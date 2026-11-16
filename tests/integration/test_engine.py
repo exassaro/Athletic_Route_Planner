@@ -64,3 +64,23 @@ def test_elevation_is_loaded(engine):
     coast, hills = engine.height([pt("beypore"), pt("vythiri")])
     assert coast is not None and hills is not None
     assert hills > coast
+
+
+def _ferry_edges(engine, a, b, options):
+    shape = route_shape(engine.route([pt(a), pt(b)], costing_options=options))
+    edges = engine.trace_attributes(shape, shape_match="edge_walk", costing_options=options,
+                                    attributes=["edge.id", "edge.use"])["edges"]
+    return [edge for edge in edges if edge.get("use") == "ferry"]
+
+
+@pytest.mark.parametrize("extra", [{}, {"shortest": True}, {"use_lit": 1.0}], ids=["plain", "shortest", "lit"])
+def test_exclude_ferries_keeps_ferry_edges_out(engine, extra):
+    """Hard exclusion must hold whatever else is in the costing (use_ferry: 0 alone does not)."""
+    options = {"exclude_ferries": True, **extra}
+    assert _ferry_edges(engine, "chaliyam", "beypore", options) == []
+    assert _ferry_edges(engine, "start_south_of_kadalundi", "kozhikode", options) == []
+
+
+def test_ferry_is_used_between_chaliyam_and_beypore_when_allowed(engine):
+    """Guards the fixture: if this stops holding, the OSM ferry tagging changed."""
+    assert _ferry_edges(engine, "chaliyam", "beypore", {"use_ferry": 1.0})
