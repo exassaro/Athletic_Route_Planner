@@ -20,12 +20,14 @@ from pathlib import Path
 
 from athlete_engine import geodesy
 from athlete_engine.measure import measure_shapes
+from athlete_engine.osm import is_walkable, way_tags
 from athlete_engine.policy import consistency_tolerance_m, pedestrian_options
 from athlete_engine.valhalla import Valhalla, ValhallaError
 
 ROOT = Path(__file__).resolve().parents[2]
 SCENARIOS = json.loads((ROOT / "tests" / "fixtures" / "scenarios" / "scenarios.json").read_text(encoding="utf-8"))
 MANIFEST = ROOT / "data" / "manifest.json"
+PBF = ROOT / "data" / "osm" / "kerala.osm.pbf"
 DEFAULT_REPORT = ROOT / "docs" / "reports" / "phase3" / "kpi.md"
 
 CHECKPOINT_RADIUS_M = 50.0
@@ -43,10 +45,15 @@ def close(a: float, b: float, rel: float = 0.002, floor_m: float = 10.0) -> bool
 
 
 def split_at_stops(geometry: list, stops: list) -> list[list]:
-    """Split a candidate geometry at its checkpoint positions so each piece can be edge-walked."""
-    cum = geodesy.cumulative_m(geometry)
-    cuts = sorted({min(range(len(cum)), key=lambda i: abs(cum[i] - s.at_m))
-                   for s in stops if s.role == "checkpoint"})
+    """Split a candidate geometry at its checkpoints' snapped coordinates (searching forward)."""
+    cuts, prev = [], 0
+    for s in stops:
+        if s.role != "checkpoint":
+            continue
+        target = (s.snapped_lon, s.snapped_lat)
+        idx = min(range(prev, len(geometry)), key=lambda i: geodesy.distance_m(geometry[i], target))
+        cuts.append(idx)
+        prev = idx
     pieces, prev = [], 0
     for c in cuts:
         if 0 < c < len(geometry) - 1:
@@ -145,11 +152,18 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
     for cand in result.candidates:
         cr: dict = {"label": cand.label}
         geom = [tuple(p) for p in cand.geometry]
-        m = measure_shapes(engine, split_at_stops(geom, cand.stops))
+        pieces = split_at_stops(geom, cand.stops)
+        m = measure_shapes(engine, pieces)
+        # Edges up to the last checkpoint form the base route through the mandatory stops.
+        n_base = len(pieces) - 1 if any(s.role == "checkpoint" for s in cand.stops) else 0
+        base_m = measure_shapes(engine, pieces[:n_base]) if n_base else None
         cr["foot_m"], cr["ferry_m"] = m.foot_m, m.ferry_m
-        cr["access_ok"] = m.matched_exactly
-        if not m.matched_exactly:
-            row["problems"].append(f"{cand.label}: geometry does not follow pedestrian edges exactly")
+        matched_m = sum(e.length_m for e in m.edges)
+        cr["exact_match"] = m.matched_exactly
+        cr["match_ok"] = abs(matched_m - m.geom_m) <= max(0.01 * m.geom_m, 30.0)
+        cr["ways"] = {e.way_id for e in m.edges if e.way_id and e.use != "ferry"}
+        if not cr["match_ok"]:
+            row["problems"].append(f"{cand.label}: pedestrian map-matching covers {matched_m:.0f} m of {m.geom_m:.0f} m")
         if m.ferry_m > 0 and not ferries:
             row["problems"].append(f"{cand.label}: {m.ferry_m:.0f} m of ferry with ferries excluded")
         cr["unrequested_ferry"] = m.ferry_m > 0 and not ferries
@@ -186,6 +200,13 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
         total = sum(e.length_m for e in m.edges) or 1.0
         if req.route_type != "out_and_back":
             cr["repeat_share"] = repeated / total
+            forced = 0.0
+            if base_m is not None:
+                base_counts: dict = {}
+                for e in base_m.edges:
+                    base_counts[e.key] = base_counts.get(e.key, 0) + 1
+                forced = sum(e.length_m for e in base_m.edges if base_counts[e.key] > 1)
+            cr["excess_repeat_share"] = max(0.0, repeated - forced) / total
         edge_sets[cand.label] = set(keys)
 
         if target is not None and cand.label in BUDGET_LABELS:
@@ -245,6 +266,20 @@ def main() -> int:
             status = "ok" if not row["problems"] else f"{len(row['problems'])} problem(s)"
             print(f"{f['id']:14s} {result.outcome:11s} {elapsed:6.0f} ms  {status}", flush=True)
 
+    # Pedestrian access by OSM tags, one pass over the extract for every way any candidate uses.
+    all_ways = set().union(*(c.get("ways", set()) for r in rows for c in r["candidates"]))
+    tags = way_tags(PBF, all_ways) if all_ways else {}
+    bad_ways = {w for w, t in tags.items() if not is_walkable(t) and t.get("route") != "ferry"}
+    for r in rows:
+        for c in r["candidates"]:
+            bad = sorted(c.get("ways", set()) & bad_ways)
+            c["tag_ok"] = not bad
+            c["access_ok"] = c["match_ok"] and not bad
+            if bad:
+                r["problems"].append(f"{c['label']}: uses tag-unwalkable way(s) " + ", ".join(
+                    f"{w} (highway={tags[w].get('highway')}, foot={tags[w].get('foot')}, access={tags[w].get('access')})"
+                    for w in bad[:3]))
+
     # Edit invariants (scenarios 9 and 10)
     invariant_rows = []
     for f in fixtures:
@@ -273,6 +308,7 @@ def main() -> int:
     dist = [c["dist_err_pct"] for c in cands if "dist_err_pct" in c]
     lat = [r["ms"] for r in rows if "ms" in r]
     reps = [c["repeat_share"] * 100 for c in cands if c.get("repeat_share") is not None]
+    excess = [c["excess_repeat_share"] * 100 for c in cands if c.get("excess_repeat_share") is not None]
     back = [c["backtrack"] * 100 for c in cands if c.get("backtrack") is not None]
     bear = [c["bearing_err"] for c in cands if "bearing_err" in c]
     overlaps = [r["overlap"] * 100 for r in rows if "overlap" in r]
@@ -298,6 +334,8 @@ def main() -> int:
         kpi("Feasibility: access violations or unrequested ferry", "0",
             f"{sum((not c['access_ok']) or c['unrequested_ferry'] for c in cands)}",
             have and not any((not c["access_ok"]) or c["unrequested_ferry"] for c in cands)),
+        kpi("(info) Geometries that pedestrian edge_walk cannot follow exactly", "info only",
+            f"{sum(not c['exact_match'] for c in cands)} / {len(cands)} (map-matched instead; see method)", True),
         kpi("Infeasibility handling: correct conflict objects", "100%",
             f"{len(inf_ok)} / {len(infeasible)}", len(inf_ok) == len(infeasible)),
         kpi("Latency per solve", "p50 < 2 s, p95 < 5 s",
@@ -306,6 +344,8 @@ def main() -> int:
         kpi("Duplication (repeated edges), excluding out-and-back", "median < 2%, none > 10%",
             f"median {statistics.median(reps):.1f}%, max {max(reps):.1f}%" if reps else "no routes",
             bool(reps) and statistics.median(reps) < 2 and max(reps) <= 10),
+        kpi("(proposed) Duplication beyond what the mandatory stops force", "median < 2%, none > 10%",
+            f"median {statistics.median(excess):.1f}%, max {max(excess):.1f}%" if excess else "no routes", True),
         kpi("Direction adherence (share moving away from target, after last stop)", "every route < 15%",
             f"max {max(back):.1f}%, {sum(b < 15 for b in back)} / {len(back)} under" if back else "no routes",
             bool(back) and all(b < 15 for b in back)),
@@ -331,6 +371,10 @@ def main() -> int:
         "Every number below is measured by the harness from the candidate geometry, independently of the "
         "solver's own figures. Conflict objects are checked against brute-force reference values "
         "(`tests/kpi/reference.py`).", "",
+        "Pedestrian access is judged twice: the geometry must map-match onto Valhalla pedestrian edges over its "
+        "whole length (within 1% or 30 m), and no matched OSM way may be unwalkable by its tags in the pinned "
+        "extract. `edge_walk` exact matching alone is not used as a test: it fails on some of Valhalla's own "
+        "unmodified pedestrian routes.", "",
         f"**Overall: {'PASS' if passed else 'FAIL'}**", "",
         "| KPI | Target | Measured | Pass |", "| --- | --- | --- | --- |",
     ]
@@ -343,6 +387,8 @@ def main() -> int:
             continue
         res = results[r["id"]]
         cs = "; ".join(f"{c['label']} {c['foot_m'] / 1000:.2f}" + (f" ({c['dist_err_pct']:.2f}%)" if "dist_err_pct" in c else "")
+                       + (f", repeat {c['repeat_share'] * 100:.1f}%" if c.get("repeat_share") else "")
+                       + (f", ferry {c['ferry_m']:.0f} m" if c.get("ferry_m") else "")
                        for c in r["candidates"])
         md.append(f"| {r['id']} | {res.outcome} | {r['ms']:.0f} | {cs} | {'; '.join(r['problems']) or '-'} |")
     if invariant_rows:
