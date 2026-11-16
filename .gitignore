@@ -1,0 +1,18 @@
+# Large downloaded / generated data (OSM extract, Valhalla tiles, Photon index)
+/data/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Node (later phases)
+node_modules/
+.next/
+
+# Local env and editor
+.env
+.vscode/
+.idea/
