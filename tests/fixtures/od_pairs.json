@@ -1,0 +1,1147 @@
+{
+ "osm_timestamp": "2026-11-15T00:15:25Z",
+ "seed": 20261116,
+ "bbox": [
+  75.4754716,
+  10.945055799999999,
+  76.0754716,
+  11.5450558
+ ],
+ "note": "prefilter_band_km is straight-line separation used to spread route lengths; not a route distance",
+ "pairs": [
+  {
+   "id": 0,
+   "prefilter_band_km": [
+    0.2,
+    1.0
+   ],
+   "from": {
+    "lon": 75.6417738,
+    "lat": 11.4675799,
+    "osm_node": 12072671626,
+    "osm_way": 1303604857,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.634767,
+    "lat": 11.470777,
+    "osm_node": 7484971912,
+    "osm_way": 1182451338,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 1,
+   "prefilter_band_km": [
+    0.2,
+    1.0
+   ],
+   "from": {
+    "lon": 75.6649233,
+    "lat": 11.5160441,
+    "osm_node": 6768962642,
+    "osm_way": 721566081,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.6601596,
+    "lat": 11.5231769,
+    "osm_node": 5255261013,
+    "osm_way": 543632376,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 2,
+   "prefilter_band_km": [
+    0.2,
+    1.0
+   ],
+   "from": {
+    "lon": 75.9139039,
+    "lat": 11.3490871,
+    "osm_node": 10845509387,
+    "osm_way": 1166043388,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.9165466,
+    "lat": 11.3520525,
+    "osm_node": 10939086658,
+    "osm_way": 725226930,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 3,
+   "prefilter_band_km": [
+    0.2,
+    1.0
+   ],
+   "from": {
+    "lon": 75.8670716,
+    "lat": 11.2681754,
+    "osm_node": 11085131983,
+    "osm_way": 802844507,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.8716638,
+    "lat": 11.271708,
+    "osm_node": 6746202804,
+    "osm_way": 718378679,
+    "highway": "service"
+   }
+  },
+  {
+   "id": 4,
+   "prefilter_band_km": [
+    0.2,
+    1.0
+   ],
+   "from": {
+    "lon": 75.8135926,
+    "lat": 11.3381216,
+    "osm_node": 9662831199,
+    "osm_way": 1051490760,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.8099686,
+    "lat": 11.3366509,
+    "osm_node": 7511540084,
+    "osm_way": 803007651,
+    "highway": "path"
+   }
+  },
+  {
+   "id": 5,
+   "prefilter_band_km": [
+    0.2,
+    1.0
+   ],
+   "from": {
+    "lon": 75.6213728,
+    "lat": 11.4916294,
+    "osm_node": 12072650554,
+    "osm_way": 1303603063,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.6252678,
+    "lat": 11.4874693,
+    "osm_node": 4772230579,
+    "osm_way": 484472100,
+    "highway": "tertiary"
+   }
+  },
+  {
+   "id": 6,
+   "prefilter_band_km": [
+    0.2,
+    1.0
+   ],
+   "from": {
+    "lon": 75.8075302,
+    "lat": 11.2374232,
+    "osm_node": 9928559273,
+    "osm_way": 1083394989,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.8159476,
+    "lat": 11.2361487,
+    "osm_node": 11274192449,
+    "osm_way": 1216757446,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 7,
+   "prefilter_band_km": [
+    0.2,
+    1.0
+   ],
+   "from": {
+    "lon": 75.7965882,
+    "lat": 11.2254564,
+    "osm_node": 9165059606,
+    "osm_way": 991953268,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.7915433,
+    "lat": 11.2314015,
+    "osm_node": 6779595853,
+    "osm_way": 722747500,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 8,
+   "prefilter_band_km": [
+    0.2,
+    1.0
+   ],
+   "from": {
+    "lon": 75.9097157,
+    "lat": 11.3583874,
+    "osm_node": 5781556095,
+    "osm_way": 1166291854,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.9136645,
+    "lat": 11.362704,
+    "osm_node": 10845879480,
+    "osm_way": 1166086258,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 9,
+   "prefilter_band_km": [
+    0.2,
+    1.0
+   ],
+   "from": {
+    "lon": 75.6332088,
+    "lat": 11.4943221,
+    "osm_node": 10980535952,
+    "osm_way": 1182451361,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.6325945,
+    "lat": 11.490256,
+    "osm_node": 10980534754,
+    "osm_way": 1182451304,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 10,
+   "prefilter_band_km": [
+    1.0,
+    5.0
+   ],
+   "from": {
+    "lon": 75.9303336,
+    "lat": 11.0868656,
+    "osm_node": 7006356086,
+    "osm_way": 749219182,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.9397248,
+    "lat": 11.047351,
+    "osm_node": 12294759387,
+    "osm_way": 1548763571,
+    "highway": "trunk"
+   }
+  },
+  {
+   "id": 11,
+   "prefilter_band_km": [
+    1.0,
+    5.0
+   ],
+   "from": {
+    "lon": 75.9136645,
+    "lat": 11.362704,
+    "osm_node": 10845879480,
+    "osm_way": 1166086258,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.9048385,
+    "lat": 11.3892231,
+    "osm_node": 6731659964,
+    "osm_way": 716664396,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 12,
+   "prefilter_band_km": [
+    1.0,
+    5.0
+   ],
+   "from": {
+    "lon": 75.9867471,
+    "lat": 11.0686212,
+    "osm_node": 11337295502,
+    "osm_way": 1222411644,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.9639417,
+    "lat": 11.1046967,
+    "osm_node": 11335427769,
+    "osm_way": 1222190804,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 13,
+   "prefilter_band_km": [
+    1.0,
+    5.0
+   ],
+   "from": {
+    "lon": 75.9248348,
+    "lat": 11.0186409,
+    "osm_node": 11306989307,
+    "osm_way": 1220247524,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.9335937,
+    "lat": 11.0293788,
+    "osm_node": 7518688319,
+    "osm_way": 803775919,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 14,
+   "prefilter_band_km": [
+    1.0,
+    5.0
+   ],
+   "from": {
+    "lon": 75.8074999,
+    "lat": 11.2466946,
+    "osm_node": 11254906142,
+    "osm_way": 1214774602,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.8010928,
+    "lat": 11.2869233,
+    "osm_node": 6299112782,
+    "osm_way": 1394084817,
+    "highway": "trunk"
+   }
+  },
+  {
+   "id": 15,
+   "prefilter_band_km": [
+    1.0,
+    5.0
+   ],
+   "from": {
+    "lon": 75.7759944,
+    "lat": 11.5017121,
+    "osm_node": 12086411845,
+    "osm_way": 1304952130,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.8090115,
+    "lat": 11.4748658,
+    "osm_node": 10982313249,
+    "osm_way": 1182668792,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 16,
+   "prefilter_band_km": [
+    1.0,
+    5.0
+   ],
+   "from": {
+    "lon": 75.8846218,
+    "lat": 11.1345759,
+    "osm_node": 11252253545,
+    "osm_way": 1214460188,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.8924675,
+    "lat": 11.1193981,
+    "osm_node": 6754113443,
+    "osm_way": 719464044,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 17,
+   "prefilter_band_km": [
+    1.0,
+    5.0
+   ],
+   "from": {
+    "lon": 75.883187,
+    "lat": 11.0270121,
+    "osm_node": 7163341020,
+    "osm_way": 767117607,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.9253144,
+    "lat": 11.0112126,
+    "osm_node": 12128937776,
+    "osm_way": 1309993981,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 18,
+   "prefilter_band_km": [
+    1.0,
+    5.0
+   ],
+   "from": {
+    "lon": 75.9189226,
+    "lat": 11.338815,
+    "osm_node": 10845497737,
+    "osm_way": 1166040561,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.9103292,
+    "lat": 11.3212342,
+    "osm_node": 6780372656,
+    "osm_way": 722842678,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 19,
+   "prefilter_band_km": [
+    1.0,
+    5.0
+   ],
+   "from": {
+    "lon": 75.9285736,
+    "lat": 11.0356328,
+    "osm_node": 11252513527,
+    "osm_way": 1214492340,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.9312875,
+    "lat": 11.0004622,
+    "osm_node": 4382489504,
+    "osm_way": 1224017186,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 20,
+   "prefilter_band_km": [
+    1.0,
+    5.0
+   ],
+   "from": {
+    "lon": 75.9329366,
+    "lat": 11.3474366,
+    "osm_node": 10848158670,
+    "osm_way": 1166291930,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.9430666,
+    "lat": 11.3234123,
+    "osm_node": 6753442445,
+    "osm_way": 719375631,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 21,
+   "prefilter_band_km": [
+    1.0,
+    5.0
+   ],
+   "from": {
+    "lon": 76.0464504,
+    "lat": 11.0493543,
+    "osm_node": 6747318678,
+    "osm_way": 718501104,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 76.0096261,
+    "lat": 11.0579985,
+    "osm_node": 7008639130,
+    "osm_way": 749485705,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 22,
+   "prefilter_band_km": [
+    5.0,
+    15.0
+   ],
+   "from": {
+    "lon": 75.9214783,
+    "lat": 11.3750864,
+    "osm_node": 10866724874,
+    "osm_way": 1168448500,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 76.0072223,
+    "lat": 11.4608623,
+    "osm_node": 12086401320,
+    "osm_way": 1304950049,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 23,
+   "prefilter_band_km": [
+    5.0,
+    15.0
+   ],
+   "from": {
+    "lon": 75.998273,
+    "lat": 11.2563101,
+    "osm_node": 11365581407,
+    "osm_way": 1225579452,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.9315302,
+    "lat": 11.3467901,
+    "osm_node": 10848158425,
+    "osm_way": 1166291874,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 24,
+   "prefilter_band_km": [
+    5.0,
+    15.0
+   ],
+   "from": {
+    "lon": 75.9299362,
+    "lat": 11.1756653,
+    "osm_node": 7126412513,
+    "osm_way": 762673791,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.8924675,
+    "lat": 11.1193981,
+    "osm_node": 6754113443,
+    "osm_way": 719464044,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 25,
+   "prefilter_band_km": [
+    5.0,
+    15.0
+   ],
+   "from": {
+    "lon": 75.849442,
+    "lat": 11.4461713,
+    "osm_node": 7529264956,
+    "osm_way": 804943131,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.9329366,
+    "lat": 11.3474366,
+    "osm_node": 10848158670,
+    "osm_way": 1166291930,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 26,
+   "prefilter_band_km": [
+    5.0,
+    15.0
+   ],
+   "from": {
+    "lon": 75.8330648,
+    "lat": 11.2521031,
+    "osm_node": 12920926477,
+    "osm_way": 1395930517,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.828978,
+    "lat": 11.1968783,
+    "osm_node": 11268539636,
+    "osm_way": 1216168382,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 27,
+   "prefilter_band_km": [
+    5.0,
+    15.0
+   ],
+   "from": {
+    "lon": 75.9172855,
+    "lat": 11.3262522,
+    "osm_node": 6780357933,
+    "osm_way": 722842663,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.9155919,
+    "lat": 11.2153799,
+    "osm_node": 11379075004,
+    "osm_way": 1227099995,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 28,
+   "prefilter_band_km": [
+    5.0,
+    15.0
+   ],
+   "from": {
+    "lon": 75.9789963,
+    "lat": 11.289999,
+    "osm_node": 3018385312,
+    "osm_way": 817889257,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 76.0558251,
+    "lat": 11.2284044,
+    "osm_node": 11365934548,
+    "osm_way": 1225615966,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 29,
+   "prefilter_band_km": [
+    5.0,
+    15.0
+   ],
+   "from": {
+    "lon": 75.936181,
+    "lat": 10.9787721,
+    "osm_node": 8889739291,
+    "osm_way": 960992274,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 76.0450913,
+    "lat": 11.0401583,
+    "osm_node": 7155462034,
+    "osm_way": 766135622,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 30,
+   "prefilter_band_km": [
+    5.0,
+    15.0
+   ],
+   "from": {
+    "lon": 75.7883208,
+    "lat": 11.294168,
+    "osm_node": 3434501271,
+    "osm_way": 336413084,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.9000912,
+    "lat": 11.2959929,
+    "osm_node": 8848434033,
+    "osm_way": 956061355,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 31,
+   "prefilter_band_km": [
+    5.0,
+    15.0
+   ],
+   "from": {
+    "lon": 75.9576256,
+    "lat": 11.0471874,
+    "osm_node": 7001695721,
+    "osm_way": 748691888,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.9830666,
+    "lat": 11.1392525,
+    "osm_node": 7013313301,
+    "osm_way": 750011032,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 32,
+   "prefilter_band_km": [
+    5.0,
+    15.0
+   ],
+   "from": {
+    "lon": 75.9744321,
+    "lat": 11.3117237,
+    "osm_node": 6801442183,
+    "osm_way": 1225571442,
+    "highway": "service"
+   },
+   "to": {
+    "lon": 76.0619505,
+    "lat": 11.230233,
+    "osm_node": 6751332763,
+    "osm_way": 719051943,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 33,
+   "prefilter_band_km": [
+    5.0,
+    15.0
+   ],
+   "from": {
+    "lon": 75.8116731,
+    "lat": 11.3373048,
+    "osm_node": 12079727252,
+    "osm_way": 1304405243,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.9303054,
+    "lat": 11.3508864,
+    "osm_node": 10848158735,
+    "osm_way": 1166291946,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 34,
+   "prefilter_band_km": [
+    15.0,
+    22.0
+   ],
+   "from": {
+    "lon": 75.8561851,
+    "lat": 11.2046749,
+    "osm_node": 6707572247,
+    "osm_way": 713393174,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.9209499,
+    "lat": 11.0373746,
+    "osm_node": 7122833716,
+    "osm_way": 762300075,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 35,
+   "prefilter_band_km": [
+    15.0,
+    22.0
+   ],
+   "from": {
+    "lon": 75.8291119,
+    "lat": 11.4902403,
+    "osm_node": 6742443370,
+    "osm_way": 717925640,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.9103292,
+    "lat": 11.3212342,
+    "osm_node": 6780372656,
+    "osm_way": 722842678,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 36,
+   "prefilter_band_km": [
+    15.0,
+    22.0
+   ],
+   "from": {
+    "lon": 75.9789963,
+    "lat": 11.289999,
+    "osm_node": 3018385312,
+    "osm_way": 817889257,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 76.0072223,
+    "lat": 11.4608623,
+    "osm_node": 12086401320,
+    "osm_way": 1304950049,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 37,
+   "prefilter_band_km": [
+    15.0,
+    22.0
+   ],
+   "from": {
+    "lon": 75.8183758,
+    "lat": 11.5331056,
+    "osm_node": 3765376780,
+    "osm_way": 372994094,
+    "highway": "tertiary"
+   },
+   "to": {
+    "lon": 75.9931786,
+    "lat": 11.476691,
+    "osm_node": 6820465487,
+    "osm_way": 1198258618,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 38,
+   "prefilter_band_km": [
+    15.0,
+    22.0
+   ],
+   "from": {
+    "lon": 75.7883208,
+    "lat": 11.294168,
+    "osm_node": 3434501271,
+    "osm_way": 336413084,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.9815931,
+    "lat": 11.3330571,
+    "osm_node": 12094894531,
+    "osm_way": 1305902079,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 39,
+   "prefilter_band_km": [
+    15.0,
+    22.0
+   ],
+   "from": {
+    "lon": 75.9815931,
+    "lat": 11.3330571,
+    "osm_node": 12094894531,
+    "osm_way": 1305902079,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.8380503,
+    "lat": 11.2950566,
+    "osm_node": 9664111186,
+    "osm_way": 1051636460,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 40,
+   "prefilter_band_km": [
+    15.0,
+    22.0
+   ],
+   "from": {
+    "lon": 75.8846218,
+    "lat": 11.1345759,
+    "osm_node": 11252253545,
+    "osm_way": 1214460188,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.9402887,
+    "lat": 10.9558222,
+    "osm_node": 12128983145,
+    "osm_way": 1309999281,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 41,
+   "prefilter_band_km": [
+    15.0,
+    22.0
+   ],
+   "from": {
+    "lon": 75.9679613,
+    "lat": 10.967953,
+    "osm_node": 12128983739,
+    "osm_way": 1309999353,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.9851662,
+    "lat": 11.14155,
+    "osm_node": 7167196161,
+    "osm_way": 767635599,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 42,
+   "prefilter_band_km": [
+    15.0,
+    22.0
+   ],
+   "from": {
+    "lon": 75.9339461,
+    "lat": 11.1710867,
+    "osm_node": 7004267687,
+    "osm_way": 748991726,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.7953034,
+    "lat": 11.2638173,
+    "osm_node": 4516827004,
+    "osm_way": 455270548,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 43,
+   "prefilter_band_km": [
+    15.0,
+    22.0
+   ],
+   "from": {
+    "lon": 75.9155592,
+    "lat": 11.4331925,
+    "osm_node": 12086680384,
+    "osm_way": 1304982009,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.9861701,
+    "lat": 11.2894413,
+    "osm_node": 7515358215,
+    "osm_way": 803421592,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 44,
+   "prefilter_band_km": [
+    22.0,
+    45.0
+   ],
+   "from": {
+    "lon": 76.0096261,
+    "lat": 11.0579985,
+    "osm_node": 7008639130,
+    "osm_way": 749485705,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.9266979,
+    "lat": 11.3723843,
+    "osm_node": 10925945119,
+    "osm_way": 1169787766,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 45,
+   "prefilter_band_km": [
+    22.0,
+    45.0
+   ],
+   "from": {
+    "lon": 75.9303054,
+    "lat": 11.3508864,
+    "osm_node": 10848158735,
+    "osm_way": 1166291946,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 76.0133064,
+    "lat": 11.0767276,
+    "osm_node": 8910043101,
+    "osm_way": 963238582,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 46,
+   "prefilter_band_km": [
+    22.0,
+    45.0
+   ],
+   "from": {
+    "lon": 75.8023843,
+    "lat": 11.3223232,
+    "osm_node": 12079771857,
+    "osm_way": 1304408043,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.8621621,
+    "lat": 11.5372791,
+    "osm_node": 5653185567,
+    "osm_way": 592279428,
+    "highway": "track"
+   }
+  },
+  {
+   "id": 47,
+   "prefilter_band_km": [
+    22.0,
+    45.0
+   ],
+   "from": {
+    "lon": 76.0416351,
+    "lat": 11.0647078,
+    "osm_node": 8366894664,
+    "osm_way": 900697017,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.8023843,
+    "lat": 11.3223232,
+    "osm_node": 12079771857,
+    "osm_way": 1304408043,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 48,
+   "prefilter_band_km": [
+    22.0,
+    45.0
+   ],
+   "from": {
+    "lon": 76.0081601,
+    "lat": 11.2256198,
+    "osm_node": 6976263601,
+    "osm_way": 745263965,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 76.0094974,
+    "lat": 11.500086,
+    "osm_node": 6726360101,
+    "osm_way": 715730087,
+    "highway": "unclassified"
+   }
+  },
+  {
+   "id": 49,
+   "prefilter_band_km": [
+    22.0,
+    45.0
+   ],
+   "from": {
+    "lon": 75.8846218,
+    "lat": 11.1345759,
+    "osm_node": 11252253545,
+    "osm_way": 1214460188,
+    "highway": "residential"
+   },
+   "to": {
+    "lon": 75.6982818,
+    "lat": 11.4240974,
+    "osm_node": 6784591195,
+    "osm_way": 724435307,
+    "highway": "secondary"
+   }
+  },
+  {
+   "id": 50,
+   "prefilter_band_km": [
+    22.0,
+    45.0
+   ],
+   "from": {
+    "lon": 76.0753982,
+    "lat": 11.295772,
+    "osm_node": 6886760834,
+    "osm_way": 713284277,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.8444875,
+    "lat": 11.2697149,
+    "osm_node": 6787791234,
+    "osm_way": 723734621,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 51,
+   "prefilter_band_km": [
+    22.0,
+    45.0
+   ],
+   "from": {
+    "lon": 75.7658755,
+    "lat": 11.5251688,
+    "osm_node": 6780845355,
+    "osm_way": 722918977,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.8716638,
+    "lat": 11.271708,
+    "osm_node": 6746202804,
+    "osm_way": 718378679,
+    "highway": "service"
+   }
+  },
+  {
+   "id": 52,
+   "prefilter_band_km": [
+    22.0,
+    45.0
+   ],
+   "from": {
+    "lon": 75.9299362,
+    "lat": 11.1756653,
+    "osm_node": 7126412513,
+    "osm_way": 762673791,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 76.0112017,
+    "lat": 10.9682699,
+    "osm_node": 8382701896,
+    "osm_way": 1269298360,
+    "highway": "residential"
+   }
+  },
+  {
+   "id": 53,
+   "prefilter_band_km": [
+    22.0,
+    45.0
+   ],
+   "from": {
+    "lon": 75.9402887,
+    "lat": 10.9558222,
+    "osm_node": 12128983145,
+    "osm_way": 1309999281,
+    "highway": "unclassified"
+   },
+   "to": {
+    "lon": 75.840253,
+    "lat": 11.1807572,
+    "osm_node": 6777083270,
+    "osm_way": 722495479,
+    "highway": "residential"
+   }
+  }
+ ]
+}

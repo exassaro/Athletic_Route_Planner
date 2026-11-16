@@ -20,6 +20,18 @@ def line_length_m(points: Sequence[Sequence[float]]) -> float:
     return _GEOD.line_length(lons, lats)
 
 
+def sphere_line_length_m(points: Sequence[Sequence[float]], radius_m: float = 6378137.0) -> float:
+    """Length of a (lon, lat) polyline on a sphere. Diagnostic only.
+
+    Used to test whether a routing engine measures on a sphere instead of the
+    ellipsoid. Product numbers always use line_length_m.
+    """
+    if len(points) < 2:
+        return 0.0
+    sphere = Geod(a=radius_m, b=radius_m)
+    return sphere.line_length([p[0] for p in points], [p[1] for p in points])
+
+
 def distance_m(a: Sequence[float], b: Sequence[float]) -> float:
     """Straight-line (geodesic) distance in metres between two (lon, lat) points.
 
