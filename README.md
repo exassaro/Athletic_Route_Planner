@@ -2,7 +2,7 @@
 
 A running route planner that treats distance as the input: "25 km towards Kozhikode via three stops" returns a route of that length, or a clear reason why it cannot. The full design is in [docs/blueprint.md](docs/blueprint.md).
 
-**Status:** Phase 2 of 8, routing engine experiments. There is no API or web app yet.
+**Status:** Phase 3 of 8, route-generation solver (library and command line). There is no API or web app yet.
 
 ## Requirements
 
@@ -85,6 +85,38 @@ docker compose --profile geocode up -d photon            # http://localhost:2322
 uv run python engine/experiments/06_photon_smoke.py
 docker compose --profile geocode stop photon
 ```
+
+### Solver (Phase 3)
+
+Valhalla must be running.
+
+```powershell
+uv run python -m athlete_solver solve request.json --geojson route.geojson   # one RouteRequest -> SolveResult JSON
+uv run python tests/kpi/run_kpi.py                                           # all scenarios -> docs/reports/phase3/kpi.md
+uv run python tests/kpi/run_kpi.py --only S05,S15                            # a subset
+```
+
+A request follows blueprint section 4, with coordinates on every point; `tests/fixtures/scenarios/scenarios.json` has 60 examples.
+
+### Pinned extract backup (one-off)
+
+The pinned extract must be uploaded once as a GitHub release asset so `--from-backup` works. In the browser: on the repository, open *Releases*, then *Draft a new release*. Use tag `osm-kerala-2026-11-15` and attach `data/osm/kerala.osm.pbf`. Or with the GitHub CLI (`winget install GitHub.cli`, then `gh auth login`):
+
+```powershell
+gh release create osm-kerala-2026-11-15 data/osm/kerala.osm.pbf --title "Pinned OSM extract: Kerala 2026-11-15" --notes "MD5 2d7b79f8c963d2a0b8304f1a732ba646, OSM timestamp 2026-11-15T00:15:25Z. Map data (c) OpenStreetMap contributors, ODbL."
+```
+
+### Quieter-route spike (Phase 3, optional)
+
+```powershell
+docker compose --profile spike up -d graphhopper      # imports Kerala, about 3 minutes, about 2 GB RAM
+uv run python engine/experiments/07_quieter_spike.py
+docker compose --profile spike stop graphhopper
+```
+
+## Phase 3 status
+
+Start with [docs/reports/phase3/summary.md](docs/reports/phase3/summary.md).
 
 ## Phase 2 results
 

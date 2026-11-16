@@ -97,6 +97,14 @@ uv run python tests/kpi/run_kpi.py [--only S05,S15]   # -> docs/reports/phase3/k
 
 Scenario requests live in `tests/fixtures/scenarios/base.json`. Never edit `scenarios.json` by hand: its reference values come from `tests/kpi/reference.py` (every stop order routed and measured, no matrix, no DP), kept independent of the solver.
 
+GraphHopper (profile `spike`, http://localhost:8989; Phase 3 spike only):
+
+```
+docker compose --profile spike up -d graphhopper   # imports the pinned extract, about 3 min, about 2 GB RAM
+uv run python engine/experiments/07_quieter_spike.py
+docker compose --profile spike stop graphhopper
+```
+
 Photon (profile `geocode`, http://localhost:2322):
 
 ```
@@ -116,3 +124,10 @@ docker compose --profile geocode stop photon
 - Pedestrian costing has no option that penalises trunk or primary roads.
 - OSM place nodes are not on roads (snap offsets of 2 to 54 m seen). Measure checkpoint compliance against the snapped point.
 - Polyline shapes are precision 6. Edge attributes for a route shape: `trace_attributes` with `shape_match: edge_walk`.
+- **`edge_walk` is not an access check**: pedestrian `edge_walk` accepts a bicycle route over a `foot=no` bridge, and fails on some unmodified pedestrian routes. Judge pedestrian access by `map_snap` coverage plus OSM tags (`athlete_engine.osm.is_walkable`).
+- Valhalla stores edge lengths in whole metres: routes with many short edges drift from the spherical measurement by about 0.1 m per edge.
+- Isodistance contours are outlines: vertices are often far nearer by route than the contour value. Route and measure every sample.
+
+## Open decisions (Phase 3, see docs/reports/phase3/summary.md)
+
+Do not resolve these silently: (1) repeated-edge limit raw vs beyond what the stops force (repetition is currently flagged, not rejected); (2) consistency threshold allowance for per-edge rounding; (3) "fewer main roads" engine (spike recommends GraphHopper foot + custom model). Loops wait until the point-to-point KPIs pass.
