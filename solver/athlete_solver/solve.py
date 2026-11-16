@@ -11,7 +11,21 @@ from .out_and_back import solve_out_and_back
 from .p2p import (SECTOR_DEG, Infeasible, bearing_tail, build_conflict, check_snapping, disconnected_conflict,
                   make_candidate, minimum_route, truncate)
 
+from .scoring import annotate, diversify
+
 BEARING_OK_DEG = 30.0  # section 16: endpoint bearing within 30 degrees where the network permits
+
+
+def finish(req: RouteRequest, eng, pairs) -> tuple[list, list[str]]:
+    """Measure and score every candidate, drop hard-rule failures, then apply the diversity filter."""
+    scored, rejected = [], []
+    for cand, edges in pairs:
+        cand, fails = annotate(eng, req, cand, edges)
+        if fails:
+            rejected.append(f"{cand.label}: " + "; ".join(fails))
+            continue
+        scored.append((cand, {e.key for e in edges if e.use != "ferry"}))
+    return diversify(scored, req.alternatives), rejected
 
 
 def _engines(engine, ferries_allowed: bool) -> tuple[Engine, Engine | None]:
@@ -63,6 +77,16 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
     def done(**kw) -> SolveResult:
         kw.setdefault("flags", [])
         kw["flags"] = pref_flags + kw["flags"]
+        pairs = kw.pop("pairs", None)
+        if pairs is not None:
+            kept, rejected = finish(req, eng, pairs)
+            kw["candidates"] = kept
+            if rejected:
+                kw.setdefault("facts", {})["rejected"] = rejected
+            if not kept and kw.get("outcome") == "ok":
+                kw["outcome"] = "unsupported"
+                kw["flags"].append(Flag(code="preference_unsupported",
+                                        message="every candidate broke a hard rule: " + "; ".join(rejected)))
         return SolveResult(request=req, graph_build=graph_build,
                            engine_calls=eng.calls + (ferry_eng.calls if ferry_eng else 0), **kw)
 
@@ -71,8 +95,8 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
             check_snapping(eng, req)
         except Infeasible as inf:
             return done(outcome="infeasible", conflict=inf.conflict)
-        cands, facts, flags = solve_out_and_back(req, eng)
-        return done(outcome="ok" if cands else "unsupported", candidates=cands, facts=facts, flags=flags)
+        pairs, facts, flags = solve_out_and_back(req, eng)
+        return done(outcome="ok" if pairs else "unsupported", pairs=pairs, facts=facts, flags=flags)
     if req.route_type != "point_to_point":
         return _unsupported(req, graph_build, f"{req.route_type} is not implemented yet")
     if req.end.kind == "fixed":
@@ -123,7 +147,7 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
         routed = eng.route(prefix, detail=True)
         cand = make_candidate(req, routed, "direct", "last_checkpoint", base.order, [])
         facts.update(case="ends_at_last_checkpoint", deviation_m=round(cand.deviation_m, 1))
-        return done(outcome="ok", candidates=[cand], facts=facts)
+        return done(outcome="ok", pairs=[(cand, routed.edges)], facts=facts)
 
     if target is None:
         return _bearing(req, eng, done, facts, prefix, base, remainder)
@@ -141,7 +165,7 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
         cand = make_candidate(req, routed, "direct", kind, base.order, flags)
         facts["end_label"] = cand.end.label
         facts["deviation_m"] = round(cand.deviation_m, 1)
-        return done(outcome="ok", candidates=[cand], facts=facts)
+        return done(outcome="ok", pairs=[(cand, routed.edges)], facts=facts)
 
     # Case B (section 8 step 8): the target is nearer than the budget allows.
     facts["case"] = "B"
@@ -157,7 +181,7 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
         routed, kind, flags, cut_facts = truncate(req, eng, [*prefix, target], beyond.tail, shortfall)
         cand = make_candidate(req, routed, "continue_past_target", kind, base.order, flags)
         facts["continue_bearing_error_deg"] = round(beyond.bearing_error, 1)
-        candidates.append(cand)
+        candidates.append((cand, routed.edges))
 
     # Option 2: end at the target and report the shortfall.
     at_target = eng.route([*prefix, target], detail=True)
@@ -169,8 +193,8 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
                       "is not supported yet."),
              data={"short_by_m": round(req.target_distance_m - at_target.foot_m, 1)})])
     short.end.label = target_label
-    candidates.append(short)
-    return done(outcome="ok", candidates=candidates, facts=facts)
+    candidates.append((short, at_target.edges))
+    return done(outcome="ok", pairs=candidates, facts=facts)
 
 
 def _bearing(req, eng, done, facts, prefix, base, remainder) -> SolveResult:
@@ -195,4 +219,4 @@ def _bearing(req, eng, done, facts, prefix, base, remainder) -> SolveResult:
     facts.update(bearing_error_deg=round(geodesy.angle_between_deg(geodesy.bearing_deg(prefix[0], end),
                                                                     req.direction.degrees), 1),
                  end_label=cand.end.label, deviation_m=round(cand.deviation_m, 1))
-    return done(outcome="ok", candidates=[cand], facts=facts)
+    return done(outcome="ok", pairs=[(cand, routed.edges)], facts=facts)

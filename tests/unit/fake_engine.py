@@ -123,6 +123,11 @@ class FakeEngine:
         self.calls += 1
         return [None if (s := self._snap(p)) is None else s[2] for p in points]
 
+    def heights(self, points):
+        """A gentle slope rising northwards: 1 m per 100 m of latitude."""
+        self.calls += 1
+        return [(p[1] - 11.0) * 1110.0 for p in points]
+
     def isodistance_ring(self, origin, km):
         """Nodes reachable within km, standing in for a contour outline."""
         self.calls += 1

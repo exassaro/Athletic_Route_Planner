@@ -131,7 +131,9 @@ FlagCode = Literal[
     "reroute_mismatch",         # re-routed candidate differs from the cut geometry beyond tolerance
     "unavoidable_main_road",
     "short_of_budget",
-    "direction_limited",        # no walking endpoint lies within 30 degrees of the requested bearing          # Case B "end at target": the run is shorter than requested
+    "direction_limited",
+    "repeated_edges",           # more than 10% walked twice (reported, not rejected; pending decision)
+    "spur",                     # dead-end excursion over 100 m        # no walking endpoint lies within 30 degrees of the requested bearing          # Case B "end at target": the run is shorter than requested
 ]
 
 

@@ -83,6 +83,7 @@ class Engine(Protocol):
     def route(self, points: list[LonLat], through: set[int] | None = None, detail: bool = False) -> Routed: ...
     def locate(self, points: list[LonLat]) -> list[LonLat | None]: ...
     def isodistance_ring(self, origin: LonLat, km: float) -> list[LonLat]: ...
+    def heights(self, points: list[LonLat]) -> list[float | None]: ...
 
 
 class ValhallaEngine:
@@ -103,6 +104,14 @@ class ValhallaEngine:
     def locate(self, points: list[LonLat]) -> list[LonLat | None]:
         self.calls += 1
         return self.client.locate(points, costing_options=self.options)
+
+    def heights(self, points: list[LonLat]) -> list[float | None]:
+        """Terrain height in metres at each point (Valhalla's elevation tiles)."""
+        out: list[float | None] = []
+        for i in range(0, len(points), 2000):
+            self.calls += 1
+            out += self.client.height(points[i:i + 2000])
+        return out
 
     def isodistance_ring(self, origin: LonLat, km: float) -> list[LonLat]:
         """Outer ring of the walking isodistance contour (candidate endpoints only; never a distance)."""
