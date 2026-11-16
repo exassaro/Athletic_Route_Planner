@@ -32,6 +32,17 @@ WANTED = {
     "parappanangadi": {"Parappanangadi"},
     "kannur": {"Kannur"},
     "vythiri": {"Vythiri"},  # Wayanad, above the ghat road: the hilly control point
+    "thamarassery": {"Thamarassery"},  # foot of the Thamarassery ghat road
+    "adivaram": {"Adivaram"},
+    "mananchira": {"Mananchira"},
+}
+
+# Objects pinned by OSM id because the name is ambiguous or is not a place node.
+# For a way, the fixture is the way's middle node.
+BY_ID = {
+    "lakkidi_wayanad": ("node", 3922194996),   # Lakkidi, Wayanad (top of the ghat); another Lakkidi is in Palakkad
+    "calicut_beach": ("node", 10240443491),    # tourism=attraction
+    "beach_road": ("way", 174513251),          # Beach Road, Kozhikode (highway=secondary)
 }
 PLACE_RANK = ["city", "town", "suburb", "village", "neighbourhood", "quarter", "hamlet", "locality"]
 
@@ -69,7 +80,23 @@ def main() -> int:
                     "place": node.tags.get("place"),
                 })
 
+    node_ids = {oid: key for key, (kind, oid) in BY_ID.items() if kind == "node"}
+    way_ids = {oid: key for key, (kind, oid) in BY_ID.items() if kind == "way"}
+    by_id: dict[str, dict] = {}
+    for obj in osmium.FileProcessor(str(PBF)).with_locations():
+        if obj.is_node() and obj.id in node_ids:
+            by_id[node_ids[obj.id]] = {"osm_id": f"node/{obj.id}", "lon": obj.location.lon, "lat": obj.location.lat,
+                                       "name": obj.tags.get("name"), "source": "osm node pinned by id"}
+        elif obj.is_way() and obj.id in way_ids:
+            nodes = [n for n in obj.nodes if n.location.valid()]
+            mid = nodes[len(nodes) // 2]
+            by_id[way_ids[obj.id]] = {"osm_id": f"node/{mid.ref}", "lon": mid.lon, "lat": mid.lat,
+                                      "name": obj.tags.get("name"), "highway": obj.tags.get("highway"),
+                                      "source": f"middle node of way/{obj.id}, pinned by id"}
+
     places: dict[str, dict] = dict(DEVELOPER_SUPPLIED)
+    missing_ids = [k for k in BY_ID if k not in by_id]
+    places.update(by_id)
     missing = []
     for key, candidates in found.items():
         if not candidates:
@@ -94,8 +121,8 @@ def main() -> int:
     for key, p in places.items():
         extra = f"  ({len(p['candidates'])} candidates)" if "candidates" in p else ""
         print(f"{key:26s} {p['lat']:.6f}, {p['lon']:.6f}  {p.get('place', '-'):10s} {p.get('osm_id', p['source'])}{extra}")
-    if missing:
-        print("NOT FOUND:", ", ".join(missing))
+    if missing or missing_ids:
+        print("NOT FOUND:", ", ".join(missing + missing_ids))
     print(f"Wrote {OUT.relative_to(ROOT).as_posix()}")
     return 0
 

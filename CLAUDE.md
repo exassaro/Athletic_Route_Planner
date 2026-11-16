@@ -87,6 +87,16 @@ uv run python engine/experiments/05_worked_example.py
 uv run python engine/experiments/05b_quieter_probe.py
 ```
 
+Solver and KPI harness (Phase 3; Valhalla must be running):
+
+```
+uv run python -m athlete_solver solve request.json [--geojson out.geojson]
+uv run python tests/kpi/build_scenarios.py   # fixtures + brute-force reference values -> tests/fixtures/scenarios/scenarios.json
+uv run python tests/kpi/run_kpi.py [--only S05,S15]   # -> docs/reports/phase3/kpi.md, exit 0 only if every KPI passes
+```
+
+Scenario requests live in `tests/fixtures/scenarios/base.json`. Never edit `scenarios.json` by hand: its reference values come from `tests/kpi/reference.py` (every stop order routed and measured, no matrix, no DP), kept independent of the solver.
+
 Photon (profile `geocode`, http://localhost:2322):
 
 ```

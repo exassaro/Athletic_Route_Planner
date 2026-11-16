@@ -139,6 +139,27 @@ class Valhalla:
             body["costing_options"] = {costing: costing_options}
         return self._post("/trace_attributes", body)
 
+    def locate(
+        self,
+        points: Sequence[Location],
+        costing: str = "pedestrian",
+        costing_options: dict[str, Any] | None = None,
+    ) -> list[tuple[float, float] | None]:
+        """Where each point meets the network for this costing: (lon, lat), or None if no edge is found."""
+        body: dict[str, Any] = {"locations": [_as_loc(p) for p in points], "costing": costing}
+        if costing_options:
+            body["costing_options"] = {costing: costing_options}
+        start = time.perf_counter()
+        resp = self._http.post("/locate", json=body)
+        self.last_elapsed_ms = (time.perf_counter() - start) * 1000
+        if resp.status_code != 200:
+            raise ValhallaError(resp.status_code, resp.text)
+        out: list[tuple[float, float] | None] = []
+        for item in resp.json():
+            edges = item.get("edges") or []
+            out.append((edges[0]["correlated_lon"], edges[0]["correlated_lat"]) if edges else None)
+        return out
+
     def height(self, points: Sequence[Sequence[float]]) -> list[float | None]:
         body = {"shape": [{"lon": p[0], "lat": p[1]} for p in points]}
         return self._post("/height", body)["height"]

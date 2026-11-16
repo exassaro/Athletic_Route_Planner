@@ -7,6 +7,28 @@
       "lat": 11.05,
       "source": "developer-supplied: blueprint section 4 sample request"
     },
+    "lakkidi_wayanad": {
+      "osm_id": "node/3922194996",
+      "lon": 76.0203502,
+      "lat": 11.5205672,
+      "name": "Lakkidi",
+      "source": "osm node pinned by id"
+    },
+    "calicut_beach": {
+      "osm_id": "node/10240443491",
+      "lon": 75.7711608,
+      "lat": 11.2516316,
+      "name": "Calicut Beach",
+      "source": "osm node pinned by id"
+    },
+    "beach_road": {
+      "osm_id": "node/647877777",
+      "lon": 75.7699716,
+      "lat": 11.2558833,
+      "name": "Beach Road",
+      "highway": "secondary",
+      "source": "middle node of way/174513251, pinned by id"
+    },
     "kadalundi": {
       "osm_id": "node/7728008448",
       "lon": 75.8334302,
@@ -85,6 +107,56 @@
       "name_en": null,
       "name_ml": "വൈത്തിരി",
       "place": "village",
+      "source": "osm place node"
+    },
+    "thamarassery": {
+      "osm_id": "node/459429897",
+      "lon": 75.9369456,
+      "lat": 11.417752,
+      "name": "Thamarassery",
+      "name_en": null,
+      "name_ml": "താമരശ്ശേരി",
+      "place": "town",
+      "source": "osm place node"
+    },
+    "adivaram": {
+      "osm_id": "node/3842111626",
+      "lon": 76.0126133,
+      "lat": 11.4849767,
+      "name": "Adivaram",
+      "name_en": null,
+      "name_ml": "അടിവാരം",
+      "place": "town",
+      "source": "osm place node",
+      "candidates": [
+        {
+          "osm_id": "node/3842111626",
+          "lon": 76.0126133,
+          "lat": 11.4849767,
+          "name": "Adivaram",
+          "name_en": null,
+          "name_ml": "അടിവാരം",
+          "place": "town"
+        },
+        {
+          "osm_id": "node/10862065260",
+          "lon": 77.1041656,
+          "lat": 9.9582858,
+          "name": "Adivaram",
+          "name_en": null,
+          "name_ml": "അടിവാരം",
+          "place": "hamlet"
+        }
+      ]
+    },
+    "mananchira": {
+      "osm_id": "node/12355175353",
+      "lon": 75.7815134,
+      "lat": 11.254274,
+      "name": "Mananchira",
+      "name_en": null,
+      "name_ml": null,
+      "place": "suburb",
       "source": "osm place node"
     }
   }
