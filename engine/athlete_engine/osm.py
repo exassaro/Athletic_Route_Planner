@@ -8,7 +8,7 @@ import osmium
 # highway values a pedestrian could plausibly use (motorways and non-roads excluded)
 ROAD_CLASSES = ["trunk", "trunk_link", "primary", "primary_link", "secondary", "secondary_link",
                 "tertiary", "tertiary_link", "unclassified", "residential", "living_street", "service", "road"]
-PATH_CLASSES = ["pedestrian", "footway", "path", "steps", "track", "cycleway", "bridleway"]
+PATH_CLASSES = ["pedestrian", "footway", "path", "steps", "track", "cycleway", "bridleway", "corridor"]
 WALKABLE = set(ROAD_CLASSES) | set(PATH_CLASSES)
 FOOT_OK = {"yes", "designated", "permissive", "official"}
 
@@ -23,6 +23,14 @@ def is_walkable(tags) -> bool:
     if tags.get("access") in ("no", "private") and foot not in FOOT_OK:
         return False
     return True
+
+
+def way_tags(pbf: Path, way_ids: set[int]) -> dict[int, dict[str, str]]:
+    """Tags of the given ways, read from the extract."""
+    out: dict[int, dict[str, str]] = {}
+    for obj in osmium.FileProcessor(str(pbf), osmium.osm.WAY).with_filter(osmium.filter.IdFilter(way_ids)):
+        out[obj.id] = {t.k: t.v for t in obj.tags}
+    return out
 
 
 def sample_way_points(

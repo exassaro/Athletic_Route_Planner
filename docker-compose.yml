@@ -40,3 +40,21 @@ services:
       - JAVA_OPTS=-Xmx1500m
     mem_limit: 3g
     restart: "no"
+
+  # Phase 3 spike only: GraphHopper foot profiles on the same pinned extract.
+  # Started on request:  docker compose --profile spike up -d graphhopper
+  graphhopper:
+    profiles: ["spike"]
+    build:
+      context: ./engine/graphhopper
+    image: athlete-graphhopper:11.1
+    container_name: athlete-graphhopper
+    ports:
+      - "8989:8989"
+    volumes:
+      - ./data/graphhopper:/data
+      - ./data/osm/kerala.osm.pbf:/osm/kerala.osm.pbf:ro
+    environment:
+      - JAVA_OPTS=-Xmx3g
+    mem_limit: 4g
+    restart: "no"

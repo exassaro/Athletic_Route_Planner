@@ -1,0 +1,47 @@
+# GraphHopper 11.1 config for the quieter spike (Kerala, foot only, no elevation).
+graphhopper:
+  datareader.file: ""
+  graph.location: graph-cache
+  custom_models.directory: /opt/gh/custom_models
+  profiles:
+    # Plain foot profile with ferries blocked: the GraphHopper baseline.
+    - name: foot_direct
+      custom_model_files: [stock_foot.json, no_ferry.json]
+    # Option (b): foot with a priority penalty on trunk and primary roads.
+    - name: foot_quiet
+      custom_model_files: [stock_foot.json, no_ferry.json, fewer_main_roads.json]
+  profiles_ch: []
+  # Landmarks keep request-time latency realistic without fixing the weighting in the graph.
+  profiles_lm:
+    - profile: foot_direct
+    - profile: foot_quiet
+  prepare.lm.landmarks: 16
+  graph.encoded_values: |
+    foot_access, foot_average_speed, foot_priority, foot_road_access, hike_rating, mtb_rating,
+    country, road_class, road_environment, osm_way_id
+  graph.elevation.provider: ""
+  prepare.min_network_size: 200
+  prepare.subnetworks.threads: 1
+  routing.snap_preventions_default: tunnel, bridge, ferry
+  routing.non_ch.max_waypoint_distance: 1000000
+  import.osm.ignored_highways: ''
+  graph.dataaccess.default_type: RAM_STORE
+
+server:
+  application_connectors:
+    - type: http
+      port: 8989
+      bind_host: 0.0.0.0
+      max_request_header_size: 50k
+  request_log:
+    appenders: []
+  admin_connectors:
+    - type: http
+      port: 8990
+      bind_host: 0.0.0.0
+
+logging:
+  appenders:
+    - type: console
+      time_zone: UTC
+      log_format: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
