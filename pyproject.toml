@@ -1,13 +1,14 @@
 [project]
 name = "athlete-router"
 version = "0.1.0"
-description = "Distance-budgeted running route planner (Phase 2: routing engine experiments)"
+description = "Distance-budgeted running route planner (Phase 3: route-generation solver)"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "httpx>=0.27",
     "pyproj>=3.6",
     "shapely>=2.0",
     "osmium>=4.0",
+    "pydantic>=2.7",
 ]
 
 [dependency-groups]
@@ -18,10 +19,11 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["engine/athlete_engine"]
+packages = ["engine/athlete_engine", "solver/athlete_solver"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
+    "kpi: runs the section 16 scenario set against the engine (slow)",
     "integration: needs a running Valhalla at VALHALLA_URL (default http://localhost:8002)",
 ]
