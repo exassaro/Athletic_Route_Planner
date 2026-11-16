@@ -1,18 +1,39 @@
-# Large downloaded / generated data (OSM extract, Valhalla tiles, Photon index)
+# Large downloaded / generated data (OSM extract, Valhalla tiles, elevation, Photon index)
 /data/
+*.osm.pbf
+*.tar.bz2
+*.part
 
 # Python
 .venv/
+venv/
 __pycache__/
-*.pyc
+*.py[cod]
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
 *.egg-info/
+build/
+dist/
 
 # Node (later phases)
 node_modules/
 .next/
+out/
+npm-debug.log*
 
-# Local env and editor
+# Secrets and local environment
 .env
+.env.*
+!.env.example
+
+# Editor, tools and OS
 .vscode/
 .idea/
+.claude/settings.local.json
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
