@@ -82,6 +82,7 @@ class Engine(Protocol):
     def matrix(self, points: list[LonLat]) -> list[list[float | None]]: ...
     def route(self, points: list[LonLat], through: set[int] | None = None, detail: bool = False) -> Routed: ...
     def locate(self, points: list[LonLat]) -> list[LonLat | None]: ...
+    def isodistance_ring(self, origin: LonLat, km: float) -> list[LonLat]: ...
 
 
 class ValhallaEngine:
@@ -102,6 +103,19 @@ class ValhallaEngine:
     def locate(self, points: list[LonLat]) -> list[LonLat | None]:
         self.calls += 1
         return self.client.locate(points, costing_options=self.options)
+
+    def isodistance_ring(self, origin: LonLat, km: float) -> list[LonLat]:
+        """Outer ring of the walking isodistance contour (candidate endpoints only; never a distance)."""
+        self.calls += 1
+        try:
+            features = self.client.isodistance(origin, [km], costing_options=self.options)["features"]
+        except ValhallaError:
+            return []
+        if not features:
+            return []
+        g = features[0]["geometry"]
+        ring = g["coordinates"][0] if g["type"] == "Polygon" else max((poly[0] for poly in g["coordinates"]), key=len)
+        return [(c[0], c[1]) for c in ring]
 
     def route(self, points: list[LonLat], through: set[int] | None = None, detail: bool = False) -> Routed:
         """Route through points; index i in `through` is a shaping via, every other point is a break.

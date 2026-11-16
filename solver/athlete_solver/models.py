@@ -130,6 +130,8 @@ FlagCode = Literal[
     "checkpoint_far_from_network",
     "reroute_mismatch",         # re-routed candidate differs from the cut geometry beyond tolerance
     "unavoidable_main_road",
+    "short_of_budget",
+    "direction_limited",        # no walking endpoint lies within 30 degrees of the requested bearing          # Case B "end at target": the run is shorter than requested
 ]
 
 
@@ -153,7 +155,7 @@ class EndPoint(Strict):
     lon: float
     lat: float
     label: str | None = None
-    kind: Literal["junction", "mid_road", "target", "fixed"]
+    kind: Literal["junction", "mid_road", "target", "fixed", "last_checkpoint", "start"]  # "start": out-and-back
 
 
 class Candidate(Strict):

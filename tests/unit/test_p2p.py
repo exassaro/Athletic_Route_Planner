@@ -114,3 +114,43 @@ def test_far_checkpoint_is_rejected_before_routing():
 def test_unsupported_preferences_are_flagged_not_ignored():
     res = run(req(N["m0"], 5000, target=N["m40"], preferences={"hills": "minimise"}))
     assert any(f.code == "preference_unsupported" for f in res.flags)
+
+
+def test_case_b_offers_both_options_and_continue_meets_the_budget():
+    # Target m10 is much nearer than the budget; the ladder continues north past it.
+    near = geodesy.line_length_m([N[f"m{i}"] for i in range(11)])
+    budget = near * 2.5
+    res = run(req(N["m0"], budget, target=N["m10"]))
+    assert res.outcome == "ok" and res.facts["case"] == "B"
+    labels = [c.label for c in res.candidates]
+    assert labels == ["continue_past_target", "end_at_target"]
+    cont, short = res.candidates
+    assert abs(cont.foot_m - budget) <= max(0.005 * budget, 2.0)
+    assert short.foot_m == pytest.approx(near, abs=1.0)
+    assert any(f.code == "short_of_budget" for f in short.flags)
+
+
+def test_bearing_only_heads_the_right_way():
+    budget = geodesy.line_length_m([N[f"m{i}"] for i in range(21)])
+    res = run(RouteRequest.model_validate({
+        "route_type": "point_to_point", "start": {"lon": N["m5"][0], "lat": N["m5"][1]},
+        "target_distance_m": budget, "direction": {"kind": "bearing", "degrees": 0}}))
+    assert res.outcome == "ok"
+    c = res.candidates[0]
+    assert abs(c.foot_m - budget) <= max(0.005 * budget, 2.0)
+    assert res.facts["bearing_error_deg"] <= 30
+    assert c.end.lat > N["m5"][1]
+
+
+def test_out_and_back_is_exact_and_retraces_itself():
+    budget = geodesy.line_length_m([N[f"m{i}"] for i in range(21)]) * 1.3
+    res = run(RouteRequest.model_validate({
+        "route_type": "out_and_back", "start": {"lon": N["m2"][0], "lat": N["m2"][1]},
+        "target_distance_m": budget, "direction": {"kind": "bearing", "degrees": 0}}))
+    assert res.outcome == "ok"
+    c = res.candidates[0]
+    assert abs(c.foot_m - budget) <= max(0.005 * budget, 2.0)
+    assert c.geometry[0] == c.geometry[-1]
+    half = len(c.geometry) // 2
+    assert c.geometry[:half + 1] == list(reversed(c.geometry[half:]))
+    assert c.end.kind == "start"

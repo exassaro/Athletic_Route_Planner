@@ -123,6 +123,19 @@ class FakeEngine:
         self.calls += 1
         return [None if (s := self._snap(p)) is None else s[2] for p in points]
 
+    def isodistance_ring(self, origin, km):
+        """Nodes reachable within km, standing in for a contour outline."""
+        self.calls += 1
+        out = []
+        for name, q in self.g.nodes.items():
+            try:
+                shape, _, _ = self._path(origin, q)
+            except NoRoute:
+                continue
+            if geodesy.line_length_m(shape) <= km * 1000:
+                out.append(q)
+        return out
+
     def matrix(self, points):
         self.calls += 1
         out = []

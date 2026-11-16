@@ -2,12 +2,16 @@
 
 import time
 
+from athlete_engine import geodesy
 from athlete_engine.valhalla import Valhalla
 
 from .engine import Engine, NoRoute, ValhallaEngine
 from .models import Flag, RouteRequest, SolveResult
-from .p2p import (Infeasible, build_conflict, check_snapping, disconnected_conflict, make_candidate,
-                  minimum_route, truncate)
+from .out_and_back import solve_out_and_back
+from .p2p import (SECTOR_DEG, Infeasible, bearing_tail, build_conflict, check_snapping, disconnected_conflict,
+                  make_candidate, minimum_route, truncate)
+
+BEARING_OK_DEG = 30.0  # section 16: endpoint bearing within 30 degrees where the network permits
 
 
 def _engines(engine, ferries_allowed: bool) -> tuple[Engine, Engine | None]:
@@ -62,6 +66,13 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
         return SolveResult(request=req, graph_build=graph_build,
                            engine_calls=eng.calls + (ferry_eng.calls if ferry_eng else 0), **kw)
 
+    if req.route_type == "out_and_back":
+        try:
+            check_snapping(eng, req)
+        except Infeasible as inf:
+            return done(outcome="infeasible", conflict=inf.conflict)
+        cands, facts, flags = solve_out_and_back(req, eng)
+        return done(outcome="ok" if cands else "unsupported", candidates=cands, facts=facts, flags=flags)
     if req.route_type != "point_to_point":
         return _unsupported(req, graph_build, f"{req.route_type} is not implemented yet")
     if req.end.kind == "fixed":
@@ -105,10 +116,17 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
     remainder = req.target_distance_m - base.foot_m
     facts["remainder_m"] = round(remainder, 1)
     last = stops[base.order[-1]] if base.order else start
+    prefix = [start, *(stops[i] for i in base.order)]
+
+    # Budget already used up by the stops (within tolerance): the run ends at the last checkpoint.
+    if base.routed is not None and remainder <= 1.0:
+        routed = eng.route(prefix, detail=True)
+        cand = make_candidate(req, routed, "direct", "last_checkpoint", base.order, [])
+        facts.update(case="ends_at_last_checkpoint", deviation_m=round(cand.deviation_m, 1))
+        return done(outcome="ok", candidates=[cand], facts=facts)
 
     if target is None:
-        return done(outcome="unsupported", facts=facts,
-                    flags=[Flag(code="preference_unsupported", message="bearing-only endpoints are not implemented yet")])
+        return _bearing(req, eng, done, facts, prefix, base, remainder)
 
     try:
         tail = eng.route([last, target], detail=True)
@@ -116,16 +134,65 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
         return done(outcome="disconnected", conflict=disconnected_conflict(labels, matrix))
     facts["tail_to_target_m"] = round(tail.foot_m, 1)
 
-    if tail.foot_m < remainder:
-        facts["case"] = "B"
-        return done(outcome="unsupported", facts=facts,
-                    flags=[Flag(code="preference_unsupported",
-                                message="target nearer than the budget (Case B) is not implemented yet")])
+    if tail.foot_m >= remainder:
+        facts["case"] = "A"
+        routed, kind, flags, cut_facts = truncate(req, eng, prefix, tail, remainder)
+        facts.update(cut_facts)
+        cand = make_candidate(req, routed, "direct", kind, base.order, flags)
+        facts["end_label"] = cand.end.label
+        facts["deviation_m"] = round(cand.deviation_m, 1)
+        return done(outcome="ok", candidates=[cand], facts=facts)
 
-    facts["case"] = "A"
-    routed, kind, flags, cut_facts = truncate(req, eng, start, stops, base, tail, remainder)
+    # Case B (section 8 step 8): the target is nearer than the budget allows.
+    facts["case"] = "B"
+    shortfall = remainder - tail.foot_m
+    facts["shortfall_m"] = round(shortfall, 1)
+    target_label = req.direction.place.label or "the target"
+    candidates = []
+
+    # Option 1: carry on past the target in the same direction for the rest of the budget.
+    heading = geodesy.bearing_deg(last if last != target else start, target)
+    beyond = bearing_tail(eng, target, heading, shortfall, measure_from=target)
+    if beyond is not None:
+        routed, kind, flags, cut_facts = truncate(req, eng, [*prefix, target], beyond.tail, shortfall)
+        cand = make_candidate(req, routed, "continue_past_target", kind, base.order, flags)
+        facts["continue_bearing_error_deg"] = round(beyond.bearing_error, 1)
+        candidates.append(cand)
+
+    # Option 2: end at the target and report the shortfall.
+    at_target = eng.route([*prefix, target], detail=True)
+    short = make_candidate(req, at_target, "end_at_target", "target", base.order, [
+        Flag(code="short_of_budget",
+             message=(f"{target_label} is {at_target.foot_m / 1000:.1f} km away by this route, "
+                      f"{(req.target_distance_m - at_target.foot_m) / 1000:.1f} km short of the "
+                      f"{req.target_distance_m / 1000:.1f} km requested. Adding a detour on an earlier leg "
+                      "is not supported yet."),
+             data={"short_by_m": round(req.target_distance_m - at_target.foot_m, 1)})])
+    short.end.label = target_label
+    candidates.append(short)
+    return done(outcome="ok", candidates=candidates, facts=facts)
+
+
+def _bearing(req, eng, done, facts, prefix, base, remainder) -> SolveResult:
+    """Bearing-only endpoint (section 8 step 8): sample the isodistance contour inside the sector, cut exactly."""
+    facts["case"] = "bearing"
+    origin = prefix[-1]
+    found = bearing_tail(eng, origin, req.direction.degrees, remainder, measure_from=prefix[0])
+    if found is None:
+        return done(outcome="unsupported", facts=facts, flags=[Flag(
+            code="preference_unsupported",
+            message=f"no walkable endpoint found within {SECTOR_DEG:.0f} degrees of bearing {req.direction.degrees:.0f}")])
+    routed, kind, flags, cut_facts = truncate(req, eng, prefix, found.tail, remainder)
     facts.update(cut_facts)
+    if found.bearing_error > BEARING_OK_DEG:
+        flags.append(Flag(code="direction_limited",
+                          message=(f"no walking route of this length ends within {BEARING_OK_DEG:.0f} degrees of "
+                                   f"bearing {req.direction.degrees:.0f}; the closest found is "
+                                   f"{found.bearing_error:.0f} degrees off"),
+                          data={"bearing_error_deg": round(found.bearing_error, 1)}))
     cand = make_candidate(req, routed, "direct", kind, base.order, flags)
-    facts["end_label"] = cand.end.label
-    facts["deviation_m"] = round(cand.deviation_m, 1)
+    end = (cand.end.lon, cand.end.lat)
+    facts.update(bearing_error_deg=round(geodesy.angle_between_deg(geodesy.bearing_deg(prefix[0], end),
+                                                                    req.direction.degrees), 1),
+                 end_label=cand.end.label, deviation_m=round(cand.deviation_m, 1))
     return done(outcome="ok", candidates=[cand], facts=facts)

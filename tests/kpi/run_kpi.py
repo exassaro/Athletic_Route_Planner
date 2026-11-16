@@ -79,6 +79,40 @@ def direction_adherence(engine: Valhalla, geometry: list, target: tuple, from_m:
     return away / total if total else None
 
 
+def best_achievable_bearing(engine: Valhalla, origin: tuple, bearing: float, distance_m: float,
+                            ferries: bool) -> float | None:
+    """Exhaustive reference: the smallest bearing error any walking endpoint at exactly distance_m reaches.
+
+    Samples isodistance contours at several sizes, every vertex within 90 degrees (up to 40), routes to
+    each and measures where distance_m on foot lands. Independent of the solver's own search.
+    """
+    from athlete_engine.measure import measure_route as measure  # noqa: PLC0415
+    best = None
+    opts = pedestrian_options(ferries)
+    for factor in (1.2, 1.6, 2.2, 3.0):
+        feats = engine.isodistance(origin, [distance_m * factor / 1000], costing_options=opts)["features"]
+        if not feats:
+            continue
+        g = feats[0]["geometry"]
+        ring = g["coordinates"][0] if g["type"] == "Polygon" else max((x[0] for x in g["coordinates"]), key=len)
+        near = [tuple(c) for c in ring if geodesy.angle_between_deg(geodesy.bearing_deg(origin, c), bearing) <= 90]
+        for c in near[:: max(1, len(near) // 40)][:40]:
+            try:
+                resp = engine.route([origin, c], costing_options=opts)
+            except ValhallaError:
+                continue
+            m = measure(engine, resp, opts)
+            if m.foot_m < distance_m:
+                continue
+            shape = [p for e in m.edges if e.use != "ferry" for p in e.shape] or None
+            end = geodesy.point_at(shape, distance_m)[0] if shape else None
+            if end is None:
+                continue
+            err = geodesy.angle_between_deg(geodesy.bearing_deg(origin, end), bearing)
+            best = err if best is None else min(best, err)
+    return best
+
+
 def check_conflict(result, ref: dict, req) -> list[str]:
     """Problems with an infeasible result's conflict object, against the reference."""
     problems = []
@@ -153,6 +187,9 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
         cr: dict = {"label": cand.label}
         geom = [tuple(p) for p in cand.geometry]
         pieces = split_at_stops(geom, cand.stops)
+        if req.route_type == "out_and_back":   # the geometry turns round at its middle vertex
+            mid = len(geom) // 2
+            pieces = [geom[:mid + 1], geom[mid:]]
         m = measure_shapes(engine, pieces)
         # Edges up to the last checkpoint form the base route through the mandatory stops.
         n_base = len(pieces) - 1 if any(s.role == "checkpoint" for s in cand.stops) else 0
@@ -209,12 +246,28 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
             cr["excess_repeat_share"] = max(0.0, repeated - forced) / total
         edge_sets[cand.label] = set(keys)
 
-        if target is not None and cand.label in BUDGET_LABELS:
+        # Direction adherence applies to routes that head for the target; "continue past target"
+        # moves away from it by design after passing it, and is judged by its bearing instead.
+        if target is not None and cand.label in ("direct", "end_at_target"):
             last_cp = max((s.at_m for s in cand.stops if s.role == "checkpoint"), default=0.0)
             cr["backtrack"] = direction_adherence(engine, geom, target, last_cp, ferries)
         if req.direction and req.direction.kind == "bearing" and req.route_type == "point_to_point":
             cr["bearing_err"] = geodesy.angle_between_deg(geodesy.bearing_deg(geom[0], geom[-1]),
                                                           req.direction.degrees)
+            if cr["bearing_err"] > 30 and not req.checkpoints:
+                ref_best = best_achievable_bearing(engine, req.start.lonlat, req.direction.degrees,
+                                                   req.target_distance_m, ferries)
+                cr["bearing_ref_best"] = ref_best
+                if ref_best is not None and ref_best > 30:
+                    cr["bearing_network_limited"] = True
+                if not any(f.code == "direction_limited" for f in cand.flags):
+                    row["problems"].append(f"{cand.label}: {cr['bearing_err']:.0f}° off the bearing without a direction_limited flag")
+        if cand.label == "continue_past_target" and target is not None:
+            # Continuing "on the same bearing": compare target-to-end with the approach to the target.
+            last = [s for s in cand.stops if s.role == "checkpoint"]
+            origin = (last[-1].snapped_lon, last[-1].snapped_lat) if last else geom[0]
+            cr["bearing_err"] = geodesy.angle_between_deg(geodesy.bearing_deg(target, geom[-1]),
+                                                          geodesy.bearing_deg(origin, target))
         row["candidates"].append(cr)
 
     alt = [k for k in edge_sets if k in ("direct", "fewer_main_roads")]
@@ -311,6 +364,8 @@ def main() -> int:
     excess = [c["excess_repeat_share"] * 100 for c in cands if c.get("excess_repeat_share") is not None]
     back = [c["backtrack"] * 100 for c in cands if c.get("backtrack") is not None]
     bear = [c["bearing_err"] for c in cands if "bearing_err" in c]
+    bear_limited = [c for c in cands if c.get("bearing_network_limited")]
+    bear_fail = [c for c in cands if "bearing_err" in c and c["bearing_err"] > 30 and not c.get("bearing_network_limited")]
     overlaps = [r["overlap"] * 100 for r in rows if "overlap" in r]
     infeasible = [f for f in fixtures if f["reference"]["outcome"] == "infeasible"]
     inf_ok = [r for r in rows if r["id"] in {f["id"] for f in infeasible} and "error" not in r and not r["problems"]]
@@ -349,9 +404,10 @@ def main() -> int:
         kpi("Direction adherence (share moving away from target, after last stop)", "every route < 15%",
             f"max {max(back):.1f}%, {sum(b < 15 for b in back)} / {len(back)} under" if back else "no routes",
             bool(back) and all(b < 15 for b in back)),
-        kpi("Endpoint bearing (bearing-only requests)", "within 30°",
-            f"max {max(bear):.0f}°, {sum(b <= 30 for b in bear)} / {len(bear)} within" if bear else "no routes",
-            bool(bear) and all(b <= 30 for b in bear)),
+        kpi("Endpoint bearing (bearing-only requests; continue-past-target direction)", "within 30°",
+            (f"{sum(b <= 30 for b in bear)} / {len(bear)} within; {len(bear_limited)} beyond 30° where an exhaustive "
+             f"search finds nothing closer (network does not permit)" if bear else "no routes"),
+            bool(bear) and not bear_fail),
         kpi("Checkpoint compliance (snapped point within 50 m)", "100%",
             f"{sum(c['checkpoints_ok'] for c in cands)} / {len(cands)}", have and all(c["checkpoints_ok"] for c in cands)),
         kpi("Alternative diversity (edge overlap)", "< 60%",
@@ -389,6 +445,9 @@ def main() -> int:
         cs = "; ".join(f"{c['label']} {c['foot_m'] / 1000:.2f}" + (f" ({c['dist_err_pct']:.2f}%)" if "dist_err_pct" in c else "")
                        + (f", repeat {c['repeat_share'] * 100:.1f}%" if c.get("repeat_share") else "")
                        + (f", ferry {c['ferry_m']:.0f} m" if c.get("ferry_m") else "")
+                       + (f", away {c['backtrack'] * 100:.0f}%" if c.get("backtrack") else "")
+                       + (f", bearing off {c['bearing_err']:.0f}°" if "bearing_err" in c else "")
+                       + (f" (best possible {c['bearing_ref_best']:.0f}°)" if c.get("bearing_ref_best") is not None else "")
                        for c in r["candidates"])
         md.append(f"| {r['id']} | {res.outcome} | {r['ms']:.0f} | {cs} | {'; '.join(r['problems']) or '-'} |")
     if invariant_rows:

@@ -201,28 +201,83 @@ def cut_point(tail: Routed, remainder_m: float, target_m: float) -> tuple[LonLat
     return tail.point_at_foot(remainder_m), "mid_road", remainder_m
 
 
-def truncate(req: RouteRequest, engine: Engine, start: LonLat, stops: list[LonLat], base: Base,
-             tail: Routed, remainder_m: float) -> tuple[Routed, str, list[Flag], dict]:
-    """Cut the tail at the remainder and re-route the whole run as one engine request."""
-    point, kind, at = cut_point(tail, remainder_m, req.target_distance_m)
+def truncate(req: RouteRequest, engine: Engine, prefix: list[LonLat], tail: Routed,
+             remainder_m: float, goal_m: float | None = None) -> tuple[Routed, str, list[Flag], dict]:
+    """Cut the tail at the remainder and re-route the whole run (prefix points, then the cut) as one request.
+
+    `prefix` is the start followed by every point the run must pass, in order; the tail begins at its last
+    point. `goal_m` is the foot length the re-routed run should have (default: the request's budget; an
+    out-and-back passes half of it).
+    """
+    goal = req.target_distance_m if goal_m is None else goal_m
+    tolerance = req.tolerance_m * goal / req.target_distance_m
+    point, kind, at = cut_point(tail, remainder_m, goal)
     flags: list[Flag] = []
-    seq = [start, *(stops[i] for i in base.order), point]
+    seq = [*prefix, point]
     routed = engine.route(seq, detail=True)
     facts = {"cut_at_m": round(at, 1), "end_kind": kind}
     # One correction if the re-route lands off target (e.g. the end snapped to a neighbouring edge).
-    miss = req.target_distance_m - routed.foot_m
-    if abs(miss) > req.tolerance_m / 2 and 0 < remainder_m + miss < tail.foot_m:
+    miss = goal - routed.foot_m
+    if abs(miss) > tolerance / 2 and 0 < remainder_m + miss < tail.foot_m:
         point = tail.point_at_foot(remainder_m + miss)
         kind = "mid_road"
         retry = engine.route([*seq[:-1], point], detail=True)
-        if abs(req.target_distance_m - retry.foot_m) < abs(miss):
+        if abs(goal - retry.foot_m) < abs(miss):
             routed = retry
             facts["corrected_m"] = round(miss, 1)
-    if abs(req.target_distance_m - routed.foot_m) > req.tolerance_m:
+    if abs(goal - routed.foot_m) > tolerance:
         flags.append(Flag(code="reroute_mismatch",
-                          message=f"re-routed run is {routed.foot_m:.0f} m on foot against {req.target_distance_m:.0f} m requested",
+                          message=f"re-routed run is {routed.foot_m:.0f} m on foot against {goal:.0f} m requested",
                           data={"foot_m": routed.foot_m}))
     if kind == "mid_road":
         flags.append(Flag(code="endpoint_mid_road",
                           message="no junction within the snap window; the run ends at the exact distance"))
     return routed, kind, flags, facts
+
+
+# ------------------------------------------------------------------ bearing-only endpoints
+
+SECTOR_DEG = 45.0          # section 8 step 8: sample the contour within 45 degrees of the bearing
+CONTOUR_FACTORS = (1.3, 2.0)
+SAMPLES = 7
+GOOD_ENOUGH_DEG = 10.0     # stop searching once an endpoint is this close to the bearing
+
+
+@dataclass
+class BearingTail:
+    tail: Routed
+    bearing_error: float
+
+
+def bearing_tail(engine: Engine, origin: LonLat, bearing: float, distance_m: float,
+                 measure_from: LonLat) -> BearingTail | None:
+    """A routed path from origin, at least distance_m on foot, ending as close as possible to the bearing.
+
+    Samples isodistance contours larger than the distance (contour vertices are often much nearer by
+    route than the contour value), keeps vertices within the sector, routes to each, and keeps routes
+    long enough to be cut at exactly distance_m. The bearing error is judged from `measure_from`
+    (the start of the run) to the point where the cut will land. The best over all contours wins.
+    """
+    best: BearingTail | None = None
+    for factor in CONTOUR_FACTORS:
+        ring = engine.isodistance_ring(origin, distance_m * factor / 1000.0)
+        in_sector = [p for p in ring
+                     if geodesy.angle_between_deg(geodesy.bearing_deg(origin, p), bearing) <= SECTOR_DEG]
+        if not in_sector:
+            continue
+        in_sector.sort(key=lambda p: geodesy.angle_between_deg(geodesy.bearing_deg(origin, p), bearing))
+        step = max(1, len(in_sector) // SAMPLES)
+        for p in in_sector[::step][:SAMPLES]:
+            try:
+                tail = engine.route([origin, p], detail=True)
+            except NoRoute:
+                continue
+            if tail.foot_m < distance_m:
+                continue
+            end = tail.point_at_foot(distance_m)
+            err = geodesy.angle_between_deg(geodesy.bearing_deg(measure_from, end), bearing)
+            if best is None or err < best.bearing_error:
+                best = BearingTail(tail=tail, bearing_error=err)
+        if best is not None and best.bearing_error <= GOOD_ENOUGH_DEG:
+            break
+    return best
