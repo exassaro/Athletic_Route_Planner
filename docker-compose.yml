@@ -1,0 +1,25 @@
+# Phase 2 services. Valhalla only for now; Photon is added in a later step
+# under the `geocode` profile so the two never compete for RAM by accident.
+services:
+  valhalla:
+    # Pinned by digest (was :latest on 2026-11-16, Valhalla 3.9.2) so the engine
+    # cannot change under the measurements.
+    image: ghcr.io/valhalla/valhalla-scripted@sha256:6e3a8a6deb570f111ab628826f0ffc5c59ea428d3c578d303dce07638c180843
+    container_name: athlete-valhalla
+    ports:
+      - "8002:8002"
+    volumes:
+      # Tiles, elevation and valhalla.json are written here (gitignored).
+      - ./data/valhalla:/custom_files
+      # The pinned extract from engine/scripts/fetch_extract.py, read-only.
+      - ./data/osm/kerala.osm.pbf:/custom_files/kerala.osm.pbf:ro
+    environment:
+      - use_tiles_ignore_pbf=True   # reuse built tiles on restart
+      - force_rebuild=False
+      - build_elevation=True        # download DEM tiles for the graph's bbox
+      - build_admins=False          # not needed for pedestrian routing in one country
+      - build_time_zones=False      # no time-dependent routing in Phase 2
+      - build_tar=True
+      - serve_tiles=True
+      - server_threads=2            # 8 GB laptop
+    restart: "no"

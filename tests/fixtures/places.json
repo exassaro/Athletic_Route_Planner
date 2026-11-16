@@ -1,0 +1,91 @@
+{
+  "osm_timestamp": "2026-11-15T00:15:25Z",
+  "coordinate_order": "lon, lat (WGS84)",
+  "places": {
+    "start_south_of_kadalundi": {
+      "lon": 75.86,
+      "lat": 11.05,
+      "source": "developer-supplied: blueprint section 4 sample request"
+    },
+    "kadalundi": {
+      "osm_id": "node/7728008448",
+      "lon": 75.8334302,
+      "lat": 11.1381083,
+      "name": "Kadalundi",
+      "name_en": null,
+      "name_ml": "കടലുണ്ടി",
+      "place": "village",
+      "source": "osm place node"
+    },
+    "chaliyam": {
+      "osm_id": "node/1683145417",
+      "lon": 75.8095217,
+      "lat": 11.1559577,
+      "name": "Chaliyam",
+      "name_en": null,
+      "name_ml": "ചാലിയം",
+      "place": "village",
+      "source": "osm place node"
+    },
+    "beypore": {
+      "osm_id": "node/1683149581",
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "name": "Beypore",
+      "name_en": null,
+      "name_ml": "ബേപ്പൂര്‍",
+      "place": "town",
+      "source": "osm place node"
+    },
+    "kozhikode": {
+      "osm_id": "node/1348192542",
+      "lon": 75.7754716,
+      "lat": 11.2450558,
+      "name": "Kozhikode",
+      "name_en": "Kozhikode",
+      "name_ml": "കോഴിക്കോട്",
+      "place": "city",
+      "source": "osm place node"
+    },
+    "feroke": {
+      "osm_id": "node/986593739",
+      "lon": 75.8375372,
+      "lat": 11.1825447,
+      "name": "Feroke",
+      "name_en": null,
+      "name_ml": "ഫറോക്ക്",
+      "place": "town",
+      "source": "osm place node"
+    },
+    "parappanangadi": {
+      "osm_id": "node/2515905257",
+      "lon": 75.8590128,
+      "lat": 11.0482666,
+      "name": "Parappanangadi",
+      "name_en": null,
+      "name_ml": "പരപ്പനങ്ങാടി",
+      "place": "town",
+      "source": "osm place node"
+    },
+    "kannur": {
+      "osm_id": "node/290180981",
+      "lon": 75.3737973,
+      "lat": 11.8763836,
+      "name": "Kannur",
+      "name_en": "Kannur",
+      "name_ml": "കണ്ണൂർ",
+      "place": "city",
+      "source": "osm place node"
+    },
+    "vythiri": {
+      "osm_id": "node/290210470",
+      "lon": 76.038922,
+      "lat": 11.5560885,
+      "name": "Vythiri",
+      "name_en": null,
+      "name_ml": "വൈത്തിരി",
+      "place": "village",
+      "source": "osm place node"
+    }
+  }
+}

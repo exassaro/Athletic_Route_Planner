@@ -33,7 +33,30 @@ uv run python engine/scripts/fetch_extract.py
 
 This writes `data/osm/kerala.osm.pbf` and `data/manifest.json`. The manifest's `osm_timestamp` identifies the data every later measurement was made on. Re-running skips the download when the local file still matches the published checksum; `--force` downloads again.
 
-Steps for starting Valhalla and Photon are added here as each Phase 2 step lands.
+### Routing engine (Valhalla)
+
+Start Docker Desktop first.
+
+```powershell
+# 5. Build the routing graph and start Valhalla on http://localhost:8002
+#    First run downloads elevation tiles and builds tiles: about 7 minutes.
+docker compose up -d valhalla
+docker compose logs -f valhalla      # wait for "Tile extract successfully loaded", then Ctrl+C
+
+# 6. Apply our config overrides (engine/valhalla/overrides.json), then restart
+uv run python engine/scripts/configure_valhalla.py
+docker compose restart valhalla
+
+# 7. Read place coordinates from the extract into tests/fixtures/places.json
+uv run python engine/scripts/build_fixtures.py
+
+# 8. Check the engine is up and elevation is loaded
+uv run python engine/experiments/00_engine_check.py
+```
+
+Later starts reuse the built tiles and take a few seconds. `docker compose down` stops the engine. To rebuild after downloading a newer extract, delete `data/valhalla/` and start again.
+
+Steps for Photon are added here when that step lands.
 
 ## Repository layout
 
