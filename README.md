@@ -56,7 +56,39 @@ uv run python engine/experiments/00_engine_check.py
 
 Later starts reuse the built tiles and take a few seconds. `docker compose down` stops the engine. To rebuild after downloading a newer extract, delete `data/valhalla/` and start again.
 
-Steps for Photon are added here when that step lands.
+### Experiments
+
+Each script writes a report to `docs/reports/phase2/`. Valhalla must be running, except for the tag audit.
+
+```powershell
+uv run python engine/scripts/build_pairs.py              # fixed origin/destination pairs (already in git)
+uv run python engine/experiments/01_primitives.py        # route with vias, matrix, isodistance, edge attributes
+uv run python engine/experiments/02_length_check.py      # engine length vs geodesic geometry length
+docker compose restart valhalla                          # optional: makes the next first call a cold call
+uv run python engine/experiments/03_latency.py           # ~25 km route latency
+uv run python engine/experiments/04_tag_coverage.py      # sidewalk/surface/lit, ferries, bridges (no engine needed)
+uv run python engine/experiments/05_worked_example.py    # section 8 example under four ferry settings
+uv run python engine/experiments/05b_quieter_probe.py    # do costing options change the road mix?
+
+uv run pytest                                            # unit + integration (integration skips if Valhalla is down)
+```
+
+The `.geojson` files in `docs/reports/phase2/` can be dragged into QGIS or geojson.io.
+
+### Geocoder (Photon)
+
+Photon runs from a prebuilt India index (about 610 MB download). It is under a Compose profile so it only starts when asked.
+
+```powershell
+uv run python engine/scripts/fetch_photon.py             # download, verify, unpack to data/photon/photon_data
+docker compose --profile geocode up -d photon            # http://localhost:2322 (first start takes a minute)
+uv run python engine/experiments/06_photon_smoke.py
+docker compose --profile geocode stop photon
+```
+
+## Phase 2 results
+
+Start with [docs/reports/phase2/summary.md](docs/reports/phase2/summary.md).
 
 ## Repository layout
 
