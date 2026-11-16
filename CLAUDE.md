@@ -40,7 +40,8 @@ Solo developer, comfortable with Python and Next.js. Windows 11, 8 GB RAM, Intel
 uv sync                                  # create .venv and install dependencies
 uv run pytest tests/unit                 # unit tests, no services needed
 uv run pytest -m integration             # needs Valhalla on localhost:8002
-uv run python engine/scripts/<name>.py   # data scripts
+uv run python engine/scripts/fetch_extract.py   # download + verify Kerala extract, write data/manifest.json
+uv run python engine/scripts/<name>.py   # other data scripts
 uv run python engine/experiments/<name>.py
 ```
 

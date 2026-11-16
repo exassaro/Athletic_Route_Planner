@@ -24,7 +24,16 @@ uv sync
 uv run pytest tests/unit
 ```
 
-Steps for downloading the OSM extract and starting Valhalla and Photon are added here as each Phase 2 step lands.
+### Map data
+
+```powershell
+# 4. Download the Kerala OSM extract (about 180 MB) and verify its checksum
+uv run python engine/scripts/fetch_extract.py
+```
+
+This writes `data/osm/kerala.osm.pbf` and `data/manifest.json`. The manifest's `osm_timestamp` identifies the data every later measurement was made on. Re-running skips the download when the local file still matches the published checksum; `--force` downloads again.
+
+Steps for starting Valhalla and Photon are added here as each Phase 2 step lands.
 
 ## Repository layout
 
