@@ -1,5 +1,5 @@
-# Phase 2 services. Valhalla only for now; Photon is added in a later step
-# under the `geocode` profile so the two never compete for RAM by accident.
+# Phase 2 services. Valhalla starts by default; Photon sits
+# under the `geocode` profile so it only uses RAM when asked for.
 services:
   valhalla:
     # Pinned by digest (was :latest on 2026-11-16, Valhalla 3.9.2) so the engine
@@ -22,4 +22,21 @@ services:
       - build_tar=True
       - serve_tiles=True
       - server_threads=2            # 8 GB laptop
+    restart: "no"
+
+  # Geocoder. Started only on request:  docker compose --profile geocode up -d photon
+  photon:
+    profiles: ["geocode"]
+    build:
+      context: ./engine/photon
+    image: athlete-photon:1.3.0
+    container_name: athlete-photon
+    ports:
+      - "2322:2322"
+    volumes:
+      # Prebuilt India index from engine/scripts/fetch_photon.py (gitignored).
+      - ./data/photon:/photon
+    environment:
+      - JAVA_OPTS=-Xmx1500m
+    mem_limit: 3g
     restart: "no"
