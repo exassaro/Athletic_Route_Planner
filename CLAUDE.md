@@ -5,12 +5,27 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 2** (geospatial data and routing engine experiments). No FastAPI, no frontend, no LLM, no solver yet.
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 3** (core route-generation solver as a pure Python library in `solver/` with a command-line runner). No FastAPI, no frontend, no LLM. Loops only after point-to-point, Case B, bearing-only, out-and-back and scoring meet their KPIs.
 - **Plan first.** Give a plan and wait for approval before writing code.
 - **Small steps.** Each step ends in something the developer can run and check. Commit after each step.
 - **No invented distances.** Never hardcode or estimate a distance. Every distance comes from the routing engine or from measuring geometry (`athlete_engine.geodesy`). The leg distances in the blueprint's section 8 worked example are made up: never use them as test expectations. Straight-line distance is allowed only for snap distances and pre-filters and must never be presented as a route distance.
 - **Coordinates come from data.** Place coordinates are read from OSM (with their OSM ids) or supplied by the developer, not typed from memory.
 - Reports state where numbers were measured (this laptop, not the target server).
+
+## Decisions from Phase 2 (also at the top of docs/blueprint.md)
+
+1. **Ferries are hard-excluded by default** with `exclude_ferries: true`. Never rely on `use_ferry: 0`. Ferries are opt-in. When allowed, ferry metres are reported separately and do not count toward the distance budget: **the budget is distance on foot.**
+2. **Every distance shown and every cut uses ellipsoid geometry length.** The engine consistency check compares engine length with a spherical measurement of the same geometry: threshold 0.1%, floor 2 m.
+3. **MVP alternatives: "direct" and "fewer main roads".** The second waits for the quieter spike (`docs/reports/phase3/quieter_spike.md`) and the developer's decision.
+4. **Geocoding is Latin script only** for the MVP.
+5. **Checkpoints are `break` locations**; `through` is only for shaping vias. Checkpoint compliance is measured against the snapped point.
+6. **Engine warnings** (e.g. code 401, relaxed restrictions) are carried into results as flags.
+
+Also agreed: conflict savings are routed and measured, not matrix sums; ordering by exact DP (no OR-Tools); cut snaps to a junction only within 0.5% of the target; every truncated candidate is re-routed as one engine request; via-point lengthening (section 8 step 10) comes after the point-to-point KPIs, before loops.
+
+## Pinned graph
+
+`engine/osm_pin.json` names the extract every fixture was measured on (Kerala, 2026-11-15). The upstream file changes daily. Expected values in fixtures come from running the engine on this pin, and the KPI harness refuses to run if `data/manifest.json` has a different timestamp. Backup: GitHub release `osm-kerala-2026-11-15` (restore with `fetch_extract.py --from-backup`).
 
 ## Developer and machine
 
@@ -32,7 +47,9 @@ Solo developer, comfortable with Python and Next.js. Windows 11, 8 GB RAM, Intel
 - `docs/reports/phase2/` generated reports and GeoJSON.
 - `tests/unit/` no network. `tests/integration/` needs Valhalla running. `tests/fixtures/` coordinates with OSM ids.
 - `data/` is gitignored (extract, tiles, index).
-- `solver/`, `api/`, `web/` are placeholders for later phases.
+- `solver/athlete_solver/` Phase 3 solver package (models, engine adapter, ordering, gate, truncation, scoring) with a CLI (`python -m athlete_solver`). It calls the engine only through `athlete_engine`.
+- `tests/fixtures/scenarios/` solver scenarios (section 16); `docs/reports/phase3/` KPI report and the quieter spike.
+- `api/`, `web/` are placeholders for later phases.
 
 ## Commands
 
@@ -40,7 +57,8 @@ Solo developer, comfortable with Python and Next.js. Windows 11, 8 GB RAM, Intel
 uv sync                                  # create .venv and install dependencies
 uv run pytest tests/unit                 # unit tests, no services needed
 uv run pytest -m integration             # needs Valhalla on localhost:8002
-uv run python engine/scripts/fetch_extract.py   # download + verify Kerala extract, write data/manifest.json
+uv run python engine/scripts/fetch_extract.py   # verify local extract against engine/osm_pin.json, write data/manifest.json
+uv run python engine/scripts/fetch_extract.py --from-backup   # restore the pinned extract from the GitHub release
 uv run python engine/scripts/<name>.py   # other data scripts
 uv run python engine/experiments/<name>.py
 ```

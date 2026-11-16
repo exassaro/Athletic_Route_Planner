@@ -2,6 +2,34 @@
 
 Nov 16, 2026 · @Azzm
 
+## Phase 2 amendments
+
+Decided after Phase 2 (evidence: [docs/reports/phase2/summary.md](reports/phase2/summary.md)). Where these conflict with a later section, these win.
+
+**Decisions**
+
+1. **Ferries are hard-excluded by default** with `exclude_ferries: true`; never rely on `use_ferry: 0`, which still routes over ferries when combined with other options. Ferries are an explicit opt-in. When allowed, ferry metres are reported separately and do not count toward the running distance: **the budget is distance on foot.**
+2. **Every distance shown, and every cut, uses ellipsoid geometry length** (WGS84 geodesic length of the returned shape). The engine consistency check compares the engine's reported length with a spherical measurement of the same geometry; threshold 0.1%, with a floor of 2 m so rounding on short routes does not trip it.
+3. **MVP alternatives are "direct" and "fewer main roads".** "Flatter" is dropped from the MVP; `hills` stays in the request model and is reported as unsupported. How to build "fewer main roads" is decided after a spike of at most 2 days comparing Valhalla bicycle costing (`use_roads: 0`, re-checked as walkable with pedestrian costing) against GraphHopper's foot profile with a custom model ([docs/reports/phase3/quieter_spike.md](reports/phase3/quieter_spike.md)).
+4. **Geocoding is Latin script only for the MVP.** Malayalam-script search needs a custom Photon import and is deferred.
+5. **Checkpoints are `break` locations; `through` is only for shaping vias.** Checkpoint compliance (within 50 m) is measured against the point where the route meets the network, not the raw OSM place node, which can sit tens of metres off the road.
+6. **Engine warnings** (for example code 401, "retrying with relaxed restrictions") are carried into the result as flags.
+
+**Solver details agreed for Phase 3**
+
+- Conflict savings (dropping a stop, allowing ferries) are computed by routing the variant and measuring its geometry, not from matrix sums: matrix distances are engine lengths and include ferry metres.
+- Checkpoint ordering uses exact dynamic programming (the request allows at most 8 stops); OR-Tools is not needed. When ferries are allowed, the two best orders by matrix are routed and the one with fewer foot metres wins. The "heads towards the target" tie-break (section 8 step 4) applies only when the preferred order still fits the budget.
+- The truncation cut snaps to a junction only within 0.5% of the target distance; otherwise the route ends mid-road at the exact distance. End labels come from street names and the nearest OSM place, without a running geocoder.
+- Every truncated candidate is re-routed as one engine request (start, stops, cut point) and the re-routed geometry is what is returned and measured.
+- Section 8 step 10 (lengthening with a via-point, needed for "add a detour" in Case B and for pinned endpoints) is built after the point-to-point KPIs hold, before loops. Until then those options return "not supported yet".
+
+**Measured facts the algorithm must respect**
+
+- Start → Kadalundi → Chaliyam → Beypore needs 19.60 km on foot with the ferry and 25.89 km without it, so "25 km via those three stops" is infeasible with ferries excluded.
+- Chaliyam and Beypore stay connected by road with ferries excluded: the "no walking route" message in section 13 is wrong for that pair.
+- Pedestrian costing has no option that penalises trunk or primary roads, and sidewalk, surface and lit tags cover 3.5%, 12.2% and 0.1% of walkable km in Kozhikode district.
+- The pinned OSM extract (Kerala, 2026-11-15) is recorded in `engine/osm_pin.json`; the upstream file is overwritten daily, so expected values in fixtures are tied to that pin.
+
 ## 1. Executive summary
 
 The product is buildable by one developer in roughly 5 to 6 months full-time, and the hard part is a constraint solver wrapped around an open-source routing engine, not the AI.
@@ -713,7 +741,7 @@ Test the solver as a library against fixed scenarios on a pinned graph build, so
 
 ### Scenarios around Calicut
 
-Start points are suggestions; record exact coordinates as fixtures in Phase 2.
+Coordinates are fixtures in `tests/fixtures/places.json` (OSM place nodes; the start south of Kadalundi is 11.05, 75.86). Scenarios 5, 7, 10, 12 and 13 and new scenario 15 were revised after Phase 2 measured the worked example (see Phase 2 amendments). Expected values in fixtures come from running the engine on the pinned graph, never from this table.
 
 | # | Scenario | Setup | What it proves |
 | --- | --- | --- | --- |
@@ -721,16 +749,17 @@ Start points are suggestions; record exact coordinates as fixtures in Phase 2.
 | 2 | 10 km loop | Mananchira, city centre | Loop scaling; avoidance of trunk roads |
 | 3 | 10 km out-and-back | Along the beach road, heading north | Exact halving; coastal single-road case |
 | 4 | 25 km towards Calicut | A start south of Kadalundi | Truncation, endpoint choice, direction adherence |
-| 5 | 25 km with Kadalundi, Chaliyam, Beypore | Same start, ferry excluded | Ordering, bridges, remainder allocation |
-| 6 | Same as 5, ferry allowed | Same | Preference changes the endpoint; warning shown |
-| 7 | 15 km with the same three stops | Same | Infeasibility explanation with correct savings |
+| 5 | **28 km** with Kadalundi, Chaliyam, Beypore | Same start, ferries excluded | Ordering, bridges, remainder allocation |
+| 6 | Same as 5, ferries allowed | Same | Preference changes the endpoint; ferry metres reported separately; warning shown |
+| 7 | 15 km with the same three stops | Same, under both ferry settings | Infeasible either way; explanation with correct savings |
 | 8 | 50 km towards Kannur | Kozhikode | Long distance; many river crossings; latency |
 | 9 | Changed destination | Scenario 4, then "towards Feroke" | Re-solve keeps start, distance and preferences |
-| 10 | Changed distance | Scenario 5, then 28 km | Endpoint moves; stops and order unchanged |
+| 10 | Changed distance | Scenario 5, then **32 km** | Endpoint moves; stops and order unchanged |
 | 11 | Target nearer than budget | 25 km towards a place 12 km away | Case B options offered |
-| 12 | Ambiguous place | A name with several matches in Kerala | Picker shown; no silent guess |
-| 13 | Hilly control | A ghat-road start in Wayanad | Elevation preference has a visible effect; the coast is too flat to test it |
+| 12 | Ambiguous place | A name with several matches in Kerala | Picker shown; no silent guess. **Phase 4** (the solver takes coordinates) |
+| 13 | Hilly point-to-point | A ghat-road start in Wayanad | Climb and descent reported from elevation. The hills preference is unsupported in the MVP |
 | 14 | Sparse network | A coastal village with one through road | Loop fallback to out-and-back |
+| 15 | **25 km** with Kadalundi, Chaliyam, Beypore | Same start as 4, ferries excluded | Infeasible: the stops alone exceed the budget; "allow ferries" is offered as a fix |
 
 Multiply scenarios by preference sets and random nearby starts to reach 200 or more fixtures.
 
@@ -740,7 +769,7 @@ Multiply scenarios by preference sets and random nearby starts to reach 200 or m
 | --- | --- | --- |
 | Distance accuracy, point-to-point | Absolute deviation of geometry length from target | Median under 0.5%; p95 under 1.5% |
 | Distance accuracy, loops | Same | p90 under 3%; none above 5% |
-| Length consistency | Engine-reported length against geodesic length of the geometry | Within 0.5% on every route |
+| Length consistency | Engine-reported length against a spherical measurement of the same geometry (amended after Phase 2) | Within 0.1% or 2 m, whichever is larger, on every route |
 | Feasibility | Routes with any edge lacking pedestrian access, or an unrequested ferry | 0 |
 | Infeasibility handling | Infeasible fixtures that return a conflict object with correct numbers | 100% |
 | Latency | Time to first set of alternatives | p50 under 2 s; p95 under 5 s point-to-point, under 8 s loops |

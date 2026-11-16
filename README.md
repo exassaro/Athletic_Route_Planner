@@ -27,11 +27,11 @@ uv run pytest tests/unit
 ### Map data
 
 ```powershell
-# 4. Download the Kerala OSM extract (about 180 MB) and verify its checksum
-uv run python engine/scripts/fetch_extract.py
+# 4. Get the pinned Kerala OSM extract (about 180 MB) from the project's GitHub release
+uv run python engine/scripts/fetch_extract.py --from-backup
 ```
 
-This writes `data/osm/kerala.osm.pbf` and `data/manifest.json`. The manifest's `osm_timestamp` identifies the data every later measurement was made on. Re-running skips the download when the local file still matches the published checksum; `--force` downloads again.
+All measurements and test fixtures are tied to one OSM snapshot, named in [engine/osm_pin.json](engine/osm_pin.json) (Kerala, 2026-11-15). The upstream site overwrites its file daily, so the pinned copy lives in the GitHub release `osm-kerala-2026-11-15`. The script writes `data/osm/kerala.osm.pbf` and `data/manifest.json`, and verifies the checksum against the pin. Run without flags to just verify a local file. `--latest` deliberately moves to today's upstream data; fixtures must then be regenerated.
 
 ### Routing engine (Valhalla)
 

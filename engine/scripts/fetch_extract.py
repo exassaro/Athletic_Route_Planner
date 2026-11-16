@@ -1,6 +1,15 @@
-"""Download the Kerala OSM extract, verify it, and pin it in data/manifest.json.
+"""Get the pinned Kerala OSM extract, verify it, and record it in data/manifest.json.
 
-Usage:  uv run python engine/scripts/fetch_extract.py [--force]
+Usage:
+  uv run python engine/scripts/fetch_extract.py               # verify the local file against the pin
+  uv run python engine/scripts/fetch_extract.py --from-backup # restore the pinned file from the GitHub release
+  uv run python engine/scripts/fetch_extract.py --latest      # deliberately move to today's upstream file
+
+The pin (engine/osm_pin.json, committed) names the exact file every fixture and
+report was measured on. download.openstreetmap.fr overwrites its file daily, so
+the upstream URL cannot reproduce the pin; the GitHub release backup can.
+--latest changes the graph: fixtures with engine-derived expected values must
+then be regenerated, and engine/osm_pin.json updated.
 
 The manifest's `osm_timestamp` is the graph build id used by later steps, so
 every measured number can be traced to the data it was measured on.
@@ -23,6 +32,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OSM_DIR = ROOT / "data" / "osm"
 PBF = OSM_DIR / f"{NAME}.osm.pbf"
 MANIFEST = ROOT / "data" / "manifest.json"
+PIN = json.loads((ROOT / "engine" / "osm_pin.json").read_text(encoding="utf-8"))
 HEADERS = {"User-Agent": "athlete-router-dev/0.1 (phase 2 experiments)"}
 
 
@@ -53,26 +63,44 @@ def download(client: httpx.Client, url: str, dest: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--force", action="store_true", help="download even if a verified file exists")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--from-backup", action="store_true", help="download the pinned file from the GitHub release")
+    mode.add_argument("--latest", action="store_true", help="replace the pin with today's upstream file")
     args = parser.parse_args()
 
     OSM_DIR.mkdir(parents=True, exist_ok=True)
     pbf_url = f"{BASE_URL}/{NAME}.osm.pbf"
+    state_txt = None
 
     with httpx.Client(headers=HEADERS, follow_redirects=True, timeout=60) as client:
-        expected_md5 = client.get(f"{pbf_url}.md5").raise_for_status().text.split()[0]
-        state_txt = client.get(f"{BASE_URL}/{NAME}.state.txt").raise_for_status().text
-
-        if PBF.exists() and not args.force and md5_of(PBF) == expected_md5:
-            print(f"Already have {PBF.name} matching the published md5; not downloading.")
+        if args.latest:
+            expected_md5 = client.get(f"{pbf_url}.md5").raise_for_status().text.split()[0]
+            state_txt = client.get(f"{BASE_URL}/{NAME}.state.txt").raise_for_status().text
+            if PBF.exists() and md5_of(PBF) == expected_md5:
+                print(f"Already have today's upstream {PBF.name}; not downloading.")
+            else:
+                print(f"Downloading {pbf_url}  (this REPLACES the pinned graph data)")
+                download(client, pbf_url, PBF)
         else:
-            print(f"Downloading {pbf_url}")
-            download(client, pbf_url, PBF)
+            expected_md5 = PIN["md5"]
+            if PBF.exists() and md5_of(PBF) == expected_md5:
+                print(f"Local {PBF.name} matches the pin ({PIN['osm_timestamp']}).")
+            elif args.from_backup:
+                print(f"Downloading pinned backup {PIN['backup_url']}")
+                download(client, PIN["backup_url"], PBF)
+            else:
+                state = "differs from" if PBF.exists() else "is missing; expected"
+                print(f"Local extract {state} the pin ({PIN['osm_timestamp']}, md5 {PIN['md5']}).\n"
+                      "Restore it with --from-backup, or move to new data with --latest.", file=sys.stderr)
+                return 1
 
     actual_md5 = md5_of(PBF)
     if actual_md5 != expected_md5:
         print(f"MD5 MISMATCH: expected {expected_md5}, got {actual_md5}", file=sys.stderr)
         return 1
+    if args.latest and actual_md5 != PIN["md5"]:
+        print("NOTE: this is not the pinned extract. Update engine/osm_pin.json, upload a new backup, "
+              "rebuild Valhalla (delete data/valhalla/) and regenerate engine-derived fixtures.")
 
     reader = osmium.io.Reader(str(PBF))
     header = reader.header()
@@ -80,6 +108,10 @@ def main() -> int:
     osm_timestamp = header.get("osmosis_replication_timestamp") or header.get("timestamp")
     reader.close()
 
+    existing = json.loads(MANIFEST.read_text(encoding="utf-8")) if MANIFEST.exists() else {}
+    previous = existing.get("extract", {})
+    if state_txt is None and previous.get("md5") == actual_md5:
+        state_txt = previous.get("state_txt")
     manifest = {
         "extract": {
             "name": NAME,
@@ -98,14 +130,13 @@ def main() -> int:
             "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         }
     }
-    existing = json.loads(MANIFEST.read_text(encoding="utf-8")) if MANIFEST.exists() else {}
     existing.update(manifest)
     MANIFEST.write_text(json.dumps(existing, indent=2) + "\n", encoding="utf-8")
 
     e = manifest["extract"]
     print(f"File:          {e['file']}")
     print(f"Size:          {e['size_bytes'] / 1e6:.1f} MB")
-    print(f"MD5:           {e['md5']}  OK (matches published)")
+    print(f"MD5:           {e['md5']}  OK ({'upstream' if args.latest else 'pin'})")
     print(f"OSM timestamp: {e['osm_timestamp']}")
     print(f"Bbox:          {e['bbox'] or 'not present in the file header (polygon extract)'}")
     print(f"Manifest:      {MANIFEST.relative_to(ROOT).as_posix()}")

@@ -1,0 +1,8 @@
+{
+  "name": "kerala",
+  "source_url": "https://download.openstreetmap.fr/extracts/asia/india/kerala.osm.pbf",
+  "backup_url": "https://github.com/exassaro/Athletic_Route_Planner/releases/download/osm-kerala-2026-11-15/kerala.osm.pbf",
+  "osm_timestamp": "2026-11-15T00:15:25Z",
+  "size_bytes": 178944745,
+  "md5": "2d7b79f8c963d2a0b8304f1a732ba646"
+}
