@@ -23,7 +23,11 @@ SPUR_MIN_M = 100.0
 REPEAT_LIMIT = 0.10           # section 8: hard above 10% unless out-and-back (see module note)
 DIVERSITY_LIMIT = 0.60
 MAIN_CLASSES = ("trunk", "primary")
-EXEMPT = ("continue_past_target", "end_at_target", "full_route", "cut_at_target")
+HIGHWAY_CLASSES = ("motorway", "trunk")
+NATIONAL_HIGHWAY_STRETCH_M = 200.0   # decision 12
+# Options shown in a fixed order inside one alternative.
+OPTION_ORDER = {"full_route": 0, "cut_at_target": 1, "continue_past_target": 0, "end_at_target": 1}
+BUDGET_OPTIONS = ("main", "continue_past_target", "cut_at_target")
 
 
 @dataclass
@@ -118,7 +122,7 @@ def measure(engine: Engine, req: RouteRequest, cand: Candidate, edges: list[Edge
     if req.route_type == "out_and_back":
         turns.append(cand.foot_m / 2)
         forced_until = cand.foot_m  # all repetition is the point of an out-and-back
-    if cand.label in ("full_route", "cut_at_target"):
+    if cand.option in ("full_route", "cut_at_target"):
         # Over budget: both runs are (a prefix of) the route through the stops, so the stops force all of it.
         forced_until = cand.foot_m
     rep, forced = repetition(edges, forced_until)
@@ -134,8 +138,7 @@ def measure(engine: Engine, req: RouteRequest, cand: Candidate, edges: list[Edge
 
 def hard_failures(req: RouteRequest, cand: Candidate, m: Measures) -> list[str]:
     fails = []
-    if cand.label in ("direct", "fewer_main_roads", "continue_past_target", "cut_at_target") and \
-            abs(cand.deviation_m) > req.tolerance_m:
+    if cand.option in BUDGET_OPTIONS and abs(cand.deviation_m) > req.tolerance_m:
         fails.append(f"distance off by {cand.deviation_m:+.0f} m, over the {req.tolerance_m:.0f} m tolerance")
     if cand.ferry_m > 0:
         fails.append(f"{cand.ferry_m:.0f} m on a ferry (ferries are always excluded)")
@@ -161,8 +164,37 @@ def score(req: RouteRequest, cand: Candidate, m: Measures) -> float:
     dist = abs(cand.deviation_m) / req.target_distance_m * 100            # percent
     repeat = 0.0 if req.route_type == "out_and_back" else (m.repeat_share - m.forced_repeat_share) * 100
     spur = sum(m.spur_m) / 1000.0
-    quiet = req.preferences.quiet_roads * m.main_share * 100
-    return round(2.0 * dist + 0.5 * repeat + 1.0 * spur + 0.2 * quiet, 3)
+    return round(2.0 * dist + 0.5 * repeat + 1.0 * spur, 3)
+
+
+def highway_stretches(edges: list[Edge]) -> list[tuple[float, list[str]]]:
+    """Consecutive runs of trunk/motorway edges: (length in metres, road names and refs)."""
+    out: list[tuple[float, list[str]]] = []
+    run, names = 0.0, []
+    for e in [*edges, None]:
+        if e is not None and e.road_class in HIGHWAY_CLASSES and e.use != "ferry":
+            run += e.length_m
+            names += [n for n in e.names if n not in names]
+        elif run > 0:
+            out.append((run, names))
+            run, names = 0.0, []
+    return out
+
+
+def highway_flag(edges: list[Edge]) -> Flag | None:
+    """Decision 12: 200 m or more in one stretch uses a national highway; anything shorter is a crossing."""
+    stretches = highway_stretches(edges)
+    if not stretches:
+        return None
+    longest = max(stretches, key=lambda s: s[0])
+    road = ", ".join(longest[1]) or "a trunk road"
+    data = {"stretches_m": [round(s[0], 1) for s in stretches], "longest_m": round(longest[0], 1),
+            "names": longest[1]}
+    if longest[0] >= NATIONAL_HIGHWAY_STRETCH_M:
+        return Flag(code="uses_national_highway",
+                    message=f"uses a national highway ({road}, {longest[0]:.0f} m); running there may be prohibited",
+                    data=data)
+    return Flag(code="crosses_national_highway", message=f"crosses a national highway ({road})", data=data)
 
 
 def annotate(engine: Engine, req: RouteRequest, cand: Candidate, edges: list[Edge]) -> tuple[Candidate, list[str]]:
@@ -181,6 +213,9 @@ def annotate(engine: Engine, req: RouteRequest, cand: Candidate, edges: list[Edg
     if m.spur_m:
         cand.flags.append(Flag(code="spur", message=f"{len(m.spur_m)} dead-end excursion(s) over {SPUR_MIN_M:.0f} m",
                                data={"spur_m": [round(x, 1) for x in m.spur_m]}))
+    nh = highway_flag(edges)
+    if nh is not None:
+        cand.flags.append(nh)
     cand.flags = _dedupe(cand.flags)
     return cand, hard_failures(req, cand, m)
 
@@ -195,21 +230,25 @@ def _dedupe(flags: list[Flag]) -> list[Flag]:
     return out
 
 
-def diversify(scored: list[tuple[Candidate, set]], limit: int) -> list[Candidate]:
-    """Best-first; keep a candidate only if its edge overlap with every kept one is below 60%.
+def diversify(groups: list[tuple[str, list[tuple[Candidate, set]]]], limit: int) -> list[Candidate]:
+    """Keep alternatives (in the given order, "recommended" first) whose routes differ.
 
-    Case B options ("continue past target" and "end at target") and the over-budget pair ("full route"
-    and "cut at target") are choices about the same route rather than alternatives, so they are exempt.
+    Each group is one alternative's options. Case B options ("continue past target", "end at target") and
+    the over-budget pair ("full route", "cut at target") are choices about the same route, so they stay
+    together in a fixed order. An alternative is kept only if its first option's edge overlap with every
+    kept alternative's first option is below 60%, up to `limit` alternatives.
     """
-    kept: list[tuple[Candidate, set]] = []
-    for cand, keys in sorted(scored, key=lambda ck: ck[0].score if ck[0].score is not None else 0.0):
-        exempt = cand.label in EXEMPT
-        if not exempt and any(jaccard(keys, k) >= DIVERSITY_LIMIT for c, k in kept if c.label not in EXEMPT):
+    kept: list[list[tuple[Candidate, set]]] = []
+    for _, options in groups:
+        options = sorted(options, key=lambda ck: (OPTION_ORDER.get(ck[0].option, 0),
+                                                  ck[0].score if ck[0].score is not None else 0.0))
+        lead = options[0][1]
+        if any(jaccard(lead, g[0][1]) >= DIVERSITY_LIMIT for g in kept):
             continue
-        kept.append((cand, keys))
-        if len(kept) >= limit and not exempt:
+        kept.append(options)
+        if len(kept) >= limit:
             break
-    return [c for c, _ in kept]
+    return [c for g in kept for c, _ in g]
 
 
 def jaccard(a: set, b: set) -> float:

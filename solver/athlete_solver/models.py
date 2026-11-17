@@ -64,8 +64,10 @@ class FixedEnd(Strict):
 
 class Preferences(Strict):
     hills: Literal["any", "minimise"] = "any"            # unsupported in the MVP (amendment 3)
-    quiet_roads: Annotated[float, Field(ge=0, le=1)] = 0.0
     surface: Literal["any", "paved"] = "any"             # unsupported: surface tags too sparse
+    # Phase 3 amendment 2(d): footways, paths, tracks and steps only when nothing else connects,
+    # unless the user asks for them.
+    paths: Literal["avoid", "allow"] = "avoid"
 
 
 class RouteRequest(Strict):
@@ -118,11 +120,14 @@ FlagCode = Literal[
     "preference_unsupported",   # e.g. hills, surface in the MVP
     "checkpoint_far_from_network",
     "reroute_mismatch",         # re-routed candidate differs from the cut geometry beyond tolerance
-    "unavoidable_main_road",
-    "short_of_budget",
-    "direction_limited",
+    "uses_national_highway",    # 200 m or more of trunk/motorway in one stretch (decision 12)
+    "crosses_national_highway", # shorter trunk/motorway use: a crossing (decision 12)
+    "short_of_budget",          # Case B "end at target": the run is shorter than requested
+    "direction_limited",        # no walking endpoint lies within 30 degrees of the requested bearing
     "repeated_edges",           # more than 10% walked twice (rejected only beyond what must_reach stops force)
-    "spur",                     # dead-end excursion over 100 m        # no walking endpoint lies within 30 degrees of the requested bearing          # Case B "end at target": the run is shorter than requested
+    "spur",                     # dead-end excursion over 100 m
+    "alternative_unavailable",  # an alternative could not be produced (engine down, no route)
+    "alternative_over_budget",  # this alternative's own route through the stops exceeds the budget
 ]
 
 
@@ -149,9 +154,19 @@ class EndPoint(Strict):
     kind: Literal["junction", "mid_road", "target", "fixed", "last_checkpoint", "start"]  # "start": out-and-back
 
 
+Alternative = Literal["recommended", "shortest"]   # Phase 3 amendment 9
+Option = Literal[
+    "main",                    # the run as requested
+    "end_at_target",           # Case B: stop at the target and report the shortfall
+    "continue_past_target",    # Case B: carry on past the target for the rest of the budget
+    "full_route",              # over budget: the whole route through the stops (Phase 3 amendment 6)
+    "cut_at_target",           # over budget: the same route cut at the requested distance
+]
+
+
 class Candidate(Strict):
-    label: Literal["direct", "fewer_main_roads", "end_at_target", "continue_past_target",
-                   "full_route", "cut_at_target"]   # the last two: over_budget (Phase 3 amendment 6)
+    label: Alternative          # which alternative: "recommended" (GraphHopper, rules) or "shortest" (Valhalla)
+    option: Option = "main"
     geometry: list[tuple[float, float]]
     length_m: float          # ellipsoid geometry length, foot + ferry
     foot_m: float            # what the budget counts

@@ -33,7 +33,7 @@ DEFAULT_REPORT = ROOT / "docs" / "reports" / "phase3b" / "kpi.md"
 
 CHECKPOINT_RADIUS_M = 50.0
 ADHERENCE_STEP_M = 250.0
-BUDGET_LABELS = {"direct", "fewer_main_roads", "continue_past_target", "cut_at_target"}
+BUDGET_OPTIONS = {"main", "continue_past_target", "cut_at_target"}
 RADIUS = {"valhalla": VALHALLA_RADIUS_M, "graphhopper": GRAPHHOPPER_RADIUS_M}
 
 
@@ -147,39 +147,60 @@ def check_conflict(result, ref: dict, req) -> list[str]:
     return problems
 
 
+def highway_longest_m(edges) -> float:
+    """Longest consecutive stretch of matched trunk/motorway edges (harness's own measurement)."""
+    best = run = 0.0
+    for e in edges:
+        if e.road_class in ("motorway", "trunk") and e.use != "ferry":
+            run += e.length_m
+            best = max(best, run)
+        else:
+            run = 0.0
+    return best
+
+
 def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict:
     from athlete_solver.models import RouteRequest  # noqa: PLC0415
 
     req = RouteRequest.model_validate(fixture["request"])
     ref = fixture["reference"]
-    row: dict = {"id": fixture["id"], "ms": elapsed_ms, "problems": [], "candidates": []}
+    row: dict = {"id": fixture["id"], "ms": elapsed_ms, "problems": [], "candidates": [],
+                 "alternatives": sorted({c.label for c in result.candidates})}
+    by_alt: dict[str, list] = {}
+    for c in result.candidates:
+        by_alt.setdefault(c.label, []).append(c.option)
 
-    # Outcome classification. over_budget results are checked for their conflict object AND their two
-    # candidates (the full route through the stops and the cut at the target).
+    # Outcome classification. over_budget results are checked for their conflict object AND, for each
+    # alternative, the full route through the stops and the cut at the target.
     if ref["outcome"] == "over_budget":
         if result.outcome != "over_budget":
             row["problems"].append(f"expected over_budget, got {result.outcome}")
             return row
         row["conflict_problems"] = check_conflict(result, ref, req)
         row["problems"] += row["conflict_problems"]
-        labels = [c.label for c in result.candidates]
-        if labels != ["full_route", "cut_at_target"]:
-            row["problems"].append(f"over_budget candidates {labels}")
-        full = next((c for c in result.candidates if c.label == "full_route"), None)
+        for alt, options in by_alt.items():
+            if options != ["full_route", "cut_at_target"]:
+                row["problems"].append(f"over_budget {alt} options {options}")
+        full = next((c for c in result.candidates if c.label == "shortest" and c.option == "full_route"), None)
         if full is not None and not close(full.foot_m, ref["minimum_m"]):
-            row["problems"].append(f"full route {full.foot_m:.0f} m vs reference minimum {ref['minimum_m']:.0f} m")
+            row["problems"].append(f"shortest full route {full.foot_m:.0f} m vs reference minimum {ref['minimum_m']:.0f} m")
+        for c in result.candidates:
+            if c.option == "full_route" and c.foot_m < ref["minimum_m"] - max(10.0, 0.002 * ref["minimum_m"]):
+                row["problems"].append(f"{c.label} full route {c.foot_m:.0f} m is shorter than the reference minimum")
     elif result.outcome != "ok":
         row["problems"].append(f"expected ok, got {result.outcome}")
         return row
     if not result.candidates:
         row["problems"].append(f"{result.outcome} outcome with no candidates")
         return row
-    labels = {c.label for c in result.candidates}
+    # Case A / B is judged on the shortest alternative (the reference uses the same engine and costing).
     margin = req.tolerance_m
-    if ref.get("case") == "A" and ref["tail_foot_m"] - ref["remainder_m"] > margin and "direct" not in labels:
-        row["problems"].append(f"reference case A but labels {sorted(labels)}")
-    if ref.get("case") == "B" and ref["remainder_m"] - ref["tail_foot_m"] > margin and "end_at_target" not in labels:
-        row["problems"].append(f"reference case B but labels {sorted(labels)}")
+    shortest_opts = set(by_alt.get("shortest", []))
+    if shortest_opts and "full_route" not in shortest_opts:
+        if ref.get("case") == "A" and ref["tail_foot_m"] - ref["remainder_m"] > margin and "main" not in shortest_opts:
+            row["problems"].append(f"reference case A but shortest options {sorted(shortest_opts)}")
+        if ref.get("case") == "B" and ref["remainder_m"] - ref["tail_foot_m"] > margin and "end_at_target" not in shortest_opts:
+            row["problems"].append(f"reference case B but shortest options {sorted(shortest_opts)}")
 
     target = None
     if req.direction and req.direction.kind == "towards_place":
@@ -187,9 +208,11 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
     located = engine.locate([c.lonlat for c in req.checkpoints], costing_options=pedestrian_options()) \
         if req.checkpoints else []
 
-    edge_sets = {}
+    lead_keys: dict[str, set] = {}
+    forced_keys: dict[str, set] = {}
     for cand in result.candidates:
-        cr: dict = {"label": cand.label}
+        name = f"{cand.label}/{cand.option}"
+        cr: dict = {"label": cand.label, "option": cand.option, "name": name}
         geom = [tuple(p) for p in cand.geometry]
         pieces = split_at_stops(geom, cand.stops)
         if req.route_type == "out_and_back":   # the geometry turns round at its middle vertex
@@ -205,39 +228,40 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
         cr["match_ok"] = abs(matched_m - m.geom_m) <= max(0.01 * m.geom_m, 30.0)
         cr["ways"] = {e.way_id for e in m.edges if e.way_id and e.use != "ferry"}
         if not cr["match_ok"]:
-            row["problems"].append(f"{cand.label}: pedestrian map-matching covers {matched_m:.0f} m of {m.geom_m:.0f} m")
+            row["problems"].append(f"{name}: pedestrian map-matching covers {matched_m:.0f} m of {m.geom_m:.0f} m")
         if m.ferry_m > 0:
-            row["problems"].append(f"{cand.label}: {m.ferry_m:.0f} m of ferry (ferries are always excluded)")
+            row["problems"].append(f"{name}: {m.ferry_m:.0f} m of ferry (ferries are always excluded)")
         cr["unrequested_ferry"] = m.ferry_m > 0
 
         if not close(cand.foot_m, m.foot_m, rel=0.001, floor_m=2.0):
-            row["problems"].append(f"{cand.label}: reported foot {cand.foot_m:.0f} m, measured {m.foot_m:.0f} m")
+            row["problems"].append(f"{name}: reported foot {cand.foot_m:.0f} m, measured {m.foot_m:.0f} m")
         cr["reported_ok"] = close(cand.foot_m, m.foot_m, rel=0.001, floor_m=2.0)
 
         # Engine length against a sphere of the ENGINE's radius, with 0.2 m per (independently matched) edge.
         sphere = geodesy.sphere_line_length_m(geom, radius_m=RADIUS[cand.engine])
         cr["consistency_ok"] = abs(cand.engine_length_m - sphere) <= consistency_tolerance_m(sphere, len(m.edges))
         if not cr["consistency_ok"]:
-            row["problems"].append(f"{cand.label}: engine {cand.engine_length_m:.0f} m vs sphere {sphere:.0f} m "
+            row["problems"].append(f"{name}: engine {cand.engine_length_m:.0f} m vs sphere {sphere:.0f} m "
                                    f"({len(m.edges)} edges)")
 
-        if cand.label in BUDGET_LABELS:
+        if cand.option in BUDGET_OPTIONS:
             cr["dist_err_pct"] = abs(m.foot_m - req.target_distance_m) / req.target_distance_m * 100
 
         on_candidate = {s.label for s in cand.stops if s.role == "checkpoint"}
         for cp, snap in zip(req.checkpoints, located):
-            if cand.label == "cut_at_target" and cp.label not in on_candidate:
+            if cand.option == "cut_at_target" and cp.label not in on_candidate:
                 continue   # stops beyond the cut are dropped by design
             if snap is None:
-                row["problems"].append(f"{cand.label}: checkpoint {cp.label} could not be located")
+                row["problems"].append(f"{name}: checkpoint {cp.label} could not be located")
                 continue
             from shapely.geometry import LineString, Point  # noqa: PLC0415
             from shapely.ops import nearest_points  # noqa: PLC0415
             on_line, _ = nearest_points(LineString(geom), Point(snap))
             off = geodesy.distance_m(snap, (on_line.x, on_line.y))
             if off > CHECKPOINT_RADIUS_M:
-                row["problems"].append(f"{cand.label}: misses checkpoint {cp.label} by {off:.0f} m")
-        cr["checkpoints_ok"] = not any("misses checkpoint" in p or "could not be located" in p for p in row["problems"])
+                row["problems"].append(f"{name}: misses checkpoint {cp.label} by {off:.0f} m")
+        cr["checkpoints_ok"] = not any(p.startswith(name) and ("misses checkpoint" in p or "could not be located" in p)
+                                       for p in row["problems"])
 
         keys = [e.key for e in m.edges]
         counts: dict = {}
@@ -253,21 +277,38 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
                 for e in base_m.edges:
                     base_counts[e.key] = base_counts.get(e.key, 0) + 1
                 forced = sum(e.length_m for e in base_m.edges if base_counts[e.key] > 1)
-            if cand.label == "full_route":
-                row["forced_keys"] = {k for k, n in counts.items() if n > 1}
-            if cand.label == "cut_at_target":
+            if cand.option == "full_route":
+                forced_keys[cand.label] = {k for k, n in counts.items() if n > 1}
+            if cand.option == "cut_at_target":
                 # A prefix of the route through the stops: an edge it repeats is forced if the full route
                 # through the stops repeats it too (measured above from the full route's own geometry).
-                forced = sum(e.length_m for e in m.edges if counts[e.key] > 1 and e.key in row.get("forced_keys", set()))
+                fk = forced_keys.get(cand.label, set())
+                forced = sum(e.length_m for e in m.edges if counts[e.key] > 1 and e.key in fk)
             cr["excess_repeat_share"] = max(0.0, repeated - forced) / total
-        edge_sets[cand.label] = set(keys)
+        lead_keys.setdefault(cand.label, set(keys))
+
+        # Road suitability and the national-highway flag (decision 12), from the harness's own matching.
+        foot = sum(e.length_m for e in m.edges if e.use != "ferry") or 1.0
+        cr["main_share"] = sum(e.length_m for e in m.edges if e.road_class in ("trunk", "primary", "motorway")) / foot
+        cr["trunk_share"] = sum(e.length_m for e in m.edges if e.road_class in ("trunk", "motorway")) / foot
+        cr["highway_longest_m"] = highway_longest_m(m.edges)
+        codes = {f.code for f in cand.flags}
+        if cr["highway_longest_m"] >= 220 and "uses_national_highway" not in codes:
+            row["problems"].append(f"{name}: {cr['highway_longest_m']:.0f} m of trunk in one stretch without the NH flag")
+            cr["nh_flag_ok"] = False
+        elif cr["highway_longest_m"] < 180 and "uses_national_highway" in codes:
+            row["problems"].append(f"{name}: NH flag raised but only {cr['highway_longest_m']:.0f} m of trunk in one stretch")
+            cr["nh_flag_ok"] = False
+        else:
+            cr["nh_flag_ok"] = True
 
         # Direction adherence applies to routes that head for the target; "continue past target"
         # moves away from it by design after passing it, and is judged by its bearing instead.
-        if target is not None and cand.label in ("direct", "end_at_target"):
+        if target is not None and cand.option in ("main", "end_at_target"):
             last_cp = max((s.at_m for s in cand.stops if s.role == "checkpoint"), default=0.0)
             cr["backtrack"] = direction_adherence(engine, geom, target, last_cp)
-        if req.direction and req.direction.kind == "bearing" and req.route_type == "point_to_point":
+        if req.direction and req.direction.kind == "bearing" and req.route_type == "point_to_point" \
+                and cand.option == "main":
             cr["bearing_err"] = geodesy.angle_between_deg(geodesy.bearing_deg(geom[0], geom[-1]),
                                                           req.direction.degrees)
             if cr["bearing_err"] > 30 and not req.checkpoints:
@@ -277,8 +318,8 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
                 if ref_best is not None and ref_best > 30:
                     cr["bearing_network_limited"] = True
                 if not any(f.code == "direction_limited" for f in cand.flags):
-                    row["problems"].append(f"{cand.label}: {cr['bearing_err']:.0f}° off the bearing without a direction_limited flag")
-        if cand.label == "continue_past_target" and target is not None:
+                    row["problems"].append(f"{name}: {cr['bearing_err']:.0f}° off the bearing without a direction_limited flag")
+        if cand.option == "continue_past_target" and target is not None:
             # Continuing "on the same bearing": compare target-to-end with the approach to the target.
             last = [s for s in cand.stops if s.role == "checkpoint"]
             origin = (last[-1].snapped_lon, last[-1].snapped_lat) if last else geom[0]
@@ -286,9 +327,8 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
                                                           geodesy.bearing_deg(origin, target))
         row["candidates"].append(cr)
 
-    alt = [k for k in edge_sets if k in ("direct", "fewer_main_roads")]
-    if len(alt) == 2:
-        a, b = edge_sets[alt[0]], edge_sets[alt[1]]
+    if len(lead_keys) == 2:
+        a, b = lead_keys["recommended"], lead_keys["shortest"]
         row["overlap"] = len(a & b) / len(a | b) if a | b else 1.0
     return row
 
@@ -345,7 +385,7 @@ def main() -> int:
             c["tag_ok"] = not bad
             c["access_ok"] = c["match_ok"] and not bad
             if bad:
-                r["problems"].append(f"{c['label']}: uses tag-unwalkable way(s) " + ", ".join(
+                r["problems"].append(f"{c['name']}: uses tag-unwalkable way(s) " + ", ".join(
                     f"{w} (highway={tags[w].get('highway')}, foot={tags[w].get('foot')}, access={tags[w].get('access')})"
                     for w in bad[:3]))
 
@@ -383,6 +423,11 @@ def main() -> int:
     bear_limited = [c for c in cands if c.get("bearing_network_limited")]
     bear_fail = [c for c in cands if "bearing_err" in c and c["bearing_err"] > 30 and not c.get("bearing_network_limited")]
     overlaps = [r["overlap"] * 100 for r in rows if "overlap" in r]
+    both = [r for r in rows if len(r.get("alternatives", [])) == 2]
+    rec_main = [c for c in cands if c["label"] == "recommended" and c["option"] in ("main", "end_at_target",
+                                                                                     "continue_past_target")]
+    suit = [c["main_share"] * 100 for c in rec_main]
+    suit_bad = [c for c in rec_main if c["main_share"] > 0.10]
     infeasible = [f for f in fixtures if f["reference"]["outcome"] == "over_budget"]
     inf_ok = [r for r in rows if r["id"] in {f["id"] for f in infeasible} and "error" not in r and not r["problems"]]
     classified = [r for r in rows if "error" not in r and not any(p.startswith(("expected", "reference case")) for p in r["problems"])]
@@ -426,9 +471,19 @@ def main() -> int:
             bool(bear) and not bear_fail),
         kpi("Checkpoint compliance (snapped point within 50 m)", "100%",
             f"{sum(c['checkpoints_ok'] for c in cands)} / {len(cands)}", have and all(c["checkpoints_ok"] for c in cands)),
-        kpi("Alternative diversity (edge overlap)", "< 60%",
-            f"max {max(overlaps):.0f}% (n={len(overlaps)})" if overlaps else "n/a: one alternative until the spike decision",
+        kpi("Alternative diversity (edge overlap, recommended vs shortest)", "< 60%",
+            f"max {max(overlaps):.0f}% (n={len(overlaps)})" if overlaps else "no fixture returned both",
             not overlaps or max(overlaps) < 60),
+        kpi("(info) Fixtures returning both alternatives", "info only",
+            f"{len(both)} / {len(rows) - len(errors)} (the rest: shortest overlaps recommended by 60% or more)", True),
+        kpi("Road suitability, recommended (trunk + primary + motorway share)", "< 10% (section 16)",
+            (f"median {statistics.median(suit):.1f}%, max {max(suit):.1f}%; {len(suit_bad)} over 10%"
+             if suit else "no routes"), bool(suit) and not suit_bad),
+        kpi("(info) Trunk/motorway share, recommended", "info only",
+            f"median {statistics.median(c['trunk_share'] * 100 for c in rec_main):.1f}%, "
+            f"max {max(c['trunk_share'] * 100 for c in rec_main):.1f}%" if rec_main else "no routes", True),
+        kpi("National-highway flag matches the measured trunk stretch (>= 200 m)", "every route",
+            f"{sum(c['nh_flag_ok'] for c in cands)} / {len(cands)}", have and all(c["nh_flag_ok"] for c in cands)),
         kpi("Edit invariants (scenarios 9, 10)", "all hold",
             f"{sum(not p for _, _, p in invariant_rows)} / {len(invariant_rows)}",
             all(not p for _, _, p in invariant_rows) and bool(invariant_rows)),
@@ -458,8 +513,10 @@ def main() -> int:
             md.append(f"| {r['id']} | error | | | {r['error']} |")
             continue
         res = results[r["id"]]
-        cs = "; ".join(f"{c['label']} {c['foot_m'] / 1000:.2f}" + (f" ({c['dist_err_pct']:.2f}%)" if "dist_err_pct" in c else "")
+        cs = "; ".join(f"{c['name']} {c['foot_m'] / 1000:.2f}" + (f" ({c['dist_err_pct']:.2f}%)" if "dist_err_pct" in c else "")
                        + (f", repeat {c['repeat_share'] * 100:.1f}%" if c.get("repeat_share") else "")
+                       + (f", main road {c['main_share'] * 100:.0f}%" if c.get("main_share", 0) >= 0.05 else "")
+                       + (f", trunk stretch {c['highway_longest_m']:.0f} m" if c.get("highway_longest_m", 0) >= 1 else "")
                        + (f", ferry {c['ferry_m']:.0f} m" if c.get("ferry_m") else "")
                        + (f", away {c['backtrack'] * 100:.0f}%" if c.get("backtrack") else "")
                        + (f", bearing off {c['bearing_err']:.0f}°" if "bearing_err" in c else "")

@@ -63,7 +63,8 @@ def test_over_budget_returns_full_route_cut_and_brute_force_conflict():
     res = run(req(N["m0"], budget, target=N["m40"], checkpoints=stops))
     assert res.outcome == "over_budget"
     full, cut = res.candidates
-    assert (full.label, cut.label) == ("full_route", "cut_at_target")
+    assert (full.option, cut.option) == ("full_route", "cut_at_target")
+    assert full.label == cut.label == "recommended"   # the fake serves both alternatives; shortest overlaps 100%
     assert full.foot_m == pytest.approx(minimum, abs=0.5)
     assert abs(cut.foot_m - budget) <= res.request.tolerance_m
     assert res.facts["overshoot_m"] == pytest.approx(minimum - budget, abs=0.5)
@@ -124,8 +125,8 @@ def test_case_b_offers_both_options_and_continue_meets_the_budget():
     budget = near * 2.5
     res = run(req(N["m0"], budget, target=N["m10"]))
     assert res.outcome == "ok" and res.facts["case"] == "B"
-    labels = [c.label for c in res.candidates]
-    assert labels == ["continue_past_target", "end_at_target"]
+    options = [c.option for c in res.candidates]
+    assert options == ["continue_past_target", "end_at_target"]
     cont, short = res.candidates
     assert abs(cont.foot_m - budget) <= max(0.005 * budget, 2.0)
     assert short.foot_m == pytest.approx(near, abs=1.0)

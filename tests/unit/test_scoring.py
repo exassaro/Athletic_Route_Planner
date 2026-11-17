@@ -67,18 +67,40 @@ def test_climb_counts_a_steady_rise():
 
 
 class C:
-    def __init__(self, label, score):
-        self.label, self.score = label, score
+    def __init__(self, label, option, score):
+        self.label, self.option, self.score = label, option, score
 
 
 def test_diversity_keeps_only_distinct_alternatives():
     a, b, c = {1, 2, 3, 4, 5}, {1, 2, 3, 4, 6}, {7, 8, 9, 1, 2}
     assert jaccard(a, b) >= 0.6 and jaccard(a, c) < 0.6
-    kept = diversify([(C("direct", 1.0), a), (C("fewer_main_roads", 2.0), b), (C("fewer_main_roads", 3.0), c)], 2)
-    assert [k.score for k in kept] == [1.0, 3.0]
+    same = diversify([("recommended", [(C("recommended", "main", 1.0), a)]),
+                      ("shortest", [(C("shortest", "main", 0.5), b)])], 2)
+    assert [k.label for k in same] == ["recommended"]          # shortest overlaps 80%: dropped
+    distinct = diversify([("recommended", [(C("recommended", "main", 1.0), a)]),
+                          ("shortest", [(C("shortest", "main", 0.5), c)])], 2)
+    assert [k.label for k in distinct] == ["recommended", "shortest"]
 
 
-def test_case_b_options_are_exempt_from_diversity():
+def test_options_of_one_alternative_stay_together_in_a_fixed_order():
     a = {1, 2, 3}
-    kept = diversify([(C("continue_past_target", 1.0), a), (C("end_at_target", 2.0), a)], 2)
-    assert len(kept) == 2
+    kept = diversify([("recommended", [(C("recommended", "end_at_target", 1.0), a),
+                                       (C("recommended", "continue_past_target", 2.0), a)])], 2)
+    assert [k.option for k in kept] == ["continue_past_target", "end_at_target"]
+    kept = diversify([("recommended", [(C("recommended", "cut_at_target", 0.1), a),
+                                       (C("recommended", "full_route", 9.0), a)])], 2)
+    assert [k.option for k in kept] == ["full_route", "cut_at_target"]
+
+
+def test_national_highway_flag_needs_a_200_m_stretch():
+    from athlete_solver.scoring import highway_flag
+    short = chain(LINE[:2]) + chain(LINE[1:4])        # 110 m residential then about 330 m ...
+    for e in short[1:]:
+        e.road_class = "trunk"
+        e.names = ["NH66"]
+    flag = highway_flag(short)
+    assert flag.code == "uses_national_highway" and "NH66" in flag.message
+    crossing = chain(LINE[:3])
+    crossing[1].road_class = "trunk"                  # one 110 m edge of trunk
+    assert highway_flag(crossing).code == "crosses_national_highway"
+    assert highway_flag(chain(LINE)) is None

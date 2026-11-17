@@ -47,4 +47,12 @@ def test_s15_is_over_budget_with_measured_savings(engine):
 
 def test_case_b_offers_both_options(engine):
     res = run(engine, "S11")
-    assert [c.label for c in res.candidates] == ["continue_past_target", "end_at_target"]
+    assert [c.option for c in res.candidates if c.label == "recommended"] == ["continue_past_target", "end_at_target"]
+
+
+def test_recommended_comes_from_graphhopper_and_is_measured_by_valhalla(engine):
+    res = run(engine, "S04")
+    rec = next(c for c in res.candidates if c.label == "recommended")
+    assert rec.engine == "graphhopper"
+    assert rec.road_class_m                      # road classes from Valhalla matching
+    assert rec.foot_m == pytest.approx(geodesy.line_length_m(rec.geometry), abs=1.0)

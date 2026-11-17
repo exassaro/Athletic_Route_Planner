@@ -84,13 +84,21 @@ def cut_at(points: Sequence[Sequence[float]], at_m: float) -> list[tuple[float, 
 
 def sample_every(points: Sequence[Sequence[float]], step_m: float) -> list[tuple[tuple[float, float], float]]:
     """Points every step_m along the line, with their distance along; always includes both ends."""
-    total = line_length_m(points)
     out = []
-    at = 0.0
-    while at < total:
-        out.append((point_at(points, at)[0], at))
-        at += step_m
-    out.append(((points[-1][0], points[-1][1]), total))
+    at = 0.0       # next sample position along the line
+    run = 0.0      # distance along the line at the start of the current segment
+    for p, q in zip(points, points[1:]):
+        az, _, seg = _GEOD.inv(p[0], p[1], q[0], q[1])
+        while at < run + seg:
+            if seg == 0:
+                break
+            lon, lat, _ = _GEOD.fwd(p[0], p[1], az, at - run)
+            out.append(((lon, lat), at))
+            at += step_m
+        run += seg
+    if not out:
+        out.append(((points[0][0], points[0][1]), 0.0))
+    out.append(((points[-1][0], points[-1][1]), run))
     return out
 
 

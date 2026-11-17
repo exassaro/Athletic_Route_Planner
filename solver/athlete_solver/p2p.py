@@ -147,8 +147,8 @@ def end_label(routed: Routed) -> str | None:
     return None
 
 
-def make_candidate(req: RouteRequest, routed: Routed, label: str, end_kind: str,
-                   checkpoint_order: list[int], extra_flags: list[Flag]) -> Candidate:
+def make_candidate(req: RouteRequest, routed: Routed, option: str, end_kind: str,
+                   checkpoint_order: list[int], extra_flags: list[Flag], alternative: str) -> Candidate:
     stops = [StopOnRoute(role="start", label=req.start.label, requested=req.start,
                          snapped_lon=routed.legs[0][0][0], snapped_lat=routed.legs[0][0][1],
                          offset_m=geodesy.distance_m(req.start.lonlat, routed.legs[0][0]), at_m=0.0)]
@@ -168,7 +168,7 @@ def make_candidate(req: RouteRequest, routed: Routed, label: str, end_kind: str,
         if e.use != "ferry":
             road_m[e.road_class] = road_m.get(e.road_class, 0.0) + e.length_m
     return Candidate(
-        label=label, geometry=shape, length_m=routed.geom_m, foot_m=routed.foot_m, ferry_m=routed.ferry_m,
+        label=alternative, option=option, geometry=shape, length_m=routed.geom_m, foot_m=routed.foot_m, ferry_m=routed.ferry_m,
         engine_length_m=routed.engine_m, sphere_length_m=routed.sphere_m, engine=routed.engine,
         edge_count=len(routed.edges),
         deviation_m=routed.foot_m - req.target_distance_m, duration_s=routed.duration_s, stops=stops,

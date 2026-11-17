@@ -21,10 +21,11 @@ def mirrored(out: Routed) -> Routed:
                        shape=list(reversed(e.shape)), length_m=e.length_m) for e in reversed(out.edges)]
     return Routed(legs=[out.shape, back], leg_foot_m=[out.foot_m, out.foot_m], engine_m=2 * out.engine_m,
                   duration_s=None if out.duration_s is None else 2 * out.duration_s, ferry_m=2 * out.ferry_m,
-                  edges=out.edges + back_edges, junctions=[], flags=list(out.flags))
+                  edges=out.edges + back_edges, junctions=[], flags=list(out.flags),
+                  engine=out.engine, radius_m=out.radius_m)
 
 
-def solve_out_and_back(req: RouteRequest, eng: Engine) -> tuple[list, dict, list[Flag]]:
+def solve_out_and_back(req: RouteRequest, eng: Engine, alternative: str) -> tuple[list, dict, list[Flag]]:
     """Returns ([(candidate, edges)], facts, flags). An empty list means no outward route was found."""
     start = req.start.lonlat
     half = req.target_distance_m / 2
@@ -58,6 +59,6 @@ def solve_out_and_back(req: RouteRequest, eng: Engine) -> tuple[list, dict, list
     facts["turnaround"] = {"lon": turn[0], "lat": turn[1], "kind": kind,
                            "bearing_deg": round(geodesy.bearing_deg(start, turn), 1)}
     full = mirrored(out)
-    cand = make_candidate(req, full, "direct", "start", [], flags)
+    cand = make_candidate(req, full, "main", "start", [], flags, alternative)
     facts["deviation_m"] = round(cand.deviation_m, 1)
     return [(cand, full.edges)], facts, []

@@ -34,7 +34,7 @@ def to_geojson(result) -> dict:
         features.append({"type": "Feature", "properties": props,
                          "geometry": {"type": "LineString", "coordinates": c.geometry}})
         for s in c.stops:
-            features.append({"type": "Feature", "properties": {"candidate": c.label, "role": s.role, "label": s.label,
+            features.append({"type": "Feature", "properties": {"candidate": f"{c.label}/{c.option}", "role": s.role, "label": s.label,
                                                                "at_m": s.at_m},
                              "geometry": {"type": "Point", "coordinates": [s.snapped_lon, s.snapped_lat]}})
     return {"type": "FeatureCollection", "features": features}
