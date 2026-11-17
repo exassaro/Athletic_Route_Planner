@@ -110,7 +110,7 @@ Solo developer, comfortable with Python and Next.js. Windows 11, Intel i5 10th g
 - `engine/scripts/` data fetch and fixture scripts. `engine/experiments/` numbered Phase 2 experiments.
 - `engine/valhalla/`, `engine/photon/` container configuration.
 - `docs/reports/phase2/` generated reports and GeoJSON.
-- `tests/unit/` no network. `tests/integration/` needs Valhalla running. `tests/fixtures/` coordinates with OSM ids.
+- `tests/unit/` no network (`tests/unit/api/` for the API). `tests/api/` the API on Postgres and Redis, no engines. `tests/integration/` needs Valhalla running (and the whole stack for `test_api_*`). `tests/fixtures/` coordinates with OSM ids.
 - `data/` is gitignored (extract, tiles, index).
 - `solver/athlete_solver/` solver package with a CLI (`python -m athlete_solver`): `models` (request, candidate, conflict), `engine` (Valhalla adapter, the yardstick), `graphhopper` (the "recommended" generator, model R5, measured by Valhalla), `passnear` (checkpoints into route points), `avoid`, `ordering`, `p2p` (base route, gate, cut, truncation), `lengthen` (section 8 step 10: one through via on the longest leg; fixed ends), `loop` (loops without stops: shapes through the start, scaled to the distance, vias pulled out of water and off dead-end stubs), `out_and_back`, `scoring` (hard rules, NH flag, diversity), `solve` (both alternatives in parallel). It calls Valhalla only through `athlete_engine`.
 - `tests/fixtures/scenarios/` solver scenarios (section 16); `docs/reports/phase3/` Phase 3 KPI report and the quieter spike; `docs/reports/phase3b/` Phase 3b KPI report and the rules spike; `docs/reports/phase3c/` Phase 3c KPI report.
@@ -131,7 +131,7 @@ uv run python engine/experiments/<name>.py
 Valhalla (Docker Desktop must be running; serves on http://localhost:8002):
 
 ```
-docker compose up -d                        # Valhalla, GraphHopper, Postgres (5432), Redis (6379)
+docker compose up -d                        # Valhalla, GraphHopper, Postgres (host port 5433; 5432 is a native Windows PostgreSQL), Redis (6379)
 docker compose up -d valhalla graphhopper   # Valhalla: first run builds tiles + elevation, about 7 min; GraphHopper: first run imports, about 3 min, about 2 GB
 docker compose logs -f valhalla
 uv run python engine/scripts/configure_valhalla.py   # apply engine/valhalla/overrides.json
@@ -171,6 +171,18 @@ uv run python engine/scripts/build_rules_fixtures.py     # Phase 3b acceptance p
 uv run python engine/experiments/08a_road_priority.py    # Phase 3b: priority models (profile foot_rules) -> docs/reports/phase3b/
 uv run python engine/experiments/08b_pass_near.py --model "R5 trunk-last" --proximity network   # pass-near prototype
 ```
+
+API (Phase 4, http://localhost:8000, docs at /docs; needs Postgres and Redis, and the engines for solves). One worker only (amendment 17):
+
+```
+docker compose up -d postgres redis
+uv run alembic -c api/alembic.ini upgrade head     # migrations (psycopg); `check` compares them with athlete_api.db
+uv run uvicorn athlete_api.main:app --port 8000
+uv run pytest tests/unit/api                       # API unit tests, no services
+uv run pytest tests/api                            # the app on a throwaway athlete_test database + Redis db 15, no engines
+```
+
+The app uses asyncpg: psycopg's async mode cannot run on the Windows Proactor event loop. Settings come from `ATHLETE_*` variables (`athlete_api/config.py`); the engine URLs reuse `VALHALLA_URL` and `GRAPHHOPPER_URL`, like the solver.
 
 Photon (profile `geocode`, http://localhost:2322):
 

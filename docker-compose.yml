@@ -67,7 +67,7 @@ services:
     image: postgis/postgis@sha256:44126d872ac91993766c341e369c539e8196614321765d36a6f1bab0419a5fa5
     container_name: athlete-postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"   # 5433 on the host: a native Windows PostgreSQL already listens on 5432
     environment:
       - POSTGRES_USER=athlete
       - POSTGRES_PASSWORD=athlete
