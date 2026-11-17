@@ -116,3 +116,25 @@ def test_fixed_end_keeps_checkpoints_after_lengthening():
     assert res.outcome == "ok"
     assert [s.label for s in c.stops if s.role == "checkpoint"] == ["S"]
     assert abs(c.foot_m - budget) <= 500.0
+
+
+def towards_req(start, target, distance):
+    return RouteRequest.model_validate({
+        "route_type": "point_to_point", "start": {"lon": start[0], "lat": start[1], "label": "start"},
+        "target_distance_m": distance,
+        "direction": {"kind": "towards_place", "place": {"lon": target[0], "lat": target[1], "label": "T"}}})
+
+
+def test_case_b_offers_a_detour_that_ends_at_the_target():
+    start, target = G["1,5"], G["6,5"]
+    budget = 1.8 * direct_m(start, target)
+    res = solve(towards_req(start, target, budget), engine=FakeEngine(GRID), graph_build="fake")
+    assert res.facts["case"] == "B"
+    options = [c.option for c in res.candidates]
+    assert "end_at_target" in options
+    assert options == ["continue_past_target", "end_at_target", "detour_to_target"]
+    c = next(c for c in res.candidates if c.option == "detour_to_target")
+    assert abs(c.foot_m - budget) <= 500.0
+    assert geodesy.distance_m(c.geometry[-1], target) < 1.0
+    assert c.end.kind == "target" and c.end.label == "T"
+    assert any(f.code == "lengthened" for f in c.flags)

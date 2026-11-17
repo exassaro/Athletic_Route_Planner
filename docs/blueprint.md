@@ -115,7 +115,7 @@ Decided after Phase 2 (evidence: [docs/reports/phase2/summary.md](reports/phase2
 - Checkpoint ordering uses exact dynamic programming (the request allows at most 8 stops); OR-Tools is not needed. When ferries are allowed, the two best orders by matrix are routed and the one with fewer foot metres wins. The "heads towards the target" tie-break (section 8 step 4) applies only when the preferred order still fits the budget.
 - The truncation cut snaps to a junction only within 0.5% of the target distance; otherwise the route ends mid-road at the exact distance. End labels come from street names and the nearest OSM place, without a running geocoder.
 - Every truncated candidate is re-routed as one engine request (start, stops, cut point) and the re-routed geometry is what is returned and measured.
-- Section 8 step 10 (lengthening with a via-point, needed for "add a detour" in Case B and for pinned endpoints) is built after the point-to-point KPIs hold, before loops. Until then those options return "not supported yet".
+- Section 8 step 10 (lengthening with a via-point, needed for "add a detour" in Case B and for pinned endpoints) is built after the point-to-point KPIs hold, before loops. Built in Phase 3c: fixed ends, and Case B's "detour on an earlier leg" (offered only when the via adds no spur).
 
 **Measured facts the algorithm must respect**
 

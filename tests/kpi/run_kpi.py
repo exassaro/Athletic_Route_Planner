@@ -34,7 +34,7 @@ DEFAULT_REPORT = ROOT / "docs" / "reports" / "phase3c" / "kpi.md"
 CHECKPOINT_RADIUS_M = 50.0     # must_reach and junction stops
 PASS_NEAR_M = 1000.0           # pass-near stops: walking distance (Phase 3 amendment 3, decision 11)
 ADHERENCE_STEP_M = 250.0
-BUDGET_OPTIONS = {"main", "continue_past_target", "cut_at_target"}
+BUDGET_OPTIONS = {"main", "continue_past_target", "cut_at_target", "detour_to_target"}
 RADIUS = {"valhalla": VALHALLA_RADIUS_M, "graphhopper": GRAPHHOPPER_RADIUS_M}
 
 
@@ -245,6 +245,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
     elif result.outcome != "ok":
         row["problems"].append(f"expected ok, got {result.outcome}")
         return row
+    row["case_b"] = any(c.option == "end_at_target" for c in result.candidates) and req.end.kind != "fixed"
     if not result.candidates:
         row["problems"].append(f"{result.outcome} outcome with no candidates")
         return row
@@ -306,6 +307,12 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
             row["problems"].append(f"{name}: engine {cand.engine_length_m:.0f} m vs sphere {sphere:.0f} m "
                                    f"({len(m.edges)} edges)")
 
+        if cand.option == "detour_to_target" and target is not None:
+            row["detour_offered"] = True
+            tsnap = engine.locate([target], costing_options=pedestrian_options())[0]
+            off = geodesy.distance_m(geom[-1], tsnap) if tsnap else None
+            if off is None or off > CHECKPOINT_RADIUS_M:
+                row["problems"].append(f"{name}: detour does not end at the target")
         if end_snap is not None and cand.option in ("main", "full_route", "end_at_target"):
             off = geodesy.distance_m(geom[-1], end_snap)
             cr["end_off_m"] = off
@@ -455,7 +462,8 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
                 cr["avoid_ok"] = False
                 row["problems"].append(f"{name}: {hit}")
         want = fixture.get("expect_order")
-        if want and cand.option in ("main", "full_route", "end_at_target", "continue_past_target"):
+        if want and cand.option in ("main", "full_route", "end_at_target", "continue_past_target",
+                                    "detour_to_target"):
             got = [s.label for s in cand.stops if s.role in ("checkpoint", "must_use")]
             cr["order_ok"] = got == want
             if got != want:
@@ -569,8 +577,10 @@ def main() -> int:
     overlaps = [r["overlap"] * 100 for r in rows if "overlap" in r]
     pw = [w for c in cands for w in c.get("pass_walk", []) if w is not None]
     both = [r for r in rows if len(r.get("alternatives", [])) == 2]
-    rec_main = [c for c in cands if c["label"] == "recommended" and c["option"] in ("main", "end_at_target",
-                                                                                     "continue_past_target")]
+    rec_main = [c for c in cands if c["label"] == "recommended" and c["option"] in (
+        "main", "end_at_target", "continue_past_target", "detour_to_target")]
+    case_b = [r for r in rows if r.get("case_b")]
+    case_b_detour = [r for r in case_b if r.get("detour_offered")]
     # Road suitability (amended 2026-11-17, Phase 3 amendment 18): trunk/motorway share, or the stretch is flagged.
     suit = [c["trunk_share"] * 100 for c in rec_main]
     suit_bad = [c for c in rec_main if c["trunk_share"] > 0.10 and not c["nh_flagged"]]
@@ -589,6 +599,8 @@ def main() -> int:
         kpi("Distance accuracy, point-to-point", "median < 0.5%, p95 < 1.5%",
             f"median {statistics.median(dist):.2f}%, p95 {pct(dist, .95):.2f}% (n={len(dist)})" if dist else "no routes",
             bool(dist) and statistics.median(dist) < 0.5 and pct(dist, .95) < 1.5),
+        kpi("(info) Case B: an alternative offers \"detour on an earlier leg\" (section 8 step 10)", "info only",
+            f"{len(case_b_detour)} / {len(case_b)}", True),
         kpi("(info) Fixed end: alternative's shortest way to the end already over the target", "info only",
             ", ".join(f"{c['name']} +{c['forced_over_pct']:.2f}%" for c in cands if "forced_over_pct" in c) or "none",
             True),

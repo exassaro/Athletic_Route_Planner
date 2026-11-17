@@ -65,9 +65,12 @@ def test_s15m_is_over_budget_with_measured_savings(engine):
     assert all(s.action == "drop_checkpoint" for s in res.conflict.savings)
 
 
-def test_case_b_offers_both_options(engine):
+def test_case_b_offers_all_three_options(engine):
     res = run(engine, "S11")
-    assert [c.option for c in res.candidates if c.label == "recommended"] == ["continue_past_target", "end_at_target"]
+    assert [c.option for c in res.candidates if c.label == "recommended"] ==         ["continue_past_target", "end_at_target", "detour_to_target"]
+    detour = next(c for c in res.candidates if c.option == "detour_to_target")
+    assert abs(detour.deviation_m) <= 500.0
+    assert detour.foot_m == pytest.approx(geodesy.line_length_m(detour.geometry), abs=1.0)
 
 
 def test_recommended_comes_from_graphhopper_and_is_measured_by_valhalla(engine):

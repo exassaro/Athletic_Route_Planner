@@ -286,6 +286,7 @@ Option = Literal[
     "main",                    # the run as requested
     "end_at_target",           # Case B: stop at the target and report the shortfall
     "continue_past_target",    # Case B: carry on past the target for the rest of the budget
+    "detour_to_target",        # Case B: end at the target with a detour on an earlier leg (section 8 step 10)
     "full_route",              # over budget: the whole route through the stops (Phase 3 amendment 6)
     "cut_at_target",           # over budget: the same route cut at the requested distance
 ]

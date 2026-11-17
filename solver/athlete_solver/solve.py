@@ -18,7 +18,7 @@ from athlete_engine.valhalla import Valhalla
 from .avoid import inside, valhalla_extra
 from .engine import Engine, NoRoute, ValhallaEngine
 from .graphhopper import EASING, GraphHopperEngine, GraphHopperUnavailable
-from .lengthen import accuracy_m, lengthen
+from .lengthen import RETRACE_OK_M, accuracy_m, lengthen
 from .models import Conflict, Flag, RouteRequest, SolveResult
 from .out_and_back import solve_out_and_back
 from .p2p import (SECTOR_DEG, Infeasible, all_must_reach, anchors, bearing_tail, build_conflict, check_snapping,
@@ -379,17 +379,34 @@ def _alternative(req, eng, alt, start, target, base):
     shortfall = req.target_distance_m - to_target.foot_m
     facts["shortfall_m"] = round(shortfall, 1)
     target_label = req.direction.place.label or "the target"
-    candidates = []
 
-    # Option 1: carry on past the target in the same direction for the rest of the budget.
-    heading = geodesy.bearing_deg(last if last != target else start, target)
-    beyond = bearing_tail(eng, target, heading, shortfall, measure_from=target)
-    if beyond is not None:
-        routed, kind, flags, cut_facts = truncate(req, eng, [*prefix, target], beyond.tail, shortfall,
-                                                  through=through)
-        cand = make_candidate(req, routed, "continue_past_target", kind, base, flags, alt)
+    # Options 1 and 3 each search with several engine calls; they are independent, so they run in parallel.
+    def continue_past():
+        # Option 1: carry on past the target in the same direction for the rest of the budget.
+        heading = geodesy.bearing_deg(last if last != target else start, target)
+        beyond = bearing_tail(eng, target, heading, shortfall, measure_from=target)
+        if beyond is None:
+            return None
+        routed, kind, flags, _ = truncate(req, eng, [*prefix, target], beyond.tail, shortfall, through=through)
         facts["continue_bearing_error_deg"] = round(beyond.bearing_error, 1)
-        candidates.append((cand, routed.edges))
+        return make_candidate(req, routed, "continue_past_target", kind, base, flags, alt), routed.edges
+
+    def detour():
+        # Option 3 (section 8 step 10): end at the target, with a detour on the longest leg for the rest.
+        # It is an extra choice, so it is offered only without a spur at the via.
+        run = with_points(base, [*prefix, target], through)
+        made = _lengthened(req, eng, alt, run, to_target, "detour_to_target", "target", facts,
+                           max_retrace_m=RETRACE_OK_M)
+        if made is not None and abs(made[0].deviation_m) <= req.tolerance_m:
+            made[0].end.label = target_label
+            return made
+        if made is not None:
+            facts["lengthen"]["outside_tolerance_m"] = round(made[0].deviation_m, 1)
+        return None
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first, third = pool.submit(continue_past), pool.submit(detour)
+        option1, option3 = first.result(), third.result()
 
     # Option 2: end at the target and report the shortfall.
     at_target = to_target
@@ -397,18 +414,17 @@ def _alternative(req, eng, alt, start, target, base):
         Flag(code="short_of_budget",
              message=(f"{target_label} is {at_target.foot_m / 1000:.1f} km away by this route, "
                       f"{(req.target_distance_m - at_target.foot_m) / 1000:.1f} km short of the "
-                      f"{req.target_distance_m / 1000:.1f} km requested. Adding a detour on an earlier leg "
-                      "is not supported yet."),
+                      f"{req.target_distance_m / 1000:.1f} km requested."),
              data={"short_by_m": round(req.target_distance_m - at_target.foot_m, 1)})], alt)
     short.end.label = target_label
-    candidates.append((short, at_target.edges))
+    candidates = [c for c in (option1, (short, at_target.edges), option3) if c is not None]
     return candidates, facts, []
 
 
-def _lengthened(req, eng, alt, base, routed, option, end_kind, facts):
+def _lengthened(req, eng, alt, base, routed, option, end_kind, facts, max_retrace_m=None):
     """Section 8 step 10: the run through base.points lengthened with one via to the budget, or None."""
     found = lengthen(eng, base.points, base.through, routed, req.target_distance_m,
-                     accuracy_m(req.target_distance_m, req.tolerance_m))
+                     accuracy_m(req.target_distance_m, req.tolerance_m), max_retrace_m=max_retrace_m)
     if found is None:
         facts["lengthen"] = {"found": False}
         return None

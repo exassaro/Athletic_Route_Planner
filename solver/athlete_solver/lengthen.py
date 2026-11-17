@@ -17,6 +17,7 @@ Every length that decides the result is a measured foot length of a routed geome
 """
 
 import math
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 from athlete_engine import geodesy
@@ -142,11 +143,12 @@ def _next_offset(seen: list[tuple[float, float]], goal_m: float) -> float | None
 
 
 def lengthen(engine: Engine, points: list[LonLat], through: set[int], routed: Routed,
-             goal_m: float, accuracy: float) -> Lengthened | None:
+             goal_m: float, accuracy: float, max_retrace_m: float | None = None) -> Lengthened | None:
     """Insert one through via into the run's longest leg so the measured run is goal_m on foot.
 
     `routed` is the run through `points` as it is now (shorter than the goal). Returns the attempt closest
     to the goal (the caller judges it against the tolerance), or None if no candidate could be routed.
+    With `max_retrace_m`, attempts that walk that much road twice (a spur at the via) are not kept.
     """
     legs = leg_lengths(routed, points)
     leg = max(range(len(legs)), key=lambda k: legs[k])
@@ -159,38 +161,31 @@ def lengthen(engine: Engine, points: list[LonLat], through: set[int], routed: Ro
     ranked = ranked_vias(engine, a, b, need)
     rays = _distinct_rays(mid, ranked)
     seq_through = {i if i <= leg else i + 1 for i in through} | {leg + 1}
-    tries: list[dict] = []
-    best = None   # (rank, seq)
     base_retrace = retraced_m(routed.shape)
-    retrace_ok = RETRACE_OK_M
 
-    def good(rank) -> bool:
-        return rank is not None and rank[0] == 0
-
-    def attempt(v: LonLat, ray: int, t: float) -> float | None:
-        nonlocal best
+    def attempt(v: LonLat, ray: int, t: float, out: list) -> float | None:
         seq = [*points[:leg + 1], v, *points[leg + 1:]]
         try:
             r = engine.route(seq, through=seq_through)
         except NoRoute:
-            tries.append({"ray": ray, "offset_m": round(t, 1), "foot_m": None})
+            out.append((None, seq, {"ray": ray, "offset_m": round(t, 1), "foot_m": None}))
             return None
         miss = abs(goal_m - r.foot_m)
         extra = max(0.0, retraced_m(r.shape) - base_retrace)
-        tries.append({"ray": ray, "offset_m": round(t, 1), "foot_m": round(r.foot_m, 1),
-                      "retraced_m": round(extra, 1)})
-        # Within accuracy and without much doubling back first; then the smallest miss plus doubling back.
-        rank = (0 if miss <= accuracy and extra < retrace_ok else 1, miss + extra)
-        if best is None or rank < best[0]:
-            best = (rank, seq)
+        # Within accuracy and without doubling back first; then the smallest miss plus doubling back.
+        rank = (0 if miss <= accuracy and extra < RETRACE_OK_M else 1, round(miss + extra, 1), ray)
+        out.append((rank, seq, {"ray": ray, "offset_m": round(t, 1), "foot_m": round(r.foot_m, 1),
+                                "retraced_m": round(extra, 1)}))
         return r.foot_m
 
-    for ray, v in enumerate(rays):
+    def search_ray(ray: int, v: LonLat) -> list:
+        """Route along one ray: the candidate, then bracketing/secant steps on its offset from the midpoint."""
+        out: list = []
         bearing = geodesy.bearing_deg(mid, v)
         t1 = geodesy.distance_m(mid, v)
-        first = attempt(v, ray, t1)
+        first = attempt(v, ray, t1, out)
         if first is None:
-            continue
+            return out
         seen = [(0.0, routed.foot_m), (t1, first)]     # offset 0: no via, the run as it is
         for _ in range(REFINE_STEPS):
             t_now, l_now = seen[-1]
@@ -202,15 +197,32 @@ def lengthen(engine: Engine, points: list[LonLat], through: set[int], routed: Ro
             t = min(max(t, 0.1 * t1), 3.0 * t1)
             if min(abs(t - s) for s, _ in seen) < 5.0:
                 break
-            length = attempt(geodesy.destination(mid, bearing, t), ray, t)
+            # The via must sit on the yardstick's walkable network (an unsnapped point lets the generator
+            # snap it to a road the pedestrian check does not cover).
+            raw = geodesy.destination(mid, bearing, t)
+            snapped = engine.locate([raw])[0]
+            if snapped is None or geodesy.distance_m(raw, snapped) > SNAP_LIMIT_M:
+                break
+            length = attempt(snapped, ray, t, out)
             if length is None:
                 break
+            if any(abs(length - l) < 1.0 for _, l in seen[1:]):
+                break    # the via snapped to the same road as before: the route no longer changes
             seen.append((t, length))
-        if best is not None and good(best[0]):
-            break
+        return out
 
-    if best is None:
+    # Rays are independent: route them in parallel (every ray runs fully, so the result is deterministic).
+    if len(rays) > 1:
+        with ThreadPoolExecutor(max_workers=len(rays)) as pool:
+            results = list(pool.map(lambda rv: search_ray(*rv), enumerate(rays)))
+    else:
+        results = [search_ray(0, v) for v in rays]
+    attempts = [a for res in results for a in res]
+    tries = [t for _, _, t in attempts]
+    routed_ok = [(rank, seq) for rank, seq, t in attempts if rank is not None
+                 and (max_retrace_m is None or t["retraced_m"] < max_retrace_m)]
+    if not routed_ok:
         return None
-    _, seq = best
+    _, seq = min(routed_ok, key=lambda x: x[0])
     final = engine.route(seq, through=seq_through, detail=True)
     return Lengthened(routed=final, points=seq, through=seq_through, via_index=leg + 1, leg=leg, tries=tries)

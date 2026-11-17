@@ -28,8 +28,9 @@ MAIN_CLASSES = ("trunk", "primary")
 HIGHWAY_CLASSES = ("motorway", "trunk")
 NATIONAL_HIGHWAY_STRETCH_M = 200.0   # decision 12
 # Options shown in a fixed order inside one alternative.
-OPTION_ORDER = {"full_route": 0, "cut_at_target": 1, "continue_past_target": 0, "end_at_target": 1}
-BUDGET_OPTIONS = ("main", "continue_past_target", "cut_at_target")
+OPTION_ORDER = {"full_route": 0, "cut_at_target": 1, "continue_past_target": 0, "end_at_target": 1,
+                "detour_to_target": 2}
+BUDGET_OPTIONS = ("main", "continue_past_target", "cut_at_target", "detour_to_target")
 
 
 @dataclass
@@ -251,7 +252,8 @@ def _dedupe(flags: list[Flag]) -> list[Flag]:
 def diversify(groups: list[tuple[str, list[tuple[Candidate, set]]]], limit: int) -> list[Candidate]:
     """Keep alternatives (in the given order, "recommended" first) whose routes differ.
 
-    Each group is one alternative's options. Case B options ("continue past target", "end at target") and
+    Each group is one alternative's options. Case B options ("continue past target", "end at target",
+    "detour to target") and
     the over-budget pair ("full route", "cut at target") are choices about the same route, so they stay
     together in a fixed order. An alternative is kept only if its first option's edge overlap with every
     kept alternative's first option is below 60%, up to `limit` alternatives.
