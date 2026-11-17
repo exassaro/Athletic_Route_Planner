@@ -92,6 +92,8 @@ def resolve(req: dict) -> dict:
     d = req.get("direction")
     if d and d["kind"] == "towards_place" and isinstance(d["place"], str):
         d["place"] = point(d["place"])
+    if isinstance(req.get("end"), str):
+        req["end"] = {"kind": "fixed", "point": point(req["end"])}
     defaults = req.pop("checkpoint_defaults", {})
     req["checkpoints"] = [item(c, defaults) for c in req.get("checkpoints", [])]
     for key in ("via", "must_use"):
@@ -172,6 +174,8 @@ def main() -> int:
         for f in active:
             r = f["request"]
             target = r["direction"]["place"] if r.get("direction", {}).get("kind") == "towards_place" else None
+            end = r.get("end", {}).get("point")
+            fixed_end = (end["lon"], end["lat"]) if end else None
             f["reference"] = reference_for(
                 engine,
                 start=(r["start"]["lon"], r["start"]["lat"]),
@@ -180,6 +184,7 @@ def main() -> int:
                 budget_m=r["target_distance_m"],
                 tolerance_m=r.get("tolerance_m", 500.0),
                 fixed_order=r.get("checkpoint_order") == "fixed",
+                fixed_end=fixed_end,
             )
             if pass_near_request(r):
                 # The brute-force reference reaches every stop: for a pass-near request it is an upper bound

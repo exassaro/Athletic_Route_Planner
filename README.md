@@ -2,7 +2,7 @@
 
 A running route planner that treats distance as the input: "25 km towards Kozhikode via three stops" returns a route of that length, or a clear reason why it cannot. The full design is in [docs/blueprint.md](docs/blueprint.md).
 
-**Status:** Phase 3b of 8, routing-rule changes to the route-generation solver (library and command line). The decisions are under "Phase 3 amendments" at the top of [docs/blueprint.md](docs/blueprint.md). There is no API or web app yet.
+**Status:** Phase 3c of 8, route-generation solver (library and command line): lengthening a run with a via-point (fixed ends), then loops. The decisions are under "Phase 3 amendments" at the top of [docs/blueprint.md](docs/blueprint.md) (21 to 23 for Phase 3c). There is no API or web app yet.
 
 ## Requirements
 
@@ -93,11 +93,11 @@ Valhalla and GraphHopper must be running (`docker compose up -d valhalla graphho
 ```powershell
 uv run python -m athlete_solver solve request.json --geojson route.geojson   # one RouteRequest -> SolveResult JSON
 uv run python tests/kpi/build_scenarios.py                                   # rebuild fixtures + reference values
-uv run python tests/kpi/run_kpi.py                                           # all scenarios -> docs/reports/phase3b/kpi.md
+uv run python tests/kpi/run_kpi.py                                           # all scenarios -> docs/reports/phase3c/kpi.md
 uv run python tests/kpi/run_kpi.py --only S05,A01                            # a subset
 ```
 
-A request follows blueprint section 4 as amended in Phase 3 (checkpoints passed near by default, `must_reach`, `via`, `avoid`, `must_use`, ±500 m), with coordinates on every point. `tests/fixtures/scenarios/scenarios.json` has 74 active examples, including the acceptance request (A01) and ten outside Kozhikode (X01 to X10).
+A request follows blueprint section 4 as amended in Phase 3 (checkpoints passed near by default, `must_reach`, `via`, `avoid`, `must_use`, ±500 m, `end: {"kind": "fixed"}`), with coordinates on every point. A fixed end that is short of the distance gets one detour on its longest leg (section 8 step 10). `tests/fixtures/scenarios/scenarios.json` has 74 active examples, including the acceptance request (A01) and ten outside Kozhikode (X01 to X10).
 
 ### Pinned extract backup
 

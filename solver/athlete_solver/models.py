@@ -249,6 +249,8 @@ FlagCode = Literal[
     "pass_near_spur",           # no spur-free pass point at all: the stop is reached with a spur
     "avoid_unmet",              # the route still touches something the request asked to avoid
     "detour_eased",             # "recommended" was over 30% longer than "shortest": road penalties eased
+    "lengthened",               # section 8 step 10: one via added on the longest leg to reach the distance
+    "direction_ignored",        # a fixed end was given, so the requested direction is not used
 ]
 
 

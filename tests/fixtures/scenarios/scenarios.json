@@ -7624,6 +7624,321 @@
    }
   },
   {
+   "id": "F01",
+   "title": "Fixed end: 20 km from south of Kadalundi, ending at Feroke",
+   "base": "F01",
+   "status": "active",
+   "request": {
+    "route_type": "point_to_point",
+    "start": {
+     "lon": 75.86,
+     "lat": 11.05,
+     "label": "start_south_of_kadalundi"
+    },
+    "target_distance_m": 20000,
+    "end": {
+     "kind": "fixed",
+     "point": {
+      "lon": 75.8375372,
+      "lat": 11.1825447,
+      "label": "Feroke",
+      "place_id": "osm:node/986593739"
+     }
+    },
+    "checkpoints": []
+   },
+   "reference": {
+    "budget_upper_m": 20500.0,
+    "order": [],
+    "minimum_m": 18328.2,
+    "outcome": "ok",
+    "case": "fixed_end",
+    "short_by_m": 1671.8
+   }
+  },
+  {
+   "id": "F02",
+   "title": "Fixed end: 38 km via Kadalundi, Chaliyam, Beypore, ending at Kozhikode",
+   "base": "F02",
+   "status": "active",
+   "request": {
+    "route_type": "point_to_point",
+    "start": {
+     "lon": 75.86,
+     "lat": 11.05,
+     "label": "start_south_of_kadalundi"
+    },
+    "target_distance_m": 38000,
+    "end": {
+     "kind": "fixed",
+     "point": {
+      "lon": 75.7754716,
+      "lat": 11.2450558,
+      "label": "Kozhikode",
+      "place_id": "osm:node/1348192542"
+     }
+    },
+    "checkpoints": [
+     {
+      "lon": 75.8334302,
+      "lat": 11.1381083,
+      "label": "Kadalundi",
+      "place_id": "osm:node/7728008448"
+     },
+     {
+      "lon": 75.8095217,
+      "lat": 11.1559577,
+      "label": "Chaliyam",
+      "place_id": "osm:node/1683145417"
+     },
+     {
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "label": "Beypore",
+      "place_id": "osm:node/1683149581"
+     }
+    ]
+   },
+   "reference": {
+    "budget_upper_m": 38500.0,
+    "order": [
+     "Kadalundi",
+     "Chaliyam",
+     "Beypore"
+    ],
+    "minimum_m": 35095.6,
+    "outcome": "pass_near",
+    "case": "fixed_end",
+    "short_by_m": 2904.4,
+    "reach_outcome": "ok"
+   }
+  },
+  {
+   "id": "F03",
+   "title": "Fixed end over budget: 15 km from south of Kadalundi, ending at Kozhikode",
+   "base": "F03",
+   "status": "active",
+   "request": {
+    "route_type": "point_to_point",
+    "start": {
+     "lon": 75.86,
+     "lat": 11.05,
+     "label": "start_south_of_kadalundi"
+    },
+    "target_distance_m": 15000,
+    "end": {
+     "kind": "fixed",
+     "point": {
+      "lon": 75.7754716,
+      "lat": 11.2450558,
+      "label": "Kozhikode",
+      "place_id": "osm:node/1348192542"
+     }
+    },
+    "checkpoints": []
+   },
+   "reference": {
+    "budget_upper_m": 15500.0,
+    "order": [],
+    "minimum_m": 29154.2,
+    "outcome": "over_budget",
+    "savings": []
+   }
+  },
+  {
+   "id": "F04",
+   "title": "Fixed end, Kochi: 15 km from Fort Kochi, passing near Mattancherry, ending at Ernakulam",
+   "base": "F04",
+   "status": "active",
+   "request": {
+    "route_type": "point_to_point",
+    "start": {
+     "lon": 76.2421901,
+     "lat": 9.967569,
+     "label": "Fort Kochi",
+     "place_id": "osm:node/1023203445"
+    },
+    "target_distance_m": 15000,
+    "end": {
+     "kind": "fixed",
+     "point": {
+      "lon": 76.2740001,
+      "lat": 9.9837257,
+      "label": "Ernakulam",
+      "place_id": "osm:node/2278426212"
+     }
+    },
+    "checkpoints": [
+     {
+      "lon": 76.2588346,
+      "lat": 9.9589134,
+      "label": "Mattancherry",
+      "place_id": "osm:node/671445585",
+      "boundary": {
+       "type": "MultiPolygon",
+       "coordinates": [
+        [
+         [
+          [
+           76.2532535,
+           9.96654
+          ],
+          [
+           76.2532654,
+           9.9657901
+          ],
+          [
+           76.2533891,
+           9.9650345
+          ],
+          [
+           76.2535805,
+           9.9627764
+          ],
+          [
+           76.2535624,
+           9.9619023
+          ],
+          [
+           76.2536614,
+           9.9609761
+          ],
+          [
+           76.2537109,
+           9.9603423
+          ],
+          [
+           76.2538594,
+           9.959026
+          ],
+          [
+           76.2538594,
+           9.9579048
+          ],
+          [
+           76.2552453,
+           9.9580998
+          ],
+          [
+           76.2557402,
+           9.9579535
+          ],
+          [
+           76.2563837,
+           9.9579535
+          ],
+          [
+           76.2579676,
+           9.9579535
+          ],
+          [
+           76.2581656,
+           9.9579535
+          ],
+          [
+           76.2584625,
+           9.955906
+          ],
+          [
+           76.258611,
+           9.9549309
+          ],
+          [
+           76.2594401,
+           9.9549248
+          ],
+          [
+           76.2598856,
+           9.9549736
+          ],
+          [
+           76.2604053,
+           9.9549248
+          ],
+          [
+           76.2612122,
+           9.9548936
+          ],
+          [
+           76.261072,
+           9.956387
+          ],
+          [
+           76.2607849,
+           9.9579893
+          ],
+          [
+           76.260549,
+           9.9588521
+          ],
+          [
+           76.2602949,
+           9.9597506
+          ],
+          [
+           76.2600673,
+           9.9607507
+          ],
+          [
+           76.2596071,
+           9.9618817
+          ],
+          [
+           76.2587361,
+           9.9629184
+          ],
+          [
+           76.2574582,
+           9.9639497
+          ],
+          [
+           76.2569634,
+           9.9642578
+          ],
+          [
+           76.2560184,
+           9.9650757
+          ],
+          [
+           76.2548244,
+           9.9660398
+          ],
+          [
+           76.2541907,
+           9.9664277
+          ],
+          [
+           76.2536449,
+           9.9669762
+          ],
+          [
+           76.2534857,
+           9.966733
+          ],
+          [
+           76.2532535,
+           9.96654
+          ]
+         ]
+        ]
+       ]
+      }
+     }
+    ]
+   },
+   "reference": {
+    "budget_upper_m": 15500.0,
+    "order": [
+     "Mattancherry"
+    ],
+    "minimum_m": 14611.0,
+    "outcome": "pass_near",
+    "case": "fixed_end",
+    "short_by_m": 389.0,
+    "reach_outcome": "ok"
+   }
+  },
+  {
    "id": "S04-n1",
    "title": "25 km towards Kozhikode from south of Kadalundi; start 1 sampled nearby",
    "base": "S04",

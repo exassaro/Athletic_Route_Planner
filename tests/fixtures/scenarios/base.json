@@ -126,7 +126,20 @@
     {"id": "X10", "title": "Wayanad: 20 km from Mananthavady towards Kalpetta, reaching Panamaram",
      "request": {"route_type": "point_to_point", "start": "r:mananthavady", "target_distance_m": 20000,
                  "direction": {"kind": "towards_place", "place": "r:kalpetta"},
-                 "checkpoints": [{"place": "r:panamaram", "must_reach": true}]}}
+                 "checkpoints": [{"place": "r:panamaram", "must_reach": true}]}},
+
+    {"id": "F01", "title": "Fixed end: 20 km from south of Kadalundi, ending at Feroke",
+     "request": {"route_type": "point_to_point", "start": "start_south_of_kadalundi", "target_distance_m": 20000,
+                 "end": "feroke"}},
+    {"id": "F02", "title": "Fixed end: 38 km via Kadalundi, Chaliyam, Beypore, ending at Kozhikode",
+     "request": {"route_type": "point_to_point", "start": "start_south_of_kadalundi", "target_distance_m": 38000,
+                 "end": "kozhikode", "checkpoints": ["kadalundi", "chaliyam", "beypore"]}},
+    {"id": "F03", "title": "Fixed end over budget: 15 km from south of Kadalundi, ending at Kozhikode",
+     "request": {"route_type": "point_to_point", "start": "start_south_of_kadalundi", "target_distance_m": 15000,
+                 "end": "kozhikode"}},
+    {"id": "F04", "title": "Fixed end, Kochi: 15 km from Fort Kochi, passing near Mattancherry, ending at Ernakulam",
+     "request": {"route_type": "point_to_point", "start": "r:fort_kochi", "target_distance_m": 15000,
+                 "end": "r:ernakulam", "checkpoints": ["r:mattancherry"]}}
   ],
   "variants": {
     "note": "Seeded expansion to reach 60+ fixtures. Nearby starts are sampled from walkable OSM ways in a box around the base start; bearings and budgets are request parameters.",

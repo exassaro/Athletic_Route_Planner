@@ -56,7 +56,9 @@ def check_snapping(engine: Engine, req: RouteRequest) -> None:
         limit = PASS_NEAR_M if c.pass_near else SNAP_LIMIT_M
         point = c.lonlat if c.kind not in ("bridge", "road") else tuple(c.lines[0][0])
         named.append((c.label, point, limit))
-    if req.direction and req.direction.kind == "towards_place":
+    if req.end.kind == "fixed":
+        named.append((req.end.point.label or "end", req.end.point.lonlat, SNAP_LIMIT_M))
+    elif req.direction and req.direction.kind == "towards_place":
         named.append((req.direction.place.label or "target", req.direction.place.lonlat, SNAP_LIMIT_M))
     snapped = engine.locate([p if isinstance(p, tuple) else p.lonlat for _, p, _ in named])
     for (label, p, limit), s in zip(named, snapped):
@@ -180,6 +182,21 @@ def planned_base(req: RouteRequest, engine: Engine, start: LonLat, target: LonLa
                 stop_at=plan.stop_at, picks=plan.picks, flags=plan.flags)
 
 
+def extended_to(engine: Engine, base: Base, end: LonLat) -> Base:
+    """The base run continued to a fixed end (a break location), routed and measured as one request."""
+    points = [*(base.points or []), end]
+    routed = engine.route(points, through=base.through)
+    return Base(order=base.order, routed=routed, foot_m=routed.foot_m, points=points, through=set(base.through),
+                stop_at=dict(base.stop_at), picks=base.picks, flags=list(base.flags))
+
+
+def with_points(base: Base, points: list[LonLat], through: set[int], inserted_at: int | None = None) -> Base:
+    """A copy of base on new run points; stop indices at or after `inserted_at` move up by one."""
+    shift = (lambda i: i) if inserted_at is None else (lambda i: i + 1 if i >= inserted_at else i)
+    return Base(order=base.order, routed=base.routed, foot_m=base.foot_m, points=list(points), through=set(through),
+                stop_at={c: shift(i) for c, i in base.stop_at.items()}, picks=base.picks, flags=list(base.flags))
+
+
 def _routed_order(engine: Engine, start: LonLat, stops: list[LonLat], order: list[int]) -> Base | None:
     try:
         r = route_order(engine, start, stops, order)
@@ -196,7 +213,7 @@ def build_conflict(req: RouteRequest, engine: Engine, base: Base,
     for i, cp in enumerate(req.checkpoints):
         if cp.role != "checkpoint":
             continue   # via and must_use items are never dropped
-        if all_must_reach(req):
+        if all_must_reach(req) and req.end.kind != "fixed":
             rest = [p for j, p in enumerate(stops) if j != i]
             alt = minimum_route(engine, start, rest, target, fixed)
             alt_m = None if alt is None else alt.foot_m
@@ -212,10 +229,12 @@ def build_conflict(req: RouteRequest, engine: Engine, base: Base,
             fixes += [Fix(action="drop_checkpoint", label=s.label), Fix(action="make_optional", label=s.label)]
     names = [req.checkpoints[i].label for i in base.order if req.checkpoints[i].role == "checkpoint"]
     over = base.foot_m - req.target_distance_m
+    what = f"These {len(names)} stops need" if req.end.kind != "fixed" else (
+        (f"These {len(names)} stops and the fixed end need" if names else "The fixed end needs"))
     return Conflict(
         kind="checkpoints_exceed_distance", requested_m=req.target_distance_m, minimum_m=round(base.foot_m, 1),
         overshoot_m=round(over, 1), order=names, savings=savings, fixes=fixes,
-        message=(f"These {len(names)} stops need at least {base.foot_m / 1000:.1f} km on foot, "
+        message=(f"{what} at least {base.foot_m / 1000:.1f} km on foot, "
                  f"{over / 1000:.1f} km over the {req.target_distance_m / 1000:.1f} km requested."))
 
 

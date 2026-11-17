@@ -7,7 +7,7 @@ geometry (ellipsoid length, ferry metres from edge attributes, checkpoints
 located with the engine), and conflict objects are checked against the
 brute-force reference values stored in scenarios.json. Refuses to run on a
 graph other than the one the fixtures were built on.
-Writes docs/reports/phase3b/kpi.md. Exit code 0 only if every KPI passes.
+Writes docs/reports/phase3c/kpi.md. Exit code 0 only if every KPI passes.
 """
 
 import argparse
@@ -29,7 +29,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCENARIOS = json.loads((ROOT / "tests" / "fixtures" / "scenarios" / "scenarios.json").read_text(encoding="utf-8"))
 MANIFEST = ROOT / "data" / "manifest.json"
 PBF = ROOT / "data" / "osm" / "kerala.osm.pbf"
-DEFAULT_REPORT = ROOT / "docs" / "reports" / "phase3b" / "kpi.md"
+DEFAULT_REPORT = ROOT / "docs" / "reports" / "phase3c" / "kpi.md"
 
 CHECKPOINT_RADIUS_M = 50.0     # must_reach and junction stops
 PASS_NEAR_M = 1000.0           # pass-near stops: walking distance (Phase 3 amendment 3, decision 11)
@@ -264,6 +264,12 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
     located = engine.locate([c.lonlat for c in all_stops], costing_options=pedestrian_options()) \
         if all_stops else []
 
+    end_snap = None
+    if req.end.kind == "fixed":
+        end_snap = engine.locate([req.end.point.lonlat], costing_options=pedestrian_options())[0]
+        if end_snap is None:
+            row["problems"].append("fixed end could not be located")
+
     lead_keys: dict[str, set] = {}
     forced_keys: dict[str, set] = {}
     for cand in result.candidates:
@@ -300,8 +306,22 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
             row["problems"].append(f"{name}: engine {cand.engine_length_m:.0f} m vs sphere {sphere:.0f} m "
                                    f"({len(m.edges)} edges)")
 
+        if end_snap is not None and cand.option in ("main", "full_route", "end_at_target"):
+            off = geodesy.distance_m(geom[-1], end_snap)
+            cr["end_off_m"] = off
+            if off > CHECKPOINT_RADIUS_M:
+                row["problems"].append(f"{name}: ends {off:.0f} m from the fixed end")
+
         if cand.option in BUDGET_OPTIONS:
-            cr["dist_err_pct"] = abs(m.foot_m - req.target_distance_m) / req.target_distance_m * 100
+            err = abs(m.foot_m - req.target_distance_m) / req.target_distance_m * 100
+            # A fixed end whose own shortest way (this alternative) is already over the target cannot land
+            # closer: reported as information, not counted in the accuracy KPI.
+            own_min = (result.facts.get("l_min_by_alternative") or {}).get(cand.label)
+            if req.end.kind == "fixed" and cand.option == "main" and own_min is not None \
+                    and own_min > req.target_distance_m:
+                cr["forced_over_pct"] = err
+            else:
+                cr["dist_err_pct"] = err
 
         on_candidate = {s.label for s in cand.stops if s.role not in ("start", "end")}
         stop_of = {s.label: s for s in cand.stops if s.role not in ("start", "end")}
@@ -569,6 +589,9 @@ def main() -> int:
         kpi("Distance accuracy, point-to-point", "median < 0.5%, p95 < 1.5%",
             f"median {statistics.median(dist):.2f}%, p95 {pct(dist, .95):.2f}% (n={len(dist)})" if dist else "no routes",
             bool(dist) and statistics.median(dist) < 0.5 and pct(dist, .95) < 1.5),
+        kpi("(info) Fixed end: alternative's shortest way to the end already over the target", "info only",
+            ", ".join(f"{c['name']} +{c['forced_over_pct']:.2f}%" for c in cands if "forced_over_pct" in c) or "none",
+            True),
         kpi("Reported length matches re-measured geometry", "every route, 0.1% / 2 m",
             f"{sum(c['reported_ok'] for c in cands)} / {len(cands)}", have and all(c["reported_ok"] for c in cands)),
         kpi("Length consistency (engine vs sphere on its own radius)", "every route, 0.1% / 2 m + 0.2 m per edge",
@@ -632,7 +655,7 @@ def main() -> int:
     passed = all(k[3] for k in kpis)
 
     md = [
-        "# Phase 3b: KPI report", "",
+        "# Phase 3c: KPI report", "",
         f"Graph build {SCENARIOS['graph_build']} (pinned extract). {len(fixtures)} active fixtures"
         f"{' (filtered)' if only else ''}; {len(skipped)} not yet in scope "
         f"({', '.join(f['id'] + ': ' + f['status'] for f in skipped)}). Measured on the development laptop.", "",

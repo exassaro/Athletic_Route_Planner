@@ -18,10 +18,12 @@ from athlete_engine.valhalla import Valhalla
 from .avoid import inside, valhalla_extra
 from .engine import Engine, NoRoute, ValhallaEngine
 from .graphhopper import EASING, GraphHopperEngine, GraphHopperUnavailable
+from .lengthen import accuracy_m, lengthen
 from .models import Conflict, Flag, RouteRequest, SolveResult
 from .out_and_back import solve_out_and_back
 from .p2p import (SECTOR_DEG, Infeasible, all_must_reach, anchors, bearing_tail, build_conflict, check_snapping,
-                  cut_at_target, disconnected_conflict, make_candidate, minimum_route, planned_base, truncate)
+                  cut_at_target, disconnected_conflict, extended_to, make_candidate, minimum_route, planned_base, truncate,
+                  with_points)
 from .scoring import annotate, diversify
 
 BEARING_OK_DEG = 30.0  # section 16: endpoint bearing within 30 degrees where the network permits
@@ -156,11 +158,11 @@ def _solve(req: RouteRequest, engines: dict[str, Engine], graph_build: str, flag
     if req.route_type != "point_to_point":
         return done("unsupported", extra_flags=[Flag(code="preference_unsupported",
                                                      message=f"{req.route_type} is not implemented yet")])
-    if req.end.kind == "fixed":
-        return done("unsupported", extra_flags=[Flag(
-            code="preference_unsupported",
-            message="a fixed end needs via-point lengthening (section 8 step 10), not built yet")])
-    if req.direction is None:
+    fixed_end = req.end.point.lonlat if req.end.kind == "fixed" else None
+    if fixed_end is not None and req.direction is not None:
+        flags = flags + [Flag(code="direction_ignored",
+                              message="the run ends at the fixed end; the requested direction is not used")]
+    if req.direction is None and fixed_end is None:
         return done("unsupported", extra_flags=[Flag(
             code="preference_unsupported", message="point_to_point needs a direction (towards a place or a bearing)")])
 
@@ -169,10 +171,15 @@ def _solve(req: RouteRequest, engines: dict[str, Engine], graph_build: str, flag
     req = req.model_copy(update={"checkpoints": req.stops()})
     start = req.start.lonlat
     stops = anchors(req)
-    target = req.direction.place.lonlat if req.direction.kind == "towards_place" else None
+    if fixed_end is not None:
+        target, target_label = fixed_end, req.end.point.label or "end"
+    elif req.direction.kind == "towards_place":
+        target, target_label = req.direction.place.lonlat, req.direction.place.label or "target"
+    else:
+        target, target_label = None, None
     named = [(req.start.label or "start", start), *((c.label, c.lonlat) for c in req.checkpoints)]
     if target:
-        named.append((req.direction.place.label or "target", target))
+        named.append((target_label, target))
     for label, point in named:
         area = inside(req, point)
         if area is not None:
@@ -187,8 +194,7 @@ def _solve(req: RouteRequest, engines: dict[str, Engine], graph_build: str, flag
 
     # Connectivity (section 8 step 3): one walking matrix over every point.
     pts = [start, *stops] + ([target] if target else [])
-    labels = [req.start.label or "start", *(c.label for c in req.checkpoints)] + \
-             ([req.direction.place.label or "target"] if target else [])
+    labels = [req.start.label or "start", *(c.label for c in req.checkpoints)] + ([target_label] if target else [])
     matrix = yard.matrix(pts)
     if any(c is None for row in matrix for c in row):
         return done("disconnected", conflict=disconnected_conflict(labels, matrix))
@@ -206,10 +212,10 @@ def _solve(req: RouteRequest, engines: dict[str, Engine], graph_build: str, flag
     order = ranked.order
 
     def plan(alt, eng):
-        if alt == "shortest" and all_must_reach(req):
-            return ranked
         try:
-            return planned_base(req, eng, start, target, req.upper_m, order=order)
+            if alt == "shortest" and all_must_reach(req):
+                return extended_to(eng, ranked, fixed_end) if fixed_end is not None else ranked
+            return _planned(req, eng, start, target, order)
         except (NoRoute, GraphHopperUnavailable):
             return None
 
@@ -242,6 +248,14 @@ def _solve(req: RouteRequest, engines: dict[str, Engine], graph_build: str, flag
     return done("ok", by_alt=by_alt, facts=facts, extra_flags=lost)
 
 
+def _planned(req, eng, start, target, order):
+    """This engine's minimum run through the stops in the given order; with a fixed end, continued to it."""
+    base = planned_base(req, eng, start, target, req.upper_m, order=order)
+    if base is not None and req.end.kind == "fixed":
+        base = extended_to(eng, base, target)
+    return base
+
+
 DETOUR_LIMIT = 1.30   # Phase 3 amendment 20: "recommended" at most 30% longer than "shortest" to the target
 
 
@@ -265,7 +279,7 @@ def _cap_detour(req, engines, by_alt, start, target, order) -> None:
     for k, factors in enumerate(EASING):
         eased = eng.eased(factors)
         try:
-            base = planned_base(req, eased, start, target, req.upper_m, order=order)
+            base = _planned(req, eased, start, target, order)
             if base is None:
                 continue
             pairs, facts, flags = _alternative(req, eased, "recommended", start, target, base)
@@ -306,7 +320,8 @@ def _pick_facts(pick: dict) -> dict:
 def _over_budget(req, eng, alt, base):
     """Over budget (Phase 3 amendment 6): the full route through the stops and the run cut at the target."""
     full = eng.route(base.points, through=base.through, detail=True)
-    full_cand = make_candidate(req, full, "full_route", "last_checkpoint", base, [], alt)
+    full_cand = make_candidate(req, full, "full_route", "fixed" if req.end.kind == "fixed" else "last_checkpoint",
+                               base, [], alt)
     routed, kept, kind, flags, cut_facts = cut_at_target(req, eng, base, full)
     cut_cand = make_candidate(req, routed, "cut_at_target", kind, base, flags, alt, keep=kept)
     facts = {"order": [req.checkpoints[i].label for i in base.order], "l_min_m": round(base.foot_m, 1),
@@ -327,6 +342,9 @@ def _alternative(req, eng, alt, start, target, base):
              "stops": {req.checkpoints[i].label: _pick_facts(base.picks.get(i, {})) for i in base.order}}
     remainder = req.target_distance_m - base.foot_m
     facts["remainder_m"] = round(remainder, 1)
+    if req.end.kind == "fixed":
+        facts["tail_to_target_m"] = 0.0     # base already ends at the fixed end (for the detour cap)
+        return _fixed_end(req, eng, alt, facts, base)
     prefix = base.points or [start]
     through = base.through
     last = prefix[-1]
@@ -385,6 +403,50 @@ def _alternative(req, eng, alt, start, target, base):
     short.end.label = target_label
     candidates.append((short, at_target.edges))
     return candidates, facts, []
+
+
+def _lengthened(req, eng, alt, base, routed, option, end_kind, facts):
+    """Section 8 step 10: the run through base.points lengthened with one via to the budget, or None."""
+    found = lengthen(eng, base.points, base.through, routed, req.target_distance_m,
+                     accuracy_m(req.target_distance_m, req.tolerance_m))
+    if found is None:
+        facts["lengthen"] = {"found": False}
+        return None
+    new_base = with_points(base, found.points, found.through, inserted_at=found.via_index)
+    via = found.points[found.via_index]
+    added = found.routed.foot_m - routed.foot_m
+    facts["lengthen"] = {"found": True, "leg": found.leg, "via": [round(via[0], 6), round(via[1], 6)],
+                         "added_m": round(added, 1), "tries": found.tries}
+    flag = Flag(code="lengthened",
+                message=f"a detour of {added / 1000:.1f} km was added on the longest leg to reach the distance",
+                data={"added_m": round(added, 1), "via": [round(via[0], 6), round(via[1], 6)]})
+    cand = make_candidate(req, found.routed, option, end_kind, new_base, [flag], alt)
+    return cand, found.routed.edges
+
+
+def _fixed_end(req, eng, alt, facts, base):
+    """A fixed end (section 8 step 10): the run through the stops to the end, lengthened if it is short."""
+    facts["case"] = "fixed_end"
+    short = req.target_distance_m - base.foot_m
+    facts["short_by_m"] = round(short, 1)
+    if short <= accuracy_m(req.target_distance_m, req.tolerance_m):
+        routed = eng.route(base.points, through=base.through, detail=True)
+        cand = make_candidate(req, routed, "main", "fixed", base, [], alt)
+        facts["deviation_m"] = round(cand.deviation_m, 1)
+        return [(cand, routed.edges)], facts, []
+    made = _lengthened(req, eng, alt, base, base.routed, "main", "fixed", facts)
+    if made is not None and abs(made[0].deviation_m) <= req.tolerance_m:
+        facts["deviation_m"] = round(made[0].deviation_m, 1)
+        return [made], facts, []
+    # No via brings the run within tolerance: offer the direct run to the end and say how short it is.
+    routed = eng.route(base.points, through=base.through, detail=True)
+    end_label_ = req.end.point.label or "the end"
+    cand = make_candidate(req, routed, "end_at_target", "fixed", base, [Flag(
+        code="short_of_budget",
+        message=(f"{end_label_} is {routed.foot_m / 1000:.1f} km away by this route; no detour found that adds "
+                 f"the missing {short / 1000:.1f} km within tolerance"),
+        data={"short_by_m": round(short, 1)})], alt)
+    return [(cand, routed.edges)], facts, []
 
 
 def _bearing(req, eng, alt, facts, prefix, base, remainder, through):

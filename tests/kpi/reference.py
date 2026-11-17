@@ -33,24 +33,25 @@ def measure_route(engine: Valhalla, points: list[LonLat]) -> Measured | None:
 
 
 def minimum_through(engine: Valhalla, start: LonLat, stops: dict[str, LonLat],
-                    fixed_order: bool) -> tuple[list[str], Measured] | None:
-    """Shortest (foot metres) route from start through all stops, trying every order unless fixed."""
+                    fixed_order: bool, end: LonLat | None = None) -> tuple[list[str], Measured] | None:
+    """Shortest (foot metres) route from start through all stops (then to a fixed end, if given),
+    trying every order unless fixed."""
     names = list(stops)
     orders = [names] if fixed_order else [list(p) for p in itertools.permutations(names)]
     best = None
     for order in orders:
-        m = measure_route(engine, [start, *(stops[n] for n in order)])
+        m = measure_route(engine, [start, *(stops[n] for n in order), *([end] if end else [])])
         if m is not None and (best is None or m.foot_m < best[1].foot_m):
             best = (order, m)
     return best
 
 
 def reference_for(engine: Valhalla, start: LonLat, stops: dict[str, LonLat], target: LonLat | None,
-                  budget_m: float, tolerance_m: float, fixed_order: bool) -> dict:
+                  budget_m: float, tolerance_m: float, fixed_order: bool, fixed_end: LonLat | None = None) -> dict:
     upper = budget_m + tolerance_m
     out: dict = {"budget_upper_m": upper}
-    if stops:
-        best = minimum_through(engine, start, stops, fixed_order)
+    if stops or fixed_end:
+        best = minimum_through(engine, start, stops, fixed_order, fixed_end)
         if best is None:
             return {**out, "outcome": "disconnected"}
         order, m = best
@@ -62,7 +63,7 @@ def reference_for(engine: Valhalla, start: LonLat, stops: dict[str, LonLat], tar
         savings = []
         for name in stops:
             rest = {k: v for k, v in stops.items() if k != name}
-            alt = minimum_through(engine, start, rest, fixed_order) if rest else None
+            alt = minimum_through(engine, start, rest, fixed_order, fixed_end) if rest or fixed_end else None
             alt_m = alt[1].foot_m if alt else 0.0
             savings.append({"action": "drop_checkpoint", "label": name,
                             "saves_m": round(out["minimum_m"] - alt_m, 1), "fits": alt_m <= upper})
@@ -70,6 +71,9 @@ def reference_for(engine: Valhalla, start: LonLat, stops: dict[str, LonLat], tar
         return out
 
     out["outcome"] = "ok"
+    if fixed_end is not None:
+        out.update(case="fixed_end", short_by_m=round(budget_m - out["minimum_m"], 1))
+        return out
     if target is not None:
         last = stops[order[-1]] if order else start
         tail = measure_route(engine, [last, target])
