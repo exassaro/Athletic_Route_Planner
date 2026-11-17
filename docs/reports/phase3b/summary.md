@@ -45,7 +45,7 @@ Athlete's request: from Athanikkal towards Kozhikode, 25 km, passing near Kottak
 - Savings: dropping Kallai saves 6.60 km and dropping Beypore 1.95 km. Both fit the budget, so both come with "drop" and "make optional" fixes. Dropping any of the first four saves nothing, because the route passes them anyway.
 - The "set distance" fix is 21.8 km.
 
-## KPIs: 74 fixtures, two decisions open
+## KPIs: 74 fixtures, one decision open
 
 | KPI | Target | Measured | Pass |
 | --- | --- | --- | --- |
@@ -65,7 +65,8 @@ Athlete's request: from Athanikkal towards Kozhikode, 25 km, passing near Kottak
 | National-highway flag matches the measured trunk stretch | every route | 160 / 160 | yes |
 | Alternative diversity | < 60% | max 59%; both alternatives returned on 58 of 74 | yes |
 | **Direction adherence** | every route < 15% | 76 / 83; max 25.9% | **no** (decision 1) |
-| **Road suitability** (trunk + primary share, "recommended") | < 10% | 11 over 10%; max 23.7% | **no** (decision 2) |
+| Road suitability (trunk + motorway share, "recommended"; amended, decision 2) | < 10%, or flagged | 0 over 10% without the flag; median 0.0%, max 14.3% (the flagged ghat) | yes |
+| (info) Main-road share incl. primary, "recommended" | – | median 4.4%, max 23.7% | – |
 
 The 10 fixtures outside Kozhikode (X01 to X10) all solve without a problem.
 
@@ -83,9 +84,22 @@ Options:
 - (b) Cap the detour: when "recommended" is more than, say, 30% longer than "shortest", re-solve it with trunk ×0.3. The route would then use the highway and carry the national-highway flag.
 - (c) Keep everything as is and accept the failures.
 
-My recommendation is (b). A 56% detour is not what a runner asking for "Thamarassery" expects, and the flag already warns them about the highway.
+My recommendation was (b). **Measured before building it, it does not work** (blueprint Phase 3 amendment 20):
 
-### 2. The road-suitability KPI and "primary, mild penalty"
+| Lifted penalty, S13 Lakkidi → Thamarassery | "recommended" vs "shortest" (17.5 km) | Trunk used |
+| --- | --- | --- |
+| R5 as built (trunk ×0.1) | +56% | 1.2 km |
+| trunk ×0.3 | +46% | 1.8 km |
+| trunk ×0.6 | +42% | 14.4 km |
+| trunk ×1.0 | +34% | 18.1 km |
+| trunk ×1.0 and paths ×1.0 | 0% (the same route) | 12.4 km |
+
+"shortest" also takes 1.7 km of footpath shortcuts across the ghat's hairpins, which R5 avoids too. On X10 the detour (+12%) comes from avoiding 19 km of primary road; lifting the primary penalty brings it to +2%. Revised options:
+- (b′) When "recommended" is over 30% longer than "shortest", re-solve it with **every** penalty eased step by step (trunk, paths, primary) until it is within 30%, and flag it. This fixes S13 but not X10 or E02, which are under 30%.
+- (d) Judge direction adherence on "shortest" only, and report "recommended"'s as information: its detours are the rules working.
+- (b′) and (d) together.
+
+### 2. The road-suitability KPI and "primary, mild penalty" (decided 2026-11-17: option (a))
 
 Section 16's KPI (trunk + primary under 10% "in the quieter variant") predates amendment 2, which asks only a *mild* penalty on primary roads. Under R5 (primary ×0.6), 11 "recommended" routes carry 10 to 24% main road. That is almost all primary: trunk share has a median of 0% and a maximum of 14% (the S13 ghat). Typical cases:
 - 50 km Kozhikode → Kannur: 11 to 15%, against 80 to 96% for "shortest";
@@ -97,7 +111,7 @@ Options:
 
 My recommendation is (a), because it measures what the amendment asks for.
 
-### 3. Defaults I chose during implementation
+### 3. Defaults I chose during implementation (confirmed 2026-11-17)
 
 Please confirm or change:
 - **Junction checkpoints** pass through the junction itself (within 50 m, no spur). Bridge and named-road checkpoints, and `must_use`, mean the route uses one of the item's OSM ways (decision 17).

@@ -392,6 +392,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
             cr["nh_flag_ok"] = False
         else:
             cr["nh_flag_ok"] = True
+        cr["nh_flagged"] = "uses_national_highway" in codes
 
         # Direction adherence applies to routes that head for the target; "continue past target"
         # moves away from it by design after passing it, and is judged by its bearing instead.
@@ -547,8 +548,9 @@ def main() -> int:
     both = [r for r in rows if len(r.get("alternatives", [])) == 2]
     rec_main = [c for c in cands if c["label"] == "recommended" and c["option"] in ("main", "end_at_target",
                                                                                      "continue_past_target")]
-    suit = [c["main_share"] * 100 for c in rec_main]
-    suit_bad = [c for c in rec_main if c["main_share"] > 0.10]
+    # Road suitability (amended 2026-11-17, Phase 3 amendment 18): trunk/motorway share, or the stretch is flagged.
+    suit = [c["trunk_share"] * 100 for c in rec_main]
+    suit_bad = [c for c in rec_main if c["trunk_share"] > 0.10 and not c["nh_flagged"]]
     infeasible = [f for f in fixtures if f["reference"]["outcome"] == "over_budget"]
     inf_ok = [r for r in rows if r["id"] in {f["id"] for f in infeasible} and "error" not in r and not r["problems"]]
     classified = [r for r in rows if "error" not in r and not any(p.startswith(("expected", "reference case")) for p in r["problems"])]
@@ -604,12 +606,12 @@ def main() -> int:
             not overlaps or max(overlaps) < 60),
         kpi("(info) Fixtures returning both alternatives", "info only",
             f"{len(both)} / {len(rows) - len(errors)} (the rest: shortest overlaps recommended by 60% or more)", True),
-        kpi("Road suitability, recommended (trunk + primary + motorway share)", "< 10% (section 16)",
-            (f"median {statistics.median(suit):.1f}%, max {max(suit):.1f}%; {len(suit_bad)} over 10%"
+        kpi("Road suitability, recommended (trunk + motorway share)", "< 10%, or flagged as a national highway",
+            (f"median {statistics.median(suit):.1f}%, max {max(suit):.1f}%; {len(suit_bad)} over 10% without the flag"
              if suit else "no routes"), bool(suit) and not suit_bad),
-        kpi("(info) Trunk/motorway share, recommended", "info only",
-            f"median {statistics.median(c['trunk_share'] * 100 for c in rec_main):.1f}%, "
-            f"max {max(c['trunk_share'] * 100 for c in rec_main):.1f}%" if rec_main else "no routes", True),
+        kpi("(info) Main-road share, recommended (trunk + primary + motorway)", "info only",
+            f"median {statistics.median(c['main_share'] * 100 for c in rec_main):.1f}%, "
+            f"max {max(c['main_share'] * 100 for c in rec_main):.1f}%" if rec_main else "no routes", True),
         kpi("National-highway flag matches the measured trunk stretch (>= 200 m)", "every route",
             f"{sum(c['nh_flag_ok'] for c in cands)} / {len(cands)}", have and all(c["nh_flag_ok"] for c in cands)),
         kpi("Avoid list respected (no avoided way, place or area)", "every route",

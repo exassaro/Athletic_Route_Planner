@@ -72,6 +72,20 @@ Ten further fixtures outside Kozhikode (Kochi, Thiruvananthapuram, Thrissur, Kan
 16. **Boundary fallback stays.** A checkpoint may carry its OSM boundary polygon. If no candidate within 1 km on foot avoids a spur, candidates inside the boundary are tried and the stop is flagged. Without a boundary, the least-added candidate is used even with a spur, and flagged.
 17. **Junction checkpoints** are through vias at the junction itself (within 50 m, no spur). **Bridge and named-road checkpoints**, and `must_use` items, are satisfied by the route using one of the item's OSM ways: a bridge through both ends, a road through its point of least added distance.
 
+**Decided after implementation** (2026-11-17, evidence: [docs/reports/phase3b/summary.md](reports/phase3b/summary.md))
+
+18. **Road-suitability KPI** (section 16) measures the **trunk and motorway** share of the "recommended" route: under 10%, or the stretch carries the national-highway flag. Primary share is reported as information, since amendment 2 asks only a mild penalty on primary roads.
+19. **Confirmed defaults:**
+    - Junction checkpoints pass through the junction (decision 17).
+    - With no spur-free pass point and no boundary, the stop is passed with the shortest spur and flagged `pass_near_spur` (decision 16).
+    - `over_budget` means every alternative's own way through the stops exceeds D + 500 m. The conflict numbers come from the shorter plan; an alternative whose own way does not fit, while the other's does, returns its full route and cut, flagged `alternative_over_budget`.
+    - An avoided place given only as a point is a 300 m circle around it.
+20. **Open: long detours by "recommended".** The proposal to re-solve with the trunk penalty eased (×0.3) when "recommended" is over 30% longer than "shortest" was measured before being built, and does not do what it was meant to:
+    - On the Wayanad ghat (S13), "recommended" stays 34% longer even with no trunk penalty, because "shortest" also uses 1.7 km of footpath shortcuts across the hairpins.
+    - On X10 the detour (12%) comes from avoiding primary roads, not trunk.
+
+    Waiting for the product owner.
+
 **Open implementation questions for the spike** (answered by decisions 10 to 17)
 - Open-source GraphHopper has no matrix call. *Default:* checkpoints are ordered on the Valhalla matrix, then routed by GraphHopper. The spike checks that both engines give the same order.
 - GraphHopper's `pass_through` applies to a whole request, not to one point. A route mixing pass-near stops (no U-turn) and `must_reach` stops (U-turn allowed at a dead end) may need routing in stretches between `must_reach` stops and joining them.
@@ -853,7 +867,7 @@ Multiply scenarios by preference sets and random nearby starts to reach 200 or m
 | Direction adherence | Share of length where network distance to the target increases | Under 15% |
 | Endpoint bearing | Angle between requested bearing and start-to-end bearing | Within 30 degrees where the network permits |
 | Checkpoint compliance | Mandatory stops within 50 m of the geometry | 100% |
-| Road suitability | Share of length on trunk and primary roads in the "quieter" variant | Under 10%, or the unavoidable segment is named |
+| Road suitability | Share of length on trunk and motorway roads in the "recommended" alternative (Phase 3 amendment 18; primary reported as information) | Under 10%, or the stretch carries the national-highway flag |
 | Alternative diversity | Edge-set overlap between returned options | Under 60% |
 | Parse accuracy | Slot-level accuracy on the golden utterance set | 95% or better |
 
