@@ -59,7 +59,7 @@ See [quieter_spike.md](quieter_spike.md). Recommendation: GraphHopper foot with 
 - **Pedestrian `edge_walk` is not an access check.** It walked a bicycle route over the Feroke Old Bridge (`foot=no`). It also fails on some unmodified Valhalla pedestrian routes. The harness judges access by map-match coverage plus the OSM tags of every way used.
 - **Coastal climb figures are noise.** The flat 28 km coastal route reports 115 m of gain after smoothing and a 3 m threshold. The Wayanad ghat route reports 835 m of descent over 15 km, which is plausible. Gain should be shown with care until the elevation source or the smoothing is revisited.
 - **Bearing-only requests need a larger contour.** Contour vertices are often far nearer by route than the contour value. The solver samples contours at 1.3× and 2× the remaining distance and cuts each routed sample exactly.
-- **The Kerala extract cannot be re-downloaded.** It is pinned in `engine/osm_pin.json`, but the GitHub release backup still has to be uploaded (see README).
+- **The Kerala extract cannot be re-downloaded from upstream.** It is pinned in `engine/osm_pin.json` and backed up as the GitHub release `osm-kerala-2026-11-15` (uploaded and restore-tested 2026-11-17).
 
 ## Engine use per solve
 

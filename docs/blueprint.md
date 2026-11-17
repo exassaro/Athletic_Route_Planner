@@ -2,6 +2,70 @@
 
 Nov 16, 2026 · @Azzm
 
+## Phase 3 amendments
+
+Decided 2026-11-17 by the product owner after the Phase 3 review (evidence: [docs/reports/phase3/summary.md](reports/phase3/summary.md), [quieter_spike.md](reports/phase3/quieter_spike.md)). These are routing-rule changes for **Phase 3b**, still solver only. Where they conflict with the Phase 2 amendments or a later section, these win. Items marked *default* came from the Phase 3b plan and stand until the product owner changes them. Implementation waits for the rules spike ([docs/reports/phase3b/rules_spike.md](reports/phase3b/rules_spike.md)) and the decision after it.
+
+**Decisions**
+
+1. **Route generator.** GraphHopper foot with a custom model is the default generator. Valhalla stays the single yardstick for measurement, road classes, checkpoint checks and the access check, as in the KPI harness. Lengths still come from the geometry (Phase 2 amendment 2).
+2. **Road priority, a preference and not a hard rule:**
+   - (a) Ordinary car-drivable roads first, including service roads beside highways.
+   - (b) Primary roads, mild penalty.
+   - (c) Trunk and motorway last.
+   - (d) Footways, paths, tracks and steps only when nothing else connects, or when the user asks.
+
+   One-way restrictions are ignored for running. A route using trunk or motorway carries the flag "uses a national highway; running there may be prohibited". `foot=no` stays a hard exclusion.
+   - *Default:* motorways stay unwalkable unless tagged `foot=yes`. This is the behaviour of both engines, so "motorway last" means "only where tagged walkable".
+   - *Default:* the flag fires on trunk or motorway and names the road from its `ref` tag (for example "NH 66") when it has one.
+   - *Default:* the request preference `paths: "avoid" | "allow"` (default `"avoid"`) is how the user asks for footways and paths.
+3. **Checkpoints are "pass near" by default.**
+   - The route must pass within 1 km of the place point, with no out-and-back spur to reach it. A spur is a dead-end excursion over 100 m that returns on the same edges (section 8, scoring).
+   - *Default:* "within 1 km" is the straight-line distance from the place point to the nearest point of the Valhalla-matched route. Like a snap distance, it is a proximity and never a route distance.
+   - If no route passes within 1 km without a spur, fall back to passing inside the place's OSM boundary where one exists, and flag it.
+   - A checkpoint marked `must_reach` keeps the Phase 3 behaviour: a `break` location, within 50 m of the snapped point.
+   - Checkpoints may also be bridges, junctions or named roads.
+   - *Default:* a bridge or named-road checkpoint means the route uses it (the same mechanism as `must_use`, decision 7), ordered like any other checkpoint.
+4. **Ferries are always excluded.** The ferry opt-in, the ferry fixtures (scenario 6, the ferry variant of scenario 7) and the "allow ferries" fix are removed from the MVP. This replaces Phase 2 amendment 1, except that the exclusion is still done with `exclude_ferries: true` (Valhalla) and a zero priority (GraphHopper), never `use_ferry: 0`.
+5. **Tolerance is ±500 m**, replacing the 2% rule. The distance-accuracy KPI (section 16) is unchanged and separate.
+6. **Over budget.** When the stops alone exceed the budget, the solver returns:
+   - the full route, with outcome `over_budget`;
+   - the overshoot in metres;
+   - a ready "cut at target" candidate;
+   - the savings list.
+
+   Disconnected points and snaps that are too far stay conflicts.
+   - *Default:* the full route ends at the last stop.
+   - *Default:* a route up to D + 500 m is `ok`, not `over_budget`.
+7. **New request fields.**
+   - `via`: pass-near points or named roads.
+   - `avoid`: places, roads or areas.
+   - `must_use`: a named bridge or road.
+
+   An edit holds the distance by moving the endpoint.
+   - *Default:* a `via` is for shaping only. It is never dropped, is not listed as a stop and does not appear in the savings list. Checkpoints are named, reported and can be dropped.
+8. **Phase 3 proposals accepted.**
+   - The repeated-edge limit (hard above 10%, KPI median under 2%) applies to repetition beyond what `must_reach` stops force.
+   - The engine consistency check (0.1% / 2 m) gets an allowance of 0.2 m per edge for whole-metre edge lengths.
+9. **Alternatives are "recommended" and "shortest".** "Recommended" is the GraphHopper generator under the rules above. "Shortest" is Valhalla pedestrian. "Fewer main roads" is dropped as a separate alternative, because the default now does it; this replaces Phase 2 amendment 3. The diversity filter (overlap under 60%) still applies.
+
+**Acceptance test (from local knowledge)**
+
+The request: from Athanikkal towards Kozhikode, 25 km, passing near Kottakadavu, Kadalundi, Chaliyam, Karuvanthuruthy bridge, Beypore and Kallayi. It must:
+- follow that corridor in that order;
+- not take a spur into Chaliyam's beach end;
+- not use a ferry;
+- repeat less than 2% of its road.
+
+Its measured length is reported. If it is over 25 km, the `over_budget` result is shown. Coordinates come from OSM or Photon. *Default:* the solver orders the stops itself, and the test checks that it chooses this order.
+
+Ten further fixtures outside Kozhikode (Kochi, Thiruvananthapuram, Thrissur, Kannur, Wayanad) show that nothing is tuned to one route.
+
+**Open implementation questions for the spike**
+- Open-source GraphHopper has no matrix call. *Default:* checkpoints are ordered on the Valhalla matrix, then routed by GraphHopper. The spike checks that both engines give the same order.
+- GraphHopper's `pass_through` applies to a whole request, not to one point. A route mixing pass-near stops (no U-turn) and `must_reach` stops (U-turn allowed at a dead end) may need routing in stretches between `must_reach` stops and joining them.
+- Memory: GraphHopper (about 1.9 GiB) and Valhalla now run together, so Photon runs alone, for name lookup only.
+
 ## Phase 2 amendments
 
 Decided after Phase 2 (evidence: [docs/reports/phase2/summary.md](reports/phase2/summary.md)). Where these conflict with a later section, these win.

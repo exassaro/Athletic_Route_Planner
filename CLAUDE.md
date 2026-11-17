@@ -5,20 +5,34 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 3** (core route-generation solver as a pure Python library in `solver/` with a command-line runner). No FastAPI, no frontend, no LLM. Loops only after point-to-point, Case B, bearing-only, out-and-back and scoring meet their KPIs.
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 3b** (routing-rule changes from the product owner, still solver only, in `solver/`). No FastAPI, no frontend, no LLM. First a rules spike (`docs/reports/phase3b/rules_spike.md`, at most 2 days), then wait for the developer's decision before changing the solver. Loops only after the point-to-point KPIs pass under the Phase 3 amendments.
 - **Plan first.** Give a plan and wait for approval before writing code.
 - **Small steps.** Each step ends in something the developer can run and check. Commit after each step.
 - **No invented distances.** Never hardcode or estimate a distance. Every distance comes from the routing engine or from measuring geometry (`athlete_engine.geodesy`). The leg distances in the blueprint's section 8 worked example are made up: never use them as test expectations. Straight-line distance is allowed only for snap distances and pre-filters and must never be presented as a route distance.
 - **Coordinates come from data.** Place coordinates are read from OSM (with their OSM ids) or supplied by the developer, not typed from memory.
 - Reports state where numbers were measured (this laptop, not the target server).
 
-## Decisions from Phase 2 (also at the top of docs/blueprint.md)
+## Phase 3 amendments (2026-11-17, full text at the top of docs/blueprint.md; they win over Phase 2)
 
-1. **Ferries are hard-excluded by default** with `exclude_ferries: true`. Never rely on `use_ferry: 0`. Ferries are opt-in. When allowed, ferry metres are reported separately and do not count toward the distance budget: **the budget is distance on foot.**
+1. **Generator: GraphHopper foot + custom model** ("recommended"). **Valhalla is the single yardstick**: road classes, checkpoint checks and the access check (map_snap coverage + OSM tags) go through Valhalla matching; lengths come from geometry.
+2. **Road priority (preference, not a hard rule):** ordinary drivable roads (incl. service roads beside highways) > primary (mild penalty) > trunk/motorway (last) > footway/path/track/steps (only when nothing else connects, or `paths: "allow"`). One-way ignored. Trunk/motorway use → flag "uses a national highway; running there may be prohibited" (name from `ref`). `foot=no` is a hard exclusion; motorways stay unwalkable unless tagged `foot=yes`.
+3. **Checkpoints are "pass near" by default.** The route passes within 1 km of the place point, measured as straight-line proximity to the Valhalla-matched route, with no spur (dead-end excursion > 100 m). Fallback: inside the place's OSM boundary, flagged. `must_reach` keeps the old `break` behaviour (50 m of the snapped point). Bridge and named-road checkpoints mean the route uses them (same as `must_use`).
+4. **Ferries always excluded.** No opt-in, no ferry fixtures.
+5. **Tolerance ±500 m** (replaces 2%). Distance-accuracy KPI unchanged.
+6. **`over_budget` outcome** when the stops alone exceed D + 500 m: the full route (ends at the last stop), the overshoot in metres, a "cut at target" candidate, and the savings list. Disconnected and snap-too-far stay conflicts.
+7. **Request fields `via`, `avoid`, `must_use`.** A `via` is shaping only: never dropped, not a listed stop. Edits hold the distance by moving the endpoint.
+8. **Repetition limit applies beyond what `must_reach` stops force. Consistency check: 0.1% / 2 m plus 0.2 m per edge.**
+9. **Alternatives: "recommended" (GraphHopper, rules above) and "shortest" (Valhalla pedestrian).** "Fewer main roads" is dropped.
+
+Acceptance test: Athanikkal towards Kozhikode, 25 km, passing near Kottakadavu, Kadalundi, Chaliyam, Karuvanthuruthy bridge, Beypore and Kallayi. It must follow that order, take no spur into Chaliyam's beach end, use no ferry, and repeat under 2% of its road. Report the measured length; if it is over 25 km, show `over_budget`. Names come from OSM or Photon. If one can't be found, stop and ask. Plus 10 fixtures outside Kozhikode (Kochi, Thiruvananthapuram, Thrissur, Kannur, Wayanad).
+
+## Decisions from Phase 2 (also in docs/blueprint.md; amended above where they conflict)
+
+1. **Ferries are hard-excluded** with `exclude_ferries: true`. Never rely on `use_ferry: 0`. (Phase 3 amendment 4 removed the opt-in.)
 2. **Every distance shown and every cut uses ellipsoid geometry length.** The engine consistency check compares engine length with a spherical measurement of the same geometry: threshold 0.1%, floor 2 m.
-3. **MVP alternatives: "direct" and "fewer main roads".** The second waits for the quieter spike (`docs/reports/phase3/quieter_spike.md`) and the developer's decision.
+3. ~~MVP alternatives "direct" and "fewer main roads"~~: replaced by Phase 3 amendment 9.
 4. **Geocoding is Latin script only** for the MVP.
-5. **Checkpoints are `break` locations**; `through` is only for shaping vias. Checkpoint compliance is measured against the snapped point.
+5. **`must_reach` checkpoints are `break` locations**; `through` is for shaping vias and pass-near points. `must_reach` compliance is measured against the snapped point.
 6. **Engine warnings** (e.g. code 401, relaxed restrictions) are carried into results as flags.
 
 Also agreed: conflict savings are routed and measured, not matrix sums; ordering by exact DP (no OR-Tools); cut snaps to a junction only within 0.5% of the target; every truncated candidate is re-routed as one engine request; via-point lengthening (section 8 step 10) comes after the point-to-point KPIs, before loops.
@@ -97,7 +111,7 @@ uv run python tests/kpi/run_kpi.py [--only S05,S15]   # -> docs/reports/phase3/k
 
 Scenario requests live in `tests/fixtures/scenarios/base.json`. Never edit `scenarios.json` by hand: its reference values come from `tests/kpi/reference.py` (every stop order routed and measured, no matrix, no DP), kept independent of the solver.
 
-GraphHopper (profile `spike`, http://localhost:8989; Phase 3 spike only):
+GraphHopper (profile `spike`, http://localhost:8989; the Phase 3b generator, still started with the spike profile until it is wired into the solver). It runs alongside Valhalla (about 1.9 GiB), so stop Photon first:
 
 ```
 docker compose --profile spike up -d graphhopper   # imports the pinned extract, about 3 min, about 2 GB RAM
@@ -128,6 +142,6 @@ docker compose --profile geocode stop photon
 - Valhalla stores edge lengths in whole metres: routes with many short edges drift from the spherical measurement by about 0.1 m per edge.
 - Isodistance contours are outlines: vertices are often far nearer by route than the contour value. Route and measure every sample.
 
-## Open decisions (Phase 3, see docs/reports/phase3/summary.md)
+## Open questions (Phase 3b, answered by the rules spike; do not resolve silently)
 
-Do not resolve these silently: (1) repeated-edge limit raw vs beyond what the stops force (repetition is currently flagged, not rejected); (2) consistency threshold allowance for per-edge rounding; (3) "fewer main roads" engine (spike recommends GraphHopper foot + custom model). Loops wait until the point-to-point KPIs pass.
+(1) Custom-model priorities for decision 2. (2) How to pick pass-near points: candidates within 1 km, least added distance, routed as through vias. (3) Ordering engine: open-source GraphHopper has no matrix, so the default is to order on the Valhalla matrix and route with GraphHopper. (4) GraphHopper `pass_through` is per request, so mixing it with `must_reach` stops may need routing in stretches. (5) OSM boundary coverage for the fallback. The Phase 3 open decisions (repetition, rounding allowance, second engine) are settled by amendments 1, 8 and 9. Loops wait until the point-to-point KPIs pass.
