@@ -1,0 +1,15 @@
+// Phase 3b base model for the "recommended" generator (blueprint, Phase 3 amendments 1-4).
+// Hard rules only: pedestrian access (foot=no, motorways without foot=yes), ferries, and
+// GraphHopper's stock exclusion of difficult hiking trails. No foot_priority: that factor
+// prefers footways, which amendment 2(d) puts last. Road-class priorities come per request.
+// Foot routing in GraphHopper already ignores one-way restrictions.
+{
+  "priority": [
+    { "if": "!foot_access || hike_rating >= 2", "multiply_by": "0" },
+    { "if": "road_environment == FERRY", "multiply_by": "0" },
+    { "if": "foot_road_access == PRIVATE", "multiply_by": "0.1" }
+  ],
+  "speed": [
+    { "if": "true", "limit_to": "foot_average_speed" }
+  ]
+}

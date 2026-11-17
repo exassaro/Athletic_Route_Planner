@@ -1,0 +1,1296 @@
+{
+ "model": "R5 trunk-last",
+ "results": {
+  "acceptance / recommended": {
+   "outcome": "ok",
+   "L_min": 22258.02693602317,
+   "overshoot_m": null,
+   "deviation_m": -0.007588212934933836,
+   "case": "A",
+   "route": {
+    "length": 25000.0,
+    "highway_m": 0,
+    "primary_m": 1575.5,
+    "path_m": 0,
+    "ferry_m": 0,
+    "spurs": [],
+    "walk_ok": true,
+    "repeat_pct": 0.0
+   },
+   "full": null,
+   "cut": null,
+   "cut_dropped": null,
+   "checks": [
+    {
+     "stop": "kottakkadavu",
+     "proximity_m": 7.798911774516431,
+     "within_1km": true,
+     "walk_m": 19.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "kadalundi",
+     "proximity_m": 187.86993123761397,
+     "within_1km": true,
+     "walk_m": 215.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "chaliyam",
+     "proximity_m": 533.6669156204958,
+     "within_1km": true,
+     "walk_m": 628.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "karuvanthuruthy_bridge",
+     "bridge_used": true
+    },
+    {
+     "stop": "beypore",
+     "proximity_m": 127.2345164758201,
+     "within_1km": true,
+     "walk_m": 155.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "kallai",
+     "proximity_m": 35.10461902415824,
+     "within_1km": true,
+     "walk_m": 15.0,
+     "within_1km_walk": true
+    }
+   ],
+   "cut_checks": null,
+   "in_order": true,
+   "engine_calls": 26,
+   "ms": 5667.348599999968,
+   "picks": [
+    {
+     "stop": "kottakkadavu",
+     "kind": "on_route",
+     "point": [
+      75.83948647821109,
+      11.13921545931494
+     ],
+     "added_m": 0.0,
+     "proximity_m": 7.701402900752591,
+     "walk_m": 19.0,
+     "tried": 0
+    },
+    {
+     "stop": "kadalundi",
+     "kind": "on_route",
+     "point": [
+      75.83415011089471,
+      11.139796511731504
+     ],
+     "added_m": 0.0,
+     "proximity_m": 187.86993123761397,
+     "walk_m": 215.0,
+     "tried": 0
+    },
+    {
+     "stop": "chaliyam",
+     "kind": "on_route",
+     "point": [
+      75.81367927510041,
+      11.15207421878084
+     ],
+     "added_m": 0.0,
+     "proximity_m": 533.6669156204958,
+     "walk_m": 628.0,
+     "tried": 0
+    },
+    {
+     "stop": "karuvanthuruthy_bridge",
+     "kind": "must_use",
+     "point": [
+      [
+       75.8164305,
+       11.1598404
+      ],
+      [
+       75.8163726,
+       11.1613014
+      ]
+     ],
+     "added_m": null
+    },
+    {
+     "stop": "beypore",
+     "kind": "via",
+     "point": [
+      75.80926,
+      11.180564
+     ],
+     "added_m": 67.40740716889559,
+     "proximity_m": 127.2345164758201,
+     "tried": 8,
+     "rejected_spur": 2
+    },
+    {
+     "stop": "kallai",
+     "kind": "via",
+     "point": [
+      75.788989,
+      11.231523
+     ],
+     "added_m": 641.4016884830053,
+     "proximity_m": 35.10461902415824,
+     "tried": 8,
+     "rejected_spur": 0
+    }
+   ]
+  },
+  "acceptance / shortest": {
+   "outcome": "ok",
+   "L_min": 21738.557025313872,
+   "overshoot_m": null,
+   "deviation_m": -928.3965968647244,
+   "case": "B (target nearer than the remainder; shortfall reported)",
+   "route": {
+    "length": 24071.6,
+    "highway_m": 0,
+    "primary_m": 4232.2,
+    "path_m": 0,
+    "ferry_m": 0,
+    "spurs": [],
+    "walk_ok": true,
+    "repeat_pct": 0.0
+   },
+   "full": null,
+   "cut": null,
+   "cut_dropped": null,
+   "checks": [
+    {
+     "stop": "kottakkadavu",
+     "proximity_m": 7.798911774516431,
+     "within_1km": true,
+     "walk_m": 24.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "kadalundi",
+     "proximity_m": 187.86993123761397,
+     "within_1km": true,
+     "walk_m": 221.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "chaliyam",
+     "proximity_m": 533.6669156204958,
+     "within_1km": true,
+     "walk_m": 632.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "karuvanthuruthy_bridge",
+     "bridge_used": true
+    },
+    {
+     "stop": "beypore",
+     "proximity_m": 127.2345164758201,
+     "within_1km": true,
+     "walk_m": 139.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "kallai",
+     "proximity_m": 35.10461902415824,
+     "within_1km": true,
+     "walk_m": 25.0,
+     "within_1km_walk": true
+    }
+   ],
+   "cut_checks": null,
+   "in_order": true,
+   "engine_calls": 18,
+   "ms": 3311.0137000003306,
+   "picks": [
+    {
+     "stop": "kottakkadavu",
+     "kind": "on_route",
+     "point": [
+      75.83953021056804,
+      11.139191357735395
+     ],
+     "added_m": 0.0,
+     "proximity_m": 7.798911774516431,
+     "walk_m": 24.0,
+     "tried": 0
+    },
+    {
+     "stop": "kadalundi",
+     "kind": "on_route",
+     "point": [
+      75.83420005789121,
+      11.139792295766869
+     ],
+     "added_m": 0.0,
+     "proximity_m": 187.86993123761397,
+     "walk_m": 221.0,
+     "tried": 0
+    },
+    {
+     "stop": "chaliyam",
+     "kind": "on_route",
+     "point": [
+      75.81387298428774,
+      11.152387188860043
+     ],
+     "added_m": 0.0,
+     "proximity_m": 533.6669156204958,
+     "walk_m": 632.0,
+     "tried": 0
+    },
+    {
+     "stop": "karuvanthuruthy_bridge",
+     "kind": "must_use",
+     "point": [
+      [
+       75.8164305,
+       11.1598404
+      ],
+      [
+       75.8163726,
+       11.1613014
+      ]
+     ],
+     "added_m": null
+    },
+    {
+     "stop": "beypore",
+     "kind": "via",
+     "point": [
+      75.808759,
+      11.180584
+     ],
+     "added_m": 1954.7243947028164,
+     "proximity_m": 127.2345164758201,
+     "tried": 8,
+     "rejected_spur": 2
+    },
+    {
+     "stop": "kallai",
+     "kind": "on_route",
+     "point": [
+      75.78897619415284,
+      11.235283044525605
+     ],
+     "added_m": 0.0,
+     "proximity_m": 35.10461902415824,
+     "walk_m": 12.0,
+     "tried": 0
+    }
+   ]
+  },
+  "acceptance-20km / recommended": {
+   "outcome": "over_budget",
+   "L_min": 22258.02693602317,
+   "overshoot_m": 2258.0269360231687,
+   "deviation_m": null,
+   "case": null,
+   "route": null,
+   "full": {
+    "length": 22258.0,
+    "highway_m": 0,
+    "primary_m": 644.3,
+    "path_m": 0,
+    "ferry_m": 0,
+    "spurs": [],
+    "walk_ok": true,
+    "repeat_pct": 0.0
+   },
+   "cut": {
+    "length": 20000.0,
+    "highway_m": 0,
+    "primary_m": 644.3,
+    "path_m": 0,
+    "ferry_m": 0,
+    "spurs": [],
+    "walk_ok": true,
+    "repeat_pct": 0.0
+   },
+   "cut_dropped": [
+    "kallai"
+   ],
+   "checks": [
+    {
+     "stop": "kottakkadavu",
+     "proximity_m": 7.798911774516431,
+     "within_1km": true,
+     "walk_m": 19.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "kadalundi",
+     "proximity_m": 187.86993123761397,
+     "within_1km": true,
+     "walk_m": 215.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "chaliyam",
+     "proximity_m": 533.6669156204958,
+     "within_1km": true,
+     "walk_m": 628.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "karuvanthuruthy_bridge",
+     "bridge_used": true
+    },
+    {
+     "stop": "beypore",
+     "proximity_m": 127.2345164758201,
+     "within_1km": true,
+     "walk_m": 155.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "kallai",
+     "proximity_m": 397.3871538888585,
+     "within_1km": true,
+     "walk_m": 459.0,
+     "within_1km_walk": true
+    }
+   ],
+   "cut_checks": [
+    {
+     "stop": "kottakkadavu",
+     "proximity_m": 7.798911774516431,
+     "within_1km": true,
+     "walk_m": 19.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "kadalundi",
+     "proximity_m": 187.86993123761397,
+     "within_1km": true,
+     "walk_m": 215.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "chaliyam",
+     "proximity_m": 533.6669156204958,
+     "within_1km": true,
+     "walk_m": 628.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "karuvanthuruthy_bridge",
+     "bridge_used": true
+    },
+    {
+     "stop": "beypore",
+     "proximity_m": 127.2345164758201,
+     "within_1km": true,
+     "walk_m": 155.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "kallai",
+     "proximity_m": 1913.6434221728528,
+     "within_1km": false,
+     "walk_m": Infinity,
+     "within_1km_walk": false
+    }
+   ],
+   "in_order": true,
+   "engine_calls": 25,
+   "ms": 5747.2267000011925,
+   "picks": [
+    {
+     "stop": "kottakkadavu",
+     "kind": "on_route",
+     "point": [
+      75.83948647821109,
+      11.13921545931494
+     ],
+     "added_m": 0.0,
+     "proximity_m": 7.701402900752591,
+     "walk_m": 19.0,
+     "tried": 0
+    },
+    {
+     "stop": "kadalundi",
+     "kind": "on_route",
+     "point": [
+      75.83415011089471,
+      11.139796511731504
+     ],
+     "added_m": 0.0,
+     "proximity_m": 187.86993123761397,
+     "walk_m": 215.0,
+     "tried": 0
+    },
+    {
+     "stop": "chaliyam",
+     "kind": "on_route",
+     "point": [
+      75.81367927510041,
+      11.15207421878084
+     ],
+     "added_m": 0.0,
+     "proximity_m": 533.6669156204958,
+     "walk_m": 628.0,
+     "tried": 0
+    },
+    {
+     "stop": "karuvanthuruthy_bridge",
+     "kind": "must_use",
+     "point": [
+      [
+       75.8164305,
+       11.1598404
+      ],
+      [
+       75.8163726,
+       11.1613014
+      ]
+     ],
+     "added_m": null
+    },
+    {
+     "stop": "beypore",
+     "kind": "via",
+     "point": [
+      75.80926,
+      11.180564
+     ],
+     "added_m": 67.40740716889559,
+     "proximity_m": 127.2345164758201,
+     "tried": 8,
+     "rejected_spur": 2
+    },
+    {
+     "stop": "kallai",
+     "kind": "via",
+     "point": [
+      75.788989,
+      11.231523
+     ],
+     "added_m": 641.4016884830053,
+     "proximity_m": 35.10461902415824,
+     "tried": 8,
+     "rejected_spur": 0
+    }
+   ]
+  },
+  "acceptance-20km / shortest": {
+   "outcome": "over_budget",
+   "L_min": 21738.557025313872,
+   "overshoot_m": 1738.5570253138721,
+   "deviation_m": null,
+   "case": null,
+   "route": null,
+   "full": {
+    "length": 21738.6,
+    "highway_m": 0,
+    "primary_m": 3609.3,
+    "path_m": 0,
+    "ferry_m": 0,
+    "spurs": [],
+    "walk_ok": true,
+    "repeat_pct": 0.0
+   },
+   "cut": {
+    "length": 20000.0,
+    "highway_m": 0,
+    "primary_m": 1870.7,
+    "path_m": 0,
+    "ferry_m": 0,
+    "spurs": [],
+    "walk_ok": true,
+    "repeat_pct": 0.0
+   },
+   "cut_dropped": [
+    "kallai"
+   ],
+   "checks": [
+    {
+     "stop": "kottakkadavu",
+     "proximity_m": 7.798911774516431,
+     "within_1km": true,
+     "walk_m": 24.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "kadalundi",
+     "proximity_m": 187.86993123761397,
+     "within_1km": true,
+     "walk_m": 221.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "chaliyam",
+     "proximity_m": 533.6669156204958,
+     "within_1km": true,
+     "walk_m": 632.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "karuvanthuruthy_bridge",
+     "bridge_used": true
+    },
+    {
+     "stop": "beypore",
+     "proximity_m": 127.2345164758201,
+     "within_1km": true,
+     "walk_m": 139.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "kallai",
+     "proximity_m": 35.08693187054171,
+     "within_1km": true,
+     "walk_m": 12.0,
+     "within_1km_walk": true
+    }
+   ],
+   "cut_checks": [
+    {
+     "stop": "kottakkadavu",
+     "proximity_m": 7.798911774516431,
+     "within_1km": true,
+     "walk_m": 24.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "kadalundi",
+     "proximity_m": 187.86993123761397,
+     "within_1km": true,
+     "walk_m": 221.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "chaliyam",
+     "proximity_m": 533.6669156204958,
+     "within_1km": true,
+     "walk_m": 632.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "karuvanthuruthy_bridge",
+     "bridge_used": true
+    },
+    {
+     "stop": "beypore",
+     "proximity_m": 127.2345164758201,
+     "within_1km": true,
+     "walk_m": 139.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "kallai",
+     "proximity_m": 1721.0877451770273,
+     "within_1km": false,
+     "walk_m": Infinity,
+     "within_1km_walk": false
+    }
+   ],
+   "in_order": true,
+   "engine_calls": 17,
+   "ms": 3433.8494000003266,
+   "picks": [
+    {
+     "stop": "kottakkadavu",
+     "kind": "on_route",
+     "point": [
+      75.83953021056804,
+      11.139191357735395
+     ],
+     "added_m": 0.0,
+     "proximity_m": 7.798911774516431,
+     "walk_m": 24.0,
+     "tried": 0
+    },
+    {
+     "stop": "kadalundi",
+     "kind": "on_route",
+     "point": [
+      75.83420005789121,
+      11.139792295766869
+     ],
+     "added_m": 0.0,
+     "proximity_m": 187.86993123761397,
+     "walk_m": 221.0,
+     "tried": 0
+    },
+    {
+     "stop": "chaliyam",
+     "kind": "on_route",
+     "point": [
+      75.81387298428774,
+      11.152387188860043
+     ],
+     "added_m": 0.0,
+     "proximity_m": 533.6669156204958,
+     "walk_m": 632.0,
+     "tried": 0
+    },
+    {
+     "stop": "karuvanthuruthy_bridge",
+     "kind": "must_use",
+     "point": [
+      [
+       75.8164305,
+       11.1598404
+      ],
+      [
+       75.8163726,
+       11.1613014
+      ]
+     ],
+     "added_m": null
+    },
+    {
+     "stop": "beypore",
+     "kind": "via",
+     "point": [
+      75.808759,
+      11.180584
+     ],
+     "added_m": 1954.7243947028164,
+     "proximity_m": 127.2345164758201,
+     "tried": 8,
+     "rejected_spur": 2
+    },
+    {
+     "stop": "kallai",
+     "kind": "on_route",
+     "point": [
+      75.78897619415284,
+      11.235283044525605
+     ],
+     "added_m": 0.0,
+     "proximity_m": 35.10461902415824,
+     "walk_m": 12.0,
+     "tried": 0
+    }
+   ]
+  },
+  "harbour-pass-near / recommended": {
+   "outcome": "ok",
+   "L_min": 15392.902950144324,
+   "overshoot_m": null,
+   "deviation_m": -0.05428695636874181,
+   "case": "A",
+   "route": {
+    "length": 24999.9,
+    "highway_m": 0,
+    "primary_m": 644.3,
+    "path_m": 0,
+    "ferry_m": 0,
+    "spurs": [],
+    "walk_ok": false,
+    "repeat_pct": 0.44
+   },
+   "full": null,
+   "cut": null,
+   "cut_dropped": null,
+   "checks": [
+    {
+     "stop": "chaliyam_harbour",
+     "proximity_m": 597.9847263161748,
+     "within_1km": true,
+     "walk_m": 754.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "beypore",
+     "proximity_m": 618.7334120617217,
+     "within_1km": true,
+     "walk_m": 948.0,
+     "within_1km_walk": true
+    }
+   ],
+   "cut_checks": null,
+   "in_order": true,
+   "engine_calls": 13,
+   "ms": 5511.603299999479,
+   "picks": [
+    {
+     "stop": "chaliyam_harbour",
+     "kind": "via",
+     "point": [
+      75.809547,
+      11.156542
+     ],
+     "added_m": 2959.458032528364,
+     "proximity_m": 597.9847263161748,
+     "tried": 8,
+     "rejected_spur": 3
+    },
+    {
+     "stop": "beypore",
+     "kind": "on_route",
+     "point": [
+      75.8158865866629,
+      11.183393783841282
+     ],
+     "added_m": 0.0,
+     "proximity_m": 618.7334120617217,
+     "walk_m": 914.0,
+     "tried": 0
+    }
+   ]
+  },
+  "harbour-pass-near / shortest": {
+   "outcome": "ok",
+   "L_min": 17185.90971385138,
+   "overshoot_m": null,
+   "deviation_m": -0.028746105079335393,
+   "case": "A",
+   "route": {
+    "length": 25000.0,
+    "highway_m": 0,
+    "primary_m": 1262.4,
+    "path_m": 0,
+    "ferry_m": 0,
+    "spurs": [],
+    "walk_ok": true,
+    "repeat_pct": 0.7
+   },
+   "full": null,
+   "cut": null,
+   "cut_dropped": null,
+   "checks": [
+    {
+     "stop": "chaliyam_harbour",
+     "proximity_m": 597.9847263161748,
+     "within_1km": true,
+     "walk_m": 748.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "beypore",
+     "proximity_m": 127.2345164758201,
+     "within_1km": true,
+     "walk_m": 144.0,
+     "within_1km_walk": true
+    }
+   ],
+   "cut_checks": null,
+   "in_order": true,
+   "engine_calls": 21,
+   "ms": 7534.460599999875,
+   "picks": [
+    {
+     "stop": "chaliyam_harbour",
+     "kind": "via",
+     "point": [
+      75.809547,
+      11.156542
+     ],
+     "added_m": 3384.28749582572,
+     "proximity_m": 597.9847263161748,
+     "tried": 8,
+     "rejected_spur": 1
+    },
+    {
+     "stop": "beypore",
+     "kind": "via",
+     "point": [
+      75.805095,
+      11.182047
+     ],
+     "added_m": 2277.1385479143646,
+     "proximity_m": 127.2345164758201,
+     "tried": 8,
+     "rejected_spur": 0
+    }
+   ]
+  },
+  "S05-pass-near / recommended": {
+   "outcome": "ok",
+   "L_min": 22466.850174881518,
+   "overshoot_m": null,
+   "deviation_m": -0.047611375182896154,
+   "case": "A",
+   "route": {
+    "length": 28000.0,
+    "highway_m": 0,
+    "primary_m": 1332.2,
+    "path_m": 0,
+    "ferry_m": 0,
+    "spurs": [],
+    "walk_ok": true,
+    "repeat_pct": 0.0
+   },
+   "full": null,
+   "cut": null,
+   "cut_dropped": null,
+   "checks": [
+    {
+     "stop": "kadalundi",
+     "proximity_m": 622.6025178235853,
+     "within_1km": true,
+     "walk_m": 970.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "chaliyam",
+     "proximity_m": 533.6669156204958,
+     "within_1km": true,
+     "walk_m": 616.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "beypore",
+     "proximity_m": 618.7334120617217,
+     "within_1km": true,
+     "walk_m": 944.0,
+     "within_1km_walk": true
+    }
+   ],
+   "cut_checks": null,
+   "in_order": true,
+   "engine_calls": 14,
+   "ms": 3024.2935999995098,
+   "picks": [
+    {
+     "stop": "kadalundi",
+     "kind": "via",
+     "point": [
+      75.827732,
+      11.137923
+     ],
+     "added_m": 978.2296845394394,
+     "proximity_m": 622.6025178235853,
+     "tried": 8,
+     "rejected_spur": 2
+    },
+    {
+     "stop": "chaliyam",
+     "kind": "on_route",
+     "point": [
+      75.81345472752517,
+      11.152415013081704
+     ],
+     "added_m": 0.0,
+     "proximity_m": 533.6669156204958,
+     "walk_m": 583.0,
+     "tried": 0
+    },
+    {
+     "stop": "beypore",
+     "kind": "on_route",
+     "point": [
+      75.81563526232087,
+      11.18352856502751
+     ],
+     "added_m": 0.0,
+     "proximity_m": 618.7334120617217,
+     "walk_m": 936.0,
+     "tried": 0
+    }
+   ]
+  },
+  "S05-pass-near / shortest": {
+   "outcome": "ok",
+   "L_min": 26023.0041675269,
+   "overshoot_m": null,
+   "deviation_m": -0.027774812493589707,
+   "case": "A",
+   "route": {
+    "length": 28000.0,
+    "highway_m": 0,
+    "primary_m": 1950.4,
+    "path_m": 0,
+    "ferry_m": 0,
+    "spurs": [],
+    "walk_ok": true,
+    "repeat_pct": 0.0
+   },
+   "full": null,
+   "cut": null,
+   "cut_dropped": null,
+   "checks": [
+    {
+     "stop": "kadalundi",
+     "proximity_m": 329.854425855274,
+     "within_1km": true,
+     "walk_m": 604.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "chaliyam",
+     "proximity_m": 533.6669156204958,
+     "within_1km": true,
+     "walk_m": 604.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "beypore",
+     "proximity_m": 127.2345164758201,
+     "within_1km": true,
+     "walk_m": 170.0,
+     "within_1km_walk": true
+    }
+   ],
+   "cut_checks": null,
+   "in_order": true,
+   "engine_calls": 22,
+   "ms": 5315.16240000019,
+   "picks": [
+    {
+     "stop": "kadalundi",
+     "kind": "via",
+     "point": [
+      75.827732,
+      11.137923
+     ],
+     "added_m": 3289.9702173286005,
+     "proximity_m": 329.854425855274,
+     "tried": 8,
+     "rejected_spur": 7
+    },
+    {
+     "stop": "chaliyam",
+     "kind": "on_route",
+     "point": [
+      75.81345453463086,
+      11.152415041379024
+     ],
+     "added_m": 0.0,
+     "proximity_m": 533.6669156204958,
+     "walk_m": 583.0,
+     "tried": 0
+    },
+    {
+     "stop": "beypore",
+     "kind": "via",
+     "point": [
+      75.805095,
+      11.182047
+     ],
+     "added_m": 2277.138547914363,
+     "proximity_m": 127.2345164758201,
+     "tried": 8,
+     "rejected_spur": 0
+    }
+   ]
+  },
+  "S15-pass-near / recommended": {
+   "outcome": "ok",
+   "L_min": 22466.850174881518,
+   "overshoot_m": null,
+   "deviation_m": -0.031634377941372804,
+   "case": "A",
+   "route": {
+    "length": 25000.0,
+    "highway_m": 0,
+    "primary_m": 1332.2,
+    "path_m": 0,
+    "ferry_m": 0,
+    "spurs": [],
+    "walk_ok": true,
+    "repeat_pct": 0.0
+   },
+   "full": null,
+   "cut": null,
+   "cut_dropped": null,
+   "checks": [
+    {
+     "stop": "kadalundi",
+     "proximity_m": 622.6025178235853,
+     "within_1km": true,
+     "walk_m": 970.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "chaliyam",
+     "proximity_m": 533.6669156204958,
+     "within_1km": true,
+     "walk_m": 616.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "beypore",
+     "proximity_m": 618.7334120617217,
+     "within_1km": true,
+     "walk_m": 944.0,
+     "within_1km_walk": true
+    }
+   ],
+   "cut_checks": null,
+   "in_order": true,
+   "engine_calls": 14,
+   "ms": 2978.4349000001384,
+   "picks": [
+    {
+     "stop": "kadalundi",
+     "kind": "via",
+     "point": [
+      75.827732,
+      11.137923
+     ],
+     "added_m": 978.2296845394394,
+     "proximity_m": 622.6025178235853,
+     "tried": 8,
+     "rejected_spur": 2
+    },
+    {
+     "stop": "chaliyam",
+     "kind": "on_route",
+     "point": [
+      75.81345472752517,
+      11.152415013081704
+     ],
+     "added_m": 0.0,
+     "proximity_m": 533.6669156204958,
+     "walk_m": 583.0,
+     "tried": 0
+    },
+    {
+     "stop": "beypore",
+     "kind": "on_route",
+     "point": [
+      75.81563526232087,
+      11.18352856502751
+     ],
+     "added_m": 0.0,
+     "proximity_m": 618.7334120617217,
+     "walk_m": 936.0,
+     "tried": 0
+    }
+   ]
+  },
+  "S15-pass-near / shortest": {
+   "outcome": "over_budget",
+   "L_min": 26023.0041675269,
+   "overshoot_m": 1023.0041675268985,
+   "deviation_m": null,
+   "case": null,
+   "route": null,
+   "full": {
+    "length": 26023.0,
+    "highway_m": 0,
+    "primary_m": 1950.4,
+    "path_m": 0,
+    "ferry_m": 0,
+    "spurs": [],
+    "walk_ok": true,
+    "repeat_pct": 0.0
+   },
+   "cut": {
+    "length": 25000.0,
+    "highway_m": 0,
+    "primary_m": 1950.4,
+    "path_m": 0,
+    "ferry_m": 0,
+    "spurs": [],
+    "walk_ok": true,
+    "repeat_pct": 0.0
+   },
+   "cut_dropped": [
+    "beypore"
+   ],
+   "checks": [
+    {
+     "stop": "kadalundi",
+     "proximity_m": 329.854425855274,
+     "within_1km": true,
+     "walk_m": 604.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "chaliyam",
+     "proximity_m": 533.6669156204958,
+     "within_1km": true,
+     "walk_m": 604.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "beypore",
+     "proximity_m": 127.2345164758201,
+     "within_1km": true,
+     "walk_m": 170.0,
+     "within_1km_walk": true
+    }
+   ],
+   "cut_checks": [
+    {
+     "stop": "kadalundi",
+     "proximity_m": 329.854425855274,
+     "within_1km": true,
+     "walk_m": 604.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "chaliyam",
+     "proximity_m": 533.6669156204958,
+     "within_1km": true,
+     "walk_m": 604.0,
+     "within_1km_walk": true
+    },
+    {
+     "stop": "beypore",
+     "proximity_m": 343.2342761064578,
+     "within_1km": true,
+     "walk_m": 470.0,
+     "within_1km_walk": true
+    }
+   ],
+   "in_order": true,
+   "engine_calls": 21,
+   "ms": 5457.971600000747,
+   "picks": [
+    {
+     "stop": "kadalundi",
+     "kind": "via",
+     "point": [
+      75.827732,
+      11.137923
+     ],
+     "added_m": 3289.9702173286005,
+     "proximity_m": 329.854425855274,
+     "tried": 8,
+     "rejected_spur": 7
+    },
+    {
+     "stop": "chaliyam",
+     "kind": "on_route",
+     "point": [
+      75.81345453463086,
+      11.152415041379024
+     ],
+     "added_m": 0.0,
+     "proximity_m": 533.6669156204958,
+     "walk_m": 583.0,
+     "tried": 0
+    },
+    {
+     "stop": "beypore",
+     "kind": "via",
+     "point": [
+      75.805095,
+      11.182047
+     ],
+     "added_m": 2277.138547914363,
+     "proximity_m": 127.2345164758201,
+     "tried": 8,
+     "rejected_spur": 0
+    }
+   ]
+  }
+ },
+ "ordering": {
+  "acceptance": {
+   "valhalla_open": [
+    "kottakkadavu",
+    "kadalundi",
+    "chaliyam",
+    "karuvanthuruthy_bridge",
+    "beypore",
+    "kallai"
+   ],
+   "valhalla_to_target": [
+    "kottakkadavu",
+    "kadalundi",
+    "chaliyam",
+    "karuvanthuruthy_bridge",
+    "beypore",
+    "kallai"
+   ],
+   "gh_open": [
+    "kottakkadavu",
+    "kadalundi",
+    "chaliyam",
+    "karuvanthuruthy_bridge",
+    "beypore",
+    "kallai"
+   ],
+   "gh_to_target": [
+    "kottakkadavu",
+    "kadalundi",
+    "chaliyam",
+    "karuvanthuruthy_bridge",
+    "beypore",
+    "kallai"
+   ],
+   "requested": [
+    "kottakkadavu",
+    "kadalundi",
+    "chaliyam",
+    "karuvanthuruthy_bridge",
+    "beypore",
+    "kallai"
+   ],
+   "gh_pairwise_calls": 56,
+   "gh_pairwise_ms": 3354.50690000107
+  },
+  "acceptance-20km": {
+   "valhalla_open": [
+    "kottakkadavu",
+    "kadalundi",
+    "chaliyam",
+    "karuvanthuruthy_bridge",
+    "beypore",
+    "kallai"
+   ],
+   "valhalla_to_target": [
+    "kottakkadavu",
+    "kadalundi",
+    "chaliyam",
+    "karuvanthuruthy_bridge",
+    "beypore",
+    "kallai"
+   ],
+   "gh_open": [
+    "kottakkadavu",
+    "kadalundi",
+    "chaliyam",
+    "karuvanthuruthy_bridge",
+    "beypore",
+    "kallai"
+   ],
+   "gh_to_target": [
+    "kottakkadavu",
+    "kadalundi",
+    "chaliyam",
+    "karuvanthuruthy_bridge",
+    "beypore",
+    "kallai"
+   ],
+   "requested": [
+    "kottakkadavu",
+    "kadalundi",
+    "chaliyam",
+    "karuvanthuruthy_bridge",
+    "beypore",
+    "kallai"
+   ],
+   "gh_pairwise_calls": 56,
+   "gh_pairwise_ms": 3440.9553999994387
+  }
+ },
+ "dead_end_pass_through": {
+  "one request, pass_through on": {
+   "length": 15015.502537941418,
+   "spurs": [
+    1152.8207366020395
+   ],
+   "repeat": 0.15354956389959282,
+   "harbour_proximity_m": 55.237852318301044
+  },
+  "one request, pass_through off": {
+   "length": 15015.502537941418,
+   "spurs": [
+    1152.8207366020395
+   ],
+   "repeat": 0.15354956389959282,
+   "harbour_proximity_m": 55.237852318301044
+  },
+  "two legs joined": {
+   "length": 15015.502537941418,
+   "spurs": [
+    1152.8207366020395
+   ],
+   "repeat": 0.15354956389959282,
+   "harbour_proximity_m": 55.237852318301044
+  }
+ }
+}

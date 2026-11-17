@@ -10,11 +10,16 @@ graphhopper:
     # Option (b): foot with a priority penalty on trunk and primary roads.
     - name: foot_quiet
       custom_model_files: [stock_foot.json, no_ferry.json, fewer_main_roads.json]
+    # Phase 3b "recommended": hard rules only; road-class priorities are sent per request.
+    - name: foot_rules
+      custom_model_files: [rules_base.json]
   profiles_ch: []
   # Landmarks keep request-time latency realistic without fixing the weighting in the graph.
+  # A per-request model may only lower priorities (raise weights), which keeps landmarks valid.
   profiles_lm:
     - profile: foot_direct
     - profile: foot_quiet
+    - profile: foot_rules
   prepare.lm.landmarks: 16
   graph.encoded_values: |
     foot_access, foot_average_speed, foot_priority, foot_road_access, hike_rating, mtb_rating,

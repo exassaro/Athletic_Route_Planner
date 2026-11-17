@@ -116,6 +116,9 @@ GraphHopper (profile `spike`, http://localhost:8989; the Phase 3b generator, sti
 ```
 docker compose --profile spike up -d graphhopper   # imports the pinned extract, about 3 min, about 2 GB RAM
 uv run python engine/experiments/07_quieter_spike.py
+uv run python engine/scripts/build_rules_fixtures.py     # Phase 3b acceptance places by OSM id -> tests/fixtures/rules_places.json
+uv run python engine/experiments/08a_road_priority.py    # Phase 3b: priority models (profile foot_rules) -> docs/reports/phase3b/
+uv run python engine/experiments/08b_pass_near.py --model "R5 trunk-last" --proximity network   # pass-near prototype
 docker compose --profile spike stop graphhopper
 ```
 
