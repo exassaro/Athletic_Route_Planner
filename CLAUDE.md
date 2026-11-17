@@ -5,7 +5,7 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 3c** (still solver only, in `solver/`): section 8 step 10 lengthening, then loops (blueprint amendments 21 to 23). No FastAPI, no frontend, no LLM. Phase 3b is done (`docs/reports/phase3b/summary.md`).
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 3c** (solver only, in `solver/`): step 10 lengthening and loops (blueprint amendments 21 to 24) are built; status and the choices made are in `docs/reports/phase3c/summary.md`. No FastAPI, no frontend, no LLM until the developer starts Phase 4.
 - **Plan first.** Give a plan and wait for approval before writing code.
 - **Small steps.** Each step ends in something the developer can run and check. Commit after each step.
 - **No invented distances.** Never hardcode or estimate a distance. Every distance comes from the routing engine or from measuring geometry (`athlete_engine.geodesy`). The leg distances in the blueprint's section 8 worked example are made up: never use them as test expectations. Straight-line distance is allowed only for snap distances and pre-filters and must never be presented as a route distance.

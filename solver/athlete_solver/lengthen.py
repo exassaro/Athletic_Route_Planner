@@ -143,22 +143,25 @@ def _next_offset(seen: list[tuple[float, float]], goal_m: float) -> float | None
 
 
 def lengthen(engine: Engine, points: list[LonLat], through: set[int], routed: Routed,
-             goal_m: float, accuracy: float, max_retrace_m: float | None = None) -> Lengthened | None:
+             goal_m: float, accuracy: float, max_retrace_m: float | None = None,
+             tolerance_m: float | None = None) -> Lengthened | None:
     """The single best lengthening (see lengthen_options)."""
-    found = lengthen_options(engine, points, through, routed, goal_m, accuracy, max_retrace_m, keep=1)
+    found = lengthen_options(engine, points, through, routed, goal_m, accuracy, max_retrace_m, keep=1,
+                             tolerance_m=tolerance_m)
     return found[0] if found else None
 
 
 def lengthen_options(engine: Engine, points: list[LonLat], through: set[int], routed: Routed,
                      goal_m: float, accuracy: float, max_retrace_m: float | None = None,
-                     keep: int = 1, leg: int | None = None) -> list[Lengthened]:
+                     keep: int = 1, leg: int | None = None, tolerance_m: float | None = None) -> list[Lengthened]:
     """Insert one through via into the run's longest leg so the measured run is goal_m on foot.
 
     `routed` is the run through `points` as it is now (shorter than the goal). Returns the attempt closest
     to the goal (the caller judges it against the tolerance); with `keep` > 1 the best attempt of each of
     that many rays (different vias), best first. Empty if no candidate could be routed.
     With `max_retrace_m`, attempts that walk that much road twice (a spur at the via) are not kept.
-    `leg` picks another leg than the longest (index of its first point).
+    `leg` picks another leg than the longest (index of its first point). With `tolerance_m`, an attempt within
+    it ranks above any attempt outside it.
     """
     legs = leg_lengths(routed, points)
     if leg is None:
@@ -184,7 +187,9 @@ def lengthen_options(engine: Engine, points: list[LonLat], through: set[int], ro
         miss = abs(goal_m - r.foot_m)
         extra = max(0.0, retraced_m(r.shape) - base_retrace)
         # Within accuracy and without doubling back first; then the smallest miss plus doubling back.
-        rank = (0 if miss <= accuracy and extra < RETRACE_OK_M else 1, round(miss + extra, 1), ray)
+        # Then within the tolerance (the hard rule) before outside it, then the smallest miss plus doubling back.
+        rank = (0 if miss <= accuracy and extra < RETRACE_OK_M else 1,
+                0 if tolerance_m is None or miss <= tolerance_m else 1, round(miss + extra, 1), ray)
         out.append((rank, seq, {"ray": ray, "offset_m": round(t, 1), "foot_m": round(r.foot_m, 1),
                                 "retraced_m": round(extra, 1)}))
         return r.foot_m

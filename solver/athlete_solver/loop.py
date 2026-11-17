@@ -189,6 +189,23 @@ def _snap_vias(engine: Engine, start: LonLat, shape: Shape, scale: float,
     return snapped, adjust, None
 
 
+def stem_vertices(shape: list[LonLat]) -> int:
+    """Vertices of the loop's stem: the stretch from the start that the loop also walks back at its end (a start
+    on a lane gives every loop this "lollipop" stem; it is not a spur)."""
+    key = [(round(p[0], 6), round(p[1], 6)) for p in shape]
+    k = 0
+    while k < len(key) // 2 and key[k] == key[-1 - k]:
+        k += 1
+    return k
+
+
+def loop_retrace(shape: list[LonLat]) -> tuple[float, list[LonLat]]:
+    """Road walked twice on the loop without its stem: (metres, midpoints of those stretches)."""
+    k = stem_vertices(shape)
+    inner = shape[max(0, k - 1):len(shape) - max(0, k - 1)] if k > 1 else shape
+    return retraced_m(inner), retraced_points(inner)
+
+
 def search_shape(engine: Engine, start: LonLat, shape: Shape, target_m: float, goal: float) -> ShapeResult:
     """Scale one shape until its routed loop is within the goal; move a via that makes a spur."""
     out = ShapeResult(shape=shape)
@@ -213,20 +230,19 @@ def search_shape(engine: Engine, start: LonLat, shape: Shape, target_m: float, g
             # The route turns round at a via on a dead-end stub: put the via where the route left the road.
             try:
                 r2 = engine.route([start, *cleaner, start], through={1, 2, 3})
-                if retraced_m(r2.shape) <= retraced_m(r.shape):
+                if loop_retrace(r2.shape)[0] <= loop_retrace(r.shape)[0]:
                     snapped, points, r = cleaner, [start, *cleaner, start], r2
             except NoRoute:
                 pass
-        t = LoopTry(shape, scale, points, r.foot_m, retraced_m(r.shape))
+        again_m, again = loop_retrace(r.shape)
+        t = LoopTry(shape, scale, points, r.foot_m, again_m)
         repeat = any(x.foot_m is not None and abs(x.foot_m - t.foot_m) < 1.0 for x in out.tries)
         out.tries.append(t)
-        if repeat:
-            break    # the vias snapped back onto the same roads: nothing new to try for this shape
         if out.best is None or _rank(t, target_m, goal) < _rank(out.best, target_m, goal):
             out.best = t
-        if t.retraced_m >= RETRACE_OK_M:
-            # A spur: move the via nearest the retraced stretch and route the same size again.
-            again = retraced_points(r.shape)
+        if t.retraced_m >= RETRACE_OK_M and again:
+            # A spur: move the via nearest the retraced stretch and route the same size again. A move that
+            # leaves the route unchanged (the via snapped back to the same road) is followed by the next move.
             near = [(min(geodesy.distance_m(v, q) for q in again), k) for k, v in enumerate(snapped)]
             dist, k = min(near)
             if dist <= SPUR_VIA_NEAR_M and moves.get(k, 0) < len(SPUR_MOVES):
@@ -234,10 +250,10 @@ def search_shape(engine: Engine, start: LonLat, shape: Shape, target_m: float, g
                 adjust[k] = (f0, d0)
                 moves[k] = moves.get(k, 0) + 1
                 continue
+        if repeat:
+            break    # the vias snapped back onto the same roads: nothing new to try for this shape
         if abs(target_m - r.foot_m) <= goal:
-            if t.retraced_m < RETRACE_OK_M:
-                break
-            continue
+            break
         seen.append((scale, r.foot_m))
         nxt = _next_offset(seen, target_m)
         if nxt is None:
@@ -313,7 +329,13 @@ def solve_loop(req: RouteRequest, engine: Engine) -> tuple[list, dict, list]:
         scored.append((r.shape.name, cand, {e.key for e in rt.edges if e.use != "ferry"}))
     scored.sort(key=lambda x: x[1].score)
     facts["shapes_valid"] = len(scored)
-    kept = diversify([(name, [(cand, keys)]) for name, cand, keys in scored], req.alternatives)
+    # Amendment 22: loops land within min(500 m, 3% of D). One beyond that goal (but within the tolerance) is
+    # offered only when no loop reaches the goal.
+    goal = goal_m(req)
+    on_goal = [x for x in scored if abs(x[1].deviation_m) <= goal]
+    if on_goal and len(on_goal) < len(scored):
+        facts["beyond_goal_not_offered"] = [name for name, cand, _ in scored if abs(cand.deviation_m) > goal]
+    kept = diversify([(name, [(cand, keys)]) for name, cand, keys in (on_goal or scored)], req.alternatives)
     names = {id(cand): name for name, cand, _ in scored}
     facts["kept"] = []
     for k, cand in enumerate(kept, start=1):

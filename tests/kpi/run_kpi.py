@@ -162,6 +162,35 @@ def walk_to_route(engine: Valhalla, place: tuple, geom: list) -> float | None:
     return best
 
 
+def gap_ways(engine: Valhalla, edges) -> tuple[float, set[int], list[float]]:
+    """Stretches the pedestrian map-matching skipped (a jump between consecutive matched edges): each is located
+    with pedestrian costing at a quarter, half and three quarters of the way across. A gap whose three points
+    all lie within 5 m of a way is covered by that way, which then goes through the OSM tag check like every
+    matched way. Returns (covered straight-line metres, ways, uncovered gap lengths). A check only."""
+    covered, ways, open_gaps = 0.0, set(), []
+    for a, b in zip(edges, edges[1:]):
+        p, q = a.shape[-1], b.shape[0]
+        gap = geodesy.distance_m(p, q)
+        if gap <= 3.0:
+            continue
+        pts = [(p[0] + f * (q[0] - p[0]), p[1] + f * (q[1] - p[1])) for f in (0.25, 0.5, 0.75)]
+        resp = engine._post("/locate", {"locations": [{"lon": x, "lat": y} for x, y in pts],
+                                        "costing": "pedestrian", "verbose": True})
+        found = set()
+        for loc in resp:
+            near = [e for e in loc.get("edges", []) if isinstance(e.get("distance"), (int, float))
+                    and e["distance"] <= 5.0 and e.get("edge_info", {}).get("way_id")]
+            if not near:
+                break
+            found.add(near[0]["edge_info"]["way_id"])
+        else:
+            covered += gap
+            ways |= found
+            continue
+        open_gaps.append(gap)
+    return covered, ways, open_gaps
+
+
 def turn_points(edges) -> list[tuple[tuple, float]]:
     """(turn location, length walked out) for every out-and-back run of at least 100 m (harness's own)."""
     keys = [e.key for e in edges]
@@ -276,6 +305,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
         row["problems"].append(f"expected ok, got {result.outcome}")
         return row
     row["fallback_flag"] = any(f.code == "loop_fallback" for f in result.flags)
+    row["shapes_valid"] = result.facts.get("shapes_valid")
     row["case_b"] = any(c.option == "end_at_target" for c in result.candidates) and req.end.kind != "fixed"
     if not result.candidates:
         row["problems"].append(f"{result.outcome} outcome with no candidates")
@@ -319,10 +349,22 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
         n_base = len(pieces) - 1 if any(s.role == "checkpoint" for s in cand.stops) else 0
         base_m = measure_shapes(engine, pieces[:n_base]) if n_base else None
         cr["foot_m"], cr["ferry_m"] = m.foot_m, m.ferry_m
+        if m.foot_m < 0.1 * req.target_distance_m:
+            row["problems"].append(f"{name}: {m.foot_m:.0f} m is under a tenth of the requested distance")
         matched_m = sum(e.length_m for e in m.edges)
         cr["exact_match"] = m.matched_exactly
         cr["match_ok"] = abs(matched_m - m.geom_m) <= max(0.01 * m.geom_m, 30.0)
         cr["ways"] = {e.way_id for e in m.edges if e.way_id and e.use != "ferry"}
+        if not cr["match_ok"]:
+            # Pedestrian access is map_snap coverage plus OSM tags: a stretch the matching skipped counts as
+            # covered only if it lies on a way (checked against its tags below with the matched ways).
+            covered, extra_ways, open_gaps = gap_ways(engine, m.edges)
+            cr["gap_ways"] = sorted(extra_ways)
+            cr["ways"] |= extra_ways
+            cr["match_ok"] = abs(matched_m + covered - m.geom_m) <= max(0.01 * m.geom_m, 30.0)
+            if covered:
+                row.setdefault("notes", []).append(f"{name}: {covered:.0f} m skipped by map-matching lies on "
+                                                   f"way(s) {sorted(extra_ways)}")
         if not cr["match_ok"]:
             row["problems"].append(f"{name}: pedestrian map-matching covers {matched_m:.0f} m of {m.geom_m:.0f} m")
         if m.ferry_m > 0:
@@ -528,7 +570,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
         row["candidates"].append(cr)
 
     if len(lead_keys) == 2:
-        a, b = lead_keys.get("recommended", lead_keys.get("loop_1")), lead_keys.get("shortest", lead_keys.get("loop_2"))
+        a, b = list(lead_keys.values())   # recommended/shortest, loop_1/loop_2, or a loop and its fallback
         row["overlap"] = len(a & b) / len(a | b) if a | b else 1.0
     return row
 
@@ -625,9 +667,9 @@ def main() -> int:
     lat_loop = [r["ms"] for r in rows if "ms" in r and r["route_type"] == "loop"]
     loop_err = [c["loop_err_pct"] for c in cands if "loop_err_pct" in c]
     loop_spurs = [x for c in cands for x in c.get("loop_spurs", [])]
+    # Section 8: fewer than two loop shapes surviving the hard rules -> an out-and-back is offered as well.
     sparse = [r for r in rows if r["route_type"] == "loop" and "error" not in r and not r.get("loop_gate")
-              and not r.get("has_stops")
-              and sum(c["option"] == "main" for c in r["candidates"]) < 2]
+              and not r.get("has_stops") and r.get("shapes_valid") is not None and r["shapes_valid"] < 2]
     sparse_ok = [r for r in sparse if any(c["option"] == "out_and_back" for c in r["candidates"]) and r.get("fallback_flag")]
     loop_rows = [r for r in rows if r["route_type"] == "loop" and "error" not in r and not r.get("loop_gate")]
     loop_gh = [r for r in loop_rows if r["candidates"]
@@ -722,7 +764,7 @@ def main() -> int:
             not lat_loop or pct(lat_loop, .95) < 8000),
         kpi("(info) Loop lean: start-to-centre bearing against the requested direction", "info only",
             ", ".join(f"{c['fixture']} {c['name']} {c['loop_lean_err']:.0f}°" for c in cands if "loop_lean_err" in c) or "none", True),
-        kpi("Sparse network: a loop request with fewer than two loops offers a flagged out-and-back", "100%",
+        kpi("Sparse network: fewer than two valid loop shapes -> a flagged out-and-back is offered", "100%",
             f"{len(sparse_ok)} / {len(sparse)}" + (f" ({', '.join(r['id'] for r in sparse)})" if sparse else ""),
             len(sparse_ok) == len(sparse)),
         kpi("Loops generated by GraphHopper (amendment 23)", "every loop fixture",

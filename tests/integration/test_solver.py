@@ -90,3 +90,21 @@ def test_long_detour_is_capped_by_easing_the_road_penalties(engine):
     assert to_target <= 1.30 * (short["l_min_m"] + short["tail_to_target_m"])
     assert rec["eased"]["from_m"] > 1.30 * rec["eased"]["shortest_m"]
     assert any(f.code == "detour_eased" for f in res.flags)
+
+
+def test_loop_is_closed_from_graphhopper_and_near_the_distance(engine):
+    res = run(engine, "S02")
+    assert res.outcome == "ok"
+    loops = [c for c in res.candidates if c.option == "main"]
+    assert loops and loops[0].label == "loop_1"
+    for c in loops:
+        assert c.engine == "graphhopper"
+        assert abs(c.deviation_m) <= min(500.0, 0.03 * 10000)
+        assert geodesy.distance_m(c.geometry[0], c.geometry[-1]) < 1.0
+
+
+def test_sparse_network_offers_an_out_and_back(engine):
+    res = run(engine, "S14")
+    assert any(f.code == "loop_fallback" for f in res.flags)
+    oab = next(c for c in res.candidates if c.option == "out_and_back")
+    assert abs(oab.deviation_m) <= 500.0

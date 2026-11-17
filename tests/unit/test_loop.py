@@ -132,3 +132,14 @@ def test_loop_gate_rejects_a_stop_too_far_to_reach_and_return():
     assert res.conflict.kind == "loop_stop_too_far" and res.conflict.pair == ["Far"]
     assert res.conflict.minimum_m == pytest.approx(2 * there, abs=1.0)
     assert {f.action for f in res.conflict.fixes} == {"set_distance", "drop_checkpoint"}
+
+
+def test_stop_passed_at_the_start_gives_an_ordinary_loop():
+    start = G["5,5"]
+    near = G["5,6"]       # a few hundred metres away: passed near (1 km on foot) at the start itself
+    body = {"route_type": "loop", "start": {"lon": start[0], "lat": start[1], "label": "start"},
+            "target_distance_m": 4000, "checkpoints": [{"lon": near[0], "lat": near[1], "label": "Near"}]}
+    res = solve(RouteRequest.model_validate(body), engine=FakeEngine(GRID), graph_build="fake")
+    assert res.outcome == "ok"
+    mains = [c for c in res.candidates if c.option == "main"]
+    assert mains and all(c.foot_m > 3000 for c in mains)

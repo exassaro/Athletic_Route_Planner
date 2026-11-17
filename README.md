@@ -114,6 +114,10 @@ docker compose up -d graphhopper                      # also the solver's "recom
 uv run python engine/experiments/07_quieter_spike.py
 ```
 
+## Phase 3c status
+
+Start with [docs/reports/phase3c/summary.md](docs/reports/phase3c/summary.md): fixed ends and Case B detours (section 8 step 10), loops with and without stops, the sparse-network fallback, and the KPI report on 110 fixtures.
+
 ## Phase 3b status
 
 Start with [docs/reports/phase3b/summary.md](docs/reports/phase3b/summary.md): routing rules from the product owner (GraphHopper "recommended" + Valhalla "shortest", pass-near checkpoints, ferries always excluded, ±500 m, `over_budget`, `via` / `avoid` / `must_use`), the acceptance test and the KPI report.
