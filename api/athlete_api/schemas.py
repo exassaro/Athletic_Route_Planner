@@ -60,3 +60,61 @@ class PlanOut(BaseModel):
     versions: list[int]
     latest: PlanVersionOut | None
     error: dict[str, Any] | None = Field(None, description="Why the last solve failed, when status is 'failed'")
+
+
+# ---------------------------------------------------------------- routes, saved routes, share
+
+
+class LineStringZ(BaseModel):
+    type: Literal["LineString"] = "LineString"
+    coordinates: list[tuple[float, float, float]] = Field(description="[lon, lat, height]: the solver's geometry, "
+                                                                      "height from Valhalla's DEM")
+
+
+class RouteFeature(BaseModel):
+    """One route as a GeoJSON Feature. `properties` are the solver's Candidate fields (lengths, stops, end, road
+    classes, flags) plus where it belongs."""
+
+    type: Literal["Feature"] = "Feature"
+    id: uuid.UUID
+    geometry: LineStringZ
+    properties: dict[str, Any]
+
+
+class ElevationOut(BaseModel):
+    route_id: uuid.UUID
+    step_m: float = Field(description="Sampling step along the route")
+    profile: list[tuple[float, float]] = Field(description="[distance along the route in m, height in m]. "
+                                                           "Distances measured from the geometry, heights raw DEM")
+    gain_m: float | None = Field(description="The solver's smoothed climb (not recomputed from the profile)")
+    loss_m: float | None
+
+
+class SaveIn(BaseModel):
+    name: str | None = Field(None, max_length=200)
+
+
+class SavedOut(BaseModel):
+    saved_id: uuid.UUID
+    route_id: uuid.UUID
+    name: str | None
+    share_slug: str
+    share_url: str
+    created_at: datetime
+
+
+class SavedRouteOut(SavedOut):
+    plan_id: uuid.UUID
+    version: int
+    label: str
+    option: str
+    foot_m: float
+    end_label: str | None
+
+
+class SharedRouteOut(BaseModel):
+    name: str | None
+    shared_at: datetime
+    summary: str = Field(description="Template text for this route; numbers from the solver's result only")
+    route: RouteFeature
+    gpx_url: str

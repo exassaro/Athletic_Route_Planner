@@ -720,9 +720,10 @@ Rewritten for Phase 4. Every path is under `/v1`. Requests and responses use the
 | `GET /v1/routes/{id}` | One route as a GeoJSON Feature | LineString with Z; properties are the Candidate's stats, stops and flags |
 | `GET /v1/routes/{id}/elevation` | Profile `[[distance_m, height_m], …]` every 30 m, plus the solver's gain and loss | |
 | `GET /v1/routes/{id}/gpx` | GPX 1.1 course | Track with `ele`; waypoints for start, checkpoints, end |
-| `POST /v1/routes/{id}/save` | Save under a name | Returns `{saved_id, share_slug}` |
+| `POST /v1/routes/{id}/save` | Save under a name | Returns `{saved_id, share_slug, share_url}`; saving again renames it and keeps the slug |
 | `GET /v1/me/routes` | This client's saved routes | |
 | `GET /v1/share/{slug}` | Public read-only route | No token needed |
+| `GET /v1/share/{slug}/gpx` | The shared route as GPX | No token needed. Added in Phase 4 so a share page can offer the download |
 | `GET /v1/health` | Valhalla, GraphHopper, Photon, Postgres, Redis; both build ids; OSM pin; solver hash | 200 when the solve path (Valhalla, Postgres, Redis) is up, else 503 |
 
 ### Response for create, patch and version reads
