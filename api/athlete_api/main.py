@@ -10,10 +10,12 @@ import httpx
 from fastapi import FastAPI
 from redis.asyncio import Redis
 
-from . import errors, routes_health, routes_session
+from . import errors, routes_health, routes_plans, routes_session
 from .config import Settings, get_settings
 from .db import make_engine, make_sessionmaker
 from .deps import Services
+from .planning import Planner
+from .solving import SolveRunner, SolverPort, real_solver
 
 DESCRIPTION = """Distance-budgeted running routes in Kerala.
 
@@ -23,7 +25,8 @@ Send the token from `POST /v1/session` in the `X-Client-Token` header.
 """
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, solver: SolverPort | None = None) -> FastAPI:
+    """`solver` replaces the real solver (tests use a fake: no engines needed)."""
     settings = settings or get_settings()
 
     @asynccontextmanager
@@ -31,11 +34,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         db_engine = make_engine(settings.database_url)
         redis = Redis.from_url(settings.redis_url, decode_responses=False)
         http = httpx.AsyncClient(timeout=settings.health_timeout_s)
-        app.state.services = Services(settings=settings, db_engine=db_engine,
-                                      sessions=make_sessionmaker(db_engine), redis=redis, http=http)
+        svc = Services(settings=settings, db_engine=db_engine, sessions=make_sessionmaker(db_engine), redis=redis,
+                       http=http)
+        app.state.services = svc
+        app.state.planner = Planner(svc, SolveRunner(solver or real_solver(settings), settings.solve_slots,
+                                                     settings.slot_wait_s))
         try:
             yield
         finally:
+            await app.state.planner.close()
             await http.aclose()
             await redis.aclose()
             await db_engine.dispose()
@@ -43,6 +50,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="Athlete Router API", version="0.4.0", description=DESCRIPTION, lifespan=lifespan)
     errors.install(app)
     app.include_router(routes_session.router)
+    app.include_router(routes_plans.router)
     app.include_router(routes_health.router)
     return app
 

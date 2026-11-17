@@ -6,20 +6,17 @@ added by the API in step 5 and never feeds a length.
 """
 
 import asyncio
-import json
 import uuid
 
 import pytest
 from geoalchemy2 import Geography
-from athlete_solver.models import Candidate
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 
-from athlete_api.config import ROOT
 from athlete_api.db import Client, Plan, PlanVersion, Route, SavedRoute, make_engine, make_sessionmaker
 from athlete_api.store import candidate_of, geometry_of, route_row
+from api_fixtures import a01_candidates
 
-REPORT = ROOT / "docs" / "reports" / "phase3b"
 # geography ST_Length (PostGIS, spheroid) against the solver's ellipsoid length (pyproj Geod). Both are WGS84
 # geodesics, so they should agree to well under a millimetre per kilometre.
 CROSS_CHECK_REL = 1e-6
@@ -29,15 +26,6 @@ def length_2d(geom):
     """ST_Length on the 2D line. On a geography LINESTRING Z, PostGIS 3.4's ST_Length includes the Z changes
     (measured: 109.29 m flat, 148.13 m with a 100 m rise), so Z must be dropped before measuring."""
     return func.ST_Length(func.ST_Force2D(func.geometry(geom)).cast(Geography))
-
-
-def a01_candidates() -> list[Candidate]:
-    result = json.loads((REPORT / "acceptance_A01.json").read_text(encoding="utf-8"))
-    shapes = {(f["properties"]["label"], f["properties"]["option"]): f["geometry"]["coordinates"]
-              for f in json.loads((REPORT / "acceptance_A01.geojson").read_text(encoding="utf-8"))["features"]
-              if f["geometry"]["type"] == "LineString"}
-    return [Candidate.model_validate({**c, "geometry": shapes[(c["label"], c["option"])]})
-            for c in result["candidates"]]
 
 
 def version_row(plan_id, **over) -> PlanVersion:

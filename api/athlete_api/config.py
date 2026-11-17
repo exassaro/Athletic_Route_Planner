@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     solve_slots: int = Field(2, ge=1)
     slot_wait_s: float = Field(10.0, gt=0)
     solve_budget_s: float = Field(15.0, gt=0)
+    busy_retry_after_s: int = Field(5, ge=1)   # Retry-After on 429 solver_busy
 
     cache_ttl_s: int = 24 * 3600   # amendment 5
 

@@ -118,7 +118,7 @@ Solo developer, comfortable with Python and Next.js. Windows 11, Intel i5 10th g
 - `data/` is gitignored (extract, tiles, index).
 - `solver/athlete_solver/` solver package with a CLI (`python -m athlete_solver`): `models` (request, candidate, conflict), `engine` (Valhalla adapter, the yardstick), `graphhopper` (the "recommended" generator, model R5, measured by Valhalla), `passnear` (checkpoints into route points), `avoid`, `ordering`, `p2p` (base route, gate, cut, truncation), `lengthen` (section 8 step 10: one through via on the longest leg; fixed ends), `loop` (loops without stops: shapes through the start, scaled to the distance, vias pulled out of water and off dead-end stubs), `out_and_back`, `scoring` (hard rules, NH flag, diversity), `solve` (both alternatives in parallel). It calls Valhalla only through `athlete_engine`.
 - `tests/fixtures/scenarios/` solver scenarios (section 16); `docs/reports/phase3/` Phase 3 KPI report and the quieter spike; `docs/reports/phase3b/` Phase 3b KPI report and the rules spike; `docs/reports/phase3c/` Phase 3c KPI report.
-- `api/` the Phase 4 backend (FastAPI); `api/scripts/` its measurement scripts (`measure_memory.py`); `docs/reports/phase4/` its reports. `web/` is a placeholder for Phase 5.
+- `api/athlete_api/` the Phase 4 backend (FastAPI; module list in `api/README.md`). `api/alembic/` migrations. `api/scripts/` measurement scripts (`measure_memory.py`). `docs/reports/phase4/` its reports. `tests/api/api_fixtures.py` has a fake solver that returns A01's real result. `web/` is a placeholder for Phase 5.
 
 ## Commands
 

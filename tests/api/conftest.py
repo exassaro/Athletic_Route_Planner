@@ -11,8 +11,12 @@ from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
 
+from athlete_api.cache import BuildIds
 from athlete_api.config import ROOT, Settings, sync_database_url
 from athlete_api.main import create_app
+
+BUILDS = BuildIds(osm="2026-11-15T00:15:25Z", valhalla="valhalla test tiles 1", graphhopper="graphhopper test import 1",
+                  solver="test-solver")
 
 DEV_URL = Settings().database_url
 TEST_DB = "athlete_test"
@@ -71,12 +75,17 @@ def make_client(settings):
     """make_client(**overrides) -> TestClient on an app with those settings changed."""
     opened = []
 
-    def make(app_hook=None, **overrides) -> TestClient:
-        app = create_app(settings.model_copy(update=overrides))
+    def make(app_hook=None, solver=None, builds=BUILDS, **overrides) -> TestClient:
+        """builds: the build ids the planner sees (None: ask the engines, which are unreachable here -> 503)."""
+        app = create_app(settings.model_copy(update=overrides), solver=solver)
         if app_hook:
             app_hook(app)
         client = TestClient(app)
         client.__enter__()
+        if builds is not None:
+            async def fixed():
+                return builds
+            app.state.planner.current_builds = fixed
         opened.append(client)
         return client
 
