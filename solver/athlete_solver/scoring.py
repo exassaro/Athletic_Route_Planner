@@ -3,11 +3,9 @@
 Every measure comes from the candidate's geometry and the engine's edge data.
 A hard-rule failure removes a candidate; a penalty only lowers its score.
 
-Repeated edges: the blueprint makes more than 10% repetition a hard reject.
-Phase 3 measured that a mandatory checkpoint on a dead-end (Chaliyam, with
-ferries excluded) forces more than that on its own. Until the developer
-decides, repetition is measured both raw and beyond what the stops force,
-reported as a flag, and NOT used to reject (see docs/reports/phase3/kpi.md).
+Repeated edges (Phase 3 amendment 8): more than 10% repetition BEYOND what the
+must_reach stops force is a hard reject. Raw repetition above 10% is still
+reported as a flag, with the forced share, so a dead-end stop is explained.
 """
 
 from dataclasses import dataclass, field
@@ -25,6 +23,7 @@ SPUR_MIN_M = 100.0
 REPEAT_LIMIT = 0.10           # section 8: hard above 10% unless out-and-back (see module note)
 DIVERSITY_LIMIT = 0.60
 MAIN_CLASSES = ("trunk", "primary")
+EXEMPT = ("continue_past_target", "end_at_target", "full_route", "cut_at_target")
 
 
 @dataclass
@@ -119,6 +118,9 @@ def measure(engine: Engine, req: RouteRequest, cand: Candidate, edges: list[Edge
     if req.route_type == "out_and_back":
         turns.append(cand.foot_m / 2)
         forced_until = cand.foot_m  # all repetition is the point of an out-and-back
+    if cand.label in ("full_route", "cut_at_target"):
+        # Over budget: both runs are (a prefix of) the route through the stops, so the stops force all of it.
+        forced_until = cand.foot_m
     rep, forced = repetition(edges, forced_until)
     foot = sum(e.length_m for e in edges if e.use != "ferry") or 1.0
     main = sum(e.length_m for e in edges if e.road_class in MAIN_CLASSES and e.use != "ferry")
@@ -132,7 +134,7 @@ def measure(engine: Engine, req: RouteRequest, cand: Candidate, edges: list[Edge
 
 def hard_failures(req: RouteRequest, cand: Candidate, m: Measures) -> list[str]:
     fails = []
-    if cand.label in ("direct", "fewer_main_roads", "continue_past_target") and \
+    if cand.label in ("direct", "fewer_main_roads", "continue_past_target", "cut_at_target") and \
             abs(cand.deviation_m) > req.tolerance_m:
         fails.append(f"distance off by {cand.deviation_m:+.0f} m, over the {req.tolerance_m:.0f} m tolerance")
     if cand.ferry_m > 0:
@@ -142,6 +144,8 @@ def hard_failures(req: RouteRequest, cand: Candidate, m: Measures) -> list[str]:
             off = geodesy.distance_m((s.snapped_lon, s.snapped_lat), _nearest_on(cand.geometry, s))
             if off > 50.0:
                 fails.append(f"misses checkpoint {s.label} by {off:.0f} m")
+    if req.route_type != "out_and_back" and m.repeat_share - m.forced_repeat_share > REPEAT_LIMIT:
+        fails.append(f"{(m.repeat_share - m.forced_repeat_share) * 100:.1f}% walked twice beyond what the stops force")
     if req.route_type == "loop" and m.spur_m:
         fails.append(f"{len(m.spur_m)} spur(s) on a loop")
     return fails
@@ -194,14 +198,13 @@ def _dedupe(flags: list[Flag]) -> list[Flag]:
 def diversify(scored: list[tuple[Candidate, set]], limit: int) -> list[Candidate]:
     """Best-first; keep a candidate only if its edge overlap with every kept one is below 60%.
 
-    Case B options ("continue past target" and "end at target") are choices about the same
-    route rather than alternatives, so they are exempt.
+    Case B options ("continue past target" and "end at target") and the over-budget pair ("full route"
+    and "cut at target") are choices about the same route rather than alternatives, so they are exempt.
     """
     kept: list[tuple[Candidate, set]] = []
     for cand, keys in sorted(scored, key=lambda ck: ck[0].score if ck[0].score is not None else 0.0):
-        exempt = cand.label in ("continue_past_target", "end_at_target")
-        if not exempt and any(jaccard(keys, k) >= DIVERSITY_LIMIT for c, k in kept
-                              if c.label not in ("continue_past_target", "end_at_target")):
+        exempt = cand.label in EXEMPT
+        if not exempt and any(jaccard(keys, k) >= DIVERSITY_LIMIT for c, k in kept if c.label not in EXEMPT):
             continue
         kept.append((cand, keys))
         if len(kept) >= limit and not exempt:

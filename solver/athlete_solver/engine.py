@@ -11,7 +11,7 @@ from typing import Protocol
 
 from athlete_engine import geodesy, polyline
 from athlete_engine.measure import Edge, edges_for_shape
-from athlete_engine.policy import consistency_tolerance_m, pedestrian_options
+from athlete_engine.policy import VALHALLA_RADIUS_M, consistency_tolerance_m, pedestrian_options
 from athlete_engine.valhalla import Valhalla, ValhallaError, loc
 
 from .models import Flag
@@ -36,6 +36,8 @@ class Routed:
     edges: list[Edge] = field(default_factory=list)
     junctions: list[Junction] = field(default_factory=list)
     flags: list[Flag] = field(default_factory=list)
+    engine: str = "valhalla"
+    radius_m: float = VALHALLA_RADIUS_M     # the engine's own earth radius (consistency check)
 
     @property
     def shape(self) -> list[LonLat]:
@@ -54,7 +56,7 @@ class Routed:
 
     @property
     def sphere_m(self) -> float:
-        return geodesy.sphere_line_length_m(self.shape)
+        return geodesy.sphere_line_length_m(self.shape, radius_m=self.radius_m)
 
     def point_at_foot(self, foot_m: float) -> LonLat:
         """The point reached after foot_m metres on foot along the route (ferry edges are skipped over)."""
@@ -68,6 +70,16 @@ class Routed:
                 return geodesy.point_at(e.shape, foot_m - run)[0]
             run += e.length_m
         return self.shape[-1]
+
+
+def check_consistency(routed: Routed) -> None:
+    """Flag an engine length that disagrees with the spherical measurement (needs the route's edges)."""
+    sphere = routed.sphere_m
+    if abs(routed.engine_m - sphere) > consistency_tolerance_m(sphere, len(routed.edges)):
+        routed.flags.append(Flag(code="engine_length_mismatch",
+                                 message=f"engine length {routed.engine_m:.0f} m against spherical "
+                                         f"measurement {sphere:.0f} m ({len(routed.edges)} edges)",
+                                 data={"engine_m": routed.engine_m, "sphere_m": sphere, "edges": len(routed.edges)}))
 
 
 class NoRoute(Exception):
@@ -147,12 +159,7 @@ class ValhallaEngine:
 
         if detail:
             self._add_edges(routed)
-        sphere = routed.sphere_m
-        if abs(routed.engine_m - sphere) > consistency_tolerance_m(sphere):
-            routed.flags.append(Flag(code="engine_length_mismatch",
-                                     message=f"engine length {routed.engine_m:.0f} m against spherical "
-                                             f"measurement {sphere:.0f} m",
-                                     data={"engine_m": routed.engine_m, "sphere_m": sphere}))
+            check_consistency(routed)
         return routed
 
     def _add_edges(self, routed: Routed) -> None:

@@ -21,7 +21,8 @@ from pathlib import Path
 from athlete_engine import geodesy
 from athlete_engine.measure import measure_shapes
 from athlete_engine.osm import is_walkable, way_tags
-from athlete_engine.policy import consistency_tolerance_m, pedestrian_options
+from athlete_engine.policy import (GRAPHHOPPER_RADIUS_M, VALHALLA_RADIUS_M, consistency_tolerance_m,
+                                   pedestrian_options)
 from athlete_engine.valhalla import Valhalla, ValhallaError
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,7 +33,8 @@ DEFAULT_REPORT = ROOT / "docs" / "reports" / "phase3b" / "kpi.md"
 
 CHECKPOINT_RADIUS_M = 50.0
 ADHERENCE_STEP_M = 250.0
-BUDGET_LABELS = {"direct", "fewer_main_roads", "continue_past_target"}
+BUDGET_LABELS = {"direct", "fewer_main_roads", "continue_past_target", "cut_at_target"}
+RADIUS = {"valhalla": VALHALLA_RADIUS_M, "graphhopper": GRAPHHOPPER_RADIUS_M}
 
 
 def pct(values: list[float], q: float) -> float:
@@ -134,9 +136,8 @@ def check_conflict(result, ref: dict, req) -> list[str]:
             problems.append(f"saving {key}: {got[key].saves_m:.0f} vs reference {s['saves_m']:.0f}")
         if got[key].fits != s["fits"]:
             problems.append(f"saving {key}: fits {got[key].fits} vs reference {s['fits']}")
-    upper = 1 + req.tolerance_pct / 100
     set_d = [f for f in c.fixes if f.action == "set_distance"]
-    if not set_d or set_d[0].value_m * upper < ref["minimum_m"] or set_d[0].value_m > ref["minimum_m"] + 100:
+    if not set_d or set_d[0].value_m + req.tolerance_m < ref["minimum_m"] or set_d[0].value_m > ref["minimum_m"] + 100:
         problems.append("set_distance fix missing or does not make the request fit")
     for s in ref["savings"]:
         if s["fits"]:
@@ -153,19 +154,25 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
     ref = fixture["reference"]
     row: dict = {"id": fixture["id"], "ms": elapsed_ms, "problems": [], "candidates": []}
 
-    # Outcome classification
-    if ref["outcome"] == "infeasible":
-        if result.outcome != "infeasible":
-            row["problems"].append(f"expected infeasible, got {result.outcome}")
-        else:
-            row["conflict_problems"] = check_conflict(result, ref, req)
-            row["problems"] += row["conflict_problems"]
-        return row
-    if result.outcome != "ok":
+    # Outcome classification. over_budget results are checked for their conflict object AND their two
+    # candidates (the full route through the stops and the cut at the target).
+    if ref["outcome"] == "over_budget":
+        if result.outcome != "over_budget":
+            row["problems"].append(f"expected over_budget, got {result.outcome}")
+            return row
+        row["conflict_problems"] = check_conflict(result, ref, req)
+        row["problems"] += row["conflict_problems"]
+        labels = [c.label for c in result.candidates]
+        if labels != ["full_route", "cut_at_target"]:
+            row["problems"].append(f"over_budget candidates {labels}")
+        full = next((c for c in result.candidates if c.label == "full_route"), None)
+        if full is not None and not close(full.foot_m, ref["minimum_m"]):
+            row["problems"].append(f"full route {full.foot_m:.0f} m vs reference minimum {ref['minimum_m']:.0f} m")
+    elif result.outcome != "ok":
         row["problems"].append(f"expected ok, got {result.outcome}")
         return row
     if not result.candidates:
-        row["problems"].append("ok outcome with no candidates")
+        row["problems"].append(f"{result.outcome} outcome with no candidates")
         return row
     labels = {c.label for c in result.candidates}
     margin = req.tolerance_m
@@ -207,15 +214,20 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
             row["problems"].append(f"{cand.label}: reported foot {cand.foot_m:.0f} m, measured {m.foot_m:.0f} m")
         cr["reported_ok"] = close(cand.foot_m, m.foot_m, rel=0.001, floor_m=2.0)
 
-        sphere = geodesy.sphere_line_length_m(geom)
-        cr["consistency_ok"] = abs(cand.engine_length_m - sphere) <= consistency_tolerance_m(sphere)
+        # Engine length against a sphere of the ENGINE's radius, with 0.2 m per (independently matched) edge.
+        sphere = geodesy.sphere_line_length_m(geom, radius_m=RADIUS[cand.engine])
+        cr["consistency_ok"] = abs(cand.engine_length_m - sphere) <= consistency_tolerance_m(sphere, len(m.edges))
         if not cr["consistency_ok"]:
-            row["problems"].append(f"{cand.label}: engine {cand.engine_length_m:.0f} m vs sphere {sphere:.0f} m")
+            row["problems"].append(f"{cand.label}: engine {cand.engine_length_m:.0f} m vs sphere {sphere:.0f} m "
+                                   f"({len(m.edges)} edges)")
 
         if cand.label in BUDGET_LABELS:
             cr["dist_err_pct"] = abs(m.foot_m - req.target_distance_m) / req.target_distance_m * 100
 
+        on_candidate = {s.label for s in cand.stops if s.role == "checkpoint"}
         for cp, snap in zip(req.checkpoints, located):
+            if cand.label == "cut_at_target" and cp.label not in on_candidate:
+                continue   # stops beyond the cut are dropped by design
             if snap is None:
                 row["problems"].append(f"{cand.label}: checkpoint {cp.label} could not be located")
                 continue
@@ -241,6 +253,12 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
                 for e in base_m.edges:
                     base_counts[e.key] = base_counts.get(e.key, 0) + 1
                 forced = sum(e.length_m for e in base_m.edges if base_counts[e.key] > 1)
+            if cand.label == "full_route":
+                row["forced_keys"] = {k for k, n in counts.items() if n > 1}
+            if cand.label == "cut_at_target":
+                # A prefix of the route through the stops: an edge it repeats is forced if the full route
+                # through the stops repeats it too (measured above from the full route's own geometry).
+                forced = sum(e.length_m for e in m.edges if counts[e.key] > 1 and e.key in row.get("forced_keys", set()))
             cr["excess_repeat_share"] = max(0.0, repeated - forced) / total
         edge_sets[cand.label] = set(keys)
 
@@ -365,7 +383,7 @@ def main() -> int:
     bear_limited = [c for c in cands if c.get("bearing_network_limited")]
     bear_fail = [c for c in cands if "bearing_err" in c and c["bearing_err"] > 30 and not c.get("bearing_network_limited")]
     overlaps = [r["overlap"] * 100 for r in rows if "overlap" in r]
-    infeasible = [f for f in fixtures if f["reference"]["outcome"] == "infeasible"]
+    infeasible = [f for f in fixtures if f["reference"]["outcome"] == "over_budget"]
     inf_ok = [r for r in rows if r["id"] in {f["id"] for f in infeasible} and "error" not in r and not r["problems"]]
     classified = [r for r in rows if "error" not in r and not any(p.startswith(("expected", "reference case")) for p in r["problems"])]
 
@@ -375,30 +393,30 @@ def main() -> int:
     have = bool(cands)
     kpis = [
         kpi("Fixtures solved without error", "all", f"{len(rows) - len(errors)} / {len(rows)}", not errors),
-        kpi("Outcome classification (ok / infeasible / Case A or B)", "100%",
+        kpi("Outcome classification (ok / over_budget / Case A or B)", "100%",
             f"{len(classified)} / {len(rows)}", len(classified) == len(rows)),
         kpi("Distance accuracy, point-to-point", "median < 0.5%, p95 < 1.5%",
             f"median {statistics.median(dist):.2f}%, p95 {pct(dist, .95):.2f}% (n={len(dist)})" if dist else "no routes",
             bool(dist) and statistics.median(dist) < 0.5 and pct(dist, .95) < 1.5),
         kpi("Reported length matches re-measured geometry", "every route, 0.1% / 2 m",
             f"{sum(c['reported_ok'] for c in cands)} / {len(cands)}", have and all(c["reported_ok"] for c in cands)),
-        kpi("Length consistency (engine vs sphere)", "every route, 0.1% / 2 m",
+        kpi("Length consistency (engine vs sphere on its own radius)", "every route, 0.1% / 2 m + 0.2 m per edge",
             f"{sum(c['consistency_ok'] for c in cands)} / {len(cands)}", have and all(c["consistency_ok"] for c in cands)),
         kpi("Feasibility: access violations or any ferry", "0",
             f"{sum((not c['access_ok']) or c['unrequested_ferry'] for c in cands)}",
             have and not any((not c["access_ok"]) or c["unrequested_ferry"] for c in cands)),
         kpi("(info) Geometries that pedestrian edge_walk cannot follow exactly", "info only",
             f"{sum(not c['exact_match'] for c in cands)} / {len(cands)} (map-matched instead; see method)", True),
-        kpi("Infeasibility handling: correct conflict objects", "100%",
+        kpi("Over-budget handling: correct conflict objects and candidates", "100%",
             f"{len(inf_ok)} / {len(infeasible)}", len(inf_ok) == len(infeasible)),
         kpi("Latency per solve", "p50 < 2 s, p95 < 5 s",
             f"p50 {statistics.median(lat):.0f} ms, p95 {pct(lat, .95):.0f} ms" if lat else "no solves",
             bool(lat) and statistics.median(lat) < 2000 and pct(lat, .95) < 5000),
-        kpi("Duplication (repeated edges), excluding out-and-back", "median < 2%, none > 10%",
-            f"median {statistics.median(reps):.1f}%, max {max(reps):.1f}%" if reps else "no routes",
-            bool(reps) and statistics.median(reps) < 2 and max(reps) <= 10),
-        kpi("(proposed) Duplication beyond what the mandatory stops force", "median < 2%, none > 10%",
-            f"median {statistics.median(excess):.1f}%, max {max(excess):.1f}%" if excess else "no routes", True),
+        kpi("Duplication beyond what must_reach stops force, excluding out-and-back", "median < 2%, none > 10%",
+            f"median {statistics.median(excess):.1f}%, max {max(excess):.1f}%" if excess else "no routes",
+            bool(excess) and statistics.median(excess) < 2 and max(excess) <= 10),
+        kpi("(info) Raw duplication, including what the stops force", "info only",
+            f"median {statistics.median(reps):.1f}%, max {max(reps):.1f}%" if reps else "no routes", True),
         kpi("Direction adherence (share moving away from target, after last stop)", "every route < 15%",
             f"max {max(back):.1f}%, {sum(b < 15 for b in back)} / {len(back)} under" if back else "no routes",
             bool(back) and all(b < 15 for b in back)),

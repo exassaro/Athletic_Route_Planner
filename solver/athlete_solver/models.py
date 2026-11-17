@@ -73,7 +73,7 @@ class RouteRequest(Strict):
     route_type: Literal["point_to_point", "out_and_back", "loop"]
     start: Point
     target_distance_m: Annotated[float, Field(gt=0, le=MAX_DISTANCE_M)]
-    tolerance_pct: Annotated[float, Field(gt=0, le=10)] = 2.0
+    tolerance_m: Annotated[float, Field(gt=0, le=5000)] = 500.0   # Phase 3 amendment 5: +-500 m
     direction: Annotated[TowardsPlace | Bearing, Field(discriminator="kind")] | None = None
     end: Annotated[AutoEnd | FixedEnd, Field(discriminator="kind")] = Field(default_factory=AutoEnd)
     checkpoints: list[Checkpoint] = Field(default_factory=list, max_length=MAX_CHECKPOINTS)
@@ -103,8 +103,9 @@ class RouteRequest(Strict):
         return self
 
     @property
-    def tolerance_m(self) -> float:
-        return self.target_distance_m * self.tolerance_pct / 100.0
+    def upper_m(self) -> float:
+        """The longest run that still counts as the requested distance."""
+        return self.target_distance_m + self.tolerance_m
 
 
 # ---------------------------------------------------------------- results
@@ -112,7 +113,7 @@ class RouteRequest(Strict):
 
 FlagCode = Literal[
     "engine_warning",           # carried from the engine response (amendment 6)
-    "engine_length_mismatch",   # engine vs spherical measurement over 0.1% / 2 m
+    "engine_length_mismatch",   # engine vs spherical measurement over 0.1% / 2 m + 0.2 m per edge
     "endpoint_mid_road",        # no junction within the snap window; ends at the exact distance
     "preference_unsupported",   # e.g. hills, surface in the MVP
     "checkpoint_far_from_network",
@@ -120,7 +121,7 @@ FlagCode = Literal[
     "unavoidable_main_road",
     "short_of_budget",
     "direction_limited",
-    "repeated_edges",           # more than 10% walked twice (reported, not rejected; pending decision)
+    "repeated_edges",           # more than 10% walked twice (rejected only beyond what must_reach stops force)
     "spur",                     # dead-end excursion over 100 m        # no walking endpoint lies within 30 degrees of the requested bearing          # Case B "end at target": the run is shorter than requested
 ]
 
@@ -149,13 +150,16 @@ class EndPoint(Strict):
 
 
 class Candidate(Strict):
-    label: Literal["direct", "fewer_main_roads", "end_at_target", "continue_past_target"]
+    label: Literal["direct", "fewer_main_roads", "end_at_target", "continue_past_target",
+                   "full_route", "cut_at_target"]   # the last two: over_budget (Phase 3 amendment 6)
     geometry: list[tuple[float, float]]
     length_m: float          # ellipsoid geometry length, foot + ferry
     foot_m: float            # what the budget counts
     ferry_m: float = 0.0
     engine_length_m: float
-    sphere_length_m: float
+    sphere_length_m: float   # spherical measurement on the engine's own earth radius
+    engine: Literal["valhalla", "graphhopper"] = "valhalla"
+    edge_count: int = 0      # edges the route uses (for the per-edge rounding allowance)
     deviation_m: float       # foot_m - target
     duration_s: float | None = None
     gain_m: float | None = None
@@ -189,6 +193,7 @@ class Fix(Strict):
 
 class Conflict(Strict):
     kind: Literal["checkpoints_exceed_distance", "disconnected", "snap_too_far"]
+    # checkpoints_exceed_distance comes with outcome "over_budget" and the full and cut candidates
     message: str
     requested_m: float | None = None
     minimum_m: float | None = None    # measured foot metres of the shortest route through all stops
@@ -200,7 +205,9 @@ class Conflict(Strict):
 
 
 class SolveResult(Strict):
-    outcome: Literal["ok", "infeasible", "disconnected", "unsupported"]
+    # over_budget: the stops alone exceed the budget; candidates are the full route and a cut at the target.
+    # infeasible: a point cannot be reached at all (snap too far). disconnected: no walking route.
+    outcome: Literal["ok", "over_budget", "infeasible", "disconnected", "unsupported"]
     request: RouteRequest
     candidates: list[Candidate] = Field(default_factory=list)
     conflict: Conflict | None = None

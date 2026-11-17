@@ -46,8 +46,8 @@ def minimum_through(engine: Valhalla, start: LonLat, stops: dict[str, LonLat],
 
 
 def reference_for(engine: Valhalla, start: LonLat, stops: dict[str, LonLat], target: LonLat | None,
-                  budget_m: float, tolerance_pct: float, fixed_order: bool) -> dict:
-    upper = budget_m * (1 + tolerance_pct / 100)
+                  budget_m: float, tolerance_m: float, fixed_order: bool) -> dict:
+    upper = budget_m + tolerance_m
     out: dict = {"budget_upper_m": upper}
     if stops:
         best = minimum_through(engine, start, stops, fixed_order)
@@ -66,7 +66,7 @@ def reference_for(engine: Valhalla, start: LonLat, stops: dict[str, LonLat], tar
             alt_m = alt[1].foot_m if alt else 0.0
             savings.append({"action": "drop_checkpoint", "label": name,
                             "saves_m": round(out["minimum_m"] - alt_m, 1), "fits": alt_m <= upper})
-        out.update(outcome="infeasible", savings=savings)
+        out.update(outcome="over_budget", savings=savings)
         return out
 
     out["outcome"] = "ok"

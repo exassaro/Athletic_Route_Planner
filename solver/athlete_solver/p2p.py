@@ -115,7 +115,7 @@ def minimum_route(engine: Engine, start: LonLat, stops: list[LonLat], target: Lo
 
 def build_conflict(req: RouteRequest, engine: Engine, base: Base,
                    start: LonLat, stops: list[LonLat], target: LonLat | None) -> Conflict:
-    upper = req.target_distance_m * (1 + req.tolerance_pct / 100)
+    upper = req.upper_m
     fixed = req.checkpoint_order == "fixed"
     savings: list[Saving] = []
     for i, cp in enumerate(req.checkpoints):
@@ -169,11 +169,36 @@ def make_candidate(req: RouteRequest, routed: Routed, label: str, end_kind: str,
             road_m[e.road_class] = road_m.get(e.road_class, 0.0) + e.length_m
     return Candidate(
         label=label, geometry=shape, length_m=routed.geom_m, foot_m=routed.foot_m, ferry_m=routed.ferry_m,
-        engine_length_m=routed.engine_m, sphere_length_m=routed.sphere_m,
+        engine_length_m=routed.engine_m, sphere_length_m=routed.sphere_m, engine=routed.engine,
+        edge_count=len(routed.edges),
         deviation_m=routed.foot_m - req.target_distance_m, duration_s=routed.duration_s, stops=stops,
         end=EndPoint(lon=end[0], lat=end[1], label=end_label(routed), kind=end_kind),
         road_class_m={k: round(v, 1) for k, v in road_m.items()},
         edge_ids=[e.id for e in routed.edges], flags=routed.flags + extra_flags)
+
+
+# ------------------------------------------------------------------ over budget: cut the full route at the target
+
+def cut_at_target(req: RouteRequest, engine: Engine, start: LonLat, stops: list[LonLat],
+                  base: Base) -> tuple[Routed, list[int], str, list[Flag], dict]:
+    """The full route through the stops cut at the requested distance (Phase 3 amendment 6).
+
+    Keeps the stops reached before the cut, cuts the next leg at the remainder (snapped to a junction inside
+    the window) and re-routes the run as one request. Returns (routed, kept order, end kind, flags, facts).
+    """
+    budget = req.target_distance_m
+    run, kept = 0.0, []
+    for leg_m, i in zip(base.routed.leg_foot_m, base.order):
+        if run + leg_m > budget:
+            break
+        run += leg_m
+        kept.append(i)
+    prefix = [start, *(stops[i] for i in kept)]
+    nxt = base.order[len(kept)]
+    tail = engine.route([prefix[-1], stops[nxt]], detail=True)
+    routed, kind, flags, facts = truncate(req, engine, prefix, tail, budget - run)
+    facts["dropped"] = [req.checkpoints[i].label for i in base.order[len(kept):]]
+    return routed, kept, kind, flags, facts
 
 
 # ------------------------------------------------------------------ case A: truncation

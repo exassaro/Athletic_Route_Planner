@@ -57,7 +57,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 10200.0,
+    "budget_upper_m": 10500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -139,7 +139,7 @@
     ]
    },
    "reference": {
-    "budget_upper_m": 28560.0,
+    "budget_upper_m": 28500.0,
     "order": [
      "Kadalundi",
      "Chaliyam",
@@ -196,14 +196,14 @@
     ]
    },
    "reference": {
-    "budget_upper_m": 15300.0,
+    "budget_upper_m": 15500.0,
     "order": [
      "Kadalundi",
      "Chaliyam",
      "Beypore"
     ],
     "minimum_m": 25889.7,
-    "outcome": "infeasible",
+    "outcome": "over_budget",
     "savings": [
      {
       "action": "drop_checkpoint",
@@ -252,7 +252,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 51000.0,
+    "budget_upper_m": 50500.0,
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 50000.0,
@@ -348,7 +348,7 @@
     ]
    },
    "reference": {
-    "budget_upper_m": 32640.0,
+    "budget_upper_m": 32500.0,
     "order": [
      "Kadalundi",
      "Chaliyam",
@@ -427,7 +427,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 15300.0,
+    "budget_upper_m": 15500.0,
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 15000.0,
@@ -493,7 +493,7 @@
      "Beypore"
     ],
     "minimum_m": 25889.7,
-    "outcome": "infeasible",
+    "outcome": "over_budget",
     "savings": [
      {
       "action": "drop_checkpoint",
@@ -536,7 +536,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 20400.0,
+    "budget_upper_m": 20500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -562,7 +562,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 12240.0,
+    "budget_upper_m": 12500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -748,7 +748,7 @@
     ]
    },
    "reference": {
-    "budget_upper_m": 28560.0,
+    "budget_upper_m": 28500.0,
     "order": [
      "Kadalundi",
      "Chaliyam",
@@ -806,7 +806,7 @@
     ]
    },
    "reference": {
-    "budget_upper_m": 28560.0,
+    "budget_upper_m": 28500.0,
     "order": [
      "Kadalundi",
      "Chaliyam",
@@ -864,7 +864,7 @@
     ]
    },
    "reference": {
-    "budget_upper_m": 28560.0,
+    "budget_upper_m": 28500.0,
     "order": [
      "Kadalundi",
      "Chaliyam",
@@ -922,7 +922,7 @@
     ]
    },
    "reference": {
-    "budget_upper_m": 28560.0,
+    "budget_upper_m": 28500.0,
     "order": [
      "Kadalundi",
      "Chaliyam",
@@ -980,14 +980,14 @@
     ]
    },
    "reference": {
-    "budget_upper_m": 15300.0,
+    "budget_upper_m": 15500.0,
     "order": [
      "Kadalundi",
      "Chaliyam",
      "Beypore"
     ],
     "minimum_m": 26199.2,
-    "outcome": "infeasible",
+    "outcome": "over_budget",
     "savings": [
      {
       "action": "drop_checkpoint",
@@ -1055,14 +1055,14 @@
     ]
    },
    "reference": {
-    "budget_upper_m": 15300.0,
+    "budget_upper_m": 15500.0,
     "order": [
      "Kadalundi",
      "Chaliyam",
      "Beypore"
     ],
     "minimum_m": 28225.4,
-    "outcome": "infeasible",
+    "outcome": "over_budget",
     "savings": [
      {
       "action": "drop_checkpoint",
@@ -1111,7 +1111,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 51000.0,
+    "budget_upper_m": 50500.0,
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 50000.0,
@@ -1145,7 +1145,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 51000.0,
+    "budget_upper_m": 50500.0,
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 50000.0,
@@ -1281,7 +1281,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 15300.0,
+    "budget_upper_m": 15500.0,
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 15000.0,
@@ -1315,7 +1315,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 15300.0,
+    "budget_upper_m": 15500.0,
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 15000.0,
@@ -1349,7 +1349,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 15300.0,
+    "budget_upper_m": 15500.0,
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 15000.0,
@@ -1409,7 +1409,7 @@
      "Beypore"
     ],
     "minimum_m": 27546.2,
-    "outcome": "infeasible",
+    "outcome": "over_budget",
     "savings": [
      {
       "action": "drop_checkpoint",
@@ -1542,7 +1542,7 @@
      "Beypore"
     ],
     "minimum_m": 28193.2,
-    "outcome": "infeasible",
+    "outcome": "over_budget",
     "savings": [
      {
       "action": "drop_checkpoint",
@@ -1586,7 +1586,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 10200.0,
+    "budget_upper_m": 10500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -1612,7 +1612,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 10200.0,
+    "budget_upper_m": 10500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -1638,7 +1638,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 10200.0,
+    "budget_upper_m": 10500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -1664,7 +1664,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 20400.0,
+    "budget_upper_m": 20500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -1690,7 +1690,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 20400.0,
+    "budget_upper_m": 20500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -1716,7 +1716,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 20400.0,
+    "budget_upper_m": 20500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -1746,7 +1746,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 15300.0,
+    "budget_upper_m": 15500.0,
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 15000.0,
@@ -1779,7 +1779,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 20400.0,
+    "budget_upper_m": 20500.0,
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 20000.0,
@@ -1812,7 +1812,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 30600.0,
+    "budget_upper_m": 30500.0,
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 30000.0,
@@ -1864,7 +1864,7 @@
     ]
    },
    "reference": {
-    "budget_upper_m": 30600.0,
+    "budget_upper_m": 30500.0,
     "order": [
      "Kadalundi",
      "Chaliyam",
@@ -1921,7 +1921,7 @@
     ]
    },
    "reference": {
-    "budget_upper_m": 35700.0,
+    "budget_upper_m": 35500.0,
     "order": [
      "Kadalundi",
      "Chaliyam",
@@ -1959,7 +1959,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 20400.0,
+    "budget_upper_m": 20500.0,
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 20000.0,
@@ -1993,7 +1993,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 8160.0,
+    "budget_upper_m": 8500.0,
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 8000.0,
@@ -2056,7 +2056,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 5100.0,
+    "budget_upper_m": 5500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -2082,7 +2082,7 @@
     "checkpoints": []
    },
    "reference": {
-    "budget_upper_m": 16320.0,
+    "budget_upper_m": 16500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -2107,7 +2107,7 @@
     }
    },
    "reference": {
-    "budget_upper_m": 12240.0,
+    "budget_upper_m": 12500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -2132,7 +2132,7 @@
     }
    },
    "reference": {
-    "budget_upper_m": 12240.0,
+    "budget_upper_m": 12500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -2157,7 +2157,7 @@
     }
    },
    "reference": {
-    "budget_upper_m": 12240.0,
+    "budget_upper_m": 12500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -2182,7 +2182,7 @@
     }
    },
    "reference": {
-    "budget_upper_m": 12240.0,
+    "budget_upper_m": 12500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }
@@ -2207,7 +2207,7 @@
     }
    },
    "reference": {
-    "budget_upper_m": 12240.0,
+    "budget_upper_m": 12500.0,
     "minimum_m": 0.0,
     "outcome": "ok"
    }

@@ -51,7 +51,7 @@ def test_cut_snaps_to_a_junction_inside_the_window():
     assert geodesy.distance_m((c.end.lon, c.end.lat), N["m20"]) < 1.0
 
 
-def test_infeasible_conflict_matches_brute_force():
+def test_over_budget_returns_full_route_cut_and_brute_force_conflict():
     stops = [("A", N["s30"]), ("B", N["s5"]), ("C", N["s20"])]
     eng = FakeEngine(LADDER)
     lengths = {}
@@ -59,11 +59,21 @@ def test_infeasible_conflict_matches_brute_force():
         r = eng.route([N["m0"], *(p for _, p in perm)])
         lengths[tuple(n for n, _ in perm)] = r.foot_m
     minimum = min(lengths.values())
-    res = run(req(N["m0"], minimum * 0.6, target=N["m40"], checkpoints=stops))
-    assert res.outcome == "infeasible"
+    budget = minimum * 0.6
+    res = run(req(N["m0"], budget, target=N["m40"], checkpoints=stops))
+    assert res.outcome == "over_budget"
+    full, cut = res.candidates
+    assert (full.label, cut.label) == ("full_route", "cut_at_target")
+    assert full.foot_m == pytest.approx(minimum, abs=0.5)
+    assert abs(cut.foot_m - budget) <= res.request.tolerance_m
+    assert res.facts["overshoot_m"] == pytest.approx(minimum - budget, abs=0.5)
+    # the cut keeps only the stops it reaches, in the same order
+    full_order = [s.label for s in full.stops if s.role == "checkpoint"]
+    cut_order = [s.label for s in cut.stops if s.role == "checkpoint"]
+    assert cut_order == full_order[:len(cut_order)] and len(cut_order) < len(full_order)
     c = res.conflict
     assert c.minimum_m == pytest.approx(minimum, abs=0.5)
-    assert c.overshoot_m == pytest.approx(minimum - minimum * 0.6, abs=0.5)
+    assert c.overshoot_m == pytest.approx(minimum - budget, abs=0.5)
     # dropping the farthest stop is the only saving that can matter most
     drop = {s.label: s for s in c.savings if s.action == "drop_checkpoint"}
     for name in "ABC":
@@ -71,7 +81,7 @@ def test_infeasible_conflict_matches_brute_force():
         best_rest = min(eng.route([N["m0"], *perm]).foot_m for perm in itertools.permutations(rest))
         assert drop[name].saves_m == pytest.approx(minimum - best_rest, abs=0.5)
     fix = next(f for f in c.fixes if f.action == "set_distance")
-    assert fix.value_m * 1.02 >= minimum and fix.value_m <= minimum + 100
+    assert fix.value_m + res.request.tolerance_m >= minimum and fix.value_m <= minimum + 100
 
 
 def test_ferry_is_never_used_even_when_it_is_the_only_link():

@@ -8,8 +8,8 @@ from athlete_engine.valhalla import Valhalla
 from .engine import Engine, NoRoute, ValhallaEngine
 from .models import Flag, RouteRequest, SolveResult
 from .out_and_back import solve_out_and_back
-from .p2p import (SECTOR_DEG, Infeasible, bearing_tail, build_conflict, check_snapping, disconnected_conflict,
-                  make_candidate, minimum_route, truncate)
+from .p2p import (SECTOR_DEG, Infeasible, bearing_tail, build_conflict, check_snapping, cut_at_target,
+                  disconnected_conflict, make_candidate, minimum_route, truncate)
 
 from .scoring import annotate, diversify
 
@@ -78,10 +78,12 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
         pairs = kw.pop("pairs", None)
         if pairs is not None:
             kept, rejected = finish(req, eng, pairs)
+            if kw.get("outcome") == "over_budget":   # fixed order: the full route, then the cut at the target
+                kept.sort(key=lambda c: ["full_route", "cut_at_target"].index(c.label))
             kw["candidates"] = kept
             if rejected:
                 kw.setdefault("facts", {})["rejected"] = rejected
-            if not kept and kw.get("outcome") == "ok":
+            if not kept and kw.get("outcome") in ("ok", "over_budget"):
                 kw["outcome"] = "unsupported"
                 kw["flags"].append(Flag(code="preference_unsupported",
                                         message="every candidate broke a hard rule: " + "; ".join(rejected)))
@@ -104,7 +106,7 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
     start = req.start.lonlat
     stops = [c.lonlat for c in req.checkpoints]
     target = req.direction.place.lonlat if req.direction.kind == "towards_place" else None
-    upper = req.target_distance_m * (1 + req.tolerance_pct / 100)
+    upper = req.upper_m
 
     try:
         check_snapping(eng, req)
@@ -126,10 +128,17 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
     facts = {"order": [req.checkpoints[i].label for i in base.order], "l_min_m": round(base.foot_m, 1),
              "budget_m": req.target_distance_m, "tolerance_m": req.tolerance_m}
 
-    # Feasibility gate (section 8 step 6).
+    # Over budget (Phase 3 amendment 6): the stops alone exceed the budget. Return the full route, the
+    # overshoot and savings (the conflict object), and a ready "cut at target" candidate.
     if base.foot_m > upper:
-        return done(outcome="infeasible", facts=facts,
-                    conflict=build_conflict(req, eng, base, start, stops, target))
+        conflict = build_conflict(req, eng, base, start, stops, target)
+        full = eng.route([start, *(stops[i] for i in base.order)], detail=True)
+        full_cand = make_candidate(req, full, "full_route", "last_checkpoint", base.order, [])
+        routed, kept, kind, flags, cut_facts = cut_at_target(req, eng, start, stops, base)
+        cut_cand = make_candidate(req, routed, "cut_at_target", kind, kept, flags)
+        facts.update(overshoot_m=round(base.foot_m - req.target_distance_m, 1), cut=cut_facts)
+        return done(outcome="over_budget", facts=facts, conflict=conflict,
+                    pairs=[(full_cand, full.edges), (cut_cand, routed.edges)])
 
     remainder = req.target_distance_m - base.foot_m
     facts["remainder_m"] = round(remainder, 1)

@@ -34,10 +34,12 @@ def test_s05_meets_the_budget_through_all_stops(engine):
     assert c.ferry_m == 0
 
 
-def test_s15_is_infeasible_with_measured_savings(engine):
+def test_s15_is_over_budget_with_measured_savings(engine):
     res = run(engine, "S15")
     ref = FIX["S15"]["reference"]
-    assert res.outcome == "infeasible"
+    assert res.outcome == "over_budget"
+    assert [c.label for c in res.candidates] == ["full_route", "cut_at_target"]
+    assert abs(res.candidates[1].foot_m - res.request.target_distance_m) <= res.request.tolerance_m
     assert res.conflict.minimum_m == pytest.approx(ref["minimum_m"], abs=max(10, 0.002 * ref["minimum_m"]))
     assert {s.label for s in res.conflict.savings} == set(ref["order"])
     assert all(s.action == "drop_checkpoint" for s in res.conflict.savings)

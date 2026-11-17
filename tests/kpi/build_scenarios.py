@@ -115,7 +115,7 @@ def main() -> int:
                 stops={c["label"]: (c["lon"], c["lat"]) for c in r.get("checkpoints", [])},
                 target=(target["lon"], target["lat"]) if target else None,
                 budget_m=r["target_distance_m"],
-                tolerance_pct=r.get("tolerance_pct", 2.0),
+                tolerance_m=r.get("tolerance_m", 500.0),
                 fixed_order=r.get("checkpoint_order") == "fixed",
             )
             ref = f["reference"]
