@@ -1,0 +1,214 @@
+{
+  "measured_on": "development laptop (not the target server)",
+  "docker_mem_total_mib": 7860,
+  "steps": [
+    {
+      "label": "idle, Photon stopped",
+      "at": "2026-11-17T20:09:33+00:00",
+      "containers": {
+        "athlete-redis": {
+          "used_mib": 3.4,
+          "limit_mib": 320.0,
+          "cpu_pct": 0.33
+        },
+        "athlete-postgres": {
+          "used_mib": 22.1,
+          "limit_mib": 512.0,
+          "cpu_pct": 0.0
+        },
+        "athlete-graphhopper": {
+          "used_mib": 2089.0,
+          "limit_mib": 4096.0,
+          "cpu_pct": 0.1
+        },
+        "athlete-valhalla": {
+          "used_mib": 508.1,
+          "limit_mib": 7860.2,
+          "cpu_pct": 0.06
+        }
+      },
+      "vm": {
+        "total": 7860,
+        "used": 3172,
+        "free": 2979,
+        "shared": 20,
+        "buff/cache": 1709,
+        "available": 4498,
+        "swap_used": 0,
+        "swap_total": 2048
+      },
+      "host": {
+        "total_mib": 16221,
+        "free_mib": 2157
+      }
+    },
+    {
+      "label": "A01 solve, Photon stopped",
+      "elapsed_s": 4.55,
+      "outcome": "ok",
+      "lengths_m": [
+        25000.0,
+        25052.7,
+        24071.6,
+        24678.6
+      ],
+      "samples": 3,
+      "peak_containers": {
+        "athlete-redis": {
+          "used_mib": 3.6,
+          "limit_mib": 320.0,
+          "cpu_pct": 0.63
+        },
+        "athlete-postgres": {
+          "used_mib": 22.1,
+          "limit_mib": 512.0,
+          "cpu_pct": 0.0
+        },
+        "athlete-graphhopper": {
+          "used_mib": 2089.0,
+          "limit_mib": 4096.0,
+          "cpu_pct": 26.96
+        },
+        "athlete-valhalla": {
+          "used_mib": 510.8,
+          "limit_mib": 7860.2,
+          "cpu_pct": 58.05
+        }
+      },
+      "peak_vm_used_mib": 3173,
+      "min_vm_available_mib": 4496,
+      "max_vm_swap_used_mib": 0,
+      "min_host_free_mib": 2059,
+      "solver_process": {
+        "working_set_mib": 68.5,
+        "peak_working_set_mib": 68.5
+      }
+    },
+    {
+      "label": "idle, Photon up",
+      "at": "2026-11-17T20:10:05+00:00",
+      "containers": {
+        "athlete-photon": {
+          "used_mib": 478.4,
+          "limit_mib": 3072.0,
+          "cpu_pct": 0.97
+        },
+        "athlete-redis": {
+          "used_mib": 3.4,
+          "limit_mib": 320.0,
+          "cpu_pct": 0.52
+        },
+        "athlete-postgres": {
+          "used_mib": 22.1,
+          "limit_mib": 512.0,
+          "cpu_pct": 0.0
+        },
+        "athlete-graphhopper": {
+          "used_mib": 2089.0,
+          "limit_mib": 4096.0,
+          "cpu_pct": 0.11
+        },
+        "athlete-valhalla": {
+          "used_mib": 510.4,
+          "limit_mib": 7860.2,
+          "cpu_pct": 0.06
+        }
+      },
+      "vm": {
+        "total": 7860,
+        "used": 3660,
+        "free": 2433,
+        "shared": 20,
+        "buff/cache": 1768,
+        "available": 4010,
+        "swap_used": 0,
+        "swap_total": 2048
+      },
+      "host": {
+        "total_mib": 16221,
+        "free_mib": 1487
+      }
+    },
+    {
+      "label": "A01 solve, Photon up",
+      "elapsed_s": 4.8,
+      "outcome": "ok",
+      "lengths_m": [
+        25000.0,
+        25052.7,
+        24071.6,
+        24678.6
+      ],
+      "samples": 3,
+      "peak_containers": {
+        "athlete-photon": {
+          "used_mib": 478.3,
+          "limit_mib": 3072.0,
+          "cpu_pct": 1.17
+        },
+        "athlete-redis": {
+          "used_mib": 3.4,
+          "limit_mib": 320.0,
+          "cpu_pct": 0.38
+        },
+        "athlete-postgres": {
+          "used_mib": 22.1,
+          "limit_mib": 512.0,
+          "cpu_pct": 0.0
+        },
+        "athlete-graphhopper": {
+          "used_mib": 2089.0,
+          "limit_mib": 4096.0,
+          "cpu_pct": 37.2
+        },
+        "athlete-valhalla": {
+          "used_mib": 511.1,
+          "limit_mib": 7860.2,
+          "cpu_pct": 85.22
+        }
+      },
+      "peak_vm_used_mib": 3669,
+      "min_vm_available_mib": 4002,
+      "max_vm_swap_used_mib": 0,
+      "min_host_free_mib": 1185,
+      "solver_process": {
+        "working_set_mib": 73.5,
+        "peak_working_set_mib": 74.4
+      }
+    }
+  ],
+  "photon_start_s": 8.6,
+  "photon_query_ms": [
+    221.1,
+    83.2,
+    95.0,
+    112.6,
+    89.4
+  ],
+  "photon_load": {
+    "requests": 640,
+    "seconds": 9.5
+  },
+  "oom": {
+    "athlete-valhalla": {
+      "oom_killed": false,
+      "status": "running"
+    },
+    "athlete-graphhopper": {
+      "oom_killed": false,
+      "status": "running"
+    },
+    "athlete-postgres": {
+      "oom_killed": false,
+      "status": "running"
+    },
+    "athlete-redis": {
+      "oom_killed": false,
+      "status": "running"
+    },
+    "athlete-photon": {
+      "oom_killed": false,
+      "status": "running"
+    }
+  }
+}

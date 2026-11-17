@@ -1,4 +1,4 @@
-# Phase 2 services. Valhalla starts by default; Photon sits
+# Services. Valhalla, GraphHopper, Postgres and Redis start by default; Photon sits
 # under the `geocode` profile so it only uses RAM when asked for.
 services:
   valhalla:
@@ -58,4 +58,34 @@ services:
     environment:
       - JAVA_OPTS=-Xmx3g
     mem_limit: 4g
+    restart: "no"
+
+  # Phase 4: the API's database (plans, versions, routes, saved routes). PostgreSQL 16.4 + PostGIS 3.4,
+  # pinned by digest (postgis/postgis:16-3.4 on 2026-11-18). Development credentials only.
+  #   docker compose up -d postgres redis
+  postgres:
+    image: postgis/postgis@sha256:44126d872ac91993766c341e369c539e8196614321765d36a6f1bab0419a5fa5
+    container_name: athlete-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=athlete
+      - POSTGRES_PASSWORD=athlete
+      - POSTGRES_DB=athlete
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    command: ["postgres", "-c", "shared_buffers=128MB", "-c", "max_connections=40"]
+    mem_limit: 512m
+    restart: "no"
+
+  # Phase 4: solve cache (24 h), rate-limit counters. Redis 7.4.12, pinned by digest (redis:7.4-alpine on
+  # 2026-11-18). Nothing in it needs to survive a restart, so persistence is off.
+  redis:
+    image: redis@sha256:7f7d30b7fdd09467bac58198a1f166dd69789d348d4fe859cccb20e0cf287fbe
+    container_name: athlete-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb",
+              "--maxmemory-policy", "allkeys-lru"]
+    mem_limit: 320m
     restart: "no"
