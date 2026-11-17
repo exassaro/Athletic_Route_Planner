@@ -15,9 +15,10 @@ from concurrent.futures import ThreadPoolExecutor
 from athlete_engine import geodesy
 from athlete_engine.valhalla import Valhalla
 
+from .avoid import inside, valhalla_extra
 from .engine import Engine, NoRoute, ValhallaEngine
 from .graphhopper import GraphHopperEngine, GraphHopperUnavailable
-from .models import Flag, RouteRequest, SolveResult
+from .models import Conflict, Flag, RouteRequest, SolveResult
 from .out_and_back import solve_out_and_back
 from .p2p import (SECTOR_DEG, Infeasible, all_must_reach, anchors, bearing_tail, build_conflict, check_snapping,
                   cut_at_target, disconnected_conflict, make_candidate, minimum_route, planned_base, truncate)
@@ -52,7 +53,7 @@ def solve(request: RouteRequest, engine=None, graph_build: str = "unknown", gene
 def _engines(req: RouteRequest, client, generator) -> tuple[dict[str, Engine], list, list[Flag]]:
     closers, flags = [], []
     if isinstance(client, Valhalla):
-        shortest = ValhallaEngine(client)
+        shortest = ValhallaEngine(client, extra=valhalla_extra(req))
     elif hasattr(client, "route") and hasattr(client, "matrix"):
         shortest = client
     else:
@@ -60,7 +61,7 @@ def _engines(req: RouteRequest, client, generator) -> tuple[dict[str, Engine], l
     if generator is not None:
         recommended = generator
     elif isinstance(client, Valhalla):
-        recommended = GraphHopperEngine(ValhallaEngine(client), req.preferences)
+        recommended = GraphHopperEngine(ValhallaEngine(client), req.preferences, request=req)
         closers.append(recommended.close)
         try:
             recommended.check()
@@ -123,6 +124,7 @@ def _finish(req: RouteRequest, engines, by_alt: dict[str, tuple[list, dict, list
 
 def _solve(req: RouteRequest, engines: dict[str, Engine], graph_build: str, flags: list[Flag]) -> SolveResult:
     flags = flags + _preference_flags(req)
+    given = req
     yard = engines["shortest"]
 
     def done(outcome: str, by_alt=None, facts=None, conflict=None, extra_flags=None) -> SolveResult:
@@ -140,7 +142,7 @@ def _solve(req: RouteRequest, engines: dict[str, Engine], graph_build: str, flag
                 outcome = "unsupported"
                 all_flags.append(Flag(code="preference_unsupported",
                                       message="every candidate broke a hard rule: " + "; ".join(rejected)))
-        return SolveResult(outcome=outcome, request=req, graph_build=graph_build, candidates=candidates,
+        return SolveResult(outcome=outcome, request=given, graph_build=graph_build, candidates=candidates,
                            conflict=conflict, facts=facts, flags=all_flags, engine_calls=_calls(engines))
 
     if req.route_type == "out_and_back":
@@ -162,9 +164,21 @@ def _solve(req: RouteRequest, engines: dict[str, Engine], graph_build: str, flag
         return done("unsupported", extra_flags=[Flag(
             code="preference_unsupported", message="point_to_point needs a direction (towards a place or a bearing)")])
 
+    # From here on the solver works on one list of stops: checkpoints, then via and must_use items with their
+    # roles (Phase 3 amendment 7). The result still carries the request as given.
+    req = req.model_copy(update={"checkpoints": req.stops()})
     start = req.start.lonlat
     stops = anchors(req)
     target = req.direction.place.lonlat if req.direction.kind == "towards_place" else None
+    named = [(req.start.label or "start", start), *((c.label, c.lonlat) for c in req.checkpoints)]
+    if target:
+        named.append((req.direction.place.label or "target", target))
+    for label, point in named:
+        area = inside(req, point)
+        if area is not None:
+            return done("infeasible", conflict=Conflict(
+                kind="inside_avoided", pair=[label, area],
+                message=f"{label} lies inside {area}, which the request asks to avoid"))
 
     try:
         check_snapping(yard, req)

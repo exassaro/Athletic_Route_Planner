@@ -194,6 +194,8 @@ def build_conflict(req: RouteRequest, engine: Engine, base: Base,
     fixed = req.checkpoint_order == "fixed"
     savings: list[Saving] = []
     for i, cp in enumerate(req.checkpoints):
+        if cp.role != "checkpoint":
+            continue   # via and must_use items are never dropped
         if all_must_reach(req):
             rest = [p for j, p in enumerate(stops) if j != i]
             alt = minimum_route(engine, start, rest, target, fixed)
@@ -208,7 +210,7 @@ def build_conflict(req: RouteRequest, engine: Engine, base: Base,
     for s in savings:
         if s.fits:
             fixes += [Fix(action="drop_checkpoint", label=s.label), Fix(action="make_optional", label=s.label)]
-    names = [req.checkpoints[i].label for i in base.order]
+    names = [req.checkpoints[i].label for i in base.order if req.checkpoints[i].role == "checkpoint"]
     over = base.foot_m - req.target_distance_m
     return Conflict(
         kind="checkpoints_exceed_distance", requested_m=req.target_distance_m, minimum_m=round(base.foot_m, 1),
@@ -268,7 +270,7 @@ def make_candidate(req: RouteRequest, routed: Routed, option: str, end_kind: str
         cp = req.checkpoints[i]
         p = shape[j]    # where the route passes the stop
         pick = base.picks.get(i, {})
-        stops.append(StopOnRoute(role="checkpoint", label=cp.label, requested=cp, snapped_lon=p[0], snapped_lat=p[1],
+        stops.append(StopOnRoute(role=cp.role, label=cp.label, requested=cp, snapped_lon=p[0], snapped_lat=p[1],
                                  offset_m=round(geodesy.distance_m(cp.lonlat, p), 1),
                                  at_m=round(at_m * foot_over_geom, 1), kind=cp.kind, must_reach=cp.must_reach,
                                  pass_walk_m=pick.get("walk_m"), how=pick.get("how")))

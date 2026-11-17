@@ -198,3 +198,59 @@ def test_pass_near_place_over_1_km_on_foot_is_detoured_to():
     assert res.outcome == "ok"
     cp = next(s for s in res.candidates[0].stops if s.role == "checkpoint")
     assert cp.how in ("via", "spur") and cp.pass_walk_m <= 1000
+
+
+# ------------------------------------------------------------------ via, must_use, avoid (Phase 3 amendment 7)
+
+def two_bridges() -> FakeGraph:
+    """Two banks joined by a short bridge (b1) and a longer one upstream (b2)."""
+    nodes = {"a": (75.80, 11.10), "s1": (75.80, 11.11), "n1": (75.80, 11.12), "t": (75.80, 11.15),
+             "s2": (75.82, 11.11), "n2": (75.82, 11.12)}
+    edges = [GEdge("a", "s1"), GEdge("s1", "n1", name="Short Bridge"), GEdge("n1", "t"),
+             GEdge("s1", "s2"), GEdge("s2", "n2", name="Long Bridge"), GEdge("n2", "n1")]
+    return FakeGraph(nodes, edges)
+
+
+def test_must_use_bridge_is_crossed_even_when_another_is_shorter():
+    g = two_bridges()
+    long_bridge = g.edges.index(next(e for e in g.edges if e.name == "Long Bridge")) + 1   # the fake's way id
+    mid = ((g.nodes["s2"][0] + g.nodes["n2"][0]) / 2, (g.nodes["s2"][1] + g.nodes["n2"][1]) / 2)
+    r = req(g.nodes["a"], 9000, target=g.nodes["t"],
+            must_use=[{"kind": "bridge", "label": "Long Bridge", "lon": mid[0], "lat": mid[1],
+                       "way_ids": [long_bridge], "lines": [[g.nodes["s2"], g.nodes["n2"]]]}])
+    res = run(r, g)
+    assert res.outcome == "ok"
+    c = res.candidates[0]
+    assert any(s.role == "must_use" and s.label == "Long Bridge" for s in c.stops)
+    shortest_way = geodesy.line_length_m([g.nodes[k] for k in ("a", "s1", "n1", "t")])
+    assert res.facts["l_min_m"] > geodesy.distance_m(g.nodes["a"], g.nodes["s1"])   # it went round
+    assert c.foot_m > shortest_way or res.facts.get("case") == "B"
+
+
+def test_via_shapes_the_run_but_is_never_dropped_or_listed_as_a_checkpoint():
+    stops = [("A", N["s30"])]
+    full = FakeEngine(LADDER).route([N["m0"], N["s30"]]).foot_m
+    r = req(N["m0"], full * 0.5, target=N["m40"], checkpoints=stops, must_reach=True,
+            via=[{"lon": N["s10"][0], "lat": N["s10"][1], "label": "Side 10"}])
+    res = run(r)
+    assert res.outcome == "over_budget"
+    assert [s.label for s in res.conflict.savings] == ["A"]               # the via is not offered as a saving
+    roles = {s.label: s.role for s in res.candidates[0].stops}
+    assert roles["Side 10"] == "via" and roles["A"] == "checkpoint"
+    assert res.request.via and not any(c.role != "checkpoint" for c in res.request.checkpoints)  # request as given
+
+
+def test_start_inside_an_avoided_area_is_a_conflict():
+    r = req(N["m0"], 5000, target=N["m40"],
+            avoid=[{"kind": "place", "label": "Market", "lon": N["m0"][0], "lat": N["m0"][1], "radius_m": 200}])
+    res = run(r)
+    assert res.outcome == "infeasible" and res.conflict.kind == "inside_avoided"
+
+
+def test_a_route_through_an_avoided_area_breaks_a_hard_rule():
+    # The fake engine ignores the avoid list, so the only way through is rejected by the hard rule.
+    r = req(N["m0"], geodesy.line_length_m([N[f"m{i}"] for i in range(31)]), target=N["m40"],
+            avoid=[{"kind": "place", "label": "Square", "lon": N["m15"][0], "lat": N["m15"][1], "radius_m": 100}])
+    res = run(r)
+    assert res.outcome == "unsupported"
+    assert any("enters Square" in x for x in res.facts["rejected"])

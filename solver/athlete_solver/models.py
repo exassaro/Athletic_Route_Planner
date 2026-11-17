@@ -14,6 +14,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 MAX_CHECKPOINTS = 8
+MAX_STOPS = 10     # checkpoints + via + must_use, ordered together by exact DP
 MAX_DISTANCE_M = 100_000.0  # Valhalla's pedestrian max_distance default
 
 
@@ -54,6 +55,9 @@ class Checkpoint(Point):
     label: str
     mandatory: bool = True
     kind: Literal["place", "junction", "bridge", "road"] = "place"
+    # "checkpoint": a named stop (reported, can be dropped when over budget). The solver also turns the
+    # request's `via` items (shaping only) and `must_use` items into stops with these roles.
+    role: Literal["checkpoint", "via", "must_use"] = "checkpoint"
     must_reach: bool = False
     way_ids: list[int] = Field(default_factory=list)
     lines: list[LineCoords] = Field(default_factory=list)
@@ -72,6 +76,65 @@ class Checkpoint(Point):
     @property
     def pass_near(self) -> bool:
         return self.kind == "place" and not self.must_reach
+
+
+class Via(Strict):
+    """Shaping only (Phase 3 amendment 7): pass near a point, or use a named road. Never dropped, not a stop."""
+
+    kind: Literal["place", "road"] = "place"
+    lon: Lon
+    lat: Lat
+    label: str | None = None
+    place_id: str | None = None
+    way_ids: list[int] = Field(default_factory=list)       # road: its OSM ways
+    lines: list[LineCoords] = Field(default_factory=list)  # road: their geometry (from OSM)
+
+    @model_validator(mode="after")
+    def _road(self) -> "Via":
+        if self.kind == "road" and (not self.way_ids or not self.lines):
+            raise ValueError("a road via needs its OSM way_ids and lines")
+        return self
+
+
+class MustUse(Strict):
+    """A named bridge or road the route must use (Phase 3 amendment 7). Never dropped."""
+
+    kind: Literal["bridge", "road"]
+    lon: Lon                  # the item's middle (ordering)
+    lat: Lat
+    label: str
+    place_id: str | None = None
+    way_ids: list[int] = Field(min_length=1)
+    lines: list[LineCoords] = Field(min_length=1)
+
+
+class AvoidItem(Strict):
+    """Something the route must not use (Phase 3 amendment 7): a place, a road or an area.
+
+    place: `polygon` (its OSM boundary) or a circle of `radius_m` round (lon, lat). area: `polygon`.
+    road: its OSM `way_ids` (and `lines`, for the shortest alternative's engine).
+    """
+
+    kind: Literal["place", "road", "area"]
+    label: str
+    lon: Lon | None = None
+    lat: Lat | None = None
+    radius_m: Annotated[float, Field(gt=0, le=5000)] = 300.0
+    polygon: dict | None = None
+    way_ids: list[int] = Field(default_factory=list)
+    lines: list[LineCoords] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _shape(self) -> "AvoidItem":
+        if self.polygon is not None and self.polygon.get("type") not in ("Polygon", "MultiPolygon"):
+            raise ValueError("polygon must be a GeoJSON Polygon or MultiPolygon")
+        if self.kind == "area" and self.polygon is None:
+            raise ValueError(f"area {self.label!r} needs a polygon")
+        if self.kind == "place" and self.polygon is None and (self.lon is None or self.lat is None):
+            raise ValueError(f"place {self.label!r} needs a polygon or a point")
+        if self.kind == "road" and (not self.way_ids or not self.lines):
+            raise ValueError(f"road {self.label!r} needs its OSM way_ids and lines")
+        return self
 
 
 class TowardsPlace(Strict):
@@ -111,6 +174,9 @@ class RouteRequest(Strict):
     end: Annotated[AutoEnd | FixedEnd, Field(discriminator="kind")] = Field(default_factory=AutoEnd)
     checkpoints: list[Checkpoint] = Field(default_factory=list, max_length=MAX_CHECKPOINTS)
     checkpoint_order: Literal["auto", "fixed"] = "auto"
+    via: list[Via] = Field(default_factory=list, max_length=MAX_CHECKPOINTS)
+    must_use: list[MustUse] = Field(default_factory=list, max_length=4)
+    avoid: list[AvoidItem] = Field(default_factory=list, max_length=20)
     preferences: Preferences = Field(default_factory=Preferences)
     alternatives: Annotated[int, Field(ge=1, le=4)] = 2
 
@@ -127,13 +193,33 @@ class RouteRequest(Strict):
 
     @model_validator(mode="after")
     def _type_rules(self) -> "RouteRequest":
-        if self.route_type == "out_and_back" and self.checkpoints:
-            raise ValueError("out_and_back does not take checkpoints yet")
+        if self.route_type == "out_and_back" and (self.checkpoints or self.via or self.must_use):
+            raise ValueError("out_and_back does not take checkpoints, via or must_use yet")
+        if len(self.checkpoints) + len(self.via) + len(self.must_use) > MAX_STOPS:
+            raise ValueError(f"at most {MAX_STOPS} checkpoints, via and must_use items together")
+        labels = [c.label for c in self.checkpoints] + [m.label for m in self.must_use]
+        if len(set(labels)) != len(labels):
+            raise ValueError("checkpoint and must_use labels must be distinct")
+        if any(c.role != "checkpoint" for c in self.checkpoints):
+            raise ValueError("checkpoint roles are set by the solver; use via and must_use")
         if self.route_type == "out_and_back" and self.direction is None:
             raise ValueError("out_and_back needs a direction (towards_place or bearing)")
         if self.end.kind == "fixed" and self.route_type != "point_to_point":
             raise ValueError("a fixed end only applies to point_to_point")
         return self
+
+    def stops(self) -> list[Checkpoint]:
+        """Checkpoints, then via and must_use items as stops with their roles (one list for ordering)."""
+        out = list(self.checkpoints)
+        if any(c.role != "checkpoint" for c in out):   # already expanded (the solver's working copy)
+            return out
+        for k, v in enumerate(self.via, start=1):
+            out.append(Checkpoint(lon=v.lon, lat=v.lat, label=v.label or f"via {k}", kind=v.kind, role="via",
+                                  way_ids=v.way_ids, lines=v.lines))
+        for m in self.must_use:
+            out.append(Checkpoint(lon=m.lon, lat=m.lat, label=m.label, kind=m.kind, role="must_use",
+                                  way_ids=m.way_ids, lines=m.lines))
+        return out
 
     @property
     def upper_m(self) -> float:
@@ -161,6 +247,7 @@ FlagCode = Literal[
     "alternative_over_budget",  # this alternative's own route through the stops exceeds the budget
     "pass_near_boundary",       # no spur-free pass point within 1 km on foot: passes inside the OSM boundary
     "pass_near_spur",           # no spur-free pass point at all: the stop is reached with a spur
+    "avoid_unmet",              # the route still touches something the request asked to avoid
 ]
 
 
@@ -171,7 +258,7 @@ class Flag(Strict):
 
 
 class StopOnRoute(Strict):
-    role: Literal["start", "checkpoint", "end"]
+    role: Literal["start", "checkpoint", "via", "must_use", "end"]   # via: shaping only, not shown as a stop
     label: str | None = None
     requested: Point
     snapped_lon: float       # where the route passes the stop (pass-near: the pass point on the route)
@@ -244,7 +331,7 @@ class Fix(Strict):
 
 
 class Conflict(Strict):
-    kind: Literal["checkpoints_exceed_distance", "disconnected", "snap_too_far"]
+    kind: Literal["checkpoints_exceed_distance", "disconnected", "snap_too_far", "inside_avoided"]
     # checkpoints_exceed_distance comes with outcome "over_budget" and the full and cut candidates
     message: str
     requested_m: float | None = None

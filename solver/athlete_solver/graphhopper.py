@@ -18,8 +18,9 @@ import httpx
 from athlete_engine import geodesy
 from athlete_engine.policy import GRAPHHOPPER_RADIUS_M
 
+from .avoid import graphhopper_model
 from .engine import NoRoute, Routed, ValhallaEngine, check_consistency
-from .models import Preferences
+from .models import Preferences, RouteRequest
 
 GH_URL = os.environ.get("GRAPHHOPPER_URL", "http://127.0.0.1:8989")
 PROFILE = "foot_rules"
@@ -48,9 +49,14 @@ class GraphHopperEngine:
     engine_name = "graphhopper"
 
     def __init__(self, yardstick: ValhallaEngine, prefs: Preferences, base_url: str = GH_URL,
-                 client: httpx.Client | None = None):
+                 client: httpx.Client | None = None, request: RouteRequest | None = None):
         self.yard = yardstick
         self.model = priority_model(prefs)
+        if request is not None and request.avoid:
+            areas, rules = graphhopper_model(request)
+            self.model["priority"] += rules
+            if areas is not None:
+                self.model["areas"] = areas
         self._own = client is None
         self.http = client or httpx.Client(base_url=base_url, timeout=60)
         self.gh_calls = 0

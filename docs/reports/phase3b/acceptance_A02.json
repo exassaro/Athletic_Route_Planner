@@ -1,0 +1,992 @@
+{
+ "outcome": "over_budget",
+ "candidates": [
+  {
+   "label": "recommended",
+   "option": "full_route",
+   "length_m": 22258.026936023176,
+   "foot_m": 22258.026936023176,
+   "ferry_m": 0.0,
+   "engine_length_m": 22316.156,
+   "sphere_length_m": 22316.43607168195,
+   "engine": "graphhopper",
+   "edge_count": 193,
+   "deviation_m": 2258.026936023176,
+   "duration_s": 16067.636,
+   "gain_m": 113.5,
+   "loss_m": 141.2,
+   "stops": [
+    {
+     "role": "start",
+     "label": "Athanikkal",
+     "requested": {
+      "lon": 75.8460689,
+      "lat": 11.1209333,
+      "label": "Athanikkal",
+      "place_id": "osm:node/1770460252"
+     },
+     "snapped_lon": 75.846193,
+     "snapped_lat": 11.120867,
+     "offset_m": 15.413560911165037,
+     "at_m": 0.0,
+     "kind": null,
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": null
+    },
+    {
+     "role": "checkpoint",
+     "label": "Kottakkadavu",
+     "requested": {
+      "lon": 75.8393601,
+      "lat": 11.1393612,
+      "label": "Kottakkadavu",
+      "place_id": "osm:node/3027581412"
+     },
+     "snapped_lon": 75.839486,
+     "snapped_lat": 11.139215,
+     "offset_m": 21.2,
+     "at_m": 2300.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 19.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Kadalundi",
+     "requested": {
+      "lon": 75.8334302,
+      "lat": 11.1381083,
+      "label": "Kadalundi",
+      "place_id": "osm:node/7728008448"
+     },
+     "snapped_lon": 75.83415,
+     "snapped_lat": 11.139796,
+     "offset_m": 202.6,
+     "at_m": 2900.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 215.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Chaliyam",
+     "requested": {
+      "lon": 75.8095217,
+      "lat": 11.1559577,
+      "label": "Chaliyam",
+      "place_id": "osm:node/1683145417"
+     },
+     "snapped_lon": 75.813679,
+     "snapped_lat": 11.152074,
+     "offset_m": 625.1,
+     "at_m": 6000.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 628.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Karuvanthuruthy bridge",
+     "requested": {
+      "lon": 75.8163968,
+      "lat": 11.1605711,
+      "label": "Karuvanthuruthy bridge",
+      "place_id": "osm:way/389396419"
+     },
+     "snapped_lon": 75.816373,
+     "snapped_lat": 11.161301,
+     "offset_m": 80.8,
+     "at_m": 7234.2,
+     "kind": "bridge",
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": "uses"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Beypore",
+     "requested": {
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "label": "Beypore",
+      "place_id": "osm:node/1683149581"
+     },
+     "snapped_lon": 75.80926,
+     "snapped_lat": 11.180565,
+     "offset_m": 193.6,
+     "at_m": 15263.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 218.0,
+     "how": "via"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Kallai",
+     "requested": {
+      "lon": 75.7886846,
+      "lat": 11.235104,
+      "label": "Kallai",
+      "place_id": "osm:node/3797752730"
+     },
+     "snapped_lon": 75.78899,
+     "snapped_lat": 11.231523,
+     "offset_m": 397.5,
+     "at_m": 22258.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 459.0,
+     "how": "via"
+    },
+    {
+     "role": "end",
+     "label": "Panniyankara Payyanakkal Meenchanda Road",
+     "requested": {
+      "lon": 75.78899,
+      "lat": 11.231523,
+      "label": null,
+      "place_id": null
+     },
+     "snapped_lon": 75.78899,
+     "snapped_lat": 11.231523,
+     "offset_m": 0.0,
+     "at_m": 22258.0,
+     "kind": null,
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": null
+    }
+   ],
+   "end": {
+    "lon": 75.78899,
+    "lat": 11.231523,
+    "label": "Panniyankara Payyanakkal Meenchanda Road",
+    "kind": "last_checkpoint"
+   },
+   "road_class_m": {
+    "secondary": 17473.3,
+    "residential": 3772.9,
+    "primary": 644.3,
+    "unclassified": 367.8
+   },
+   "repeat_share": 0.0,
+   "backtrack_share": null,
+   "score": 22.58,
+   "flags": []
+  },
+  {
+   "label": "recommended",
+   "option": "cut_at_target",
+   "length_m": 20000.01466867415,
+   "foot_m": 20000.01466867415,
+   "ferry_m": 0.0,
+   "engine_length_m": 20051.289,
+   "sphere_length_m": 20051.852780215977,
+   "engine": "graphhopper",
+   "edge_count": 168,
+   "deviation_m": 0.014668674150016159,
+   "duration_s": 14436.93,
+   "gain_m": 103.5,
+   "loss_m": 130.4,
+   "stops": [
+    {
+     "role": "start",
+     "label": "Athanikkal",
+     "requested": {
+      "lon": 75.8460689,
+      "lat": 11.1209333,
+      "label": "Athanikkal",
+      "place_id": "osm:node/1770460252"
+     },
+     "snapped_lon": 75.846193,
+     "snapped_lat": 11.120867,
+     "offset_m": 15.413560911165037,
+     "at_m": 0.0,
+     "kind": null,
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": null
+    },
+    {
+     "role": "checkpoint",
+     "label": "Kottakkadavu",
+     "requested": {
+      "lon": 75.8393601,
+      "lat": 11.1393612,
+      "label": "Kottakkadavu",
+      "place_id": "osm:node/3027581412"
+     },
+     "snapped_lon": 75.839486,
+     "snapped_lat": 11.139215,
+     "offset_m": 21.2,
+     "at_m": 2300.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 19.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Kadalundi",
+     "requested": {
+      "lon": 75.8334302,
+      "lat": 11.1381083,
+      "label": "Kadalundi",
+      "place_id": "osm:node/7728008448"
+     },
+     "snapped_lon": 75.83415,
+     "snapped_lat": 11.139796,
+     "offset_m": 202.6,
+     "at_m": 2900.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 215.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Chaliyam",
+     "requested": {
+      "lon": 75.8095217,
+      "lat": 11.1559577,
+      "label": "Chaliyam",
+      "place_id": "osm:node/1683145417"
+     },
+     "snapped_lon": 75.813679,
+     "snapped_lat": 11.152074,
+     "offset_m": 625.1,
+     "at_m": 6000.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 628.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Karuvanthuruthy bridge",
+     "requested": {
+      "lon": 75.8163968,
+      "lat": 11.1605711,
+      "label": "Karuvanthuruthy bridge",
+      "place_id": "osm:way/389396419"
+     },
+     "snapped_lon": 75.816373,
+     "snapped_lat": 11.161301,
+     "offset_m": 80.8,
+     "at_m": 7234.2,
+     "kind": "bridge",
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": "uses"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Beypore",
+     "requested": {
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "label": "Beypore",
+      "place_id": "osm:node/1683149581"
+     },
+     "snapped_lon": 75.80926,
+     "snapped_lat": 11.180565,
+     "offset_m": 193.6,
+     "at_m": 15263.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 218.0,
+     "how": "via"
+    },
+    {
+     "role": "end",
+     "label": "Panniyankara Payyanakkal Meenchanda Road",
+     "requested": {
+      "lon": 75.79348,
+      "lat": 11.218459,
+      "label": null,
+      "place_id": null
+     },
+     "snapped_lon": 75.79348,
+     "snapped_lat": 11.218459,
+     "offset_m": 0.0,
+     "at_m": 20000.0,
+     "kind": null,
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": null
+    }
+   ],
+   "end": {
+    "lon": 75.79348,
+    "lat": 11.218459,
+    "label": "Panniyankara Payyanakkal Meenchanda Road",
+    "kind": "mid_road"
+   },
+   "road_class_m": {
+    "secondary": 17473.3,
+    "residential": 1654.7,
+    "primary": 644.3,
+    "unclassified": 227.9
+   },
+   "repeat_share": 0.0,
+   "backtrack_share": null,
+   "score": 0.0,
+   "flags": [
+    {
+     "code": "endpoint_mid_road",
+     "message": "no junction within the snap window; the run ends at the exact distance",
+     "data": {}
+    }
+   ]
+  },
+  {
+   "label": "shortest",
+   "option": "full_route",
+   "length_m": 21738.557025313872,
+   "foot_m": 21738.557025313872,
+   "ferry_m": 0.0,
+   "engine_length_m": 21817.0,
+   "sphere_length_m": 21823.651526850885,
+   "engine": "valhalla",
+   "edge_count": 190,
+   "deviation_m": 1738.5570253138721,
+   "duration_s": 15947.281,
+   "gain_m": 107.3,
+   "loss_m": 142.2,
+   "stops": [
+    {
+     "role": "start",
+     "label": "Athanikkal",
+     "requested": {
+      "lon": 75.8460689,
+      "lat": 11.1209333,
+      "label": "Athanikkal",
+      "place_id": "osm:node/1770460252"
+     },
+     "snapped_lon": 75.846193,
+     "snapped_lat": 11.120868,
+     "offset_m": 15.361237800126139,
+     "at_m": 0.0,
+     "kind": null,
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": null
+    },
+    {
+     "role": "checkpoint",
+     "label": "Kottakkadavu",
+     "requested": {
+      "lon": 75.8393601,
+      "lat": 11.1393612,
+      "label": "Kottakkadavu",
+      "place_id": "osm:node/3027581412"
+     },
+     "snapped_lon": 75.83953,
+     "snapped_lat": 11.139191,
+     "offset_m": 26.4,
+     "at_m": 2300.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 24.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Kadalundi",
+     "requested": {
+      "lon": 75.8334302,
+      "lat": 11.1381083,
+      "label": "Kadalundi",
+      "place_id": "osm:node/7728008448"
+     },
+     "snapped_lon": 75.8342,
+     "snapped_lat": 11.139792,
+     "offset_m": 204.3,
+     "at_m": 2900.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 221.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Chaliyam",
+     "requested": {
+      "lon": 75.8095217,
+      "lat": 11.1559577,
+      "label": "Chaliyam",
+      "place_id": "osm:node/1683145417"
+     },
+     "snapped_lon": 75.813873,
+     "snapped_lat": 11.152387,
+     "offset_m": 618.0,
+     "at_m": 6100.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 632.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Karuvanthuruthy bridge",
+     "requested": {
+      "lon": 75.8163968,
+      "lat": 11.1605711,
+      "label": "Karuvanthuruthy bridge",
+      "place_id": "osm:way/389396419"
+     },
+     "snapped_lon": 75.816373,
+     "snapped_lat": 11.161301,
+     "offset_m": 80.8,
+     "at_m": 7239.6,
+     "kind": "bridge",
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": "uses"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Beypore",
+     "requested": {
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "label": "Beypore",
+      "place_id": "osm:node/1683149581"
+     },
+     "snapped_lon": 75.808759,
+     "snapped_lat": 11.180585,
+     "offset_m": 228.4,
+     "at_m": 15138.6,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 272.0,
+     "how": "via"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Kallai",
+     "requested": {
+      "lon": 75.7886846,
+      "lat": 11.235104,
+      "label": "Kallai",
+      "place_id": "osm:node/3797752730"
+     },
+     "snapped_lon": 75.788976,
+     "snapped_lat": 11.235283,
+     "offset_m": 37.5,
+     "at_m": 21738.6,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 12.0,
+     "how": "on_route"
+    },
+    {
+     "role": "end",
+     "label": "Kallai Road",
+     "requested": {
+      "lon": 75.788976,
+      "lat": 11.235283,
+      "label": null,
+      "place_id": null
+     },
+     "snapped_lon": 75.788976,
+     "snapped_lat": 11.235283,
+     "offset_m": 0.0,
+     "at_m": 21738.6,
+     "kind": null,
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": null
+    }
+   ],
+   "end": {
+    "lon": 75.788976,
+    "lat": 11.235283,
+    "label": "Kallai Road",
+    "kind": "last_checkpoint"
+   },
+   "road_class_m": {
+    "secondary": 17635.0,
+    "residential": 494.2,
+    "primary": 3609.3
+   },
+   "repeat_share": 0.0,
+   "backtrack_share": null,
+   "score": 17.386,
+   "flags": []
+  },
+  {
+   "label": "shortest",
+   "option": "cut_at_target",
+   "length_m": 20000.01111201338,
+   "foot_m": 20000.01111201338,
+   "ferry_m": 0.0,
+   "engine_length_m": 20068.0,
+   "sphere_length_m": 20074.989372285625,
+   "engine": "valhalla",
+   "edge_count": 173,
+   "deviation_m": 0.011112013380625285,
+   "duration_s": 14711.468,
+   "gain_m": 107.3,
+   "loss_m": 136.0,
+   "stops": [
+    {
+     "role": "start",
+     "label": "Athanikkal",
+     "requested": {
+      "lon": 75.8460689,
+      "lat": 11.1209333,
+      "label": "Athanikkal",
+      "place_id": "osm:node/1770460252"
+     },
+     "snapped_lon": 75.846193,
+     "snapped_lat": 11.120868,
+     "offset_m": 15.361237800126139,
+     "at_m": 0.0,
+     "kind": null,
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": null
+    },
+    {
+     "role": "checkpoint",
+     "label": "Kottakkadavu",
+     "requested": {
+      "lon": 75.8393601,
+      "lat": 11.1393612,
+      "label": "Kottakkadavu",
+      "place_id": "osm:node/3027581412"
+     },
+     "snapped_lon": 75.83953,
+     "snapped_lat": 11.139191,
+     "offset_m": 26.4,
+     "at_m": 2300.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 24.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Kadalundi",
+     "requested": {
+      "lon": 75.8334302,
+      "lat": 11.1381083,
+      "label": "Kadalundi",
+      "place_id": "osm:node/7728008448"
+     },
+     "snapped_lon": 75.8342,
+     "snapped_lat": 11.139792,
+     "offset_m": 204.3,
+     "at_m": 2900.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 221.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Chaliyam",
+     "requested": {
+      "lon": 75.8095217,
+      "lat": 11.1559577,
+      "label": "Chaliyam",
+      "place_id": "osm:node/1683145417"
+     },
+     "snapped_lon": 75.813873,
+     "snapped_lat": 11.152387,
+     "offset_m": 618.0,
+     "at_m": 6100.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 632.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Karuvanthuruthy bridge",
+     "requested": {
+      "lon": 75.8163968,
+      "lat": 11.1605711,
+      "label": "Karuvanthuruthy bridge",
+      "place_id": "osm:way/389396419"
+     },
+     "snapped_lon": 75.816373,
+     "snapped_lat": 11.161301,
+     "offset_m": 80.8,
+     "at_m": 7239.6,
+     "kind": "bridge",
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": "uses"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Beypore",
+     "requested": {
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "label": "Beypore",
+      "place_id": "osm:node/1683149581"
+     },
+     "snapped_lon": 75.808759,
+     "snapped_lat": 11.180585,
+     "offset_m": 228.4,
+     "at_m": 15138.6,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 272.0,
+     "how": "via"
+    },
+    {
+     "role": "end",
+     "label": "Old NH17 Road",
+     "requested": {
+      "lon": 75.793359,
+      "lat": 11.22024,
+      "label": null,
+      "place_id": null
+     },
+     "snapped_lon": 75.793359,
+     "snapped_lat": 11.22024,
+     "offset_m": 0.0,
+     "at_m": 20000.0,
+     "kind": null,
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": null
+    }
+   ],
+   "end": {
+    "lon": 75.793359,
+    "lat": 11.22024,
+    "label": "Old NH17 Road",
+    "kind": "mid_road"
+   },
+   "road_class_m": {
+    "secondary": 17635.0,
+    "residential": 494.2,
+    "primary": 1870.7
+   },
+   "repeat_share": 0.0,
+   "backtrack_share": null,
+   "score": 0.0,
+   "flags": [
+    {
+     "code": "endpoint_mid_road",
+     "message": "no junction within the snap window; the run ends at the exact distance",
+     "data": {}
+    }
+   ]
+  }
+ ],
+ "conflict": {
+  "kind": "checkpoints_exceed_distance",
+  "message": "These 6 stops need at least 21.7 km on foot, 1.7 km over the 20.0 km requested.",
+  "requested_m": 20000.0,
+  "minimum_m": 21738.6,
+  "overshoot_m": 1738.6,
+  "order": [
+   "Kottakkadavu",
+   "Kadalundi",
+   "Chaliyam",
+   "Karuvanthuruthy bridge",
+   "Beypore",
+   "Kallai"
+  ],
+  "pair": [],
+  "savings": [
+   {
+    "action": "drop_checkpoint",
+    "label": "Kottakkadavu",
+    "saves_m": 0.0,
+    "fits": false
+   },
+   {
+    "action": "drop_checkpoint",
+    "label": "Kadalundi",
+    "saves_m": 0.0,
+    "fits": false
+   },
+   {
+    "action": "drop_checkpoint",
+    "label": "Chaliyam",
+    "saves_m": 0.0,
+    "fits": false
+   },
+   {
+    "action": "drop_checkpoint",
+    "label": "Karuvanthuruthy bridge",
+    "saves_m": 0.0,
+    "fits": false
+   },
+   {
+    "action": "drop_checkpoint",
+    "label": "Beypore",
+    "saves_m": 1954.7,
+    "fits": true
+   },
+   {
+    "action": "drop_checkpoint",
+    "label": "Kallai",
+    "saves_m": 6600.0,
+    "fits": true
+   }
+  ],
+  "fixes": [
+   {
+    "action": "set_distance",
+    "value_m": 21800.0,
+    "label": null
+   },
+   {
+    "action": "drop_checkpoint",
+    "value_m": null,
+    "label": "Beypore"
+   },
+   {
+    "action": "make_optional",
+    "value_m": null,
+    "label": "Beypore"
+   },
+   {
+    "action": "drop_checkpoint",
+    "value_m": null,
+    "label": "Kallai"
+   },
+   {
+    "action": "make_optional",
+    "value_m": null,
+    "label": "Kallai"
+   }
+  ]
+ },
+ "facts": {
+  "order": [
+   "Kottakkadavu",
+   "Kadalundi",
+   "Chaliyam",
+   "Karuvanthuruthy bridge",
+   "Beypore",
+   "Kallai"
+  ],
+  "l_min_m": 21738.6,
+  "l_min_by_alternative": {
+   "recommended": 22258.0,
+   "shortest": 21738.6
+  },
+  "budget_m": 20000.0,
+  "tolerance_m": 500.0,
+  "stops": {
+   "Kottakkadavu": {
+    "how": "on_route",
+    "walk_m": 24.0,
+    "added_m": 0.0,
+    "point": [
+     75.83953,
+     11.139191
+    ]
+   },
+   "Kadalundi": {
+    "how": "on_route",
+    "walk_m": 221.0,
+    "added_m": 0.0,
+    "point": [
+     75.8342,
+     11.139792
+    ]
+   },
+   "Chaliyam": {
+    "how": "on_route",
+    "walk_m": 632.0,
+    "added_m": 0.0,
+    "point": [
+     75.813873,
+     11.152387
+    ]
+   },
+   "Karuvanthuruthy bridge": {
+    "how": "uses",
+    "point": [
+     75.816373,
+     11.161301
+    ]
+   },
+   "Beypore": {
+    "how": "via",
+    "added_m": 1954.7,
+    "walk_m": 272.0,
+    "point": [
+     75.808759,
+     11.180584
+    ]
+   },
+   "Kallai": {
+    "how": "on_route",
+    "walk_m": 12.0,
+    "added_m": 0.0,
+    "point": [
+     75.788976,
+     11.235283
+    ]
+   }
+  },
+  "overshoot_m": 1738.6,
+  "by_alternative": {
+   "recommended": {
+    "order": [
+     "Kottakkadavu",
+     "Kadalundi",
+     "Chaliyam",
+     "Karuvanthuruthy bridge",
+     "Beypore",
+     "Kallai"
+    ],
+    "l_min_m": 22258.0,
+    "overshoot_m": 2258.0,
+    "cut": {
+     "cut_at_m": 20000.0,
+     "end_kind": "mid_road",
+     "dropped": [
+      "Kallai"
+     ]
+    },
+    "stops": {
+     "Kottakkadavu": {
+      "how": "on_route",
+      "walk_m": 19.0,
+      "added_m": 0.0,
+      "point": [
+       75.839486,
+       11.139215
+      ]
+     },
+     "Kadalundi": {
+      "how": "on_route",
+      "walk_m": 215.0,
+      "added_m": 0.0,
+      "point": [
+       75.83415,
+       11.139797
+      ]
+     },
+     "Chaliyam": {
+      "how": "on_route",
+      "walk_m": 628.0,
+      "added_m": 0.0,
+      "point": [
+       75.813679,
+       11.152074
+      ]
+     },
+     "Karuvanthuruthy bridge": {
+      "how": "uses",
+      "point": [
+       75.816373,
+       11.161301
+      ]
+     },
+     "Beypore": {
+      "how": "via",
+      "added_m": 67.4,
+      "walk_m": 218.0,
+      "point": [
+       75.80926,
+       11.180564
+      ]
+     },
+     "Kallai": {
+      "how": "via",
+      "added_m": 641.4,
+      "walk_m": 459.0,
+      "point": [
+       75.788989,
+       11.231523
+      ]
+     }
+    }
+   },
+   "shortest": {
+    "order": [
+     "Kottakkadavu",
+     "Kadalundi",
+     "Chaliyam",
+     "Karuvanthuruthy bridge",
+     "Beypore",
+     "Kallai"
+    ],
+    "l_min_m": 21738.6,
+    "overshoot_m": 1738.6,
+    "cut": {
+     "cut_at_m": 20000.0,
+     "end_kind": "mid_road",
+     "dropped": [
+      "Kallai"
+     ]
+    },
+    "stops": {
+     "Kottakkadavu": {
+      "how": "on_route",
+      "walk_m": 24.0,
+      "added_m": 0.0,
+      "point": [
+       75.83953,
+       11.139191
+      ]
+     },
+     "Kadalundi": {
+      "how": "on_route",
+      "walk_m": 221.0,
+      "added_m": 0.0,
+      "point": [
+       75.8342,
+       11.139792
+      ]
+     },
+     "Chaliyam": {
+      "how": "on_route",
+      "walk_m": 632.0,
+      "added_m": 0.0,
+      "point": [
+       75.813873,
+       11.152387
+      ]
+     },
+     "Karuvanthuruthy bridge": {
+      "how": "uses",
+      "point": [
+       75.816373,
+       11.161301
+      ]
+     },
+     "Beypore": {
+      "how": "via",
+      "added_m": 1954.7,
+      "walk_m": 272.0,
+      "point": [
+       75.808759,
+       11.180584
+      ]
+     },
+     "Kallai": {
+      "how": "on_route",
+      "walk_m": 12.0,
+      "added_m": 0.0,
+      "point": [
+       75.788976,
+       11.235283
+      ]
+     }
+    }
+   }
+  }
+ },
+ "flags": [],
+ "graph_build": "2026-11-15T00:15:25Z",
+ "engine_calls": 92,
+ "elapsed_ms": 3979.470999998739
+}

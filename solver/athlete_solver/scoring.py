@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from athlete_engine import geodesy
 from athlete_engine.measure import Edge
 
+from .avoid import violations
 from .engine import Engine
 from .models import Candidate, Flag, RouteRequest
 
@@ -132,7 +133,7 @@ def measure(engine: Engine, req: RouteRequest, cand: Candidate, edges: list[Edge
     # Only stops the run must actually reach force repetition and allow a turn-round: must_reach places,
     # and pass-near places that could only be passed with a spur (flagged). Pass-near stops do not.
     checkpoints_at = [s.at_m for s in cand.stops
-                      if s.role == "checkpoint" and (s.must_reach or s.how in ("reached", "spur"))]
+                      if s.role not in ("start", "end") and (s.must_reach or s.how in ("reached", "spur"))]
     forced_until = max(checkpoints_at, default=0.0)
     turns = list(checkpoints_at)
     if req.route_type == "out_and_back":
@@ -152,19 +153,20 @@ def measure(engine: Engine, req: RouteRequest, cand: Candidate, edges: list[Edge
 
 # ------------------------------------------------------------------ rules and score
 
-def hard_failures(req: RouteRequest, cand: Candidate, m: Measures) -> list[str]:
+def hard_failures(req: RouteRequest, cand: Candidate, m: Measures, edges: list[Edge] | None = None) -> list[str]:
     fails = []
     if cand.option in BUDGET_OPTIONS and abs(cand.deviation_m) > req.tolerance_m:
         fails.append(f"distance off by {cand.deviation_m:+.0f} m, over the {req.tolerance_m:.0f} m tolerance")
     if cand.ferry_m > 0:
         fails.append(f"{cand.ferry_m:.0f} m on a ferry (ferries are always excluded)")
     for s in cand.stops:
-        if s.role == "checkpoint":
+        if s.role not in ("start", "end"):
             off = geodesy.distance_m((s.snapped_lon, s.snapped_lat), _nearest_on(cand.geometry, s))
             if off > 50.0:
                 fails.append(f"misses checkpoint {s.label} by {off:.0f} m")
     if req.route_type != "out_and_back" and m.repeat_share - m.forced_repeat_share > REPEAT_LIMIT:
         fails.append(f"{(m.repeat_share - m.forced_repeat_share) * 100:.1f}% walked twice beyond what the stops force")
+    fails += violations(req, cand.geometry, edges or [])
     if req.route_type == "loop" and m.spur_m:
         fails.append(f"{len(m.spur_m)} spur(s) on a loop")
     return fails
@@ -233,7 +235,7 @@ def annotate(engine: Engine, req: RouteRequest, cand: Candidate, edges: list[Edg
     if nh is not None:
         cand.flags.append(nh)
     cand.flags = _dedupe(cand.flags)
-    return cand, hard_failures(req, cand, m)
+    return cand, hard_failures(req, cand, m, edges)
 
 
 def _dedupe(flags: list[Flag]) -> list[Flag]:

@@ -101,9 +101,10 @@ class Engine(Protocol):
 class ValhallaEngine:
     """Engine backed by a running Valhalla."""
 
-    def __init__(self, client: Valhalla):
+    def __init__(self, client: Valhalla, extra: dict | None = None):
         self.client = client
         self.options = pedestrian_options()
+        self.extra = extra or {}     # extra /route fields, e.g. exclude_polygons for the request's avoid list
         self.calls = 0
 
     def matrix(self, points: list[LonLat]) -> list[list[float | None]]:
@@ -155,7 +156,7 @@ class ValhallaEngine:
         locations = [loc(p, type="through" if i in through else "break") for i, p in enumerate(points)]
         self.calls += 1
         try:
-            resp = self.client.route(locations, costing_options=self.options)
+            resp = self.client.route(locations, costing_options=self.options, **self.extra)
         except ValhallaError as err:
             body = err.body if isinstance(err.body, dict) else {}
             raise NoRoute(body.get("error", str(err))) from err

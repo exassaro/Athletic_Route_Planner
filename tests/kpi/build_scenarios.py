@@ -31,7 +31,18 @@ MANIFEST = ROOT / "data" / "manifest.json"
 PIN = json.loads((ROOT / "engine" / "osm_pin.json").read_text(encoding="utf-8"))
 
 
+RULES = json.loads((FIXTURES / "rules_places.json").read_text(encoding="utf-8"))["places"]
+
+
 def point(key: str) -> dict:
+    """A place from places.json, or from rules_places.json with the prefix "r:" (both pinned by OSM id)."""
+    if key.startswith("r:"):
+        p = RULES[key[2:]]
+        out = {"lon": p["lon"], "lat": p["lat"], "label": p.get("name") or key[2:], "place_id": f"osm:{p['osm_id']}"}
+        if p.get("kind") == "bridge" or p["osm_id"].startswith("way/"):
+            out["way_ids"] = [int(p["osm_id"].split("/")[1])]
+            out["lines"] = [p["coords"]]
+        return out
     p = PLACES[key]
     label = p.get("name") or key
     out = {"lon": p["lon"], "lat": p["lat"], "label": label}
@@ -40,8 +51,41 @@ def point(key: str) -> dict:
     return out
 
 
+def own_boundary(key: str) -> dict | None:
+    """The most local OSM boundary named after the place (pass-near fallback, Phase 3 amendment 3)."""
+    if not key.startswith("r:"):
+        return None
+    p = RULES[key[2:]]
+    word = (p.get("name") or "").lower().split()[0] if p.get("name") else ""
+    for b in p.get("boundaries", []):          # most local first
+        if word and word in (b.get("name") or "").lower():
+            return b["geometry"]
+    return None
+
+
+def item(spec, defaults: dict | None = None) -> dict:
+    """A stop, via, must_use or avoid entry: a key string, or {"place": key, ...extra fields}."""
+    if isinstance(spec, str):
+        spec = {"place": spec}
+    out = dict(defaults or {})
+    if "place" in spec:
+        key = spec["place"]
+        out.update(point(key))
+        out["label"] = (RULES[key[2:]].get("name") if key.startswith("r:") else PLACES[key].get("name")) or key
+        kind = spec.get("kind", "place")
+        if kind == "place" and not spec.get("must_reach", out.get("must_reach", False)):
+            b = own_boundary(key)
+            if b is not None and spec.get("boundary", True):
+                out["boundary"] = b
+        if kind not in ("bridge", "road"):
+            out.pop("way_ids", None)
+            out.pop("lines", None)
+    out.update({k: v for k, v in spec.items() if k not in ("place", "boundary")})
+    return out
+
+
 def resolve(req: dict) -> dict:
-    """Replace place keys with coordinates from places.json."""
+    """Replace place keys with coordinates (and OSM ways and boundaries) from the pinned fixtures."""
     req = copy.deepcopy(req)
     if isinstance(req["start"], str):
         req["start"] = point(req["start"])
@@ -49,21 +93,27 @@ def resolve(req: dict) -> dict:
     if d and d["kind"] == "towards_place" and isinstance(d["place"], str):
         d["place"] = point(d["place"])
     defaults = req.pop("checkpoint_defaults", {})
-    out = []
-    for c in req.get("checkpoints", []):
-        if isinstance(c, str):
-            c = {"place": c}
-        if "place" in c:   # {"place": key, ...extra fields such as must_reach}
-            key = c["place"]
-            c = {**point(key), "label": PLACES[key].get("name") or key, **{k: v for k, v in c.items() if k != "place"}}
-        out.append({**defaults, **c})
-    req["checkpoints"] = out
+    req["checkpoints"] = [item(c, defaults) for c in req.get("checkpoints", [])]
+    for key in ("via", "must_use"):
+        if key in req:
+            req[key] = [item(v) for v in req[key]]
+    if "avoid" in req:
+        out = []
+        for a in req["avoid"]:
+            x = item(a)
+            x.pop("place_id", None)
+            if x.get("kind") == "road":
+                x.pop("lon", None)
+                x.pop("lat", None)
+            out.append(x)
+        req["avoid"] = out
     return req
 
 
 def pass_near_request(req: dict) -> bool:
-    """True if any checkpoint is passed near rather than reached (the default kind and must_reach false)."""
-    return any(c.get("kind", "place") != "place" or not c.get("must_reach", False) for c in req.get("checkpoints", []))
+    """True if the brute-force reference (every stop reached as a break) does not model the request: any stop
+    passed near (the default), any bridge, road or junction, or any via, must_use or avoid item."""
+    return any(c.get("kind", "place") != "place" or not c.get("must_reach", False) for c in req.get("checkpoints", []))         or bool(req.get("via") or req.get("must_use") or req.get("avoid"))
 
 
 def main() -> int:
@@ -81,7 +131,7 @@ def main() -> int:
 
     for sc in BASE["scenarios"]:
         entry = {"id": sc["id"], "title": sc["title"], "base": sc["id"], "status": sc.get("status", "active")}
-        for key in ("edit_of", "invariants"):
+        for key in ("edit_of", "invariants", "expect_order"):
             if key in sc:
                 entry[key] = sc[key]
         entry["request"] = resolve(sc["request"]) if sc.get("request") else None

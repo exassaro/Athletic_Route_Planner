@@ -40,9 +40,20 @@ NODES = {
     # Chaliyam's harbour at the tip of the spit ("Chaliyam Fish Harber"): a true dead end with
     # ferries excluded, used to test a must_reach stop at a dead end.
     "chaliyam_harbour": 2713992338,
+    # Phase 3b step 8: fixtures outside Kozhikode (found by name in the pinned extract, 2026-11-17).
+    # "Thrissur" itself has no place node in the extract; Ollur (a suburb) and Pavaratty stand in.
+    "fort_kochi": 1023203445, "mattancherry": 671445585, "ernakulam": 2278426212, "edappally": 7273763200,
+    "kalamassery": 958195608, "aluva": 1880437827,
+    "kovalam": 304916587, "thiruvananthapuram": 245581432, "east_fort": 1998291079, "kazhakkoottam": 6002339465,
+    "ollur": 10059893616, "irinjalakuda": 7137292722, "pavaratty": 7255187743, "guruvayur": 1981613388,
+    "chavakkad": 2934096610,
+    "kannur": 290180981, "thalassery": 304002887, "muzhappilangad": 4629397687,
+    "kalpetta": 245596484, "sultan_bathery": 393111659, "meenangadi": 2329757020, "mananthavady": 589983022,
+    "panamaram": 2640668694,
 }
 WAYS = {
     "karuvanthuruthy_bridge": 389396419,
+    "feroke_bridge_new": 155988674,   # "feroke bridge new", highway=primary, foot=yes: the step 7 avoid test
 }
 BOUNDARY_TYPES = {"administrative", "local_authority"}
 ADMIN_LEVELS = {"8", "9", "10"}

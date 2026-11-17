@@ -260,8 +260,9 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
     target = None
     if req.direction and req.direction.kind == "towards_place":
         target = req.direction.place.lonlat
-    located = engine.locate([c.lonlat for c in req.checkpoints], costing_options=pedestrian_options()) \
-        if req.checkpoints else []
+    all_stops = req.stops()          # checkpoints, then via and must_use items with their roles
+    located = engine.locate([c.lonlat for c in all_stops], costing_options=pedestrian_options()) \
+        if all_stops else []
 
     lead_keys: dict[str, set] = {}
     forced_keys: dict[str, set] = {}
@@ -302,10 +303,10 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
         if cand.option in BUDGET_OPTIONS:
             cr["dist_err_pct"] = abs(m.foot_m - req.target_distance_m) / req.target_distance_m * 100
 
-        on_candidate = {s.label for s in cand.stops if s.role == "checkpoint"}
-        stop_of = {s.label: s for s in cand.stops if s.role == "checkpoint"}
+        on_candidate = {s.label for s in cand.stops if s.role not in ("start", "end")}
+        stop_of = {s.label: s for s in cand.stops if s.role not in ("start", "end")}
         cr["pass_walk"] = []
-        for cp, snap in zip(req.checkpoints, located):
+        for cp, snap in zip(all_stops, located):
             if cand.option == "cut_at_target" and cp.label not in on_candidate:
                 continue   # stops beyond the cut are dropped by design
             if cp.kind in ("bridge", "road"):
@@ -366,7 +367,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
 
         # No out-and-back spur to reach a pass-near stop (Phase 3 amendment 3) unless the solver flags it.
         flagged = {f.data.get("label") for f in cand.flags if f.code == "pass_near_spur"}
-        near_stops = [cp for cp in req.checkpoints if cp.kind == "place" and not cp.must_reach
+        near_stops = [cp for cp in all_stops if cp.kind == "place" and not cp.must_reach
                       and cp.label in on_candidate and cp.label not in flagged]
         cr["pass_spurs"] = []
         if req.route_type != "out_and_back":
@@ -415,6 +416,29 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
             origin = (last[-1].snapped_lon, last[-1].snapped_lat) if last else geom[0]
             cr["bearing_err"] = geodesy.angle_between_deg(geodesy.bearing_deg(target, geom[-1]),
                                                           geodesy.bearing_deg(origin, target))
+        # Avoid list (Phase 3 amendment 7): no avoided OSM way among the matched edges, no stretch inside an
+        # avoided place or area (the harness draws its own circles for places given as a point).
+        cr["avoid_ok"] = True
+        for a in req.avoid:
+            hit = None
+            if a.kind == "road" and cr["ways"] & set(a.way_ids):
+                hit = f"uses avoided {a.label}"
+            elif a.kind in ("place", "area"):
+                from shapely.geometry import LineString, Polygon  # noqa: PLC0415
+                from shapely.geometry import shape as as_shape  # noqa: PLC0415
+                poly = as_shape(a.polygon) if a.polygon is not None else Polygon(
+                    [geodesy.destination((a.lon, a.lat), b, a.radius_m) for b in range(0, 360, 10)])
+                if LineString(geom).intersects(poly):
+                    hit = f"enters avoided {a.label}"
+            if hit:
+                cr["avoid_ok"] = False
+                row["problems"].append(f"{name}: {hit}")
+        want = fixture.get("expect_order")
+        if want and cand.option in ("main", "full_route", "end_at_target", "continue_past_target"):
+            got = [s.label for s in cand.stops if s.role in ("checkpoint", "must_use")]
+            cr["order_ok"] = got == want
+            if got != want:
+                row["problems"].append(f"{name}: stop order {got}, expected {want}")
         row["candidates"].append(cr)
 
     if len(lead_keys) == 2:
@@ -497,6 +521,12 @@ def main() -> int:
                 order_a = [s.label for s in a.stops if s.role == "checkpoint"]
                 if order_a != order_b:
                     problems.append(f"stop order {order_b} -> {order_a}")
+            if "same_distance" in f["invariants"]:
+                if before.request.target_distance_m != after.request.target_distance_m:
+                    problems.append("requested distance changed")
+                for c in after.candidates:
+                    if c.option == "main" and abs(c.foot_m - after.request.target_distance_m) > after.request.tolerance_m:
+                        problems.append(f"{c.label} is {c.foot_m:.0f} m, not the requested distance")
             if "end_moves" in f["invariants"] and geodesy.distance_m((a.end.lon, a.end.lat), (b.end.lon, b.end.lat)) < 100:
                 problems.append("end did not move")
         invariant_rows.append((f["id"], f["edit_of"], problems))
@@ -582,7 +612,12 @@ def main() -> int:
             f"max {max(c['trunk_share'] * 100 for c in rec_main):.1f}%" if rec_main else "no routes", True),
         kpi("National-highway flag matches the measured trunk stretch (>= 200 m)", "every route",
             f"{sum(c['nh_flag_ok'] for c in cands)} / {len(cands)}", have and all(c["nh_flag_ok"] for c in cands)),
-        kpi("Edit invariants (scenarios 9, 10)", "all hold",
+        kpi("Avoid list respected (no avoided way, place or area)", "every route",
+            f"{sum(c['avoid_ok'] for c in cands)} / {len(cands)}", have and all(c["avoid_ok"] for c in cands)),
+        kpi("Expected stop order (acceptance)", "every route",
+            f"{sum(c['order_ok'] for c in cands if 'order_ok' in c)} / {sum('order_ok' in c for c in cands)}",
+            all(c["order_ok"] for c in cands if "order_ok" in c)),
+        kpi("Edit invariants (scenarios 9, 10; via, avoid, must_use edits hold the distance)", "all hold",
             f"{sum(not p for _, _, p in invariant_rows)} / {len(invariant_rows)}",
             all(not p for _, _, p in invariant_rows) and bool(invariant_rows)),
     ]

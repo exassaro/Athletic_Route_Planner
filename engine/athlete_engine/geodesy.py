@@ -111,6 +111,15 @@ def distance_m(a: Sequence[float], b: Sequence[float]) -> float:
     return dist
 
 
+def destination(origin: Sequence[float], bearing_deg: float, dist_m: float) -> tuple[float, float]:
+    """The point dist_m from origin along a geodesic at the given bearing.
+
+    Use only to draw areas (e.g. a circle to avoid) or candidate grids. Not a route distance.
+    """
+    lon, lat, _ = _GEOD.fwd(origin[0], origin[1], bearing_deg, dist_m)
+    return (lon, lat)
+
+
 def percent_gap(engine_m: float, geometry_m: float) -> float:
     """Absolute gap between engine-reported and geometry length, as % of geometry length."""
     if geometry_m == 0:
