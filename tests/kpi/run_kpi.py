@@ -539,7 +539,10 @@ def main() -> int:
     lat = [r["ms"] for r in rows if "ms" in r]
     reps = [c["repeat_share"] * 100 for c in cands if c.get("repeat_share") is not None]
     excess = [c["excess_repeat_share"] * 100 for c in cands if c.get("excess_repeat_share") is not None]
-    back = [c["backtrack"] * 100 for c in cands if c.get("backtrack") is not None]
+    # Direction adherence is judged on "shortest" (Phase 3 amendment 20): "recommended" detours by its road
+    # rules (capped at 30% longer by easing them) and is reported as information.
+    back = [c["backtrack"] * 100 for c in cands if c.get("backtrack") is not None and c["label"] == "shortest"]
+    back_rec = [c["backtrack"] * 100 for c in cands if c.get("backtrack") is not None and c["label"] == "recommended"]
     bear = [c["bearing_err"] for c in cands if "bearing_err" in c]
     bear_limited = [c for c in cands if c.get("bearing_network_limited")]
     bear_fail = [c for c in cands if "bearing_err" in c and c["bearing_err"] > 30 and not c.get("bearing_network_limited")]
@@ -585,9 +588,12 @@ def main() -> int:
             bool(excess) and statistics.median(excess) < 2 and max(excess) <= 10),
         kpi("(info) Raw duplication, including what the stops force", "info only",
             f"median {statistics.median(reps):.1f}%, max {max(reps):.1f}%" if reps else "no routes", True),
-        kpi("Direction adherence (share moving away from target, after last stop)", "every route < 15%",
+        kpi("Direction adherence, shortest (share moving away from target, after last stop)", "every route < 15%",
             f"max {max(back):.1f}%, {sum(b < 15 for b in back)} / {len(back)} under" if back else "no routes",
             bool(back) and all(b < 15 for b in back)),
+        kpi("(info) Direction adherence, recommended", "info only",
+            f"max {max(back_rec):.1f}%, {sum(b < 15 for b in back_rec)} / {len(back_rec)} under 15%"
+            if back_rec else "no routes", True),
         kpi("Endpoint bearing (bearing-only requests; continue-past-target direction)", "within 30°",
             (f"{sum(b <= 30 for b in bear)} / {len(bear)} within; {len(bear_limited)} beyond 30° where an exhaustive "
              f"search finds nothing closer (network does not permit)" if bear else "no routes"),

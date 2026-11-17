@@ -155,6 +155,10 @@ docker compose --profile geocode stop photon
 
 ## Open decisions (Phase 3b, see docs/reports/phase3b/summary.md; do not resolve silently)
 
-(1) Long detours by "recommended" (blueprint Phase 3 amendment 20). On the Wayanad ghat it is 56% longer than "shortest" and fails direction adherence. Easing only the trunk penalty does not fix it (still +34% at x1.0, because "shortest" also uses 1.7 km of footpath shortcuts across the hairpins), and X10's detour comes from avoiding primary roads. Waiting for the developer. Settled 2026-11-17: the road-suitability KPI measures trunk/motorway share, or flagged (amendment 18); the implementation defaults are confirmed (amendment 19).
+None open. Settled 2026-11-17 (blueprint Phase 3 amendments 18-20):
+- road suitability is measured as trunk/motorway share, or flagged;
+- the implementation defaults are confirmed;
+- "recommended" is capped at 30% longer than "shortest" by easing every road penalty in steps (flag `detour_eased`);
+- direction adherence is judged on "shortest".
 
 Phase 3b facts: a pass-near plan depends on the engine, so `over_budget` means every alternative's way through the stops exceeds D + 500 m. Runs are cut from the whole route's geometry (a separately routed tail can begin with a U-turn the re-route cannot repeat). GraphHopper's lengths use a 6,371 km sphere. Valhalla exclusion limits are raised in `engine/valhalla/overrides.json`.

@@ -17,7 +17,7 @@ from athlete_engine.valhalla import Valhalla
 
 from .avoid import inside, valhalla_extra
 from .engine import Engine, NoRoute, ValhallaEngine
-from .graphhopper import GraphHopperEngine, GraphHopperUnavailable
+from .graphhopper import EASING, GraphHopperEngine, GraphHopperUnavailable
 from .models import Conflict, Flag, RouteRequest, SolveResult
 from .out_and_back import solve_out_and_back
 from .p2p import (SECTOR_DEG, Infeasible, all_must_reach, anchors, bearing_tail, build_conflict, check_snapping,
@@ -235,9 +235,57 @@ def _solve(req: RouteRequest, engines: dict[str, Engine], graph_build: str, flag
 
     by_alt = _run_alternatives(run, lambda alt, eng: _guard(
         alt, lambda: _alternative(req, eng, alt, start, target, bases[alt])))
+    if target is not None:
+        _cap_detour(req, run, by_alt, start, target, order)
     first = by_alt.get("recommended") or by_alt["shortest"]
     facts.update({k: v for k, v in first[1].items() if k not in facts})
     return done("ok", by_alt=by_alt, facts=facts, extra_flags=lost)
+
+
+DETOUR_LIMIT = 1.30   # Phase 3 amendment 20: "recommended" at most 30% longer than "shortest" to the target
+
+
+def _to_target_m(facts: dict) -> float | None:
+    """Length of the alternative's way to the target through the stops (base + tail), if it was routed."""
+    if "tail_to_target_m" not in facts or "l_min_m" not in facts:
+        return None
+    return facts["l_min_m"] + facts["tail_to_target_m"]
+
+
+def _cap_detour(req, engines, by_alt, start, target, order) -> None:
+    """Phase 3 amendment 20: if "recommended" is over 30% longer than "shortest" on the way to the target,
+    re-solve it with the road penalties eased step by step (GraphHopper.EASING) until it is within 30%; the
+    last step has no penalties. The replaced result carries a detour_eased flag."""
+    eng = engines.get("recommended")
+    if not isinstance(eng, GraphHopperEngine) or "recommended" not in by_alt or "shortest" not in by_alt:
+        return
+    rec, short = _to_target_m(by_alt["recommended"][1]), _to_target_m(by_alt["shortest"][1])
+    if rec is None or short is None or rec <= DETOUR_LIMIT * short:
+        return
+    for k, factors in enumerate(EASING):
+        eased = eng.eased(factors)
+        try:
+            base = planned_base(req, eased, start, target, req.upper_m, order=order)
+            if base is None:
+                continue
+            pairs, facts, flags = _alternative(req, eased, "recommended", start, target, base)
+        except (NoRoute, GraphHopperUnavailable):
+            continue
+        now = _to_target_m(facts)
+        if now is None or not pairs:
+            continue
+        if now <= DETOUR_LIMIT * short or k == len(EASING) - 1:
+            facts["eased"] = {"from_m": round(rec, 1), "to_m": round(now, 1), "shortest_m": round(short, 1),
+                              "factors": factors}
+            flags = flags + [Flag(code="detour_eased",
+                                  message=(f"the rules' preferred route to the target was {rec / short - 1:.0%} longer "
+                                           f"than the shortest; road penalties eased (primary x{factors['primary']}, "
+                                           f"trunk x{factors['trunk']}, paths x{factors['paths']}), now "
+                                           f"{now / short - 1:+.0%}"),
+                                  data=facts["eased"])]
+            by_alt["recommended"] = (pairs, facts, flags)
+            engines["recommended"] = eased
+            return
 
 
 def _guard(alt: str, fn) -> tuple[list, dict, list[Flag]]:

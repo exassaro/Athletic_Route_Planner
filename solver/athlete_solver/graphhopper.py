@@ -28,14 +28,24 @@ PROFILE = "foot_rules"
 PATH_CLASSES = ("FOOTWAY", "PATH", "STEPS", "TRACK", "CYCLEWAY", "BRIDLEWAY")
 
 
-def priority_model(prefs: Preferences) -> dict:
+R5 = {"primary": 0.6, "trunk": 0.1, "paths": 0.1}
+# Phase 3 amendment 20: when "recommended" is over 30% longer than "shortest", the penalties are eased in
+# these steps until it is within 30% (the last step has no penalties at all).
+EASING = [{"primary": 0.8, "trunk": 0.3, "paths": 0.3},
+          {"primary": 0.9, "trunk": 0.6, "paths": 0.6},
+          {"primary": 1.0, "trunk": 1.0, "paths": 1.0}]
+
+
+def priority_model(prefs: Preferences, factors: dict | None = None) -> dict:
     """Model R5 (decision 10): ordinary roads 1.0, primary x0.6, trunk/motorway x0.1, paths x0.1."""
-    rules = [
-        {"if": "road_class == PRIMARY", "multiply_by": "0.6"},
-        {"if": "road_class == TRUNK || road_class == MOTORWAY", "multiply_by": "0.1"},
-    ]
-    if prefs.paths == "avoid":
-        rules.append({"if": " || ".join(f"road_class == {c}" for c in PATH_CLASSES), "multiply_by": "0.1"})
+    f = factors or R5
+    rules = []
+    if f["primary"] < 1:
+        rules.append({"if": "road_class == PRIMARY", "multiply_by": str(f["primary"])})
+    if f["trunk"] < 1:
+        rules.append({"if": "road_class == TRUNK || road_class == MOTORWAY", "multiply_by": str(f["trunk"])})
+    if prefs.paths == "avoid" and f["paths"] < 1:
+        rules.append({"if": " || ".join(f"road_class == {c}" for c in PATH_CLASSES), "multiply_by": str(f["paths"])})
     return {"priority": rules}
 
 
@@ -49,9 +59,12 @@ class GraphHopperEngine:
     engine_name = "graphhopper"
 
     def __init__(self, yardstick: ValhallaEngine, prefs: Preferences, base_url: str = GH_URL,
-                 client: httpx.Client | None = None, request: RouteRequest | None = None):
+                 client: httpx.Client | None = None, request: RouteRequest | None = None,
+                 factors: dict | None = None):
         self.yard = yardstick
-        self.model = priority_model(prefs)
+        self.prefs, self.request, self.base_url = prefs, request, base_url
+        self.factors = factors or R5
+        self.model = priority_model(prefs, self.factors)
         if request is not None and request.avoid:
             areas, rules = graphhopper_model(request)
             self.model["priority"] += rules
@@ -64,6 +77,11 @@ class GraphHopperEngine:
     @property
     def calls(self) -> int:
         return self.gh_calls + self.yard.calls
+
+    def eased(self, factors: dict) -> "GraphHopperEngine":
+        """The same engine with other road-priority factors (shares the HTTP client and the yardstick)."""
+        return GraphHopperEngine(self.yard, self.prefs, self.base_url, client=self.http, request=self.request,
+                                 factors=factors)
 
     def close(self) -> None:
         if self._own:

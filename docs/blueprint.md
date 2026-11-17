@@ -80,11 +80,10 @@ Ten further fixtures outside Kozhikode (Kochi, Thiruvananthapuram, Thrissur, Kan
     - With no spur-free pass point and no boundary, the stop is passed with the shortest spur and flagged `pass_near_spur` (decision 16).
     - `over_budget` means every alternative's own way through the stops exceeds D + 500 m. The conflict numbers come from the shorter plan; an alternative whose own way does not fit, while the other's does, returns its full route and cut, flagged `alternative_over_budget`.
     - An avoided place given only as a point is a 300 m circle around it.
-20. **Open: long detours by "recommended".** The proposal to re-solve with the trunk penalty eased (×0.3) when "recommended" is over 30% longer than "shortest" was measured before being built, and does not do what it was meant to:
-    - On the Wayanad ghat (S13), "recommended" stays 34% longer even with no trunk penalty, because "shortest" also uses 1.7 km of footpath shortcuts across the hairpins.
-    - On X10 the detour (12%) comes from avoiding primary roads, not trunk.
-
-    Waiting for the product owner.
+20. **Long detours by "recommended" are capped** (decided 2026-11-17). Easing only the trunk penalty was measured and is not enough: on the Wayanad ghat (S13), "shortest" also uses 1.7 km of footpath shortcuts across the hairpins.
+    - When "recommended"'s way to the target is more than 30% longer than "shortest"'s, it is re-solved with every road penalty eased step by step until it is within 30%: (primary ×0.8, trunk ×0.3, paths ×0.3), then (×0.9, ×0.6, ×0.6), then none. The result is flagged `detour_eased`.
+    - On S13 the second step brings it from +56% to +8%, down NH 766, with the national-highway flag.
+    - The direction-adherence KPI is judged on "shortest". "recommended"'s adherence is reported as information, because its detours under 30% are the road rules working (X10: avoiding 19 km of primary road).
 
 **Open implementation questions for the spike** (answered by decisions 10 to 17)
 - Open-source GraphHopper has no matrix call. *Default:* checkpoints are ordered on the Valhalla matrix, then routed by GraphHopper. The spike checks that both engines give the same order.

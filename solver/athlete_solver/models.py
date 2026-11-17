@@ -248,6 +248,7 @@ FlagCode = Literal[
     "pass_near_boundary",       # no spur-free pass point within 1 km on foot: passes inside the OSM boundary
     "pass_near_spur",           # no spur-free pass point at all: the stop is reached with a spur
     "avoid_unmet",              # the route still touches something the request asked to avoid
+    "detour_eased",             # "recommended" was over 30% longer than "shortest": road penalties eased
 ]
 
 

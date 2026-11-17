@@ -45,7 +45,7 @@ Athlete's request: from Athanikkal towards Kozhikode, 25 km, passing near Kottak
 - Savings: dropping Kallai saves 6.60 km and dropping Beypore 1.95 km. Both fit the budget, so both come with "drop" and "make optional" fixes. Dropping any of the first four saves nothing, because the route passes them anyway.
 - The "set distance" fix is 21.8 km.
 
-## KPIs: 74 fixtures, one decision open
+## KPIs: 74 fixtures, all pass
 
 | KPI | Target | Measured | Pass |
 | --- | --- | --- | --- |
@@ -55,7 +55,7 @@ Athlete's request: from Athanikkal towards Kozhikode, 25 km, passing near Kottak
 | Length consistency (engine's own radius, + 0.2 m per edge) | every route | 160 / 160 | yes |
 | Access violations or any ferry | 0 | 0 | yes |
 | Over-budget conflict objects (brute-force reference) | 100% | 2 / 2 | yes |
-| Latency per solve | p50 < 2 s, p95 < 5 s | p50 1.96 s, p95 4.25 s | yes (just) |
+| Latency per solve | p50 < 2 s, p95 < 5 s | p50 1.93 s, p95 3.94 s | yes (just) |
 | Duplication beyond what must_reach stops force | median < 2%, none > 10% | median 0.0%, max 2.9% | yes |
 | Checkpoint compliance (must_reach 50 m, pass near 1 km on foot, bridge/road used) | 100% | 160 / 160 | yes |
 | Spur to reach a pass-near stop | 0 | 0 | yes |
@@ -64,15 +64,16 @@ Athlete's request: from Athanikkal towards Kozhikode, 25 km, passing near Kottak
 | Edit invariants (incl. via, avoid, must_use) | all hold | 5 / 5 | yes |
 | National-highway flag matches the measured trunk stretch | every route | 160 / 160 | yes |
 | Alternative diversity | < 60% | max 59%; both alternatives returned on 58 of 74 | yes |
-| **Direction adherence** | every route < 15% | 76 / 83; max 25.9% | **no** (decision 1) |
-| Road suitability (trunk + motorway share, "recommended"; amended, decision 2) | < 10%, or flagged | 0 over 10% without the flag; median 0.0%, max 14.3% (the flagged ghat) | yes |
-| (info) Main-road share incl. primary, "recommended" | – | median 4.4%, max 23.7% | – |
+| Direction adherence, "shortest" (decision 1) | every route < 15% | 37 / 37; max 12.0% | yes |
+| (info) Direction adherence, "recommended" | – | 45 / 46 under 15%; max 25.9% (X10, avoiding primary roads) | – |
+| Road suitability (trunk + motorway share, "recommended"; amended, decision 2) | < 10%, or flagged | 0 over 10% without the flag; median 0.0%, max 46.1% (the eased ghat route, flagged) | yes |
+| (info) Main-road share incl. primary, "recommended" | – | median 4.4%, max 46.1% | – |
 
 The 10 fixtures outside Kozhikode (X01 to X10) all solve without a problem.
 
 ## Decisions needed
 
-### 1. "Trunk last" against the direction-adherence target
+### 1. "Trunk last" against the direction-adherence target (decided 2026-11-17: (b′) and (d))
 
 Under model R5 (trunk ×0.1), "recommended" avoids national highways even at a large detour, and on a few routes it then winds away from the target for more than 15% of its length:
 - **Wayanad ghat** (S13 family, 6 fixtures): Lakkidi to Thamarassery is 17.5 km down NH 766 (12.4 km of it trunk). "recommended" takes 27.3 km on side roads instead, a 56% detour.
@@ -135,3 +136,11 @@ Please confirm or change:
 Counted over all 74 fixtures, across both alternatives, which run in parallel:
 - **Requests without stops:** median 37 engine calls, range 12 to 75.
 - **Requests with stops:** median 80, range 19 to 123. A01 used 118 calls and about 4 s. One GraphHopper route takes about 50 ms; Valhalla's map matching of GraphHopper geometry is the largest single cost.
+
+## Decided 2026-11-17
+
+1. **Detour cap:** both (b′) and (d) are built. "recommended" is re-solved with every road penalty eased step by step when its way to the target is more than 30% longer than "shortest"'s. Its result carries the flag `detour_eased`. On S13 the second step gives +8%, down NH 766, with the national-highway flag. Direction adherence is judged on "shortest" (37 of 37 under 15%).
+2. **Road-suitability KPI:** trunk/motorway share, or flagged.
+3. **Implementation defaults:** confirmed.
+
+All KPIs pass on the 74 fixtures (this laptop). Tests: 78 unit, 70 integration.

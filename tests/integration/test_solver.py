@@ -76,3 +76,14 @@ def test_recommended_comes_from_graphhopper_and_is_measured_by_valhalla(engine):
     assert rec.engine == "graphhopper"
     assert rec.road_class_m                      # road classes from Valhalla matching
     assert rec.foot_m == pytest.approx(geodesy.line_length_m(rec.geometry), abs=1.0)
+
+
+def test_long_detour_is_capped_by_easing_the_road_penalties(engine):
+    """Phase 3 amendment 20: on the Wayanad ghat, R5 alone is 56% longer than shortest; eased, within 30%."""
+    res = run(engine, "S13")
+    rec = res.facts["by_alternative"]["recommended"]
+    short = res.facts["by_alternative"]["shortest"]
+    to_target = rec["l_min_m"] + rec["tail_to_target_m"]
+    assert to_target <= 1.30 * (short["l_min_m"] + short["tail_to_target_m"])
+    assert rec["eased"]["from_m"] > 1.30 * rec["eased"]["shortest_m"]
+    assert any(f.code == "detour_eased" for f in res.flags)
