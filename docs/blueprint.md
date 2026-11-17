@@ -61,7 +61,18 @@ Its measured length is reported. If it is over 25 km, the `over_budget` result i
 
 Ten further fixtures outside Kozhikode (Kochi, Thiruvananthapuram, Thrissur, Kannur, Wayanad) show that nothing is tuned to one route.
 
-**Open implementation questions for the spike**
+**Decided after the rules spike** (2026-11-17, evidence: [docs/reports/phase3b/rules_spike.md](reports/phase3b/rules_spike.md); these replace the *defaults* above where they differ)
+
+10. **Road-priority model R5.** GraphHopper profile `foot_rules` (hard rules only), with priorities sent per request: primary ×0.6, trunk and motorway ×0.1, footway, path, track, steps, cycleway and bridleway ×0.1, every other road 1.0. `paths: "allow"` sets the path factor to 1.0.
+11. **"Within 1 km" is walking distance**: the Valhalla pedestrian matrix from the place point to sample points every 100 m along the route. The straight-line kilometre is only a pre-filter. A straight line is met from the far bank of a river.
+12. **National-highway flag.** "Uses a national highway; running there may be prohibited" is raised for 200 m or more of trunk or motorway in one stretch, named from the road's `ref` or name. A shorter stretch carries the note "crosses a national highway".
+13. **Checkpoints are ordered on the Valhalla pedestrian matrix** (one call), then routed by each alternative's engine.
+14. **One request per run.** GraphHopper's `pass_through` relaxes where a `must_reach` stop needs a U-turn, so no leg-by-leg routing is needed.
+15. **The consistency check uses each engine's own earth radius**: Valhalla 6,378,137 m, GraphHopper 6,371,000 m. The threshold is 0.1% or 2 m plus 0.2 m per edge (decision 8).
+16. **Boundary fallback stays.** A checkpoint may carry its OSM boundary polygon. If no candidate within 1 km on foot avoids a spur, candidates inside the boundary are tried and the stop is flagged. Without a boundary, the least-added candidate is used even with a spur, and flagged.
+17. **Junction checkpoints** are through vias at the junction itself (within 50 m, no spur). **Bridge and named-road checkpoints**, and `must_use` items, are satisfied by the route using one of the item's OSM ways: a bridge through both ends, a road through its point of least added distance.
+
+**Open implementation questions for the spike** (answered by decisions 10 to 17)
 - Open-source GraphHopper has no matrix call. *Default:* checkpoints are ordered on the Valhalla matrix, then routed by GraphHopper. The spike checks that both engines give the same order.
 - GraphHopper's `pass_through` applies to a whole request, not to one point. A route mixing pass-near stops (no U-turn) and `must_reach` stops (U-turn allowed at a dead end) may need routing in stretches between `must_reach` stops and joining them.
 - Memory: GraphHopper (about 1.9 GiB) and Valhalla now run together, so Photon runs alone, for name lookup only.

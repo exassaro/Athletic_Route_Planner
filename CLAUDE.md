@@ -24,6 +24,16 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 8. **Repetition limit applies beyond what `must_reach` stops force. Consistency check: 0.1% / 2 m plus 0.2 m per edge.**
 9. **Alternatives: "recommended" (GraphHopper, rules above) and "shortest" (Valhalla pedestrian).** "Fewer main roads" is dropped.
 
+After the rules spike (`docs/reports/phase3b/rules_spike.md`, accepted 2026-11-17):
+
+10. **Model R5**: primary ×0.6, trunk/motorway ×0.1, paths ×0.1 (1.0 with `paths: "allow"`), on GraphHopper profile `foot_rules`.
+11. **Pass-near = walking distance ≤ 1 km** (Valhalla matrix to sample points every 100 m on the route); straight-line only as a pre-filter.
+12. **NH flag at ≥ 200 m of trunk/motorway in one stretch**; shorter = "crosses a national highway" note.
+13. **Order on the Valhalla matrix.** 14. **One request per run** (GraphHopper relaxes `pass_through` at dead ends).
+15. **Consistency check uses the engine's own radius** (GraphHopper 6,371,000 m) plus 0.2 m per edge.
+16. **Boundary fallback** when a checkpoint carries its OSM boundary; otherwise least-added candidate with a spur, flagged.
+17. **Junction** = through via at the junction; **bridge / named road / must_use** = route uses one of the item's OSM ways.
+
 Acceptance test: Athanikkal towards Kozhikode, 25 km, passing near Kottakadavu, Kadalundi, Chaliyam, Karuvanthuruthy bridge, Beypore and Kallayi. It must follow that order, take no spur into Chaliyam's beach end, use no ferry, and repeat under 2% of its road. Report the measured length; if it is over 25 km, show `over_budget`. Names come from OSM or Photon. If one can't be found, stop and ask. Plus 10 fixtures outside Kozhikode (Kochi, Thiruvananthapuram, Thrissur, Kannur, Wayanad).
 
 ## Decisions from Phase 2 (also in docs/blueprint.md; amended above where they conflict)
@@ -145,6 +155,6 @@ docker compose --profile geocode stop photon
 - Valhalla stores edge lengths in whole metres: routes with many short edges drift from the spherical measurement by about 0.1 m per edge.
 - Isodistance contours are outlines: vertices are often far nearer by route than the contour value. Route and measure every sample.
 
-## Open questions (Phase 3b, answered by the rules spike; do not resolve silently)
+## Phase 3b implementation (steps 3 to 9 of the plan)
 
-(1) Custom-model priorities for decision 2. (2) How to pick pass-near points: candidates within 1 km, least added distance, routed as through vias. (3) Ordering engine: open-source GraphHopper has no matrix, so the default is to order on the Valhalla matrix and route with GraphHopper. (4) GraphHopper `pass_through` is per request, so mixing it with `must_reach` stops may need routing in stretches. (5) OSM boundary coverage for the fallback. The Phase 3 open decisions (repetition, rounding allowance, second engine) are settled by amendments 1, 8 and 9. Loops wait until the point-to-point KPIs pass.
+Spike questions are settled by decisions 10 to 17 above. Order: (3) remove the ferry opt-in; (4) ±500 m tolerance, `over_budget`, repetition and consistency rules; (5) GraphHopper generator, "recommended" and "shortest", NH flag; (6) pass-near checkpoints; (7) `via`, `avoid`, `must_use`; (8) acceptance fixture and 10 fixtures outside Kozhikode; (9) report. Loops wait until the point-to-point KPIs pass.
