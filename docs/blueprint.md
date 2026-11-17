@@ -2,6 +2,100 @@
 
 Nov 16, 2026 · @Azzm
 
+## Phase 4 amendments
+
+Decided 2026-11-18 by the product owner at the start of Phase 4, the backend API in `api/` (evidence: [docs/reports/phase4/memory.md](reports/phase4/memory.md)). There is no front end and no LLM in this phase. The solver's behaviour does not change: if the API needs a solver change, it is raised with the product owner first. Where these amendments conflict with an earlier amendment or a later section, they win. Sections 11, 12 and 15 (Phase 4) are rewritten to match.
+
+**Decisions**
+
+1. **The API exposes the solver's own models as they are**: `RouteRequest`, `SolveResult`, `Candidate`, `Conflict` and `Flag`. This covers:
+   - the `over_budget` outcome;
+   - the "recommended" and "shortest" alternatives;
+   - the Case B options;
+   - `via`, `avoid` and `must_use`;
+   - pass-near and `must_reach` checkpoints;
+   - loops.
+2. **Stack:**
+   - FastAPI and Pydantic v2;
+   - SQLAlchemy 2 with Alembic;
+   - PostgreSQL 16 with PostGIS, and Redis;
+   - all in docker-compose next to the engines, and managed by uv like the rest of the repository.
+3. **Solves run in a worker thread**, never on the event loop.
+   - A global limit allows 2 concurrent solves (configurable).
+   - When the limit is reached, a request waits up to 10 s, then gets 429 with `Retry-After`.
+   - Each solve has a 15 s budget. Over it, the API returns 504 with what is known.
+4. **Persistence:**
+   - **`plans`.**
+   - **`plan_versions`:** the full RouteRequest as JSON; the source (form, chat or drag); the outcome; the conflict; both engine build ids.
+   - **`routes`:** the geometry as a PostGIS LineStringZ; the foot length; every stat and flag the Candidate carries; the label.
+   - **`saved_routes`**, with share slugs.
+
+   Lengths stored are the solver's measured ones and are never recomputed in SQL for display. `ST_Length(geography)` is used only as a cross-check in tests.
+5. **Cache.**
+   - The key is a hash of the canonical RouteRequest plus the Valhalla build id and the GraphHopper build id, so a rebuild of either engine invalidates it.
+   - The SolveResult is cached in Redis for 24 h.
+6. **Edits.** `PATCH /v1/plans/{id}` does four things:
+   - takes an RFC 6902 JSON Patch on the RouteRequest and validates it;
+   - re-solves;
+   - stores a new version;
+   - returns a diff against the previous version: the fields that changed, the length delta, the duration delta, whether the end changed, and the stops added or removed.
+
+   Undo means reading an earlier version and posting it as a new one.
+7. **Identity.** A client is anonymous: `POST /v1/session` issues a random token, which is sent as a header. Real login is deferred to Phase 8. Requests are rate-limited per client id and per IP.
+8. **Geocoding.**
+   - `/v1/places/search` and `/v1/places/reverse` go through Photon, biased to a given point and restricted to Kerala.
+   - When the top results are close in score, or share a name in different districts, all of them are returned as candidates for a picker. The API never picks one.
+   - If Photon is down, the API returns 503 with a clear message, and never falls back to coordinates from anywhere else.
+9. **GPX export.**
+   - A track with the geometry and elevation, plus waypoints for the start, each checkpoint and the end.
+   - It must import cleanly into Garmin Connect and Strava. Tests validate it against the GPX 1.1 schema; the product owner checks the apps by hand.
+10. **Explanations.**
+    - Each response carries the solver's facts object unchanged, plus a short explanation string built from templates (no LLM).
+    - Over-budget savings of 0 m say "dropping X does not shorten the run".
+
+**Implementation choices** (from the Phase 4 plan, accepted 2026-11-18)
+
+11. **`duration_s` is the engine's walking time**, passed through unchanged. Example: A02's 22.26 km "recommended" route is 16,068 s. It is documented as walking time, and the diff's duration delta is a walking-time delta. Explanations do not mention duration. A running-pace estimate waits for a pace source (user profiles).
+12. **A 504 cannot carry partial routes**: the solver is synchronous, returns nothing part-way, and a Python thread cannot be stopped.
+    - The 504 carries the plan id, `status: "solving"`, the elapsed time and a URL to poll.
+    - The solve keeps its slot until it really finishes, so no more than 2 solves ever run. It then stores the version and caches the result, and `GET /v1/plans/{id}` returns it.
+    - Returning the best candidates found so far would need a deadline in the solver: a solver change, not made in Phase 4.
+13. **The 10 s queue wait is separate from the 15 s solve budget**, so the worst-case response time is about 25 s.
+14. **The cache key also holds a hash of the solver's and `athlete_engine`'s source**, so a code change cannot serve stale results.
+    - Valhalla's build id is its version plus `tileset_last_modified` from `/status`.
+    - GraphHopper's is its version plus its import date from `/info`.
+    - Results with `alternative_unavailable` (an engine down) are not cached.
+    - The cached value also holds each candidate's elevation, so a cache hit makes no engine call.
+15. **Elevation is added by the API, not the solver.** `Candidate.geometry` is two-dimensional. After a solve, one Valhalla `/height` call (through `athlete_engine`) gives:
+    - the Z of every vertex: raw DEM heights;
+    - the profile, sampled every 30 m (the solver's own step).
+
+    The gain and loss shown are always the solver's smoothed values, never recomputed from Z.
+16. **Explanation numbers come only from the SolveResult**: its facts, its conflict (the savings live there) and its candidates' measured stats, formatted but never computed by the API. A test extracts every number from each explanation and finds it in the result.
+17. **No `places` table.** A geocoder cache would be a fallback while Photon is down. Search always returns a ranked list, with `ambiguous: true` and the reasons when results share a name, also across districts (Photon's `county`). If Photon exposes no score, "close in score" cannot be measured, and the name rule applies alone.
+18. **Clients and ownership.**
+    - `clients` replaces the `users` table until Phase 8, and the token is stored only as a hash.
+    - Plans and routes are readable only by the client that created them; any other client gets 404.
+    - Share slugs are public.
+19. **Undo is a PATCH that replaces the whole request**: `{"op": "replace", "path": "", "value": <earlier request>}`. An optional `If-Match: "v<n>"` header returns 412 if a newer version exists.
+20. **One uvicorn worker.** The 2-solve limit is held in that process. A limit across several processes (in Redis) is deferred.
+21. **GPX files are courses.**
+    - They have no `<time>`, so Strava imports them as routes and Garmin Connect as courses.
+    - Waypoints sit where the route passes each checkpoint.
+    - `via` and `must_use` items are not waypoints.
+22. **Rate-limit defaults** (configurable):
+    - solves (create and patch): 20 a minute per client, 40 per IP;
+    - reads: 300 a minute per client;
+    - new sessions: 10 an hour per IP.
+
+    Being limited returns 429 `rate_limited`, which is distinct from 429 `solver_busy`.
+23. **"Same result" means the same outcome, candidates, conflict, facts and flags**, ignoring `elapsed_ms`, `engine_calls` and `edge_ids`.
+    - The `edge_ids` are internal and are not part of the API response.
+    - The A01 round-trip test runs once through the cache and once with it bypassed.
+    - A fresh solve that differs is reported, not fixed in the solver.
+24. **Photon stays up during development.** With every engine, Postgres, Redis and Photon up, the Docker VM used 3.7 of 7.7 GiB, with no swap. No stub geocoder is needed; the tests use a fake one.
+25. **Left for later phases:** `POST /v1/plans/{id}/messages` (Phase 6) and magic-link login (Phase 8).
+
 ## Phase 3 amendments
 
 Decided 2026-11-17 by the product owner after the Phase 3 review (evidence: [docs/reports/phase3/summary.md](reports/phase3/summary.md), [quieter_spike.md](reports/phase3/quieter_spike.md)). These are routing-rule changes for **Phase 3b**, still solver only. Where they conflict with the Phase 2 amendments or a later section, these win. Items marked *default* came from the Phase 3b plan and stand until the product owner changes them. Implementation waits for the rules spike ([docs/reports/phase3b/rules_spike.md](reports/phase3b/rules_spike.md)) and the decision after it.
@@ -507,86 +601,90 @@ Conclusion: chat is a convenience layer, valuable for compound edits and for the
 - Build a golden set of at least 150 utterances with expected patches, including ambiguous and adversarial ones. Target 95% slot accuracy before launch and rerun it on every prompt or model change.
 - Keep the provider behind an interface so the model can be swapped; log parse failures for the golden set.
 
-## 11. Database schema proposal
+## 11. Database schema
 
-Seven tables cover the MVP; requests are stored as versioned JSON so every edit is replayable and every route can be traced to the constraints that produced it.
+Rewritten for Phase 4 (Phase 4 amendments 4, 14, 15 and 18). Requests are stored as versioned JSON, so every edit can be replayed and every route traced to the request, engine builds and solver code that produced it. Lengths are the solver's measurements, stored as `double precision` so they come back exactly as the solver gave them. The migrations in `api/` (Alembic) are the authority; this is their shape.
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS postgis;
 
-CREATE TABLE users (
-  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  email         text UNIQUE NOT NULL,
-  display_name  text,
-  units         text NOT NULL DEFAULT 'metric',
-  pace_s_per_km int,                         -- for duration estimates
-  created_at    timestamptz NOT NULL DEFAULT now()
+CREATE TABLE clients (                       -- anonymous identity until Phase 8 (amendment 7)
+  id           uuid PRIMARY KEY,
+  token_hash   bytea UNIQUE NOT NULL,        -- sha256 of the token; the token itself is never stored
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  last_seen_at timestamptz
 );
-
-CREATE TABLE places (                        -- geocoder cache, OSM-derived
-  id        text PRIMARY KEY,                -- e.g. osm:N:123
-  name      text NOT NULL,
-  kind      text,
-  geom      geography(Point, 4326) NOT NULL,
-  raw       jsonb
-);
-CREATE INDEX places_geom_gix ON places USING gist (geom);
 
 CREATE TABLE plans (                         -- one planning session
-  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id    uuid REFERENCES users(id),
-  title      text,
+  id         uuid PRIMARY KEY,
+  client_id  uuid NOT NULL REFERENCES clients(id),
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE plan_versions (                 -- one row per edit
-  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  plan_id     uuid NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
-  version_no  int  NOT NULL,
-  request     jsonb NOT NULL,                -- the route request object
-  source      text NOT NULL,                 -- form | chat | drag
-  user_text   text,                          -- original message, if chat
-  outcome     text NOT NULL,                 -- ok | infeasible | disconnected
-  conflict    jsonb,                         -- explanation when not ok
-  graph_build text NOT NULL,                 -- OSM/Valhalla build id
-  created_at  timestamptz NOT NULL DEFAULT now(),
+CREATE TABLE plan_versions (                 -- one row per solve: create, each patch, each undo
+  id                uuid PRIMARY KEY,
+  plan_id           uuid NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
+  version_no        int  NOT NULL,
+  request           jsonb NOT NULL,          -- the full RouteRequest, defaults filled in
+  source            text NOT NULL CHECK (source IN ('form', 'chat', 'drag')),
+  user_text         text,                    -- chat only (Phase 6)
+  outcome           text NOT NULL CHECK (outcome IN ('ok', 'over_budget', 'infeasible', 'disconnected', 'unsupported')),
+  conflict          jsonb,                   -- SolveResult.conflict
+  facts             jsonb NOT NULL,          -- SolveResult.facts, unchanged
+  flags             jsonb NOT NULL,          -- SolveResult.flags (result level)
+  explanation       text NOT NULL,           -- template-built (amendment 10)
+  diff              jsonb,                   -- against version_no - 1; null for version 1
+  graph_build       text NOT NULL,           -- the OSM pin timestamp, as the solver reports it
+  valhalla_build    text NOT NULL,
+  graphhopper_build text,                    -- null when GraphHopper was down
+  solver_hash       text NOT NULL,
+  cache_key         text NOT NULL,
+  from_cache        boolean NOT NULL,
+  elapsed_ms        double precision,        -- the solver's own time (of the original solve, on a hit)
+  engine_calls      int,
+  created_at        timestamptz NOT NULL DEFAULT now(),
   UNIQUE (plan_id, version_no)
 );
 
-CREATE TABLE routes (                        -- candidates for a version
-  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  plan_version_id uuid NOT NULL REFERENCES plan_versions(id) ON DELETE CASCADE,
-  label           text NOT NULL,             -- direct | scenic | flatter | quieter
-  geom            geography(LineStringZ, 4326) NOT NULL,
-  length_m        numeric NOT NULL,          -- from geometry
-  engine_length_m numeric NOT NULL,          -- as reported by engine
-  deviation_m     numeric NOT NULL,
-  duration_s      int,
-  gain_m          numeric, loss_m numeric,
-  repeat_share    numeric,                   -- 0..1
-  backtrack_share numeric,
-  surface_mix     jsonb, road_class_mix jsonb,
-  score           numeric,
-  end_label       text
+CREATE TABLE routes (                        -- one row per Candidate of a version
+  id               uuid PRIMARY KEY,
+  plan_version_id  uuid NOT NULL REFERENCES plan_versions(id) ON DELETE CASCADE,
+  seq              int  NOT NULL,            -- position in SolveResult.candidates
+  label            text NOT NULL,            -- recommended | shortest | loop_1 .. loop_4
+  option           text NOT NULL,            -- main | end_at_target | continue_past_target | detour_to_target
+                                             -- | full_route | cut_at_target | out_and_back | short_loop
+  engine           text NOT NULL,            -- valhalla | graphhopper
+  geom             geography(LineStringZ, 4326) NOT NULL,  -- solver geometry; Z = DEM height (amendment 15)
+  length_m         double precision NOT NULL,  -- ellipsoid geometry length, foot + ferry
+  foot_m           double precision NOT NULL,  -- what the budget counts
+  ferry_m          double precision NOT NULL,
+  engine_length_m  double precision NOT NULL,
+  sphere_length_m  double precision NOT NULL,
+  edge_count       int NOT NULL,
+  deviation_m      double precision NOT NULL,
+  duration_s       double precision,         -- engine walking time (amendment 11)
+  gain_m           double precision,         -- the solver's smoothed values
+  loss_m           double precision,
+  repeat_share     double precision,
+  backtrack_share  double precision,
+  score            double precision,
+  end_label        text,
+  end_point        jsonb NOT NULL,           -- Candidate.end
+  stops            jsonb NOT NULL,           -- Candidate.stops (StopOnRoute list)
+  road_class_m     jsonb NOT NULL,
+  flags            jsonb NOT NULL,           -- Candidate.flags
+  elevation        jsonb,                    -- [[distance_m, height_m], ...] every 30 m; null if heights failed
+  UNIQUE (plan_version_id, seq)
 );
 CREATE INDEX routes_geom_gix ON routes USING gist (geom);
 
-CREATE TABLE route_stops (
-  route_id  uuid REFERENCES routes(id) ON DELETE CASCADE,
-  seq       int,
-  place_id  text REFERENCES places(id),
-  role      text NOT NULL,                   -- start | checkpoint | end
-  at_m      numeric,                         -- distance along route
-  PRIMARY KEY (route_id, seq)
-);
-
 CREATE TABLE saved_routes (
-  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     uuid NOT NULL REFERENCES users(id),
+  id          uuid PRIMARY KEY,
+  client_id   uuid NOT NULL REFERENCES clients(id),
   route_id    uuid NOT NULL REFERENCES routes(id),
   name        text,
-  share_slug  text UNIQUE,
-  rating      int,                           -- post-run feedback, 1..5
+  share_slug  text UNIQUE NOT NULL,          -- random, URL-safe
+  rating      int CHECK (rating BETWEEN 1 AND 5),   -- post-run feedback (later phases)
   feedback    text,
   created_at  timestamptz NOT NULL DEFAULT now()
 );
@@ -594,65 +692,99 @@ CREATE TABLE saved_routes (
 
 Notes:
 
-- Storing both `length_m` and `engine_length_m` makes the distance-accuracy KPI a query.
-- `graph_build` lets you reproduce any route after the OSM data changes.
-- `saved_routes.rating` and `feedback` are your own data, kept apart from OSM-derived tables. This is the seed of a quality signal competitors get from heatmaps.
+- `length_m`, `engine_length_m` and `sphere_length_m` together keep the distance-accuracy and consistency KPIs answerable from the database.
+- `ST_Length(geom)` is only a cross-check in tests. Displayed lengths are always the stored solver values (amendment 4).
+- `graph_build`, the two engine builds and `solver_hash` let any route be reproduced after the data or the code changes.
+- The Candidate's `edge_ids` are internal to the solver and are not stored.
+- The draft's `users`, `places` and `route_stops` tables are gone:
+  - `users` becomes `clients` until Phase 8;
+  - `places` would be a geocoder fallback (amendment 17);
+  - stops are the Candidate's own list, kept as jsonb.
 
-## 12. API endpoint proposal
+## 12. API
 
-The API is small: one endpoint creates a plan, one patches it, and everything else reads.
+Rewritten for Phase 4. Every path is under `/v1`. Requests and responses use the solver's own models (amendment 1). FastAPI's OpenAPI page shows them, with examples taken from real solver output.
 
 | Method and path | Purpose | Notes |
 | --- | --- | --- |
-| `GET /v1/places/search?q=&near=` | Autocomplete and geocoding | Returns ranked candidates with ids; the client shows a picker on ties |
-| `GET /v1/places/reverse?lat=&lon=` | Label for the current location |  |
-| `POST /v1/plans` | Create a plan from a route request | Returns version 1 with routes, or a conflict object |
-| `PATCH /v1/plans/{id}` | Apply a JSON patch to the request and re-solve | Returns the new version, routes and a diff against the previous one |
-| `POST /v1/plans/{id}/messages` | Natural-language edit | Body: text. Returns the parsed patch, any clarification, then the same payload as PATCH |
-| `GET /v1/plans/{id}/versions/{n}` | Read any earlier version | Enables undo |
-| `GET /v1/routes/{id}` | Geometry, stats, stops | GeoJSON |
-| `GET /v1/routes/{id}/elevation` | Profile samples | Distance and height pairs |
-| `GET /v1/routes/{id}/gpx` | GPX track with waypoints for stops |  |
-| `POST /v1/routes/{id}/save` | Save and name |  |
-| `GET /v1/me/routes` | Saved routes |  |
-| `GET /v1/share/{slug}` | Public read-only route |  |
-| `GET /v1/health` | Engine, geocoder and graph build status |  |
+| `POST /v1/session` | Issue an anonymous client token | Returns `{client_id, token}`. The token goes in `X-Client-Token` on every other call except share and health |
+| `GET /v1/places/search?q=&lat=&lon=&limit=` | Geocoding through Photon, biased to (lat, lon), Kerala only | Ranked candidates with `place_id` (`osm:node/…`), label, district, kind, lon, lat; `ambiguous` with reasons. Never picks. 503 if Photon is down |
+| `GET /v1/places/reverse?lat=&lon=` | Name for a point | 503 if Photon is down |
+| `POST /v1/plans` | Create a plan: body `{request: RouteRequest, source}` | Solves; returns version 1 |
+| `PATCH /v1/plans/{id}` | Body: RFC 6902 patch on the latest request (`application/json-patch+json`) | Re-solves; returns the new version with its diff. Optional `If-Match: "v<n>"`. Undo: `replace` at path `""` with an earlier request |
+| `GET /v1/plans/{id}` | Latest version, list of version numbers, and `status` (`ready` or `solving`) | |
+| `GET /v1/plans/{id}/versions/{n}` | Any earlier version, in full | |
+| `GET /v1/routes/{id}` | One route as a GeoJSON Feature | LineString with Z; properties are the Candidate's stats, stops and flags |
+| `GET /v1/routes/{id}/elevation` | Profile `[[distance_m, height_m], …]` every 30 m, plus the solver's gain and loss | |
+| `GET /v1/routes/{id}/gpx` | GPX 1.1 course | Track with `ele`; waypoints for start, checkpoints, end |
+| `POST /v1/routes/{id}/save` | Save under a name | Returns `{saved_id, share_slug}` |
+| `GET /v1/me/routes` | This client's saved routes | |
+| `GET /v1/share/{slug}` | Public read-only route | No token needed |
+| `GET /v1/health` | Valhalla, GraphHopper, Photon, Postgres, Redis; both build ids; OSM pin; solver hash | 200 when the solve path (Valhalla, Postgres, Redis) is up, else 503 |
 
-### Response shape for create and patch
+### Response for create, patch and version reads
 
 ```json
 {
-  "plan_id": "...", "version": 3, "outcome": "ok",
-  "request": { },
-  "routes": [
-    {"id": "...", "label": "direct", "length_m": 25040, "deviation_m": 40,
-     "duration_s": 9010, "gain_m": 62, "loss_m": 58, "end_label": "...",
-     "repeat_share": 0.0, "geometry": {"type": "LineString", "coordinates": []}}
+  "plan_id": "…", "version": 2, "source": "form", "created_at": "…",
+  "outcome": "over_budget",
+  "request": { "…": "the RouteRequest as solved" },
+  "candidates": [
+    { "route_id": "…", "label": "recommended", "option": "full_route", "length_m": 22258.03, "foot_m": 22258.03,
+      "deviation_m": 2258.03, "duration_s": 16067.6, "gain_m": 113.5, "stops": [], "end": {}, "flags": [],
+      "geometry": [[75.846, 11.121], "…"], "…": "every other Candidate field except edge_ids" }
   ],
-  "diff": {"changed": ["target_distance_m"], "length_delta_m": 3010,
-           "duration_delta_s": 1080, "end_changed": true},
-  "explanation": "..."
-}
-```
-
-### Conflict shape
-
-```json
-{
-  "outcome": "infeasible",
-  "conflict": {
-    "kind": "checkpoints_exceed_distance",
-    "requested_m": 15000, "minimum_m": 22000,
-    "savings": [
-      {"action": "drop_checkpoint", "label": "Beypore", "saves_m": 8000},
-      {"action": "allow", "preference": "ferries", "saves_m": 7500}
+  "conflict": { "kind": "checkpoints_exceed_distance", "minimum_m": 21738.6, "overshoot_m": 1738.6,
+                "savings": [{"action": "drop_checkpoint", "label": "Kallai", "saves_m": 6600.0, "fits": true}],
+                "fixes": [] },
+  "facts": { "…": "SolveResult.facts, unchanged" },
+  "flags": [],
+  "explanation": "…",
+  "diff": {
+    "from_version": 1,
+    "changed": ["/target_distance_m"],
+    "outcome": {"from": "ok", "to": "over_budget"},
+    "candidates": [
+      {"label": "recommended", "from_option": "main", "to_option": "full_route",
+       "length_delta_m": -2741.97, "duration_delta_s": "…", "end_changed": true}
     ],
-    "fixes": [{"action": "set_distance", "value_m": 22000}]
-  }
+    "stops_added": [], "stops_removed": []
+  },
+  "builds": {"osm": "2026-11-15T00:15:25Z", "valhalla": "…", "graphhopper": "…", "solver": "…"},
+  "cached": false, "elapsed_ms": "…", "engine_calls": "…"
 }
 ```
 
-Operational rules: solve synchronously with a 10 s budget and return the best valid candidates found; make requests idempotent by hashing the request object with the graph build id; rate-limit per user and per IP.
+The lengths above are A02's from the Phase 3b report, after a patch from 25 km (A01, "recommended" 25,000 m) to 20 km; the OpenAPI examples are generated from live solver output.
+
+Diff rules:
+- `changed` lists the JSON pointers that differ between the two requests, whatever patch produced them.
+- Candidates are paired by `label`, with `main`, `full_route` and `continue_past_target` treated as each alternative's primary option. Unpaired candidates are listed as added or removed.
+- Deltas are differences of the solver's stored values.
+- An end has changed when its coordinates, kind or label differ.
+- Stops are compared by `place_id`, or by label when there is none, across checkpoints, `via` and `must_use`.
+
+### Errors
+
+Every error has the body `{"error": code, "message": text, "detail": …}`.
+
+| Status | Code | When |
+| --- | --- | --- |
+| 401 | `client_required` | Missing or unknown `X-Client-Token` |
+| 404 | `not_found` | Unknown id, or it belongs to another client |
+| 409 | `patch_test_failed` | A `test` operation in the patch failed |
+| 412 | `version_mismatch` | `If-Match` names an older version |
+| 422 | `invalid_request` | The request, or the patched request, fails RouteRequest validation (Pydantic's errors in `detail`) |
+| 429 | `rate_limited` | Per-client or per-IP limit; `Retry-After` |
+| 429 | `solver_busy` | No solve slot within 10 s; `Retry-After` |
+| 503 | `engine_unavailable` / `geocoder_unavailable` | Valhalla or Photon down. A GraphHopper outage is not an error: the solver returns "shortest" with the flag `alternative_unavailable` |
+| 504 | `solve_timeout` | Over the 15 s budget. `detail` has `plan_id`, `status: "solving"`, `elapsed_ms` and the URL to poll |
+
+### Operational rules
+
+- Solves run in a worker thread, with at most 2 at once; extra requests wait up to 10 s for a slot, and each solve has a 15 s budget (amendments 3, 12, 13).
+- Results are cached by the canonical request, both engine build ids and the solver hash for 24 h (amendments 5 and 14). Identical requests already in flight share one solve.
+- Rate limits are per client and per IP (amendment 22).
 
 ## 13. UI/UX architecture
 
@@ -792,11 +924,33 @@ Eight phases total 19 to 26 weeks of full-time solo work; roughly double that al
 
 ### Phase 4: Backend API development
 
-- **Tasks:** FastAPI app, schema and migrations, plan versioning, diff computation, GPX writer, Redis caching, rate limiting, auth by magic link.
-- **Technologies:** FastAPI, SQLAlchemy or SQLModel, Alembic, PostGIS, Redis.
-- **Deliverables:** documented OpenAPI spec, containerised service.
-- **Challenges:** keeping p95 latency inside the budget when the solver makes many engine calls; run them concurrently.
-- **Acceptance:** create and patch return in under 5 s at p95 for point-to-point; GPX imports cleanly into Garmin Connect and Strava.
+Updated 2026-11-18 by the Phase 4 amendments.
+
+- **Tasks:**
+  - the FastAPI app;
+  - the schema and its Alembic migrations;
+  - plan versioning with JSON Patch edits and the diff;
+  - template explanations;
+  - the GPX writer;
+  - elevation profiles;
+  - the Redis cache;
+  - the solve slot limit;
+  - anonymous client tokens and rate limiting;
+  - Photon search and reverse with a picker.
+
+  Login (magic link) moves to Phase 8.
+- **Technologies:** FastAPI, Pydantic v2, SQLAlchemy 2, Alembic, PostgreSQL 16 + PostGIS, Redis, all in docker-compose and managed by uv.
+- **Deliverables:**
+  - a documented OpenAPI spec, with examples from real solver output;
+  - a containerised service;
+  - a report in `docs/reports/phase4/`: the endpoints, latency per endpoint, memory, and what was left out.
+- **Challenges:** keeping p95 latency inside the budget when the solver makes many engine calls, with two solves sharing the engines.
+- **Acceptance:**
+  - create and patch return in under 5 s at p95 for point-to-point, on the development laptop;
+  - cache hits return in under 100 ms;
+  - GPX validates against the GPX 1.1 schema, and imports cleanly into Garmin Connect and Strava (checked by hand);
+  - all tests pass;
+  - the solver KPIs are unchanged.
 
 ### Phase 5: Front end and interactive map
 
@@ -899,7 +1053,7 @@ A self-hosted MVP for one region should cost about 40 to 100 USD per month. Thes
 
 | Item | MVP setup | Monthly estimate (USD) |
 | --- | --- | --- |
-| Application server | One VPS, 4 vCPU and 8 GB RAM, running Valhalla, Photon, FastAPI and Redis in Docker | 20 to 50 |
+| Application server | One VPS, 4 vCPU and 8 GB RAM, running Valhalla, GraphHopper, Photon, FastAPI, PostgreSQL and Redis in Docker. Measured on the development laptop (2026-11-18): the containers use 3.7 GiB with all of them up, GraphHopper 2.1 GiB of it ([docs/reports/phase4/memory.md](reports/phase4/memory.md)) | 20 to 50 |
 | Database | PostgreSQL with PostGIS on the same VPS with nightly off-site backups, or a small managed instance | 0 to 25 |
 | Basemap tiles | Self-hosted vector tiles on object storage, or a hosted tile plan's free tier | 0 to 10 |
 | Front end hosting | Vercel or similar free tier | 0 |

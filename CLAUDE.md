@@ -5,12 +5,45 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 3c** (solver only, in `solver/`): step 10 lengthening and loops (blueprint amendments 21 to 24) are built; status and the choices made are in `docs/reports/phase3c/summary.md`. No FastAPI, no frontend, no LLM until the developer starts Phase 4.
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 4**, the backend API in `api/` (blueprint Phase 4 amendments 1 to 25). No front end and no LLM. **The solver's behaviour must not change**: if the API needs a solver change, say so and wait. Phase 3c (lengthening, loops) is finished; see `docs/reports/phase3c/summary.md`.
 - **Plan first.** Give a plan and wait for approval before writing code.
 - **Small steps.** Each step ends in something the developer can run and check. Commit after each step.
 - **No invented distances.** Never hardcode or estimate a distance. Every distance comes from the routing engine or from measuring geometry (`athlete_engine.geodesy`). The leg distances in the blueprint's section 8 worked example are made up: never use them as test expectations. Straight-line distance is allowed only for snap distances and pre-filters and must never be presented as a route distance.
 - **Coordinates come from data.** Place coordinates are read from OSM (with their OSM ids) or supplied by the developer, not typed from memory.
 - Reports state where numbers were measured (this laptop, not the target server).
+
+## Phase 4 amendments (2026-11-18, full text at the top of docs/blueprint.md; they win over earlier ones)
+
+1. **The API exposes the solver's models as they are**: RouteRequest, SolveResult, Candidate, Conflict, Flag. Blueprint sections 11 and 12 describe what is built.
+2. **Stack**: FastAPI, Pydantic v2, SQLAlchemy 2 + Alembic, PostgreSQL 16 + PostGIS, Redis, in docker-compose, managed by uv.
+3. **Solves run in a worker thread.** At most 2 at once (configurable). A request waits up to 10 s for a slot, then gets 429 with `Retry-After`. Each solve has a 15 s budget; over it, 504.
+4. **Tables:** `plans`, `plan_versions` (request JSON, source form|chat|drag, outcome, conflict, both engine build ids), `routes` (LineStringZ, every Candidate stat and flag), `saved_routes` (share slugs). **Lengths stored are the solver's**; `ST_Length(geography)` only as a test cross-check.
+5. **Cache in Redis for 24 h**, keyed on: the canonical request, the Valhalla build id, the GraphHopper build id and the solver source hash (11).
+6. **PATCH applies an RFC 6902 patch to the RouteRequest.** It re-solves, stores a new version and returns a diff:
+   - fields changed;
+   - length delta and duration delta;
+   - whether the end changed;
+   - stops added or removed.
+
+   Undo is `replace` at path `""` with an earlier request.
+7. **Clients are anonymous tokens** from `POST /v1/session`, sent in `X-Client-Token`. Login comes in Phase 8. Rate limits apply per client and per IP.
+8. **Geocoding goes through Photon only**, biased to a point and restricted to Kerala.
+   - Ambiguous results (shared names, other districts) are all returned for a picker; the API never picks.
+   - Photon down means 503. There is no other source of coordinates and no places cache.
+9. **GPX 1.1 course**: a track with elevation, plus waypoints for the start, each checkpoint (where the route passes it) and the end. Validated against the XSD in tests.
+10. **Explanations** come from templates, using only numbers already in the SolveResult (facts, conflict, candidate stats). The facts object is passed through unchanged. A saving of 0 m reads "dropping X does not shorten the run".
+
+Implementation choices (accepted 2026-11-18):
+11. `duration_s` is the engine's **walking** time, passed through and labelled as such. No pace estimate yet.
+12. A 504 carries the plan id and a URL to poll. The solve keeps its slot until it finishes, then stores and caches its result. Partial routes would need a solver change.
+13. The queue wait and the solve budget are separate: worst case about 25 s.
+14. Results with `alternative_unavailable` are not cached. The cached value includes elevation, so a hit makes no engine call.
+15. Elevation comes from one Valhalla `/height` call made by the API (Z = raw DEM; profile every 30 m). Gain and loss shown are always the solver's.
+16. No `users` (`clients` instead), no `places`, no `route_stops` tables. Other clients' plans and routes return 404.
+17. One uvicorn worker; the solve limit is per process.
+18. "Same result" means the same outcome, candidates, conflict, facts and flags, ignoring `elapsed_ms`, `engine_calls` and `edge_ids` (not exposed).
+19. Photon stays up during development (measured; see `docs/reports/phase4/memory.md`). Tests use a fake geocoder.
+20. Phase 6 adds `/messages`; Phase 8 adds login.
 
 ## Phase 3 amendments (2026-11-17, full text at the top of docs/blueprint.md; they win over Phase 2)
 
@@ -60,15 +93,16 @@ Also agreed: conflict savings are routed and measured, not matrix sums; ordering
 
 ## Developer and machine
 
-Solo developer, comfortable with Python and Next.js. Windows 11, 8 GB RAM, Intel i5 10th gen, Docker Desktop (WSL2, about 4 GB available to containers). Keep memory in mind: do not run the Valhalla tile build and Photon at the same time. Test region: Kozhikode, Kerala.
+Solo developer, comfortable with Python and Next.js. Windows 11, Intel i5 10th gen, 16 GB RAM (Windows reports 16,221 MiB), Docker Desktop (WSL2 VM: 7.7 GiB + 2 GiB swap, measured 2026-11-18). With every service and Photon up, the VM uses about 3.7 GiB. Free memory on Windows itself is the tight part (1.2 to 2.2 GiB free). Do not run the Valhalla tile build and Photon at the same time. Test region: Kozhikode, Kerala.
 
-## Stack (Phase 2)
+## Stack
 
-- Routing engine: Valhalla in Docker (`ghcr.io/valhalla/valhalla-scripted`), pedestrian costing, elevation tiles.
+- Routing engines: Valhalla in Docker (`ghcr.io/valhalla/valhalla-scripted`), pedestrian costing, elevation tiles (the yardstick, "shortest"); GraphHopper 11.1 (the "recommended" generator).
 - Data: Kerala OSM extract from download.openstreetmap.fr, pinned in `data/manifest.json`.
 - Geocoder: Photon with the prebuilt India index (Compose profile `geocode`).
 - Python 3.12 managed by uv: httpx, pyproj, shapely, osmium (pyosmium), pytest.
-- Later phases (not yet): FastAPI, PostgreSQL/PostGIS, Redis, Next.js, MapLibre.
+- API (Phase 4): FastAPI, Pydantic v2, SQLAlchemy 2 + Alembic, PostgreSQL 16.4 + PostGIS 3.4, Redis 7.4 (both pinned by digest in docker-compose).
+- Later phases (not yet): Next.js, MapLibre.
 
 ## Layout
 
@@ -80,7 +114,7 @@ Solo developer, comfortable with Python and Next.js. Windows 11, 8 GB RAM, Intel
 - `data/` is gitignored (extract, tiles, index).
 - `solver/athlete_solver/` solver package with a CLI (`python -m athlete_solver`): `models` (request, candidate, conflict), `engine` (Valhalla adapter, the yardstick), `graphhopper` (the "recommended" generator, model R5, measured by Valhalla), `passnear` (checkpoints into route points), `avoid`, `ordering`, `p2p` (base route, gate, cut, truncation), `lengthen` (section 8 step 10: one through via on the longest leg; fixed ends), `loop` (loops without stops: shapes through the start, scaled to the distance, vias pulled out of water and off dead-end stubs), `out_and_back`, `scoring` (hard rules, NH flag, diversity), `solve` (both alternatives in parallel). It calls Valhalla only through `athlete_engine`.
 - `tests/fixtures/scenarios/` solver scenarios (section 16); `docs/reports/phase3/` Phase 3 KPI report and the quieter spike; `docs/reports/phase3b/` Phase 3b KPI report and the rules spike; `docs/reports/phase3c/` Phase 3c KPI report.
-- `api/`, `web/` are placeholders for later phases.
+- `api/` the Phase 4 backend (FastAPI); `api/scripts/` its measurement scripts (`measure_memory.py`); `docs/reports/phase4/` its reports. `web/` is a placeholder for Phase 5.
 
 ## Commands
 
@@ -97,6 +131,7 @@ uv run python engine/experiments/<name>.py
 Valhalla (Docker Desktop must be running; serves on http://localhost:8002):
 
 ```
+docker compose up -d                        # Valhalla, GraphHopper, Postgres (5432), Redis (6379)
 docker compose up -d valhalla graphhopper   # Valhalla: first run builds tiles + elevation, about 7 min; GraphHopper: first run imports, about 3 min, about 2 GB
 docker compose logs -f valhalla
 uv run python engine/scripts/configure_valhalla.py   # apply engine/valhalla/overrides.json
@@ -128,7 +163,7 @@ uv run python tests/kpi/run_kpi.py [--only S05,S15]   # -> docs/reports/phase3c/
 
 Scenario requests live in `tests/fixtures/scenarios/base.json`. Never edit `scenarios.json` by hand: its reference values come from `tests/kpi/reference.py` (every stop order routed and measured, no matrix, no DP), kept independent of the solver.
 
-GraphHopper (http://localhost:8989, the "recommended" generator; started with Valhalla above). It runs alongside Valhalla (about 1.9 GiB), so stop Photon first. Delete `data/graphhopper/graph-cache` to re-import (needed after changing `engine/graphhopper/config.yml` or the custom models; rebuild the image with `docker compose build graphhopper`). Spike experiments:
+GraphHopper (http://localhost:8989, the "recommended" generator; started with Valhalla above). It runs alongside Valhalla (about 2.1 GiB). Photon can run with both (measured 2026-11-18). Delete `data/graphhopper/graph-cache` to re-import (needed after changing `engine/graphhopper/config.yml` or the custom models; rebuild the image with `docker compose build graphhopper`). Spike experiments:
 
 ```
 uv run python engine/experiments/07_quieter_spike.py
@@ -144,6 +179,7 @@ uv run python engine/scripts/fetch_photon.py
 docker compose --profile geocode up -d photon
 uv run python engine/experiments/06_photon_smoke.py
 docker compose --profile geocode stop photon
+uv run python api/scripts/measure_memory.py   # memory with every service up, Photon on and off -> docs/reports/phase4/memory.md
 ```
 
 `data/valhalla/valhalla.json` is generated by the container. Never edit it by hand; change `engine/valhalla/overrides.json` and re-run the configure script. To rebuild the graph, delete `data/valhalla/`.
