@@ -213,7 +213,7 @@ def build_conflict(req: RouteRequest, engine: Engine, base: Base,
     for i, cp in enumerate(req.checkpoints):
         if cp.role != "checkpoint":
             continue   # via and must_use items are never dropped
-        if all_must_reach(req) and req.end.kind != "fixed":
+        if all_must_reach(req) and req.end.kind != "fixed" and req.route_type != "loop":
             rest = [p for j, p in enumerate(stops) if j != i]
             alt = minimum_route(engine, start, rest, target, fixed)
             alt_m = None if alt is None else alt.foot_m
@@ -229,7 +229,8 @@ def build_conflict(req: RouteRequest, engine: Engine, base: Base,
             fixes += [Fix(action="drop_checkpoint", label=s.label), Fix(action="make_optional", label=s.label)]
     names = [req.checkpoints[i].label for i in base.order if req.checkpoints[i].role == "checkpoint"]
     over = base.foot_m - req.target_distance_m
-    what = f"These {len(names)} stops need" if req.end.kind != "fixed" else (
+    what = f"A loop through these {len(names)} stops needs" if req.route_type == "loop" else \
+        f"These {len(names)} stops need" if req.end.kind != "fixed" else (
         (f"These {len(names)} stops and the fixed end need" if names else "The fixed end needs"))
     return Conflict(
         kind="checkpoints_exceed_distance", requested_m=req.target_distance_m, minimum_m=round(base.foot_m, 1),

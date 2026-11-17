@@ -293,6 +293,7 @@ Option = Literal[
     "full_route",              # over budget: the whole route through the stops (Phase 3 amendment 6)
     "cut_at_target",           # over budget: the same route cut at the requested distance
     "out_and_back",            # a loop request on a sparse network: out and back instead (flag loop_fallback)
+    "short_loop",              # a loop through the stops that no detour could lengthen (flag short_of_budget)
 ]
 
 

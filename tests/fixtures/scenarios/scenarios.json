@@ -7730,6 +7730,133 @@
    }
   },
   {
+   "id": "L05",
+   "title": "25 km loop from Kozhikode passing near Beypore and Feroke",
+   "base": "L05",
+   "status": "active",
+   "request": {
+    "route_type": "loop",
+    "start": {
+     "lon": 75.7754716,
+     "lat": 11.2450558,
+     "label": "Kozhikode",
+     "place_id": "osm:node/1348192542"
+    },
+    "target_distance_m": 25000,
+    "checkpoints": [
+     {
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "label": "Beypore",
+      "place_id": "osm:node/1683149581"
+     },
+     {
+      "lon": 75.8375372,
+      "lat": 11.1825447,
+      "label": "Feroke",
+      "place_id": "osm:node/986593739"
+     }
+    ]
+   },
+   "reference": {
+    "outcome": "loop_stops"
+   }
+  },
+  {
+   "id": "L06",
+   "title": "10 km loop from Mananchira passing near Kallai and Calicut Beach",
+   "base": "L06",
+   "status": "active",
+   "request": {
+    "route_type": "loop",
+    "start": {
+     "lon": 75.7815134,
+     "lat": 11.254274,
+     "label": "Mananchira",
+     "place_id": "osm:node/12355175353"
+    },
+    "target_distance_m": 10000,
+    "checkpoints": [
+     {
+      "lon": 75.7886846,
+      "lat": 11.235104,
+      "label": "Kallai",
+      "place_id": "osm:node/3797752730"
+     },
+     {
+      "lon": 75.7711608,
+      "lat": 11.2516316,
+      "label": "Calicut Beach",
+      "place_id": "osm:node/10240443491"
+     }
+    ]
+   },
+   "reference": {
+    "outcome": "loop_stops"
+   }
+  },
+  {
+   "id": "L07",
+   "title": "8 km loop from Kozhikode reaching Calicut Beach",
+   "base": "L07",
+   "status": "active",
+   "request": {
+    "route_type": "loop",
+    "start": {
+     "lon": 75.7754716,
+     "lat": 11.2450558,
+     "label": "Kozhikode",
+     "place_id": "osm:node/1348192542"
+    },
+    "target_distance_m": 8000,
+    "checkpoints": [
+     {
+      "lon": 75.7711608,
+      "lat": 11.2516316,
+      "label": "Calicut Beach",
+      "place_id": "osm:node/10240443491",
+      "must_reach": true
+     }
+    ]
+   },
+   "reference": {
+    "outcome": "loop_stops"
+   }
+  },
+  {
+   "id": "L08",
+   "title": "Loop over budget: 4 km from Mananchira passing near Kallai and Calicut Beach",
+   "base": "L08",
+   "status": "active",
+   "request": {
+    "route_type": "loop",
+    "start": {
+     "lon": 75.7815134,
+     "lat": 11.254274,
+     "label": "Mananchira",
+     "place_id": "osm:node/12355175353"
+    },
+    "target_distance_m": 4000,
+    "checkpoints": [
+     {
+      "lon": 75.7886846,
+      "lat": 11.235104,
+      "label": "Kallai",
+      "place_id": "osm:node/3797752730"
+     },
+     {
+      "lon": 75.7711608,
+      "lat": 11.2516316,
+      "label": "Calicut Beach",
+      "place_id": "osm:node/10240443491"
+     }
+    ]
+   },
+   "reference": {
+    "outcome": "loop_stops"
+   }
+  },
+  {
    "id": "G01",
    "title": "Loop gate: 10 km loop from Kozhikode reaching Feroke",
    "base": "G01",

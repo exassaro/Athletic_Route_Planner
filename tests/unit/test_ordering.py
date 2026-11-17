@@ -74,3 +74,12 @@ def test_tie_break_never_drops_the_cheapest_order():
     m = random_matrix(6, 3)
     best = k_best_orders(m, [1, 2, 3, 4], k=1)[0][1]
     assert best in preferred_orders(m, [1, 2, 3, 4], target=5)
+
+
+def test_closed_tour_counts_the_way_back():
+    # 0 = start; the open order goes to 1 first; the closed tour must add the way back from its last stop.
+    m = [[0, 1, 2], [1, 0, 10], [2, 10, 0]]
+    open_cost, open_order = k_best_orders(m, [1, 2], 0)[0]
+    closed_cost, closed_order = k_best_orders(m, [1, 2], 0, return_to=0)[0]
+    assert open_order == [1, 2] and open_cost == 11
+    assert closed_cost == 1 + 10 + 2

@@ -76,11 +76,33 @@ def test_loop_on_a_grid_is_closed_and_near_the_distance():
         assert c.end.kind == "start"
 
 
-def test_loop_with_stops_is_not_built_yet():
-    body = {"route_type": "loop", "start": {"lon": G["5,5"][0], "lat": G["5,5"][1]}, "target_distance_m": 4000,
-            "checkpoints": [{"lon": G["7,7"][0], "lat": G["7,7"][1], "label": "S"}]}
+def test_loop_with_a_stop_passes_it_and_returns_to_the_start():
+    start, stop = G["3,3"], G["6,6"]
+    budget = 6000.0
+    body = {"route_type": "loop", "start": {"lon": start[0], "lat": start[1], "label": "start"},
+            "target_distance_m": budget,
+            "checkpoints": [{"lon": stop[0], "lat": stop[1], "label": "S", "must_reach": True}]}
     res = solve(RouteRequest.model_validate(body), engine=FakeEngine(GRID), graph_build="fake")
-    assert res.outcome == "unsupported"
+    assert res.outcome == "ok"
+    c = res.candidates[0]
+    assert c.label == "loop_1" and c.option == "main"
+    assert abs(c.foot_m - budget) <= 500.0
+    assert geodesy.distance_m(c.geometry[0], c.geometry[-1]) < 1.0
+    assert [s.label for s in c.stops if s.role == "checkpoint"] == ["S"]
+    assert min(geodesy.distance_m(p, stop) for p in c.geometry) < 1.0
+
+
+def test_loop_through_stops_longer_than_the_budget_is_over_budget():
+    start = G["0,0"]
+    stops = [("A", G["6,0"]), ("B", G["0,6"])]     # each stop passes the gate; the tour does not fit
+    tour = FakeEngine(GRID).route([start, *(p for _, p in stops), start]).foot_m
+    body = {"route_type": "loop", "start": {"lon": start[0], "lat": start[1]}, "target_distance_m": 0.7 * tour,
+            "checkpoints": [{"lon": p[0], "lat": p[1], "label": n, "must_reach": True} for n, p in stops]}
+    res = solve(RouteRequest.model_validate(body), engine=FakeEngine(GRID), graph_build="fake")
+    assert res.outcome == "over_budget"
+    assert [c.option for c in res.candidates] == ["full_route"]
+    assert res.conflict.minimum_m == pytest.approx(tour, abs=1.0)
+    assert "loop" in res.conflict.message
 
 
 def test_sparse_network_falls_back_to_a_flagged_out_and_back():

@@ -216,6 +216,25 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
                                    f"{ref['minimum_m']}")
         row["loop_gate"] = True
         return row
+    row["has_stops"] = bool(req.stops())
+    if ref["outcome"] == "loop_stops":
+        # A loop through stops (amendment 24): ok, or over budget with the full loop and a consistent conflict.
+        if result.outcome not in ("ok", "over_budget"):
+            row["problems"].append(f"expected ok or over_budget, got {result.outcome}")
+            return row
+        row["pass_minimum_m"] = result.facts.get("l_min_m")
+        if result.outcome == "over_budget":
+            c = result.conflict
+            if [x.option for x in result.candidates] != ["full_route"]:
+                row["problems"].append(f"loop over budget options {[x.option for x in result.candidates]}")
+            if c is None or c.minimum_m is None or c.minimum_m <= req.upper_m:
+                row["problems"].append("loop over_budget without a minimum above the budget")
+            elif result.candidates and not close(result.candidates[0].foot_m, c.minimum_m):
+                row["problems"].append(f"full loop {result.candidates[0].foot_m:.0f} m vs conflict minimum "
+                                       f"{c.minimum_m:.0f} m")
+            for sv in (c.savings if c else []):
+                if sv.fits != (c.minimum_m - sv.saves_m <= req.upper_m):
+                    row["problems"].append(f"saving {sv.label}: fits {sv.fits} inconsistent with its numbers")
     if ref["outcome"] == "over_budget":
         if result.outcome != "over_budget":
             row["problems"].append(f"expected over_budget, got {result.outcome}")
@@ -253,7 +272,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
             for sv in (c.savings if c else []):
                 if sv.fits != (c.minimum_m - sv.saves_m <= req.upper_m):
                     row["problems"].append(f"saving {sv.label}: fits {sv.fits} inconsistent with its numbers")
-    elif result.outcome != "ok":
+    elif result.outcome != "ok" and ref["outcome"] != "loop_stops":
         row["problems"].append(f"expected ok, got {result.outcome}")
         return row
     row["fallback_flag"] = any(f.code == "loop_fallback" for f in result.flags)
@@ -335,11 +354,16 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
 
         if kind == "loop":
             # Loops (amendment 22): their own accuracy KPI; closed; no spur at all (section 16).
-            cr["loop_err_pct"] = abs(m.foot_m - req.target_distance_m) / req.target_distance_m * 100
+            if cand.option == "main":
+                cr["loop_err_pct"] = abs(m.foot_m - req.target_distance_m) / req.target_distance_m * 100
             gap = geodesy.distance_m(geom[0], geom[-1])
             if gap > CHECKPOINT_RADIUS_M:
                 row["problems"].append(f"{name}: loop ends {gap:.0f} m from its start")
-            cr["loop_spurs"] = [round(length, 1) for _, length in turn_points(m.edges)]
+            # A turn-round at a stop the loop must reach is required by the request (section 16: 60 m).
+            reach = [(s.snapped_lon, s.snapped_lat) for s in cand.stops if s.role != "start" and s.role != "end"
+                     and (s.must_reach or s.how in ("reached", "spur"))]
+            cr["loop_spurs"] = [round(length, 1) for turn, length in turn_points(m.edges)
+                                if not any(geodesy.distance_m(turn, q) <= 60.0 for q in reach)]
             for length in cr["loop_spurs"]:
                 row["problems"].append(f"{name}: {length:.0f} m spur on a loop")
             cr["loop_engine"] = cand.engine
@@ -414,6 +438,9 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
                 forced = sum(e.length_m for e in base_m.edges if base_counts[e.key] > 1)
             if cand.option == "full_route":
                 forced_keys[cand.label] = {k for k, n in counts.items() if n > 1}
+                if req.route_type == "loop":
+                    # The full loop through the stops, back to the start, is the minimum the stops ask for.
+                    forced = repeated
             if cand.option == "cut_at_target":
                 # A prefix of the route through the stops: an edge it repeats is forced if the full route
                 # through the stops repeats it too (measured above from the full route's own geometry).
@@ -599,6 +626,7 @@ def main() -> int:
     loop_err = [c["loop_err_pct"] for c in cands if "loop_err_pct" in c]
     loop_spurs = [x for c in cands for x in c.get("loop_spurs", [])]
     sparse = [r for r in rows if r["route_type"] == "loop" and "error" not in r and not r.get("loop_gate")
+              and not r.get("has_stops")
               and sum(c["option"] == "main" for c in r["candidates"]) < 2]
     sparse_ok = [r for r in sparse if any(c["option"] == "out_and_back" for c in r["candidates"]) and r.get("fallback_flag")]
     loop_rows = [r for r in rows if r["route_type"] == "loop" and "error" not in r and not r.get("loop_gate")]

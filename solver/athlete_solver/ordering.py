@@ -13,8 +13,10 @@ from collections.abc import Sequence
 Matrix = Sequence[Sequence[float | None]]
 
 
-def k_best_orders(matrix: Matrix, stops: Sequence[int], start: int = 0, k: int = 1) -> list[tuple[float, list[int]]]:
-    """The k cheapest orders visiting every index in `stops`, starting at `start`.
+def k_best_orders(matrix: Matrix, stops: Sequence[int], start: int = 0, k: int = 1,
+                  return_to: int | None = None) -> list[tuple[float, list[int]]]:
+    """The k cheapest orders visiting every index in `stops`, starting at `start` (and, with `return_to`,
+    ending there: a closed tour for a loop).
 
     Returns [(cost, order)] sorted by cost; order lists stop indices. A missing
     (None) matrix cell is an impassable pair. Returns [] if no order connects.
@@ -49,8 +51,11 @@ def k_best_orders(matrix: Matrix, stops: Sequence[int], start: int = 0, k: int =
                     bucket[:] = heapq.nsmallest(k, bucket, key=lambda t: t[0])
     finals = []
     for j in range(n):
+        back = 0.0 if return_to is None else matrix[stops[j]][return_to]
+        if back is None:
+            continue
         for rank, (cost, _, _) in enumerate(labels.get((full, j), [])):
-            finals.append((cost, (full, j), rank))
+            finals.append((cost + back, (full, j), rank))
     finals = heapq.nsmallest(k, finals, key=lambda t: t[0])
 
     out = []

@@ -144,14 +144,25 @@ def _next_offset(seen: list[tuple[float, float]], goal_m: float) -> float | None
 
 def lengthen(engine: Engine, points: list[LonLat], through: set[int], routed: Routed,
              goal_m: float, accuracy: float, max_retrace_m: float | None = None) -> Lengthened | None:
+    """The single best lengthening (see lengthen_options)."""
+    found = lengthen_options(engine, points, through, routed, goal_m, accuracy, max_retrace_m, keep=1)
+    return found[0] if found else None
+
+
+def lengthen_options(engine: Engine, points: list[LonLat], through: set[int], routed: Routed,
+                     goal_m: float, accuracy: float, max_retrace_m: float | None = None,
+                     keep: int = 1, leg: int | None = None) -> list[Lengthened]:
     """Insert one through via into the run's longest leg so the measured run is goal_m on foot.
 
     `routed` is the run through `points` as it is now (shorter than the goal). Returns the attempt closest
-    to the goal (the caller judges it against the tolerance), or None if no candidate could be routed.
+    to the goal (the caller judges it against the tolerance); with `keep` > 1 the best attempt of each of
+    that many rays (different vias), best first. Empty if no candidate could be routed.
     With `max_retrace_m`, attempts that walk that much road twice (a spur at the via) are not kept.
+    `leg` picks another leg than the longest (index of its first point).
     """
     legs = leg_lengths(routed, points)
-    leg = max(range(len(legs)), key=lambda k: legs[k])
+    if leg is None:
+        leg = max(range(len(legs)), key=lambda k: legs[k])
     a, b = points[leg], points[leg + 1]
     short = goal_m - routed.foot_m
     need = legs[leg] + short
@@ -222,7 +233,15 @@ def lengthen(engine: Engine, points: list[LonLat], through: set[int], routed: Ro
     routed_ok = [(rank, seq) for rank, seq, t in attempts if rank is not None
                  and (max_retrace_m is None or t["retraced_m"] < max_retrace_m)]
     if not routed_ok:
-        return None
-    _, seq = min(routed_ok, key=lambda x: x[0])
-    final = engine.route(seq, through=seq_through, detail=True)
-    return Lengthened(routed=final, points=seq, through=seq_through, via_index=leg + 1, leg=leg, tries=tries)
+        return []
+    # The best attempt of each ray (rank ends with the ray index), best rays first.
+    best_of: dict[int, tuple] = {}
+    for rank, seq in sorted(routed_ok, key=lambda x: x[0]):
+        best_of.setdefault(rank[-1], (rank, seq))
+    picks = sorted(best_of.values(), key=lambda x: x[0])[:keep]
+    out = []
+    for _, seq in picks:
+        final = engine.route(seq, through=seq_through, detail=True)
+        out.append(Lengthened(routed=final, points=seq, through=seq_through, via_index=leg + 1, leg=leg,
+                              tries=tries))
+    return out
