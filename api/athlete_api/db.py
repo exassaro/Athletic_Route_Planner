@@ -7,9 +7,22 @@ these classes mirror them and the tests compare the two.
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, LargeBinary, MetaData, func
+from typing import Any
+
+from geoalchemy2 import Geography
+from sqlalchemy import (Boolean, CheckConstraint, DateTime, Float, ForeignKey, Index, Integer, LargeBinary, MetaData,
+                        Text, UniqueConstraint, func)
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+SOURCES = ("form", "chat", "drag")
+OUTCOMES = ("ok", "over_budget", "infeasible", "disconnected", "unsupported")   # SolveResult.outcome
+TZ = DateTime(timezone=True)
+
+
+def _in(column: str, values: tuple[str, ...]) -> str:
+    return f"{column} IN ({', '.join(repr(v) for v in values)})"
 
 
 class Base(DeclarativeBase):
@@ -27,6 +40,96 @@ class Client(Base):
     token_hash: Mapped[bytes] = mapped_column(LargeBinary, unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class Plan(Base):
+    """One planning session, owned by a client."""
+
+    __tablename__ = "plans"
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clients.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(TZ, server_default=func.now())
+
+
+class PlanVersion(Base):
+    """One solve: the create, each patch, each undo (Phase 4 amendments 4, 6, 14)."""
+
+    __tablename__ = "plan_versions"
+    __table_args__ = (
+        UniqueConstraint("plan_id", "version_no", name="uq_plan_versions_plan_id_version_no"),
+        CheckConstraint(_in("source", SOURCES), name="source"),
+        CheckConstraint(_in("outcome", OUTCOMES), name="outcome"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    plan_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("plans.id", ondelete="CASCADE"))
+    version_no: Mapped[int] = mapped_column(Integer)
+    request: Mapped[dict[str, Any]] = mapped_column(JSONB)             # the full RouteRequest, defaults filled in
+    source: Mapped[str] = mapped_column(Text)
+    user_text: Mapped[str | None] = mapped_column(Text)                # chat only (Phase 6)
+    outcome: Mapped[str] = mapped_column(Text)
+    conflict: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    facts: Mapped[dict[str, Any]] = mapped_column(JSONB)               # SolveResult.facts, unchanged
+    flags: Mapped[list[Any]] = mapped_column(JSONB)                    # SolveResult.flags
+    explanation: Mapped[str] = mapped_column(Text)
+    diff: Mapped[dict[str, Any] | None] = mapped_column(JSONB)         # against version_no - 1
+    graph_build: Mapped[str] = mapped_column(Text)                     # OSM pin, as the solver reports it
+    valhalla_build: Mapped[str] = mapped_column(Text)
+    graphhopper_build: Mapped[str | None] = mapped_column(Text)        # null when GraphHopper was down
+    solver_hash: Mapped[str] = mapped_column(Text)
+    cache_key: Mapped[str] = mapped_column(Text)
+    from_cache: Mapped[bool] = mapped_column(Boolean)
+    elapsed_ms: Mapped[float | None] = mapped_column(Float)            # the solver's own time
+    engine_calls: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(TZ, server_default=func.now())
+
+
+class Route(Base):
+    """One Candidate of a version. Every length is the solver's measurement, stored as it came (amendment 4)."""
+
+    __tablename__ = "routes"
+    __table_args__ = (
+        UniqueConstraint("plan_version_id", "seq", name="uq_routes_plan_version_id_seq"),
+        Index("ix_routes_geom", "geom", postgresql_using="gist"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    plan_version_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("plan_versions.id", ondelete="CASCADE"))
+    seq: Mapped[int] = mapped_column(Integer)                          # position in SolveResult.candidates
+    label: Mapped[str] = mapped_column(Text)
+    option: Mapped[str] = mapped_column(Text)
+    engine: Mapped[str] = mapped_column(Text)
+    geom: Mapped[Any] = mapped_column(Geography("LINESTRINGZ", srid=4326, spatial_index=False))  # Z: DEM height
+    length_m: Mapped[float] = mapped_column(Float)
+    foot_m: Mapped[float] = mapped_column(Float)
+    ferry_m: Mapped[float] = mapped_column(Float)
+    engine_length_m: Mapped[float] = mapped_column(Float)
+    sphere_length_m: Mapped[float] = mapped_column(Float)
+    edge_count: Mapped[int] = mapped_column(Integer)
+    deviation_m: Mapped[float] = mapped_column(Float)
+    duration_s: Mapped[float | None] = mapped_column(Float)            # engine walking time (amendment 11)
+    gain_m: Mapped[float | None] = mapped_column(Float)                # the solver's smoothed values
+    loss_m: Mapped[float | None] = mapped_column(Float)
+    repeat_share: Mapped[float | None] = mapped_column(Float)
+    backtrack_share: Mapped[float | None] = mapped_column(Float)
+    score: Mapped[float | None] = mapped_column(Float)
+    end_label: Mapped[str | None] = mapped_column(Text)
+    end_point: Mapped[dict[str, Any]] = mapped_column(JSONB)           # Candidate.end
+    stops: Mapped[list[Any]] = mapped_column(JSONB)                    # Candidate.stops
+    road_class_m: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    flags: Mapped[list[Any]] = mapped_column(JSONB)                    # Candidate.flags
+    elevation: Mapped[list[Any] | None] = mapped_column(JSONB)         # [[distance_m, height_m], ...] every 30 m (amendment 15)
+
+
+class SavedRoute(Base):
+    __tablename__ = "saved_routes"
+    __table_args__ = (CheckConstraint("rating BETWEEN 1 AND 5", name="rating"),)
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clients.id"), index=True)
+    route_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("routes.id"))
+    name: Mapped[str | None] = mapped_column(Text)
+    share_slug: Mapped[str] = mapped_column(Text, unique=True)
+    rating: Mapped[int | None] = mapped_column(Integer)                # post-run feedback (later phases)
+    feedback: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(TZ, server_default=func.now())
 
 
 def make_engine(url: str) -> AsyncEngine:

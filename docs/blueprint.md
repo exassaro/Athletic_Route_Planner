@@ -693,7 +693,10 @@ CREATE TABLE saved_routes (
 Notes:
 
 - `length_m`, `engine_length_m` and `sphere_length_m` together keep the distance-accuracy and consistency KPIs answerable from the database.
-- `ST_Length(geom)` is only a cross-check in tests. Displayed lengths are always the stored solver values (amendment 4).
+- `ST_Length` is only a cross-check in tests. Displayed lengths are always the stored solver values (amendment 4).
+- **Drop Z before measuring:** use `ST_Length(ST_Force2D(geom::geometry)::geography)`.
+  - On a geography `LINESTRING Z`, PostGIS 3.4's `ST_Length` includes the height changes: 109.29 m flat measured 148.13 m with a 100 m rise.
+  - With Z dropped, A01's three candidates agree with the solver to about 10⁻⁸ m (measured 2026-11-18).
 - `graph_build`, the two engine builds and `solver_hash` let any route be reproduced after the data or the code changes.
 - The Candidate's `edge_ids` are internal to the solver and are not stored.
 - The draft's `users`, `places` and `route_stops` tables are gone:

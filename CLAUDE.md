@@ -45,6 +45,10 @@ Implementation choices (accepted 2026-11-18):
 19. Photon stays up during development (measured; see `docs/reports/phase4/memory.md`). Tests use a fake geocoder.
 20. Phase 6 adds `/messages`; Phase 8 adds login.
 
+Phase 4 facts:
+- **`ST_Length` on a geography `LINESTRING Z` counts the Z changes** (PostGIS 3.4). The `routes.geom` Z is the DEM height, so a cross-check must use `ST_Length(ST_Force2D(geom::geometry)::geography)`. With that, A01 agrees with the solver to about 1e-8 m.
+- Postgres is on host port 5433, because a native Windows PostgreSQL holds 5432.
+
 ## Phase 3 amendments (2026-11-17, full text at the top of docs/blueprint.md; they win over Phase 2)
 
 1. **Generator: GraphHopper foot + custom model** ("recommended"). **Valhalla is the single yardstick**: road classes, checkpoint checks and the access check (map_snap coverage + OSM tags) go through Valhalla matching; lengths come from geometry.
