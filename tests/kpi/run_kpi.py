@@ -7,7 +7,7 @@ geometry (ellipsoid length, ferry metres from edge attributes, checkpoints
 located with the engine), and conflict objects are checked against the
 brute-force reference values stored in scenarios.json. Refuses to run on a
 graph other than the one the fixtures were built on.
-Writes docs/reports/phase3/kpi.md. Exit code 0 only if every KPI passes.
+Writes docs/reports/phase3b/kpi.md. Exit code 0 only if every KPI passes.
 """
 
 import argparse
@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCENARIOS = json.loads((ROOT / "tests" / "fixtures" / "scenarios" / "scenarios.json").read_text(encoding="utf-8"))
 MANIFEST = ROOT / "data" / "manifest.json"
 PBF = ROOT / "data" / "osm" / "kerala.osm.pbf"
-DEFAULT_REPORT = ROOT / "docs" / "reports" / "phase3" / "kpi.md"
+DEFAULT_REPORT = ROOT / "docs" / "reports" / "phase3b" / "kpi.md"
 
 CHECKPOINT_RADIUS_M = 50.0
 ADHERENCE_STEP_M = 250.0
@@ -63,12 +63,12 @@ def split_at_stops(geometry: list, stops: list) -> list[list]:
     return [p for p in pieces if len(p) >= 2]
 
 
-def direction_adherence(engine: Valhalla, geometry: list, target: tuple, from_m: float, ferries: bool) -> float | None:
+def direction_adherence(engine: Valhalla, geometry: list, target: tuple, from_m: float) -> float | None:
     """Share of length (after from_m) during which network distance to the target increases."""
     samples = [(p, at) for p, at in geodesy.sample_every(geometry, ADHERENCE_STEP_M) if at >= from_m]
     if len(samples) < 3:
         return None
-    rows = engine.matrix([p for p, _ in samples], [target], costing_options=pedestrian_options(ferries))
+    rows = engine.matrix([p for p, _ in samples], [target], costing_options=pedestrian_options())
     dists = [row[0].get("distance") for row in rows["sources_to_targets"]]
     away = total = 0.0
     for (a, da), (b, db) in zip(zip(samples, dists), zip(samples[1:], dists[1:])):
@@ -79,8 +79,7 @@ def direction_adherence(engine: Valhalla, geometry: list, target: tuple, from_m:
     return away / total if total else None
 
 
-def best_achievable_bearing(engine: Valhalla, origin: tuple, bearing: float, distance_m: float,
-                            ferries: bool) -> float | None:
+def best_achievable_bearing(engine: Valhalla, origin: tuple, bearing: float, distance_m: float) -> float | None:
     """Exhaustive reference: the smallest bearing error any walking endpoint at exactly distance_m reaches.
 
     Samples isodistance contours at several sizes, every vertex within 90 degrees (up to 40), routes to
@@ -88,7 +87,7 @@ def best_achievable_bearing(engine: Valhalla, origin: tuple, bearing: float, dis
     """
     from athlete_engine.measure import measure_route as measure  # noqa: PLC0415
     best = None
-    opts = pedestrian_options(ferries)
+    opts = pedestrian_options()
     for factor in (1.2, 1.6, 2.2, 3.0):
         feats = engine.isodistance(origin, [distance_m * factor / 1000], costing_options=opts)["features"]
         if not feats:
@@ -125,9 +124,9 @@ def check_conflict(result, ref: dict, req) -> list[str]:
         problems.append(f"minimum_m {c.minimum_m} vs reference {ref['minimum_m']}")
     if c.overshoot_m is None or not close(c.overshoot_m, ref["minimum_m"] - req.target_distance_m):
         problems.append(f"overshoot_m {c.overshoot_m} vs {ref['minimum_m'] - req.target_distance_m:.1f}")
-    got = {(s.action, s.label or s.preference): s for s in c.savings}
+    got = {(s.action, s.label): s for s in c.savings}
     for s in ref["savings"]:
-        key = (s["action"], s.get("label") or s.get("preference"))
+        key = (s["action"], s.get("label"))
         if key not in got:
             problems.append(f"missing saving {key}")
             continue
@@ -141,8 +140,8 @@ def check_conflict(result, ref: dict, req) -> list[str]:
         problems.append("set_distance fix missing or does not make the request fit")
     for s in ref["savings"]:
         if s["fits"]:
-            want = ("drop_checkpoint", s.get("label")) if s["action"] == "drop_checkpoint" else ("allow", s.get("preference"))
-            if not any((f.action, f.label or f.preference) == want for f in c.fixes):
+            want = ("drop_checkpoint", s.get("label"))
+            if not any((f.action, f.label) == want for f in c.fixes):
                 problems.append(f"missing fix {want}")
     return problems
 
@@ -153,7 +152,6 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
     req = RouteRequest.model_validate(fixture["request"])
     ref = fixture["reference"]
     row: dict = {"id": fixture["id"], "ms": elapsed_ms, "problems": [], "candidates": []}
-    ferries = req.preferences.ferries_allowed
 
     # Outcome classification
     if ref["outcome"] == "infeasible":
@@ -179,7 +177,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
     target = None
     if req.direction and req.direction.kind == "towards_place":
         target = req.direction.place.lonlat
-    located = engine.locate([c.lonlat for c in req.checkpoints], costing_options=pedestrian_options(ferries)) \
+    located = engine.locate([c.lonlat for c in req.checkpoints], costing_options=pedestrian_options()) \
         if req.checkpoints else []
 
     edge_sets = {}
@@ -201,9 +199,9 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
         cr["ways"] = {e.way_id for e in m.edges if e.way_id and e.use != "ferry"}
         if not cr["match_ok"]:
             row["problems"].append(f"{cand.label}: pedestrian map-matching covers {matched_m:.0f} m of {m.geom_m:.0f} m")
-        if m.ferry_m > 0 and not ferries:
-            row["problems"].append(f"{cand.label}: {m.ferry_m:.0f} m of ferry with ferries excluded")
-        cr["unrequested_ferry"] = m.ferry_m > 0 and not ferries
+        if m.ferry_m > 0:
+            row["problems"].append(f"{cand.label}: {m.ferry_m:.0f} m of ferry (ferries are always excluded)")
+        cr["unrequested_ferry"] = m.ferry_m > 0
 
         if not close(cand.foot_m, m.foot_m, rel=0.001, floor_m=2.0):
             row["problems"].append(f"{cand.label}: reported foot {cand.foot_m:.0f} m, measured {m.foot_m:.0f} m")
@@ -250,13 +248,13 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
         # moves away from it by design after passing it, and is judged by its bearing instead.
         if target is not None and cand.label in ("direct", "end_at_target"):
             last_cp = max((s.at_m for s in cand.stops if s.role == "checkpoint"), default=0.0)
-            cr["backtrack"] = direction_adherence(engine, geom, target, last_cp, ferries)
+            cr["backtrack"] = direction_adherence(engine, geom, target, last_cp)
         if req.direction and req.direction.kind == "bearing" and req.route_type == "point_to_point":
             cr["bearing_err"] = geodesy.angle_between_deg(geodesy.bearing_deg(geom[0], geom[-1]),
                                                           req.direction.degrees)
             if cr["bearing_err"] > 30 and not req.checkpoints:
                 ref_best = best_achievable_bearing(engine, req.start.lonlat, req.direction.degrees,
-                                                   req.target_distance_m, ferries)
+                                                   req.target_distance_m)
                 cr["bearing_ref_best"] = ref_best
                 if ref_best is not None and ref_best > 30:
                     cr["bearing_network_limited"] = True
@@ -386,7 +384,7 @@ def main() -> int:
             f"{sum(c['reported_ok'] for c in cands)} / {len(cands)}", have and all(c["reported_ok"] for c in cands)),
         kpi("Length consistency (engine vs sphere)", "every route, 0.1% / 2 m",
             f"{sum(c['consistency_ok'] for c in cands)} / {len(cands)}", have and all(c["consistency_ok"] for c in cands)),
-        kpi("Feasibility: access violations or unrequested ferry", "0",
+        kpi("Feasibility: access violations or any ferry", "0",
             f"{sum((not c['access_ok']) or c['unrequested_ferry'] for c in cands)}",
             have and not any((not c["access_ok"]) or c["unrequested_ferry"] for c in cands)),
         kpi("(info) Geometries that pedestrian edge_walk cannot follow exactly", "info only",
@@ -420,7 +418,7 @@ def main() -> int:
     passed = all(k[3] for k in kpis)
 
     md = [
-        "# Phase 3: KPI report", "",
+        "# Phase 3b: KPI report", "",
         f"Graph build {SCENARIOS['graph_build']} (pinned extract). {len(fixtures)} active fixtures"
         f"{' (filtered)' if only else ''}; {len(skipped)} not yet in scope "
         f"({', '.join(f['id'] + ': ' + f['status'] for f in skipped)}). Measured on the development laptop.", "",

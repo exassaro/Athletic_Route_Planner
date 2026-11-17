@@ -1,8 +1,7 @@
 """Request, candidate, conflict and result models.
 
-RouteRequest follows blueprint section 4, with the Phase 2 amendments:
-- ferries are excluded unless `preferences.avoid` drops "ferries";
-- the distance budget is distance on foot; ferry metres are reported separately;
+RouteRequest follows blueprint section 4, with the Phase 2 and Phase 3 amendments:
+- ferries are always excluded (Phase 3 amendment 4); ferry metres are still measured, as a check;
 - the solver takes coordinates: geocoding happens before it (Phase 4).
 
 All distances are metres. A Candidate's lengths are measured from its geometry
@@ -63,20 +62,10 @@ class FixedEnd(Strict):
     point: Point
 
 
-Avoid = Literal["ferries", "highways"]
-
-
 class Preferences(Strict):
-    # "ferries" in avoid (the default) means a hard exclusion. "highways" is accepted for
-    # compatibility with section 4; motorways are never walkable, so it changes nothing.
-    avoid: list[Avoid] = Field(default_factory=lambda: ["ferries"])
     hills: Literal["any", "minimise"] = "any"            # unsupported in the MVP (amendment 3)
     quiet_roads: Annotated[float, Field(ge=0, le=1)] = 0.0
     surface: Literal["any", "paved"] = "any"             # unsupported: surface tags too sparse
-
-    @property
-    def ferries_allowed(self) -> bool:
-        return "ferries" not in self.avoid
 
 
 class RouteRequest(Strict):
@@ -123,7 +112,6 @@ class RouteRequest(Strict):
 
 FlagCode = Literal[
     "engine_warning",           # carried from the engine response (amendment 6)
-    "ferry_used",               # ferries were allowed and the route uses one
     "engine_length_mismatch",   # engine vs spherical measurement over 0.1% / 2 m
     "endpoint_mid_road",        # no junction within the snap window; ends at the exact distance
     "preference_unsupported",   # e.g. hills, surface in the MVP
@@ -187,18 +175,16 @@ class Candidate(Strict):
 
 
 class Saving(Strict):
-    action: Literal["drop_checkpoint", "allow"]
-    label: str | None = None          # checkpoint label for drop_checkpoint
-    preference: Literal["ferries"] | None = None
+    action: Literal["drop_checkpoint"]
+    label: str | None = None          # checkpoint label
     saves_m: float                    # measured: minimum length now minus minimum length with the change
     fits: bool                        # whether the request fits the budget with this change alone
 
 
 class Fix(Strict):
-    action: Literal["set_distance", "drop_checkpoint", "make_optional", "allow"]
+    action: Literal["set_distance", "drop_checkpoint", "make_optional"]
     value_m: float | None = None
     label: str | None = None
-    preference: Literal["ferries"] | None = None
 
 
 class Conflict(Strict):
@@ -209,7 +195,6 @@ class Conflict(Strict):
     overshoot_m: float | None = None  # minimum_m - requested budget upper bound
     order: list[str] = Field(default_factory=list)
     pair: list[str] = Field(default_factory=list)          # disconnected: the two points
-    blocking_preference: Literal["ferries"] | None = None  # disconnected: the cause, if known
     savings: list[Saving] = Field(default_factory=list)
     fixes: list[Fix] = Field(default_factory=list)
 

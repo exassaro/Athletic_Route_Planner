@@ -72,7 +72,7 @@ Solo developer, comfortable with Python and Next.js. Windows 11, 8 GB RAM, Intel
 - `tests/unit/` no network. `tests/integration/` needs Valhalla running. `tests/fixtures/` coordinates with OSM ids.
 - `data/` is gitignored (extract, tiles, index).
 - `solver/athlete_solver/` Phase 3 solver package (models, engine adapter, ordering, gate, truncation, scoring) with a CLI (`python -m athlete_solver`). It calls the engine only through `athlete_engine`.
-- `tests/fixtures/scenarios/` solver scenarios (section 16); `docs/reports/phase3/` KPI report and the quieter spike.
+- `tests/fixtures/scenarios/` solver scenarios (section 16); `docs/reports/phase3/` Phase 3 KPI report and the quieter spike; `docs/reports/phase3b/` Phase 3b KPI report and the rules spike.
 - `api/`, `web/` are placeholders for later phases.
 
 ## Commands
@@ -116,7 +116,7 @@ Solver and KPI harness (Phase 3; Valhalla must be running):
 ```
 uv run python -m athlete_solver solve request.json [--geojson out.geojson]
 uv run python tests/kpi/build_scenarios.py   # fixtures + brute-force reference values -> tests/fixtures/scenarios/scenarios.json
-uv run python tests/kpi/run_kpi.py [--only S05,S15]   # -> docs/reports/phase3/kpi.md, exit 0 only if every KPI passes
+uv run python tests/kpi/run_kpi.py [--only S05,S15]   # -> docs/reports/phase3b/kpi.md, exit 0 only if every KPI passes
 ```
 
 Scenario requests live in `tests/fixtures/scenarios/base.json`. Never edit `scenarios.json` by hand: its reference values come from `tests/kpi/reference.py` (every stop order routed and measured, no matrix, no DP), kept independent of the solver.

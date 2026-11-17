@@ -49,8 +49,8 @@ def check_snapping(engine: Engine, req: RouteRequest) -> None:
                 fixes=[Fix(action="drop_checkpoint", label=label)] if label in {c.label for c in req.checkpoints} else []))
 
 
-def disconnected_conflict(labels: list[str], matrix, matrix_with_ferries=None) -> Conflict:
-    """Name the first disconnected pair, and whether allowing ferries would connect everything."""
+def disconnected_conflict(labels: list[str], matrix) -> Conflict:
+    """Name the first disconnected pair (ferries are always excluded)."""
     pair = []
     for i, row in enumerate(matrix):
         for j, cell in enumerate(row):
@@ -59,14 +59,8 @@ def disconnected_conflict(labels: list[str], matrix, matrix_with_ferries=None) -
                 break
         if pair:
             break
-    blocking = None
-    if matrix_with_ferries is not None and all(c is not None for row in matrix_with_ferries for c in row):
-        blocking = "ferries"
     msg = f"There is no walking route between {pair[0]} and {pair[1]}" if pair else "Some points are not connected"
-    if blocking:
-        msg += " with ferries excluded"
-    return Conflict(kind="disconnected", message=msg, pair=pair, blocking_preference=blocking,
-                    fixes=[Fix(action="allow", preference="ferries")] if blocking else [])
+    return Conflict(kind="disconnected", message=msg, pair=pair)
 
 
 # ------------------------------------------------------------------ base route and gate
@@ -119,7 +113,7 @@ def minimum_route(engine: Engine, start: LonLat, stops: list[LonLat], target: Lo
     return shortest
 
 
-def build_conflict(req: RouteRequest, engine: Engine, ferry_engine: Engine | None, base: Base,
+def build_conflict(req: RouteRequest, engine: Engine, base: Base,
                    start: LonLat, stops: list[LonLat], target: LonLat | None) -> Conflict:
     upper = req.target_distance_m * (1 + req.tolerance_pct / 100)
     fixed = req.checkpoint_order == "fixed"
@@ -130,18 +124,11 @@ def build_conflict(req: RouteRequest, engine: Engine, ferry_engine: Engine | Non
         if alt is not None:
             savings.append(Saving(action="drop_checkpoint", label=cp.label, saves_m=round(base.foot_m - alt.foot_m, 1),
                                   fits=alt.foot_m <= upper))
-    if ferry_engine is not None:
-        alt = minimum_route(ferry_engine, start, stops, target, fixed)
-        if alt is not None and alt.foot_m < base.foot_m:
-            savings.append(Saving(action="allow", preference="ferries", saves_m=round(base.foot_m - alt.foot_m, 1),
-                                  fits=alt.foot_m <= upper))
     value = math.ceil(base.foot_m / 100.0) * 100.0
     fixes = [Fix(action="set_distance", value_m=value)]
     for s in savings:
-        if s.fits and s.action == "drop_checkpoint":
+        if s.fits:
             fixes += [Fix(action="drop_checkpoint", label=s.label), Fix(action="make_optional", label=s.label)]
-        elif s.fits and s.action == "allow":
-            fixes.append(Fix(action="allow", preference="ferries"))
     names = [req.checkpoints[i].label for i in base.order]
     over = base.foot_m - req.target_distance_m
     return Conflict(

@@ -34,18 +34,16 @@ class FakeGraph:
 
 
 class FakeEngine:
-    def __init__(self, graph: FakeGraph, ferries_allowed: bool = False):
-        self.g = graph
-        self.ferries_allowed = ferries_allowed
-        self.calls = 0
+    """Ferry edges are never usable (ferries are always excluded); they stay in graphs to prove it."""
 
-    def with_ferries(self, allowed: bool) -> "FakeEngine":
-        return FakeEngine(self.g, allowed)
+    def __init__(self, graph: FakeGraph):
+        self.g = graph
+        self.calls = 0
 
     # ---------------------------------------------------------- graph helpers
 
     def _usable(self) -> list[tuple[int, GEdge]]:
-        return [(i, e) for i, e in enumerate(self.g.edges) if self.ferries_allowed or not e.ferry]
+        return [(i, e) for i, e in enumerate(self.g.edges) if not e.ferry]
 
     def _snap(self, p: LonLat):
         """Nearest position on a usable non-ferry edge: (offset_m, edge index, point)."""

@@ -15,15 +15,14 @@ def request(**overrides):
 
 def test_section_4_shape_parses_with_defaults():
     req = request()
-    assert req.preferences.avoid == ["ferries"]
-    assert not req.preferences.ferries_allowed
     assert req.end.kind == "auto"
     assert req.checkpoint_order == "auto"
     assert req.tolerance_m == pytest.approx(500)
 
 
-def test_ferries_are_opt_in():
-    assert request(preferences={"avoid": []}).preferences.ferries_allowed
+def test_there_is_no_ferry_opt_in():
+    with pytest.raises(ValidationError):
+        request(preferences={"avoid": []})
 
 
 def test_unknown_fields_are_rejected():
@@ -72,7 +71,7 @@ def test_fixed_end_only_point_to_point():
 
 def test_result_round_trips_through_json():
     conflict = Conflict(kind="checkpoints_exceed_distance", message="m", requested_m=25000, minimum_m=26000,
-                        overshoot_m=500, savings=[{"action": "allow", "preference": "ferries", "saves_m": 6000, "fits": True}],
+                        overshoot_m=500, savings=[{"action": "drop_checkpoint", "label": "Beypore", "saves_m": 6000, "fits": True}],
                         fixes=[{"action": "set_distance", "value_m": 26000}])
     result = SolveResult(outcome="infeasible", request=request(), conflict=conflict, graph_build="2026-11-15T00:15:25Z")
     again = SolveResult.model_validate_json(result.model_dump_json())

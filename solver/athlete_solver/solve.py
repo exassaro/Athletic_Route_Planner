@@ -28,14 +28,12 @@ def finish(req: RouteRequest, eng, pairs) -> tuple[list, list[str]]:
     return diversify(scored, req.alternatives), rejected
 
 
-def _engines(engine, ferries_allowed: bool) -> tuple[Engine, Engine | None]:
-    """The request's engine, plus a ferries-allowed one for explaining conflicts when ferries are excluded."""
+def _engine(engine) -> Engine:
+    """The Valhalla adapter for a client; test fakes already implement the Engine protocol."""
     if isinstance(engine, Valhalla):
-        main = ValhallaEngine(engine, ferries_allowed)
-        other = None if ferries_allowed else ValhallaEngine(engine, True)
-        return main, other
-    if hasattr(engine, "with_ferries"):  # test fakes
-        return engine.with_ferries(ferries_allowed), (None if ferries_allowed else engine.with_ferries(True))
+        return ValhallaEngine(engine)
+    if hasattr(engine, "route") and hasattr(engine, "matrix"):
+        return engine
     raise TypeError("engine must be a Valhalla client or an Engine")
 
 
@@ -71,7 +69,7 @@ def solve(request: RouteRequest, engine=None, graph_build: str = "unknown") -> S
 
 
 def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
-    eng, ferry_eng = _engines(client, req.preferences.ferries_allowed)
+    eng = _engine(client)
     pref_flags = _preference_flags(req)
 
     def done(**kw) -> SolveResult:
@@ -87,8 +85,7 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
                 kw["outcome"] = "unsupported"
                 kw["flags"].append(Flag(code="preference_unsupported",
                                         message="every candidate broke a hard rule: " + "; ".join(rejected)))
-        return SolveResult(request=req, graph_build=graph_build,
-                           engine_calls=eng.calls + (ferry_eng.calls if ferry_eng else 0), **kw)
+        return SolveResult(request=req, graph_build=graph_build, engine_calls=eng.calls, **kw)
 
     if req.route_type == "out_and_back":
         try:
@@ -120,8 +117,7 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
              ([req.direction.place.label or "target"] if target else [])
     matrix = eng.matrix(pts)
     if any(c is None for row in matrix for c in row):
-        m2 = ferry_eng.matrix(pts) if ferry_eng else None
-        return done(outcome="disconnected", conflict=disconnected_conflict(labels, matrix, m2))
+        return done(outcome="disconnected", conflict=disconnected_conflict(labels, matrix))
 
     base = minimum_route(eng, start, stops, target, req.checkpoint_order == "fixed", upper)
     if base is None:
@@ -129,13 +125,11 @@ def _solve(req: RouteRequest, client, graph_build: str) -> SolveResult:
 
     facts = {"order": [req.checkpoints[i].label for i in base.order], "l_min_m": round(base.foot_m, 1),
              "budget_m": req.target_distance_m, "tolerance_m": req.tolerance_m}
-    if base.routed is not None:
-        facts["l_min_ferry_m"] = round(base.routed.ferry_m, 1)
 
     # Feasibility gate (section 8 step 6).
     if base.foot_m > upper:
         return done(outcome="infeasible", facts=facts,
-                    conflict=build_conflict(req, eng, ferry_eng, base, start, stops, target))
+                    conflict=build_conflict(req, eng, base, start, stops, target))
 
     remainder = req.target_distance_m - base.foot_m
     facts["remainder_m"] = round(remainder, 1)

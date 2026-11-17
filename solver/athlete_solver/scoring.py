@@ -135,8 +135,8 @@ def hard_failures(req: RouteRequest, cand: Candidate, m: Measures) -> list[str]:
     if cand.label in ("direct", "fewer_main_roads", "continue_past_target") and \
             abs(cand.deviation_m) > req.tolerance_m:
         fails.append(f"distance off by {cand.deviation_m:+.0f} m, over the {req.tolerance_m:.0f} m tolerance")
-    if cand.ferry_m > 0 and not req.preferences.ferries_allowed:
-        fails.append(f"{cand.ferry_m:.0f} m on a ferry with ferries excluded")
+    if cand.ferry_m > 0:
+        fails.append(f"{cand.ferry_m:.0f} m on a ferry (ferries are always excluded)")
     for s in cand.stops:
         if s.role == "checkpoint":
             off = geodesy.distance_m((s.snapped_lon, s.snapped_lat), _nearest_on(cand.geometry, s))

@@ -116,7 +116,6 @@ def main() -> int:
                 target=(target["lon"], target["lat"]) if target else None,
                 budget_m=r["target_distance_m"],
                 tolerance_pct=r.get("tolerance_pct", 2.0),
-                ferries_allowed="ferries" not in r.get("preferences", {}).get("avoid", ["ferries"]),
                 fixed_order=r.get("checkpoint_order") == "fixed",
             )
             ref = f["reference"]

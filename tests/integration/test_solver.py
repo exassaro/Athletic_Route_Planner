@@ -34,23 +34,13 @@ def test_s05_meets_the_budget_through_all_stops(engine):
     assert c.ferry_m == 0
 
 
-def test_s15_is_infeasible_and_allowing_ferries_fits(engine):
+def test_s15_is_infeasible_with_measured_savings(engine):
     res = run(engine, "S15")
     ref = FIX["S15"]["reference"]
     assert res.outcome == "infeasible"
     assert res.conflict.minimum_m == pytest.approx(ref["minimum_m"], abs=max(10, 0.002 * ref["minimum_m"]))
-    ferries = next(s for s in res.conflict.savings if s.action == "allow")
-    assert ferries.fits
-    assert any(f.action == "allow" and f.preference == "ferries" for f in res.conflict.fixes)
-
-
-def test_s06_counts_ferry_metres_separately(engine):
-    res = run(engine, "S06")
-    c = res.candidates[0]
-    assert c.ferry_m > 0
-    assert c.foot_m == pytest.approx(c.length_m - c.ferry_m, abs=0.5)
-    assert abs(c.foot_m - res.request.target_distance_m) <= res.request.tolerance_m
-    assert any(f.code == "ferry_used" for f in c.flags)
+    assert {s.label for s in res.conflict.savings} == set(ref["order"])
+    assert all(s.action == "drop_checkpoint" for s in res.conflict.savings)
 
 
 def test_case_b_offers_both_options(engine):

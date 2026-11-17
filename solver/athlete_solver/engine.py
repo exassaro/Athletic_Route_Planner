@@ -1,8 +1,8 @@
 """The solver's only door to the routing engine.
 
-Wraps athlete_engine with the Phase 2 policy: ferry handling per request, foot
-metres separate from ferry metres, ellipsoid lengths for everything shown, the
-spherical consistency check, and engine warnings carried as flags. The solver's
+Wraps athlete_engine with the agreed policy: ferries always excluded (ferry metres
+still measured, as a check), ellipsoid lengths for everything shown, the spherical
+consistency check, and engine warnings carried as flags. The solver's
 algorithms depend on the `Engine` protocol, so unit tests can use a fake.
 """
 
@@ -76,7 +76,6 @@ class NoRoute(Exception):
 
 
 class Engine(Protocol):
-    ferries_allowed: bool
     calls: int
 
     def matrix(self, points: list[LonLat]) -> list[list[float | None]]: ...
@@ -89,10 +88,9 @@ class Engine(Protocol):
 class ValhallaEngine:
     """Engine backed by a running Valhalla."""
 
-    def __init__(self, client: Valhalla, ferries_allowed: bool):
+    def __init__(self, client: Valhalla):
         self.client = client
-        self.ferries_allowed = ferries_allowed
-        self.options = pedestrian_options(ferries_allowed)
+        self.options = pedestrian_options()
         self.calls = 0
 
     def matrix(self, points: list[LonLat]) -> list[list[float | None]]:
@@ -129,8 +127,7 @@ class ValhallaEngine:
     def route(self, points: list[LonLat], through: set[int] | None = None, detail: bool = False) -> Routed:
         """Route through points; index i in `through` is a shaping via, every other point is a break.
 
-        detail=True also fetches edge attributes (road class, edge identity, junctions);
-        ferry metres are always measured when ferries are allowed.
+        detail=True also fetches edge attributes (road class, edge identity, junctions, ferry metres).
         """
         through = through or set()
         locations = [loc(p, type="through" if i in through else "break") for i, p in enumerate(points)]
@@ -148,7 +145,7 @@ class ValhallaEngine:
         for w in list(resp.get("warnings", [])) + list(resp["trip"].get("warnings", [])):
             routed.flags.append(Flag(code="engine_warning", message=w.get("text", str(w)), data=w))
 
-        if detail or self.ferries_allowed:
+        if detail:
             self._add_edges(routed)
         sphere = routed.sphere_m
         if abs(routed.engine_m - sphere) > consistency_tolerance_m(sphere):
@@ -174,9 +171,6 @@ class ValhallaEngine:
                     run_foot += e.length_m
                 if is_junction:
                     routed.junctions.append(Junction(at_m=run_foot, point=e.shape[-1], names=list(e.names)))
-            if any(e.use == "ferry" for e in edges):
-                routed.flags.append(Flag(code="ferry_used", message=f"{ferry:.0f} m on a ferry (not counted as distance on foot)",
-                                         data={"ferry_m": ferry}))
 
     def _edges_with_junctions(self, shape: list[LonLat]) -> tuple[list[Edge], list[bool]]:
         attrs = ["edge.id", "edge.way_id", "edge.use", "edge.road_class", "edge.names",

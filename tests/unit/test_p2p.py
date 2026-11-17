@@ -74,35 +74,27 @@ def test_infeasible_conflict_matches_brute_force():
     assert fix.value_m * 1.02 >= minimum and fix.value_m <= minimum + 100
 
 
-def ferry_graph() -> FakeGraph:
-    """A U-shaped road around an estuary, with a ferry straight across the mouth."""
-    nodes = {"a": (75.80, 11.10), "b": (75.80, 11.15), "c": (75.85, 11.15), "d": (75.85, 11.10),
-             "e": (75.85, 11.05), "x": (75.81, 11.10), "y": (75.84, 11.10)}
-    edges = [GEdge("a", "x"), GEdge("a", "b"), GEdge("b", "c"), GEdge("c", "d"), GEdge("d", "y"), GEdge("d", "e"),
-             GEdge("x", "y", ferry=True, name="Ferry")]
-    return FakeGraph(nodes, edges)
-
-
-def test_ferries_excluded_by_default_and_budget_counts_foot_only():
-    g = ferry_graph()
-    start, stop, target = g.nodes["a"], g.nodes["y"], g.nodes["e"]
-    off = run(req(start, 40000, target=target, checkpoints=[("Y", stop)]), g)
-    on = run(req(start, 40000, target=target, checkpoints=[("Y", stop)], preferences={"avoid": []}), g)
-    assert off.facts["l_min_m"] > on.facts["l_min_m"]          # the ferry shortens the walk
-    assert on.facts["l_min_ferry_m"] > 0
-    across = geodesy.distance_m(g.nodes["x"], g.nodes["y"])
-    assert on.facts["l_min_ferry_m"] == pytest.approx(across, abs=0.1)   # facts are rounded to 0.1 m
-    # with ferries allowed the walk is the two short road pieces, not including the crossing
-    assert on.facts["l_min_m"] == pytest.approx(geodesy.distance_m(start, g.nodes["x"]), abs=0.1)
-
-
-def test_disconnected_names_the_blocking_preference():
+def test_ferry_is_never_used_even_when_it_is_the_only_link():
+    """A ferry is the only connection: the solver reports a disconnected pair, with no ferry fix."""
     nodes = {"a": (75.80, 11.10), "b": (75.81, 11.10), "c": (75.83, 11.10), "d": (75.84, 11.10)}
     g = FakeGraph(nodes, [GEdge("a", "b"), GEdge("b", "c", ferry=True), GEdge("c", "d")])
     res = run(req(nodes["a"], 5000, target=nodes["d"]), g)
     assert res.outcome == "disconnected"
-    assert res.conflict.blocking_preference == "ferries"
-    assert any(f.action == "allow" for f in res.conflict.fixes)
+    assert set(res.conflict.pair) == {"start", "T"}
+    assert res.conflict.fixes == []
+
+
+def test_route_around_an_estuary_never_takes_the_ferry():
+    """A U-shaped road round an estuary with a ferry across its mouth: the run walks round."""
+    nodes = {"a": (75.80, 11.10), "b": (75.80, 11.15), "c": (75.85, 11.15), "d": (75.85, 11.10),
+             "e": (75.85, 11.05), "x": (75.81, 11.10), "y": (75.84, 11.10)}
+    edges = [GEdge("a", "x"), GEdge("a", "b"), GEdge("b", "c"), GEdge("c", "d"), GEdge("d", "y"), GEdge("d", "e"),
+             GEdge("x", "y", ferry=True, name="Ferry")]
+    g = FakeGraph(nodes, edges)
+    res = run(req(nodes["a"], 40000, target=nodes["e"], checkpoints=[("Y", nodes["y"])]), g)
+    round_the_estuary = geodesy.line_length_m([nodes[k] for k in "abcdy"])
+    assert res.facts["l_min_m"] == pytest.approx(round_the_estuary, abs=0.1)
+    assert all(c.ferry_m == 0 for c in res.candidates)
 
 
 def test_far_checkpoint_is_rejected_before_routing():

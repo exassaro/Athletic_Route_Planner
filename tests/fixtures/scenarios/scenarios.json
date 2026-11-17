@@ -97,7 +97,7 @@
   },
   {
    "id": "S05",
-   "title": "28 km via Kadalundi, Chaliyam, Beypore, ferries excluded",
+   "title": "28 km via Kadalundi, Chaliyam, Beypore",
    "base": "S05",
    "status": "active",
    "request": {
@@ -146,7 +146,6 @@
      "Beypore"
     ],
     "minimum_m": 25889.7,
-    "minimum_ferry_m": 0.0,
     "outcome": "ok",
     "remainder_m": 2110.3,
     "tail_foot_m": 9206.0,
@@ -154,70 +153,9 @@
    }
   },
   {
-   "id": "S06",
-   "title": "Same as S05, ferries allowed",
-   "base": "S06",
-   "status": "active",
-   "request": {
-    "route_type": "point_to_point",
-    "start": {
-     "lon": 75.86,
-     "lat": 11.05,
-     "label": "start_south_of_kadalundi"
-    },
-    "target_distance_m": 28000,
-    "direction": {
-     "kind": "towards_place",
-     "place": {
-      "lon": 75.7754716,
-      "lat": 11.2450558,
-      "label": "Kozhikode",
-      "place_id": "osm:node/1348192542"
-     }
-    },
-    "checkpoints": [
-     {
-      "lon": 75.8334302,
-      "lat": 11.1381083,
-      "label": "Kadalundi",
-      "place_id": "osm:node/7728008448"
-     },
-     {
-      "lon": 75.8095217,
-      "lat": 11.1559577,
-      "label": "Chaliyam",
-      "place_id": "osm:node/1683145417"
-     },
-     {
-      "lon": 75.8101768,
-      "lat": 11.1790668,
-      "label": "Beypore",
-      "place_id": "osm:node/1683149581"
-     }
-    ],
-    "preferences": {
-     "avoid": []
-    }
-   },
-   "reference": {
-    "budget_upper_m": 28560.0,
-    "order": [
-     "Kadalundi",
-     "Chaliyam",
-     "Beypore"
-    ],
-    "minimum_m": 18978.8,
-    "minimum_ferry_m": 618.5,
-    "outcome": "ok",
-    "remainder_m": 9021.2,
-    "tail_foot_m": 9206.0,
-    "case": "A"
-   }
-  },
-  {
-   "id": "S07a",
-   "title": "15 km with the same three stops, ferries excluded",
-   "base": "S07a",
+   "id": "S07",
+   "title": "15 km with the same three stops",
+   "base": "S07",
    "status": "active",
    "request": {
     "route_type": "point_to_point",
@@ -265,7 +203,6 @@
      "Beypore"
     ],
     "minimum_m": 25889.7,
-    "minimum_ferry_m": 0.0,
     "outcome": "infeasible",
     "savings": [
      {
@@ -284,90 +221,6 @@
       "action": "drop_checkpoint",
       "label": "Beypore",
       "saves_m": 9368.6,
-      "fits": false
-     },
-     {
-      "action": "allow",
-      "preference": "ferries",
-      "saves_m": 6910.9,
-      "fits": false
-     }
-    ]
-   }
-  },
-  {
-   "id": "S07b",
-   "title": "15 km with the same three stops, ferries allowed",
-   "base": "S07b",
-   "status": "active",
-   "request": {
-    "route_type": "point_to_point",
-    "start": {
-     "lon": 75.86,
-     "lat": 11.05,
-     "label": "start_south_of_kadalundi"
-    },
-    "target_distance_m": 15000,
-    "direction": {
-     "kind": "towards_place",
-     "place": {
-      "lon": 75.7754716,
-      "lat": 11.2450558,
-      "label": "Kozhikode",
-      "place_id": "osm:node/1348192542"
-     }
-    },
-    "checkpoints": [
-     {
-      "lon": 75.8334302,
-      "lat": 11.1381083,
-      "label": "Kadalundi",
-      "place_id": "osm:node/7728008448"
-     },
-     {
-      "lon": 75.8095217,
-      "lat": 11.1559577,
-      "label": "Chaliyam",
-      "place_id": "osm:node/1683145417"
-     },
-     {
-      "lon": 75.8101768,
-      "lat": 11.1790668,
-      "label": "Beypore",
-      "place_id": "osm:node/1683149581"
-     }
-    ],
-    "preferences": {
-     "avoid": []
-    }
-   },
-   "reference": {
-    "budget_upper_m": 15300.0,
-    "order": [
-     "Kadalundi",
-     "Chaliyam",
-     "Beypore"
-    ],
-    "minimum_m": 18978.8,
-    "minimum_ferry_m": 618.5,
-    "outcome": "infeasible",
-    "savings": [
-     {
-      "action": "drop_checkpoint",
-      "label": "Kadalundi",
-      "saves_m": 2850.8,
-      "fits": false
-     },
-     {
-      "action": "drop_checkpoint",
-      "label": "Chaliyam",
-      "saves_m": -0.0,
-      "fits": false
-     },
-     {
-      "action": "drop_checkpoint",
-      "label": "Beypore",
-      "saves_m": 2457.7,
       "fits": false
      }
     ]
@@ -502,7 +355,6 @@
      "Beypore"
     ],
     "minimum_m": 25889.7,
-    "minimum_ferry_m": 0.0,
     "outcome": "ok",
     "remainder_m": 6110.3,
     "tail_foot_m": 9206.0,
@@ -592,7 +444,7 @@
   },
   {
    "id": "S15",
-   "title": "25 km via Kadalundi, Chaliyam, Beypore, ferries excluded",
+   "title": "25 km via Kadalundi, Chaliyam, Beypore",
    "base": "S15",
    "status": "active",
    "request": {
@@ -641,7 +493,6 @@
      "Beypore"
     ],
     "minimum_m": 25889.7,
-    "minimum_ferry_m": 0.0,
     "outcome": "infeasible",
     "savings": [
      {
@@ -660,12 +511,6 @@
       "action": "drop_checkpoint",
       "label": "Beypore",
       "saves_m": 9368.6,
-      "fits": true
-     },
-     {
-      "action": "allow",
-      "preference": "ferries",
-      "saves_m": 6910.9,
       "fits": true
      }
     ]
@@ -860,7 +705,7 @@
   },
   {
    "id": "S05-n1",
-   "title": "28 km via Kadalundi, Chaliyam, Beypore, ferries excluded; start 1 sampled nearby",
+   "title": "28 km via Kadalundi, Chaliyam, Beypore; start 1 sampled nearby",
    "base": "S05",
    "status": "active",
    "request": {
@@ -910,7 +755,6 @@
      "Beypore"
     ],
     "minimum_m": 27056.1,
-    "minimum_ferry_m": 0.0,
     "outcome": "ok",
     "remainder_m": 943.9,
     "tail_foot_m": 9206.0,
@@ -919,7 +763,7 @@
   },
   {
    "id": "S05-n2",
-   "title": "28 km via Kadalundi, Chaliyam, Beypore, ferries excluded; start 2 sampled nearby",
+   "title": "28 km via Kadalundi, Chaliyam, Beypore; start 2 sampled nearby",
    "base": "S05",
    "status": "active",
    "request": {
@@ -969,7 +813,6 @@
      "Beypore"
     ],
     "minimum_m": 24464.0,
-    "minimum_ferry_m": 0.0,
     "outcome": "ok",
     "remainder_m": 3536.0,
     "tail_foot_m": 9206.0,
@@ -978,7 +821,7 @@
   },
   {
    "id": "S05-n3",
-   "title": "28 km via Kadalundi, Chaliyam, Beypore, ferries excluded; start 3 sampled nearby",
+   "title": "28 km via Kadalundi, Chaliyam, Beypore; start 3 sampled nearby",
    "base": "S05",
    "status": "active",
    "request": {
@@ -1028,7 +871,6 @@
      "Beypore"
     ],
     "minimum_m": 27509.2,
-    "minimum_ferry_m": 0.0,
     "outcome": "ok",
     "remainder_m": 490.8,
     "tail_foot_m": 9206.0,
@@ -1037,7 +879,7 @@
   },
   {
    "id": "S05-n4",
-   "title": "28 km via Kadalundi, Chaliyam, Beypore, ferries excluded; start 4 sampled nearby",
+   "title": "28 km via Kadalundi, Chaliyam, Beypore; start 4 sampled nearby",
    "base": "S05",
    "status": "active",
    "request": {
@@ -1087,7 +929,6 @@
      "Beypore"
     ],
     "minimum_m": 25780.8,
-    "minimum_ferry_m": 0.0,
     "outcome": "ok",
     "remainder_m": 2219.2,
     "tail_foot_m": 9206.0,
@@ -1095,9 +936,9 @@
    }
   },
   {
-   "id": "S06-n1",
-   "title": "Same as S05, ferries allowed; start 1 sampled nearby",
-   "base": "S06",
+   "id": "S07-n1",
+   "title": "15 km with the same three stops; start 1 sampled nearby",
+   "base": "S07",
    "status": "active",
    "request": {
     "route_type": "point_to_point",
@@ -1106,192 +947,6 @@
      "lat": 11.0472208,
      "label": "near start_south_of_kadalundi (residential)",
      "place_id": "osm:node/8271092734"
-    },
-    "target_distance_m": 28000,
-    "direction": {
-     "kind": "towards_place",
-     "place": {
-      "lon": 75.7754716,
-      "lat": 11.2450558,
-      "label": "Kozhikode",
-      "place_id": "osm:node/1348192542"
-     }
-    },
-    "checkpoints": [
-     {
-      "lon": 75.8334302,
-      "lat": 11.1381083,
-      "label": "Kadalundi",
-      "place_id": "osm:node/7728008448"
-     },
-     {
-      "lon": 75.8095217,
-      "lat": 11.1559577,
-      "label": "Chaliyam",
-      "place_id": "osm:node/1683145417"
-     },
-     {
-      "lon": 75.8101768,
-      "lat": 11.1790668,
-      "label": "Beypore",
-      "place_id": "osm:node/1683149581"
-     }
-    ],
-    "preferences": {
-     "avoid": []
-    }
-   },
-   "reference": {
-    "budget_upper_m": 28560.0,
-    "order": [
-     "Kadalundi",
-     "Chaliyam",
-     "Beypore"
-    ],
-    "minimum_m": 19288.3,
-    "minimum_ferry_m": 618.5,
-    "outcome": "ok",
-    "remainder_m": 8711.7,
-    "tail_foot_m": 9206.0,
-    "case": "A"
-   }
-  },
-  {
-   "id": "S06-n2",
-   "title": "Same as S05, ferries allowed; start 2 sampled nearby",
-   "base": "S06",
-   "status": "active",
-   "request": {
-    "route_type": "point_to_point",
-    "start": {
-     "lon": 75.8741356,
-     "lat": 11.0365472,
-     "label": "near start_south_of_kadalundi (residential)",
-     "place_id": "osm:node/11770893394"
-    },
-    "target_distance_m": 28000,
-    "direction": {
-     "kind": "towards_place",
-     "place": {
-      "lon": 75.7754716,
-      "lat": 11.2450558,
-      "label": "Kozhikode",
-      "place_id": "osm:node/1348192542"
-     }
-    },
-    "checkpoints": [
-     {
-      "lon": 75.8334302,
-      "lat": 11.1381083,
-      "label": "Kadalundi",
-      "place_id": "osm:node/7728008448"
-     },
-     {
-      "lon": 75.8095217,
-      "lat": 11.1559577,
-      "label": "Chaliyam",
-      "place_id": "osm:node/1683145417"
-     },
-     {
-      "lon": 75.8101768,
-      "lat": 11.1790668,
-      "label": "Beypore",
-      "place_id": "osm:node/1683149581"
-     }
-    ],
-    "preferences": {
-     "avoid": []
-    }
-   },
-   "reference": {
-    "budget_upper_m": 28560.0,
-    "order": [
-     "Kadalundi",
-     "Chaliyam",
-     "Beypore"
-    ],
-    "minimum_m": 21314.5,
-    "minimum_ferry_m": 618.5,
-    "outcome": "ok",
-    "remainder_m": 6685.5,
-    "tail_foot_m": 9206.0,
-    "case": "A"
-   }
-  },
-  {
-   "id": "S06-n3",
-   "title": "Same as S05, ferries allowed; start 3 sampled nearby",
-   "base": "S06",
-   "status": "active",
-   "request": {
-    "route_type": "point_to_point",
-    "start": {
-     "lon": 75.8538511,
-     "lat": 11.0609365,
-     "label": "near start_south_of_kadalundi (unclassified)",
-     "place_id": "osm:node/7756859933"
-    },
-    "target_distance_m": 28000,
-    "direction": {
-     "kind": "towards_place",
-     "place": {
-      "lon": 75.7754716,
-      "lat": 11.2450558,
-      "label": "Kozhikode",
-      "place_id": "osm:node/1348192542"
-     }
-    },
-    "checkpoints": [
-     {
-      "lon": 75.8334302,
-      "lat": 11.1381083,
-      "label": "Kadalundi",
-      "place_id": "osm:node/7728008448"
-     },
-     {
-      "lon": 75.8095217,
-      "lat": 11.1559577,
-      "label": "Chaliyam",
-      "place_id": "osm:node/1683145417"
-     },
-     {
-      "lon": 75.8101768,
-      "lat": 11.1790668,
-      "label": "Beypore",
-      "place_id": "osm:node/1683149581"
-     }
-    ],
-    "preferences": {
-     "avoid": []
-    }
-   },
-   "reference": {
-    "budget_upper_m": 28560.0,
-    "order": [
-     "Kadalundi",
-     "Chaliyam",
-     "Beypore"
-    ],
-    "minimum_m": 17481.8,
-    "minimum_ferry_m": 618.5,
-    "outcome": "ok",
-    "remainder_m": 10518.2,
-    "tail_foot_m": 9206.0,
-    "case": "B"
-   }
-  },
-  {
-   "id": "S07a-n1",
-   "title": "15 km with the same three stops, ferries excluded; start 1 sampled nearby",
-   "base": "S07a",
-   "status": "active",
-   "request": {
-    "route_type": "point_to_point",
-    "start": {
-     "lon": 75.8714425,
-     "lat": 11.0360126,
-     "label": "near start_south_of_kadalundi (residential)",
-     "place_id": "osm:node/11306468064"
     },
     "target_distance_m": 15000,
     "direction": {
@@ -1331,8 +986,7 @@
      "Chaliyam",
      "Beypore"
     ],
-    "minimum_m": 28188.2,
-    "minimum_ferry_m": 0.0,
+    "minimum_m": 26199.2,
     "outcome": "infeasible",
     "savings": [
      {
@@ -1352,28 +1006,22 @@
       "label": "Beypore",
       "saves_m": 9368.6,
       "fits": false
-     },
-     {
-      "action": "allow",
-      "preference": "ferries",
-      "saves_m": 6910.9,
-      "fits": false
      }
     ]
    }
   },
   {
-   "id": "S07a-n2",
-   "title": "15 km with the same three stops, ferries excluded; start 2 sampled nearby",
-   "base": "S07a",
+   "id": "S07-n2",
+   "title": "15 km with the same three stops; start 2 sampled nearby",
+   "base": "S07",
    "status": "active",
    "request": {
     "route_type": "point_to_point",
     "start": {
-     "lon": 75.8585141,
-     "lat": 11.0394346,
+     "lon": 75.8741356,
+     "lat": 11.0365472,
      "label": "near start_south_of_kadalundi (residential)",
-     "place_id": "osm:node/11306500629"
+     "place_id": "osm:node/11770893394"
     },
     "target_distance_m": 15000,
     "direction": {
@@ -1413,8 +1061,7 @@
      "Chaliyam",
      "Beypore"
     ],
-    "minimum_m": 26958.3,
-    "minimum_ferry_m": 0.0,
+    "minimum_m": 28225.4,
     "outcome": "infeasible",
     "savings": [
      {
@@ -1433,12 +1080,6 @@
       "action": "drop_checkpoint",
       "label": "Beypore",
       "saves_m": 9368.6,
-      "fits": false
-     },
-     {
-      "action": "allow",
-      "preference": "ferries",
-      "saves_m": 6910.9,
       "fits": false
      }
     ]
@@ -1452,10 +1093,10 @@
    "request": {
     "route_type": "point_to_point",
     "start": {
-     "lon": 75.793121,
-     "lat": 11.2480167,
+     "lon": 75.791219,
+     "lat": 11.2308683,
      "label": "near Kozhikode (residential)",
-     "place_id": "osm:node/7503559887"
+     "place_id": "osm:node/6788217471"
     },
     "target_distance_m": 50000,
     "direction": {
@@ -1474,7 +1115,7 @@
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 50000.0,
-    "tail_foot_m": 91517.9,
+    "tail_foot_m": 92774.3,
     "case": "A"
    }
   },
@@ -1486,10 +1127,10 @@
    "request": {
     "route_type": "point_to_point",
     "start": {
-     "lon": 75.7754721,
-     "lat": 11.2489848,
-     "label": "near Kozhikode (tertiary)",
-     "place_id": "osm:node/1850659094"
+     "lon": 75.7947148,
+     "lat": 11.2571662,
+     "label": "near Kozhikode (residential)",
+     "place_id": "osm:node/9754282593"
     },
     "target_distance_m": 50000,
     "direction": {
@@ -1508,7 +1149,7 @@
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 50000.0,
-    "tail_foot_m": 90151.3,
+    "tail_foot_m": 90183.0,
     "case": "A"
    }
   },
@@ -1520,10 +1161,10 @@
    "request": {
     "route_type": "point_to_point",
     "start": {
-     "lon": 75.871733,
-     "lat": 11.0608913,
+     "lon": 75.8586754,
+     "lat": 11.0359388,
      "label": "near start_south_of_kadalundi (residential)",
-     "place_id": "osm:node/8271457095"
+     "place_id": "osm:node/11306500635"
     },
     "target_distance_m": 25000,
     "direction": {
@@ -1542,7 +1183,7 @@
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 25000.0,
-    "tail_foot_m": 13351.5,
+    "tail_foot_m": 13770.0,
     "case": "B"
    }
   },
@@ -1554,10 +1195,10 @@
    "request": {
     "route_type": "point_to_point",
     "start": {
-     "lon": 75.8616299,
-     "lat": 11.0472208,
+     "lon": 75.858761,
+     "lat": 11.0647162,
      "label": "near start_south_of_kadalundi (residential)",
-     "place_id": "osm:node/8271092734"
+     "place_id": "osm:node/7114932274"
     },
     "target_distance_m": 25000,
     "direction": {
@@ -1576,7 +1217,7 @@
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 25000.0,
-    "tail_foot_m": 12913.0,
+    "tail_foot_m": 11291.1,
     "case": "B"
    }
   },
@@ -1588,10 +1229,10 @@
    "request": {
     "route_type": "point_to_point",
     "start": {
-     "lon": 75.8780299,
-     "lat": 11.0376842,
-     "label": "near start_south_of_kadalundi (residential)",
-     "place_id": "osm:node/8911565975"
+     "lon": 75.8589335,
+     "lat": 11.049187,
+     "label": "near start_south_of_kadalundi (tertiary)",
+     "place_id": "osm:node/5590712375"
     },
     "target_distance_m": 25000,
     "direction": {
@@ -1610,7 +1251,7 @@
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 25000.0,
-    "tail_foot_m": 15135.7,
+    "tail_foot_m": 12511.3,
     "case": "B"
    }
   },
@@ -1622,10 +1263,10 @@
    "request": {
     "route_type": "point_to_point",
     "start": {
-     "lon": 76.0308705,
-     "lat": 11.5346537,
+     "lon": 76.0228127,
+     "lat": 11.5272239,
      "label": "near Lakkidi (unclassified)",
-     "place_id": "osm:node/5114828127"
+     "place_id": "osm:node/12069154632"
     },
     "target_distance_m": 15000,
     "direction": {
@@ -1644,7 +1285,7 @@
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 15000.0,
-    "tail_foot_m": 19921.9,
+    "tail_foot_m": 18280.4,
     "case": "A"
    }
   },
@@ -1656,10 +1297,10 @@
    "request": {
     "route_type": "point_to_point",
     "start": {
-     "lon": 76.0176417,
-     "lat": 11.5288094,
-     "label": "near Lakkidi (path)",
-     "place_id": "osm:node/11553417723"
+     "lon": 76.0292479,
+     "lat": 11.5285804,
+     "label": "near Lakkidi (unclassified)",
+     "place_id": "osm:node/12069154269"
     },
     "target_distance_m": 15000,
     "direction": {
@@ -1678,7 +1319,7 @@
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 15000.0,
-    "tail_foot_m": 20656.4,
+    "tail_foot_m": 19188.3,
     "case": "A"
    }
   },
@@ -1690,10 +1331,10 @@
    "request": {
     "route_type": "point_to_point",
     "start": {
-     "lon": 76.0144126,
-     "lat": 11.5295776,
-     "label": "near Lakkidi (footway)",
-     "place_id": "osm:node/12361598755"
+     "lon": 76.0272999,
+     "lat": 11.5383151,
+     "label": "near Lakkidi (service)",
+     "place_id": "osm:node/12350257928"
     },
     "target_distance_m": 15000,
     "direction": {
@@ -1712,22 +1353,22 @@
     "minimum_m": 0.0,
     "outcome": "ok",
     "remainder_m": 15000.0,
-    "tail_foot_m": 21207.0,
+    "tail_foot_m": 20020.7,
     "case": "A"
    }
   },
   {
    "id": "S15-n1",
-   "title": "25 km via Kadalundi, Chaliyam, Beypore, ferries excluded; start 1 sampled nearby",
+   "title": "25 km via Kadalundi, Chaliyam, Beypore; start 1 sampled nearby",
    "base": "S15",
    "status": "active",
    "request": {
     "route_type": "point_to_point",
     "start": {
-     "lon": 75.8658091,
-     "lat": 11.0423685,
+     "lon": 75.876106,
+     "lat": 11.055077,
      "label": "near start_south_of_kadalundi (residential)",
-     "place_id": "osm:node/11773170387"
+     "place_id": "osm:node/11812147191"
     },
     "target_distance_m": 25000,
     "direction": {
@@ -1767,8 +1408,140 @@
      "Chaliyam",
      "Beypore"
     ],
-    "minimum_m": 27205.9,
-    "minimum_ferry_m": 0.0,
+    "minimum_m": 27546.2,
+    "outcome": "infeasible",
+    "savings": [
+     {
+      "action": "drop_checkpoint",
+      "label": "Kadalundi",
+      "saves_m": 2850.9,
+      "fits": true
+     },
+     {
+      "action": "drop_checkpoint",
+      "label": "Chaliyam",
+      "saves_m": 1886.2,
+      "fits": false
+     },
+     {
+      "action": "drop_checkpoint",
+      "label": "Beypore",
+      "saves_m": 9368.6,
+      "fits": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "S15-n2",
+   "title": "25 km via Kadalundi, Chaliyam, Beypore; start 2 sampled nearby",
+   "base": "S15",
+   "status": "active",
+   "request": {
+    "route_type": "point_to_point",
+    "start": {
+     "lon": 75.8544501,
+     "lat": 11.0677896,
+     "label": "near start_south_of_kadalundi (residential)",
+     "place_id": "osm:node/7756859952"
+    },
+    "target_distance_m": 25000,
+    "direction": {
+     "kind": "towards_place",
+     "place": {
+      "lon": 75.7754716,
+      "lat": 11.2450558,
+      "label": "Kozhikode",
+      "place_id": "osm:node/1348192542"
+     }
+    },
+    "checkpoints": [
+     {
+      "lon": 75.8334302,
+      "lat": 11.1381083,
+      "label": "Kadalundi",
+      "place_id": "osm:node/7728008448"
+     },
+     {
+      "lon": 75.8095217,
+      "lat": 11.1559577,
+      "label": "Chaliyam",
+      "place_id": "osm:node/1683145417"
+     },
+     {
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "label": "Beypore",
+      "place_id": "osm:node/1683149581"
+     }
+    ]
+   },
+   "reference": {
+    "budget_upper_m": 25500.0,
+    "order": [
+     "Kadalundi",
+     "Chaliyam",
+     "Beypore"
+    ],
+    "minimum_m": 23521.8,
+    "outcome": "ok",
+    "remainder_m": 1478.2,
+    "tail_foot_m": 9206.0,
+    "case": "A"
+   }
+  },
+  {
+   "id": "S15-n3",
+   "title": "25 km via Kadalundi, Chaliyam, Beypore; start 3 sampled nearby",
+   "base": "S15",
+   "status": "active",
+   "request": {
+    "route_type": "point_to_point",
+    "start": {
+     "lon": 75.8746047,
+     "lat": 11.0364962,
+     "label": "near start_south_of_kadalundi (residential)",
+     "place_id": "osm:node/11770893397"
+    },
+    "target_distance_m": 25000,
+    "direction": {
+     "kind": "towards_place",
+     "place": {
+      "lon": 75.7754716,
+      "lat": 11.2450558,
+      "label": "Kozhikode",
+      "place_id": "osm:node/1348192542"
+     }
+    },
+    "checkpoints": [
+     {
+      "lon": 75.8334302,
+      "lat": 11.1381083,
+      "label": "Kadalundi",
+      "place_id": "osm:node/7728008448"
+     },
+     {
+      "lon": 75.8095217,
+      "lat": 11.1559577,
+      "label": "Chaliyam",
+      "place_id": "osm:node/1683145417"
+     },
+     {
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "label": "Beypore",
+      "place_id": "osm:node/1683149581"
+     }
+    ]
+   },
+   "reference": {
+    "budget_upper_m": 25500.0,
+    "order": [
+     "Kadalundi",
+     "Chaliyam",
+     "Beypore"
+    ],
+    "minimum_m": 28193.2,
     "outcome": "infeasible",
     "savings": [
      {
@@ -1781,162 +1554,15 @@
       "action": "drop_checkpoint",
       "label": "Chaliyam",
       "saves_m": 1886.1,
-      "fits": true
+      "fits": false
      },
      {
       "action": "drop_checkpoint",
       "label": "Beypore",
       "saves_m": 9368.6,
       "fits": true
-     },
-     {
-      "action": "allow",
-      "preference": "ferries",
-      "saves_m": 6910.9,
-      "fits": true
      }
     ]
-   }
-  },
-  {
-   "id": "S15-n2",
-   "title": "25 km via Kadalundi, Chaliyam, Beypore, ferries excluded; start 2 sampled nearby",
-   "base": "S15",
-   "status": "active",
-   "request": {
-    "route_type": "point_to_point",
-    "start": {
-     "lon": 75.8726716,
-     "lat": 11.0598344,
-     "label": "near start_south_of_kadalundi (track)",
-     "place_id": "osm:node/8911565645"
-    },
-    "target_distance_m": 25000,
-    "direction": {
-     "kind": "towards_place",
-     "place": {
-      "lon": 75.7754716,
-      "lat": 11.2450558,
-      "label": "Kozhikode",
-      "place_id": "osm:node/1348192542"
-     }
-    },
-    "checkpoints": [
-     {
-      "lon": 75.8334302,
-      "lat": 11.1381083,
-      "label": "Kadalundi",
-      "place_id": "osm:node/7728008448"
-     },
-     {
-      "lon": 75.8095217,
-      "lat": 11.1559577,
-      "label": "Chaliyam",
-      "place_id": "osm:node/1683145417"
-     },
-     {
-      "lon": 75.8101768,
-      "lat": 11.1790668,
-      "label": "Beypore",
-      "place_id": "osm:node/1683149581"
-     }
-    ]
-   },
-   "reference": {
-    "budget_upper_m": 25500.0,
-    "order": [
-     "Kadalundi",
-     "Chaliyam",
-     "Beypore"
-    ],
-    "minimum_m": 26610.2,
-    "minimum_ferry_m": 0.0,
-    "outcome": "infeasible",
-    "savings": [
-     {
-      "action": "drop_checkpoint",
-      "label": "Kadalundi",
-      "saves_m": 1757.2,
-      "fits": true
-     },
-     {
-      "action": "drop_checkpoint",
-      "label": "Chaliyam",
-      "saves_m": 1886.1,
-      "fits": true
-     },
-     {
-      "action": "drop_checkpoint",
-      "label": "Beypore",
-      "saves_m": 9368.5,
-      "fits": true
-     },
-     {
-      "action": "allow",
-      "preference": "ferries",
-      "saves_m": 6910.8,
-      "fits": true
-     }
-    ]
-   }
-  },
-  {
-   "id": "S15-n3",
-   "title": "25 km via Kadalundi, Chaliyam, Beypore, ferries excluded; start 3 sampled nearby",
-   "base": "S15",
-   "status": "active",
-   "request": {
-    "route_type": "point_to_point",
-    "start": {
-     "lon": 75.8494986,
-     "lat": 11.0699044,
-     "label": "near start_south_of_kadalundi (unclassified)",
-     "place_id": "osm:node/7167223200"
-    },
-    "target_distance_m": 25000,
-    "direction": {
-     "kind": "towards_place",
-     "place": {
-      "lon": 75.7754716,
-      "lat": 11.2450558,
-      "label": "Kozhikode",
-      "place_id": "osm:node/1348192542"
-     }
-    },
-    "checkpoints": [
-     {
-      "lon": 75.8334302,
-      "lat": 11.1381083,
-      "label": "Kadalundi",
-      "place_id": "osm:node/7728008448"
-     },
-     {
-      "lon": 75.8095217,
-      "lat": 11.1559577,
-      "label": "Chaliyam",
-      "place_id": "osm:node/1683145417"
-     },
-     {
-      "lon": 75.8101768,
-      "lat": 11.1790668,
-      "label": "Beypore",
-      "place_id": "osm:node/1683149581"
-     }
-    ]
-   },
-   "reference": {
-    "budget_upper_m": 25500.0,
-    "order": [
-     "Kadalundi",
-     "Chaliyam",
-     "Beypore"
-    ],
-    "minimum_m": 23259.1,
-    "minimum_ferry_m": 0.0,
-    "outcome": "ok",
-    "remainder_m": 1740.9,
-    "tail_foot_m": 9206.0,
-    "case": "A"
    }
   },
   {
@@ -1947,10 +1573,10 @@
    "request": {
     "route_type": "out_and_back",
     "start": {
-     "lon": 75.7891884,
-     "lat": 11.2585177,
+     "lon": 75.78337,
+     "lat": 11.2433665,
      "label": "near Beach Road (residential)",
-     "place_id": "osm:node/10246594006"
+     "place_id": "osm:node/9164981068"
     },
     "target_distance_m": 10000,
     "direction": {
@@ -1973,10 +1599,10 @@
    "request": {
     "route_type": "out_and_back",
     "start": {
-     "lon": 75.7837968,
-     "lat": 11.2488876,
-     "label": "near Beach Road (steps)",
-     "place_id": "osm:node/13648312762"
+     "lon": 75.7826335,
+     "lat": 11.236463,
+     "label": "near Beach Road (residential)",
+     "place_id": "osm:node/9165003086"
     },
     "target_distance_m": 10000,
     "direction": {
@@ -1999,10 +1625,10 @@
    "request": {
     "route_type": "out_and_back",
     "start": {
-     "lon": 75.7812369,
-     "lat": 11.2557897,
-     "label": "near Beach Road (service)",
-     "place_id": "osm:node/3803100599"
+     "lon": 75.7769968,
+     "lat": 11.2438935,
+     "label": "near Beach Road (unclassified)",
+     "place_id": "osm:node/1850655550"
     },
     "target_distance_m": 10000,
     "direction": {
@@ -2025,10 +1651,10 @@
    "request": {
     "route_type": "point_to_point",
     "start": {
-     "lon": 75.8593127,
-     "lat": 11.0651708,
-     "label": "near start_south_of_kadalundi (residential)",
-     "place_id": "osm:node/7114932281"
+     "lon": 75.8591739,
+     "lat": 11.0599355,
+     "label": "near start_south_of_kadalundi (living_street)",
+     "place_id": "osm:node/11363455239"
     },
     "target_distance_m": 20000,
     "direction": {
@@ -2051,10 +1677,10 @@
    "request": {
     "route_type": "point_to_point",
     "start": {
-     "lon": 75.8491422,
-     "lat": 11.0694382,
-     "label": "near start_south_of_kadalundi (unclassified)",
-     "place_id": "osm:node/7756881061"
+     "lon": 75.8533432,
+     "lat": 11.0518316,
+     "label": "near start_south_of_kadalundi (secondary)",
+     "place_id": "osm:node/3812324261"
     },
     "target_distance_m": 20000,
     "direction": {
@@ -2077,10 +1703,10 @@
    "request": {
     "route_type": "point_to_point",
     "start": {
-     "lon": 75.868541,
-     "lat": 11.0689923,
-     "label": "near start_south_of_kadalundi (unclassified)",
-     "place_id": "osm:node/8911565702"
+     "lon": 75.8459635,
+     "lat": 11.0665393,
+     "label": "near start_south_of_kadalundi (path)",
+     "place_id": "osm:node/7167143852"
     },
     "target_distance_m": 20000,
     "direction": {
@@ -2196,7 +1822,7 @@
   },
   {
    "id": "S05-d30",
-   "title": "28 km via Kadalundi, Chaliyam, Beypore, ferries excluded; budget 30000 m",
+   "title": "28 km via Kadalundi, Chaliyam, Beypore; budget 30000 m",
    "base": "S05",
    "status": "active",
    "request": {
@@ -2245,7 +1871,6 @@
      "Beypore"
     ],
     "minimum_m": 25889.7,
-    "minimum_ferry_m": 0.0,
     "outcome": "ok",
     "remainder_m": 4110.3,
     "tail_foot_m": 9206.0,
@@ -2254,7 +1879,7 @@
   },
   {
    "id": "S05-d35",
-   "title": "28 km via Kadalundi, Chaliyam, Beypore, ferries excluded; budget 35000 m",
+   "title": "28 km via Kadalundi, Chaliyam, Beypore; budget 35000 m",
    "base": "S05",
    "status": "active",
    "request": {
@@ -2303,72 +1928,10 @@
      "Beypore"
     ],
     "minimum_m": 25889.7,
-    "minimum_ferry_m": 0.0,
     "outcome": "ok",
     "remainder_m": 9110.3,
     "tail_foot_m": 9206.0,
     "case": "A"
-   }
-  },
-  {
-   "id": "S06-d32",
-   "title": "Same as S05, ferries allowed; budget 32000 m",
-   "base": "S06",
-   "status": "active",
-   "request": {
-    "route_type": "point_to_point",
-    "start": {
-     "lon": 75.86,
-     "lat": 11.05,
-     "label": "start_south_of_kadalundi"
-    },
-    "target_distance_m": 32000,
-    "direction": {
-     "kind": "towards_place",
-     "place": {
-      "lon": 75.7754716,
-      "lat": 11.2450558,
-      "label": "Kozhikode",
-      "place_id": "osm:node/1348192542"
-     }
-    },
-    "checkpoints": [
-     {
-      "lon": 75.8334302,
-      "lat": 11.1381083,
-      "label": "Kadalundi",
-      "place_id": "osm:node/7728008448"
-     },
-     {
-      "lon": 75.8095217,
-      "lat": 11.1559577,
-      "label": "Chaliyam",
-      "place_id": "osm:node/1683145417"
-     },
-     {
-      "lon": 75.8101768,
-      "lat": 11.1790668,
-      "label": "Beypore",
-      "place_id": "osm:node/1683149581"
-     }
-    ],
-    "preferences": {
-     "avoid": []
-    }
-   },
-   "reference": {
-    "budget_upper_m": 32640.0,
-    "order": [
-     "Kadalundi",
-     "Chaliyam",
-     "Beypore"
-    ],
-    "minimum_m": 18978.8,
-    "minimum_ferry_m": 618.5,
-    "outcome": "ok",
-    "remainder_m": 13021.2,
-    "tail_foot_m": 9206.0,
-    "case": "B"
    }
   },
   {
