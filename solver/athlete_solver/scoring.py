@@ -20,6 +20,7 @@ ELEVATION_STEP_M = 30.0       # section 9: sample every 25 to 50 m
 SMOOTH_WINDOW = 5             # moving average over samples
 CLIMB_THRESHOLD_M = 3.0       # count gain only above a 2 to 3 m threshold
 SPUR_MIN_M = 100.0
+TURN_NEAR_STOP_M = 60.0       # a turn-round this close to a stop that must be reached is required by it
 REPEAT_LIMIT = 0.10           # section 8: hard above 10% unless out-and-back (see module note)
 DIVERSITY_LIMIT = 0.60
 MAIN_CLASSES = ("trunk", "primary")
@@ -43,55 +44,67 @@ class Measures:
 
 # ------------------------------------------------------------------ measures
 
-def repetition(edges: list[Edge], forced_until_m: float) -> tuple[float, float]:
-    """(share of length on edges walked more than once, share of that already forced by the stops).
+def repetition(edges: list[Edge], forced_until_m: float, turns_m: list[float] | None = None) -> tuple[float, float]:
+    """(share of length on edges walked more than once, share of that forced by the stops).
 
-    Forced repetition is repetition among edges before `forced_until_m` (the route through the
-    mandatory stops), which no endpoint choice can avoid.
+    Forced repetition is (a) repetition among edges before `forced_until_m` (the route through the
+    stops that must be reached), which no endpoint choice can avoid, and (b) the out-and-back run around
+    a turn-round at one of those stops (`turns_m`: their positions along the route), which covers a
+    dead-end stop even when it is the last one.
     """
     total = sum(e.length_m for e in edges if e.use != "ferry") or 1.0
     counts: dict = {}
     for e in edges:
         counts[e.key] = counts.get(e.key, 0) + 1
     repeated = sum(e.length_m for e in edges if counts[e.key] > 1 and e.use != "ferry")
-    run, base_counts, base_edges = 0.0, {}, []
+    forced_idx: set[int] = set()
+    run, base_counts, n_base = 0.0, {}, 0
     for e in edges:
         if run >= forced_until_m - 1.0:
             break
-        base_edges.append(e)
         base_counts[e.key] = base_counts.get(e.key, 0) + 1
+        n_base += 1
         if e.use != "ferry":
             run += e.length_m
-    forced = sum(e.length_m for e in base_edges if base_counts[e.key] > 1 and e.use != "ferry")
+    forced_idx |= {k for k in range(n_base) if base_counts[edges[k].key] > 1}
+    for lo, hi, turn_at in mirrored_runs(edges):
+        if any(abs(turn_at - t) <= TURN_NEAR_STOP_M for t in (turns_m or [])):
+            forced_idx |= set(range(lo, hi))
+    forced = sum(edges[k].length_m for k in forced_idx if counts[edges[k].key] > 1 and edges[k].use != "ferry")
     return repeated / total, min(forced, repeated) / total
 
 
-def spurs(edges: list[Edge], allowed_turns_m: list[float]) -> list[float]:
-    """Lengths of dead-end excursions: runs walked out and straight back on the same edges.
-
-    A turn-round within 60 m of a checkpoint (or the out-and-back turnaround) is required by the
-    request and not counted.
-    """
-    out = []
+def mirrored_runs(edges: list[Edge]) -> list[tuple[int, int, float]]:
+    """Runs walked out and straight back: (first edge index, end index, distance along at the turn)."""
     keys = [e.key for e in edges]
     at, run = [], 0.0
     for e in edges:
         at.append(run)
         run += e.length_m if e.use != "ferry" else 0.0
-    i = 1
+    out, i = [], 1
     while i < len(keys):
         if keys[i] == keys[i - 1]:
-            # mirrored run around the turn between i-1 and i
             n = 0
             while i - 1 - n >= 0 and i + n < len(keys) and keys[i - 1 - n] == keys[i + n]:
                 n += 1
-            length = sum(edges[i + t].length_m for t in range(n))
-            turn_at = at[i]
-            if length >= SPUR_MIN_M and not any(abs(turn_at - a) <= 60.0 for a in allowed_turns_m):
-                out.append(length)
+            out.append((i - n, i + n, at[i]))
             i += max(n, 1)
         else:
             i += 1
+    return out
+
+
+def spurs(edges: list[Edge], allowed_turns_m: list[float]) -> list[float]:
+    """Lengths of dead-end excursions: runs walked out and straight back on the same edges.
+
+    A turn-round within 60 m of a stop the run must reach (or the out-and-back turnaround) is required by
+    the request and not counted.
+    """
+    out = []
+    for lo, hi, turn_at in mirrored_runs(edges):
+        length = sum(edges[k].length_m for k in range((lo + hi) // 2, hi))
+        if length >= SPUR_MIN_M and not any(abs(turn_at - a) <= TURN_NEAR_STOP_M for a in allowed_turns_m):
+            out.append(length)
     return out
 
 
@@ -116,7 +129,10 @@ def climb(engine: Engine, geometry: list) -> tuple[float, float] | tuple[None, N
 
 
 def measure(engine: Engine, req: RouteRequest, cand: Candidate, edges: list[Edge]) -> Measures:
-    checkpoints_at = [s.at_m for s in cand.stops if s.role == "checkpoint"]
+    # Only stops the run must actually reach force repetition and allow a turn-round: must_reach places,
+    # and pass-near places that could only be passed with a spur (flagged). Pass-near stops do not.
+    checkpoints_at = [s.at_m for s in cand.stops
+                      if s.role == "checkpoint" and (s.must_reach or s.how in ("reached", "spur"))]
     forced_until = max(checkpoints_at, default=0.0)
     turns = list(checkpoints_at)
     if req.route_type == "out_and_back":
@@ -125,7 +141,7 @@ def measure(engine: Engine, req: RouteRequest, cand: Candidate, edges: list[Edge
     if cand.option in ("full_route", "cut_at_target"):
         # Over budget: both runs are (a prefix of) the route through the stops, so the stops force all of it.
         forced_until = cand.foot_m
-    rep, forced = repetition(edges, forced_until)
+    rep, forced = repetition(edges, forced_until, turns)
     foot = sum(e.length_m for e in edges if e.use != "ferry") or 1.0
     main = sum(e.length_m for e in edges if e.road_class in MAIN_CLASSES and e.use != "ferry")
     gain, loss = climb(engine, cand.geometry)

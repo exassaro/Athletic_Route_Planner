@@ -31,7 +31,8 @@ MANIFEST = ROOT / "data" / "manifest.json"
 PBF = ROOT / "data" / "osm" / "kerala.osm.pbf"
 DEFAULT_REPORT = ROOT / "docs" / "reports" / "phase3b" / "kpi.md"
 
-CHECKPOINT_RADIUS_M = 50.0
+CHECKPOINT_RADIUS_M = 50.0     # must_reach and junction stops
+PASS_NEAR_M = 1000.0           # pass-near stops: walking distance (Phase 3 amendment 3, decision 11)
 ADHERENCE_STEP_M = 250.0
 BUDGET_OPTIONS = {"main", "continue_past_target", "cut_at_target"}
 RADIUS = {"valhalla": VALHALLA_RADIUS_M, "graphhopper": GRAPHHOPPER_RADIUS_M}
@@ -147,6 +148,38 @@ def check_conflict(result, ref: dict, req) -> list[str]:
     return problems
 
 
+def walk_to_route(engine: Valhalla, place: tuple, geom: list) -> float | None:
+    """Walking distance (Valhalla matrix) from a place to the nearest of the route's points every 100 m
+    that lie within 1 km in a straight line (a pre-filter only)."""
+    samples = [q for q, _ in geodesy.sample_every(geom, 100.0) if geodesy.distance_m(place, q) <= PASS_NEAR_M]
+    best = None
+    for i in range(0, len(samples), 50):
+        row = engine.matrix([place], samples[i:i + 50], costing_options=pedestrian_options())["sources_to_targets"][0]
+        for c in row:
+            if c.get("distance") is not None:
+                d = c["distance"] * 1000
+                best = d if best is None else min(best, d)
+    return best
+
+
+def turn_points(edges) -> list[tuple[tuple, float]]:
+    """(turn location, length walked out) for every out-and-back run of at least 100 m (harness's own)."""
+    keys = [e.key for e in edges]
+    out, i = [], 1
+    while i < len(keys):
+        if keys[i] == keys[i - 1]:
+            n = 0
+            while i - 1 - n >= 0 and i + n < len(keys) and keys[i - 1 - n] == keys[i + n]:
+                n += 1
+            length = sum(edges[i + t].length_m for t in range(n))
+            if length >= 100.0:
+                out.append((edges[i - 1].shape[-1], length))
+            i += max(n, 1)
+        else:
+            i += 1
+    return out
+
+
 def highway_longest_m(edges) -> float:
     """Longest consecutive stretch of matched trunk/motorway edges (harness's own measurement)."""
     best = run = 0.0
@@ -187,6 +220,28 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
         for c in result.candidates:
             if c.option == "full_route" and c.foot_m < ref["minimum_m"] - max(10.0, 0.002 * ref["minimum_m"]):
                 row["problems"].append(f"{c.label} full route {c.foot_m:.0f} m is shorter than the reference minimum")
+    elif ref["outcome"] == "pass_near":
+        # No brute-force reference for passing near: check the outcome against the measured lengths.
+        if result.outcome not in ("ok", "over_budget"):
+            row["problems"].append(f"expected ok or over_budget, got {result.outcome}")
+            return row
+        row["pass_minimum_m"] = result.facts.get("l_min_m")
+        row["reach_minimum_m"] = ref.get("minimum_m")
+        if result.outcome == "over_budget":
+            c = result.conflict
+            for alt, options in by_alt.items():
+                if options != ["full_route", "cut_at_target"]:
+                    row["problems"].append(f"over_budget {alt} options {options}")
+            fulls = [x for x in result.candidates if x.option == "full_route"]
+            full = min(fulls, key=lambda x: x.foot_m) if fulls else None
+            if c is None or c.minimum_m is None or c.minimum_m <= req.upper_m:
+                row["problems"].append("over_budget without a minimum above the budget")
+            elif full is not None and not close(full.foot_m, c.minimum_m):
+                row["problems"].append(f"shortest full route returned {full.foot_m:.0f} m vs conflict minimum "
+                                       f"{c.minimum_m:.0f} m")
+            for sv in (c.savings if c else []):
+                if sv.fits != (c.minimum_m - sv.saves_m <= req.upper_m):
+                    row["problems"].append(f"saving {sv.label}: fits {sv.fits} inconsistent with its numbers")
     elif result.outcome != "ok":
         row["problems"].append(f"expected ok, got {result.outcome}")
         return row
@@ -196,7 +251,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
     # Case A / B is judged on the shortest alternative (the reference uses the same engine and costing).
     margin = req.tolerance_m
     shortest_opts = set(by_alt.get("shortest", []))
-    if shortest_opts and "full_route" not in shortest_opts:
+    if shortest_opts and "full_route" not in shortest_opts and ref["outcome"] != "pass_near":
         if ref.get("case") == "A" and ref["tail_foot_m"] - ref["remainder_m"] > margin and "main" not in shortest_opts:
             row["problems"].append(f"reference case A but shortest options {sorted(shortest_opts)}")
         if ref.get("case") == "B" and ref["remainder_m"] - ref["tail_foot_m"] > margin and "end_at_target" not in shortest_opts:
@@ -248,9 +303,29 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
             cr["dist_err_pct"] = abs(m.foot_m - req.target_distance_m) / req.target_distance_m * 100
 
         on_candidate = {s.label for s in cand.stops if s.role == "checkpoint"}
+        stop_of = {s.label: s for s in cand.stops if s.role == "checkpoint"}
+        cr["pass_walk"] = []
         for cp, snap in zip(req.checkpoints, located):
             if cand.option == "cut_at_target" and cp.label not in on_candidate:
                 continue   # stops beyond the cut are dropped by design
+            if cp.kind in ("bridge", "road"):
+                if not cr["ways"] & set(cp.way_ids):
+                    row["problems"].append(f"{name}: does not use {cp.label} (OSM ways {cp.way_ids})")
+                continue
+            if cp.kind == "place" and not cp.must_reach:
+                how = stop_of[cp.label].how if cp.label in stop_of else None
+                if how == "boundary":
+                    from shapely.geometry import LineString  # noqa: PLC0415
+                    from shapely.geometry import shape as as_shape  # noqa: PLC0415
+                    if not LineString(geom).intersects(as_shape(cp.boundary)):
+                        row["problems"].append(f"{name}: boundary fallback for {cp.label} but the route stays outside it")
+                    continue
+                walk = walk_to_route(engine, cp.lonlat, geom)
+                cr["pass_walk"].append(walk)
+                if walk is None or walk > PASS_NEAR_M:
+                    shown = "no walking route" if walk is None else f"{walk:.0f} m"
+                    row["problems"].append(f"{name}: passes {cp.label} at {shown} on foot (limit 1 km)")
+                continue
             if snap is None:
                 row["problems"].append(f"{name}: checkpoint {cp.label} could not be located")
                 continue
@@ -260,7 +335,9 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
             off = geodesy.distance_m(snap, (on_line.x, on_line.y))
             if off > CHECKPOINT_RADIUS_M:
                 row["problems"].append(f"{name}: misses checkpoint {cp.label} by {off:.0f} m")
-        cr["checkpoints_ok"] = not any(p.startswith(name) and ("misses checkpoint" in p or "could not be located" in p)
+        cp_failures = ("misses checkpoint", "could not be located", "on foot (limit 1 km)", "does not use",
+                       "boundary fallback")
+        cr["checkpoints_ok"] = not any(p.startswith(name) and any(x in p for x in cp_failures)
                                        for p in row["problems"])
 
         keys = [e.key for e in m.edges]
@@ -286,6 +363,19 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
                 forced = sum(e.length_m for e in m.edges if counts[e.key] > 1 and e.key in fk)
             cr["excess_repeat_share"] = max(0.0, repeated - forced) / total
         lead_keys.setdefault(cand.label, set(keys))
+
+        # No out-and-back spur to reach a pass-near stop (Phase 3 amendment 3) unless the solver flags it.
+        flagged = {f.data.get("label") for f in cand.flags if f.code == "pass_near_spur"}
+        near_stops = [cp for cp in req.checkpoints if cp.kind == "place" and not cp.must_reach
+                      and cp.label in on_candidate and cp.label not in flagged]
+        cr["pass_spurs"] = []
+        if req.route_type != "out_and_back":
+            for turn, length in turn_points(m.edges):
+                for cp in near_stops:
+                    if geodesy.distance_m(turn, cp.lonlat) <= PASS_NEAR_M:
+                        cr["pass_spurs"].append((cp.label, length))
+                        row["problems"].append(f"{name}: {length:.0f} m spur near {cp.label}")
+                        break
 
         # Road suitability and the national-highway flag (decision 12), from the harness's own matching.
         foot = sum(e.length_m for e in m.edges if e.use != "ferry") or 1.0
@@ -423,6 +513,7 @@ def main() -> int:
     bear_limited = [c for c in cands if c.get("bearing_network_limited")]
     bear_fail = [c for c in cands if "bearing_err" in c and c["bearing_err"] > 30 and not c.get("bearing_network_limited")]
     overlaps = [r["overlap"] * 100 for r in rows if "overlap" in r]
+    pw = [w for c in cands for w in c.get("pass_walk", []) if w is not None]
     both = [r for r in rows if len(r.get("alternatives", [])) == 2]
     rec_main = [c for c in cands if c["label"] == "recommended" and c["option"] in ("main", "end_at_target",
                                                                                      "continue_past_target")]
@@ -469,8 +560,15 @@ def main() -> int:
             (f"{sum(b <= 30 for b in bear)} / {len(bear)} within; {len(bear_limited)} beyond 30° where an exhaustive "
              f"search finds nothing closer (network does not permit)" if bear else "no routes"),
             bool(bear) and not bear_fail),
-        kpi("Checkpoint compliance (snapped point within 50 m)", "100%",
+        kpi("(info) Pass-near walking distance to the route", "info only",
+            f"median {statistics.median(pw):.0f} m, max {max(pw):.0f} m (n={len(pw)})" if pw else "no pass-near stops", True),
+        kpi("No spur to reach a pass-near stop (unless flagged)", "0",
+            f"{sum(len(c.get('pass_spurs', [])) for c in cands)}", not any(c.get("pass_spurs") for c in cands)),
+        kpi("Checkpoint compliance (must_reach 50 m; pass near 1 km on foot; bridge/road used)", "100%",
             f"{sum(c['checkpoints_ok'] for c in cands)} / {len(cands)}", have and all(c["checkpoints_ok"] for c in cands)),
+        kpi("Recommended alternative returned (GraphHopper, the default)", "every solved fixture",
+            f"{sum('recommended' in r.get('alternatives', []) for r in rows if 'error' not in r)} / {len(rows) - len(errors)}",
+            all("recommended" in r.get("alternatives", []) for r in rows if "error" not in r)),
         kpi("Alternative diversity (edge overlap, recommended vs shortest)", "< 60%",
             f"max {max(overlaps):.0f}% (n={len(overlaps)})" if overlaps else "no fixture returned both",
             not overlaps or max(overlaps) < 60),

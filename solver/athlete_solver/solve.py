@@ -19,8 +19,8 @@ from .engine import Engine, NoRoute, ValhallaEngine
 from .graphhopper import GraphHopperEngine, GraphHopperUnavailable
 from .models import Flag, RouteRequest, SolveResult
 from .out_and_back import solve_out_and_back
-from .p2p import (SECTOR_DEG, Infeasible, bearing_tail, build_conflict, check_snapping, cut_at_target,
-                  disconnected_conflict, make_candidate, minimum_route, truncate)
+from .p2p import (SECTOR_DEG, Infeasible, all_must_reach, anchors, bearing_tail, build_conflict, check_snapping,
+                  cut_at_target, disconnected_conflict, make_candidate, minimum_route, planned_base, truncate)
 from .scoring import annotate, diversify
 
 BEARING_OK_DEG = 30.0  # section 16: endpoint bearing within 30 degrees where the network permits
@@ -163,7 +163,7 @@ def _solve(req: RouteRequest, engines: dict[str, Engine], graph_build: str, flag
             code="preference_unsupported", message="point_to_point needs a direction (towards a place or a bearing)")])
 
     start = req.start.lonlat
-    stops = [c.lonlat for c in req.checkpoints]
+    stops = anchors(req)
     target = req.direction.place.lonlat if req.direction.kind == "towards_place" else None
 
     try:
@@ -179,25 +179,51 @@ def _solve(req: RouteRequest, engines: dict[str, Engine], graph_build: str, flag
     if any(c is None for row in matrix for c in row):
         return done("disconnected", conflict=disconnected_conflict(labels, matrix))
 
-    # The outcome is decided on the shortest way through the stops (the true minimum distance).
-    base = minimum_route(yard, start, stops, target, req.checkpoint_order == "fixed", req.upper_m)
-    if base is None:
+    # Order the stops once on the walking matrix, then plan every alternative's way through them (in
+    # parallel). A pass-near plan depends on the engine, so neither alternative is the minimum by definition:
+    # the stops alone exceed the budget only if EVERY alternative's way through them does.
+    try:
+        ranked = planned_base(req, yard, start, target, req.upper_m) if all_must_reach(req) else \
+            minimum_route(yard, start, stops, target, req.checkpoint_order == "fixed", req.upper_m, route=False)
+    except NoRoute:
+        ranked = None
+    if ranked is None:
         return done("disconnected", conflict=disconnected_conflict(labels, matrix))
-    facts = {"order": [req.checkpoints[i].label for i in base.order], "l_min_m": round(base.foot_m, 1),
-             "budget_m": req.target_distance_m, "tolerance_m": req.tolerance_m}
+    order = ranked.order
 
-    if base.foot_m > req.upper_m:
-        conflict = build_conflict(req, yard, base, start, stops, target)
-        facts["overshoot_m"] = round(base.foot_m - req.target_distance_m, 1)
-        by_alt = _run_alternatives(engines, lambda alt, eng: _guard(
-            alt, lambda: _over_budget(req, eng, alt, start, stops, target, base if alt == "shortest" else None)))
-        return done("over_budget", by_alt=by_alt, facts=facts, conflict=conflict)
+    def plan(alt, eng):
+        if alt == "shortest" and all_must_reach(req):
+            return ranked
+        try:
+            return planned_base(req, eng, start, target, req.upper_m, order=order)
+        except (NoRoute, GraphHopperUnavailable):
+            return None
 
-    by_alt = _run_alternatives(engines, lambda alt, eng: _guard(
-        alt, lambda: _alternative(req, eng, alt, start, stops, target, base if alt == "shortest" else None)))
+    bases = {alt: b for alt, b in _run_alternatives(engines, plan).items() if b is not None}
+    if not bases:
+        return done("disconnected", conflict=disconnected_conflict(labels, matrix))
+    best_alt = min(bases, key=lambda a: bases[a].foot_m)
+    best = bases[best_alt]
+    facts = {"order": [req.checkpoints[i].label for i in order], "l_min_m": round(best.foot_m, 1),
+             "l_min_by_alternative": {a: round(b.foot_m, 1) for a, b in bases.items()},
+             "budget_m": req.target_distance_m, "tolerance_m": req.tolerance_m,
+             "stops": {req.checkpoints[i].label: _pick_facts(best.picks.get(i, {})) for i in order}}
+    lost = [Flag(code="alternative_unavailable", message=f"{a} route unavailable: no route through the stops")
+            for a in engines if a not in bases]
+    run = {a: e for a, e in engines.items() if a in bases}
+
+    if best.foot_m > req.upper_m:
+        conflict = build_conflict(req, engines[best_alt], best, start, stops, target)
+        facts["overshoot_m"] = round(best.foot_m - req.target_distance_m, 1)
+        by_alt = _run_alternatives(run, lambda alt, eng: _guard(
+            alt, lambda: _over_budget(req, eng, alt, bases[alt])))
+        return done("over_budget", by_alt=by_alt, facts=facts, conflict=conflict, extra_flags=lost)
+
+    by_alt = _run_alternatives(run, lambda alt, eng: _guard(
+        alt, lambda: _alternative(req, eng, alt, start, target, bases[alt])))
     first = by_alt.get("recommended") or by_alt["shortest"]
     facts.update({k: v for k, v in first[1].items() if k not in facts})
-    return done("ok", by_alt=by_alt, facts=facts)
+    return done("ok", by_alt=by_alt, facts=facts, extra_flags=lost)
 
 
 def _guard(alt: str, fn) -> tuple[list, dict, list[Flag]]:
@@ -208,68 +234,69 @@ def _guard(alt: str, fn) -> tuple[list, dict, list[Flag]]:
         return [], {"error": str(err)}, [Flag(code="alternative_unavailable", message=f"{alt} route unavailable: {err}")]
 
 
-def _base_for(req, eng, start, stops, target, base):
-    if base is not None:
-        return base
-    return minimum_route(eng, start, stops, target, req.checkpoint_order == "fixed", req.upper_m)
+def _pick_facts(pick: dict) -> dict:
+    out = {k: v for k, v in pick.items() if k in ("how", "walk_m", "added_m")}
+    if "point" in pick:
+        out["point"] = [round(pick["point"][0], 6), round(pick["point"][1], 6)]
+    return out
 
 
-def _over_budget(req, eng, alt, start, stops, target, base):
+def _over_budget(req, eng, alt, base):
     """Over budget (Phase 3 amendment 6): the full route through the stops and the run cut at the target."""
-    base = _base_for(req, eng, start, stops, target, base)
-    if base is None:
-        raise NoRoute("no route through the stops")
-    full = eng.route([start, *(stops[i] for i in base.order)], detail=True)
-    full_cand = make_candidate(req, full, "full_route", "last_checkpoint", base.order, [], alt)
-    routed, kept, kind, flags, cut_facts = cut_at_target(req, eng, start, stops, base)
-    cut_cand = make_candidate(req, routed, "cut_at_target", kind, kept, flags, alt)
+    full = eng.route(base.points, through=base.through, detail=True)
+    full_cand = make_candidate(req, full, "full_route", "last_checkpoint", base, [], alt)
+    routed, kept, kind, flags, cut_facts = cut_at_target(req, eng, base, full)
+    cut_cand = make_candidate(req, routed, "cut_at_target", kind, base, flags, alt, keep=kept)
     facts = {"order": [req.checkpoints[i].label for i in base.order], "l_min_m": round(base.foot_m, 1),
-             "overshoot_m": round(base.foot_m - req.target_distance_m, 1), "cut": cut_facts}
+             "overshoot_m": round(base.foot_m - req.target_distance_m, 1), "cut": cut_facts,
+             "stops": {req.checkpoints[i].label: _pick_facts(base.picks.get(i, {})) for i in base.order}}
     return [(full_cand, full.edges), (cut_cand, routed.edges)], facts, []
 
 
-def _alternative(req, eng, alt, start, stops, target, base):
-    """One alternative for a request whose stops fit the budget (on the shortest way through them)."""
-    base = _base_for(req, eng, start, stops, target, base)
-    if base is None:
-        raise NoRoute("no route through the stops")
+def _alternative(req, eng, alt, start, target, base):
+    """One alternative for a request whose stops fit the budget on at least one alternative's way."""
     if base.foot_m > req.upper_m:
-        # This engine's way through the stops is longer than the budget although the shortest way fits.
-        pairs, facts, _ = _over_budget(req, eng, alt, start, stops, target, base)
+        # This engine's way through the stops is longer than the budget although another alternative's fits.
+        pairs, facts, _ = _over_budget(req, eng, alt, base)
         return pairs, facts, [Flag(code="alternative_over_budget",
                                    message=f"the {alt} route through the stops is {base.foot_m / 1000:.1f} km, "
                                            f"over the {req.target_distance_m / 1000:.1f} km requested")]
-    facts = {"order": [req.checkpoints[i].label for i in base.order], "l_min_m": round(base.foot_m, 1)}
+    facts = {"order": [req.checkpoints[i].label for i in base.order], "l_min_m": round(base.foot_m, 1),
+             "stops": {req.checkpoints[i].label: _pick_facts(base.picks.get(i, {})) for i in base.order}}
     remainder = req.target_distance_m - base.foot_m
     facts["remainder_m"] = round(remainder, 1)
-    last = stops[base.order[-1]] if base.order else start
-    prefix = [start, *(stops[i] for i in base.order)]
+    prefix = base.points or [start]
+    through = base.through
+    last = prefix[-1]
 
     # Budget already used up by the stops (within tolerance): the run ends at the last checkpoint.
     if base.routed is not None and remainder <= 1.0:
-        routed = eng.route(prefix, detail=True)
-        cand = make_candidate(req, routed, "main", "last_checkpoint", base.order, [], alt)
+        routed = eng.route(prefix, through=through, detail=True)
+        cand = make_candidate(req, routed, "main", "last_checkpoint", base, [], alt)
         facts.update(case="ends_at_last_checkpoint", deviation_m=round(cand.deviation_m, 1))
         return [(cand, routed.edges)], facts, []
 
     if target is None:
-        return _bearing(req, eng, alt, facts, prefix, base, remainder)
+        return _bearing(req, eng, alt, facts, prefix, base, remainder, through)
 
-    tail = eng.route([last, target], detail=True)
-    facts["tail_to_target_m"] = round(tail.foot_m, 1)
+    # The whole run to the target in one request (through vias stay through vias), cut at the budget measured
+    # from the start: routing the last stretch separately could begin with a U-turn at a through via.
+    to_target = eng.route([*prefix, target], through=through, detail=True)
+    tail_m = to_target.foot_m - base.foot_m
+    facts["tail_to_target_m"] = round(tail_m, 1)
 
-    if tail.foot_m >= remainder:
+    if to_target.foot_m >= req.target_distance_m:
         facts["case"] = "A"
-        routed, kind, flags, cut_facts = truncate(req, eng, prefix, tail, remainder)
+        routed, kind, flags, cut_facts = truncate(req, eng, prefix, to_target, req.target_distance_m, through=through)
         facts.update(cut_facts)
-        cand = make_candidate(req, routed, "main", kind, base.order, flags, alt)
+        cand = make_candidate(req, routed, "main", kind, base, flags, alt)
         facts["end_label"] = cand.end.label
         facts["deviation_m"] = round(cand.deviation_m, 1)
         return [(cand, routed.edges)], facts, []
 
     # Case B (section 8 step 8): the target is nearer than the budget allows.
     facts["case"] = "B"
-    shortfall = remainder - tail.foot_m
+    shortfall = req.target_distance_m - to_target.foot_m
     facts["shortfall_m"] = round(shortfall, 1)
     target_label = req.direction.place.label or "the target"
     candidates = []
@@ -278,14 +305,15 @@ def _alternative(req, eng, alt, start, stops, target, base):
     heading = geodesy.bearing_deg(last if last != target else start, target)
     beyond = bearing_tail(eng, target, heading, shortfall, measure_from=target)
     if beyond is not None:
-        routed, kind, flags, cut_facts = truncate(req, eng, [*prefix, target], beyond.tail, shortfall)
-        cand = make_candidate(req, routed, "continue_past_target", kind, base.order, flags, alt)
+        routed, kind, flags, cut_facts = truncate(req, eng, [*prefix, target], beyond.tail, shortfall,
+                                                  through=through)
+        cand = make_candidate(req, routed, "continue_past_target", kind, base, flags, alt)
         facts["continue_bearing_error_deg"] = round(beyond.bearing_error, 1)
         candidates.append((cand, routed.edges))
 
     # Option 2: end at the target and report the shortfall.
-    at_target = eng.route([*prefix, target], detail=True)
-    short = make_candidate(req, at_target, "end_at_target", "target", base.order, [
+    at_target = to_target
+    short = make_candidate(req, at_target, "end_at_target", "target", base, [
         Flag(code="short_of_budget",
              message=(f"{target_label} is {at_target.foot_m / 1000:.1f} km away by this route, "
                       f"{(req.target_distance_m - at_target.foot_m) / 1000:.1f} km short of the "
@@ -297,7 +325,7 @@ def _alternative(req, eng, alt, start, stops, target, base):
     return candidates, facts, []
 
 
-def _bearing(req, eng, alt, facts, prefix, base, remainder):
+def _bearing(req, eng, alt, facts, prefix, base, remainder, through):
     """Bearing-only endpoint (section 8 step 8): sample the isodistance contour inside the sector, cut exactly."""
     facts["case"] = "bearing"
     origin = prefix[-1]
@@ -306,7 +334,7 @@ def _bearing(req, eng, alt, facts, prefix, base, remainder):
         return [], facts, [Flag(
             code="preference_unsupported",
             message=f"no walkable endpoint found within {SECTOR_DEG:.0f} degrees of bearing {req.direction.degrees:.0f}")]
-    routed, kind, flags, cut_facts = truncate(req, eng, prefix, found.tail, remainder)
+    routed, kind, flags, cut_facts = truncate(req, eng, prefix, found.tail, remainder, through=through)
     facts.update(cut_facts)
     if found.bearing_error > BEARING_OK_DEG:
         flags.append(Flag(code="direction_limited",
@@ -314,7 +342,7 @@ def _bearing(req, eng, alt, facts, prefix, base, remainder):
                                    f"bearing {req.direction.degrees:.0f}; the closest found is "
                                    f"{found.bearing_error:.0f} degrees off"),
                           data={"bearing_error_deg": round(found.bearing_error, 1)}))
-    cand = make_candidate(req, routed, "main", kind, base.order, flags, alt)
+    cand = make_candidate(req, routed, "main", kind, base, flags, alt)
     end = (cand.end.lon, cand.end.lat)
     facts.update(bearing_error_deg=round(geodesy.angle_between_deg(geodesy.bearing_deg(prefix[0], end),
                                                                     req.direction.degrees), 1),

@@ -17,11 +17,12 @@ LADDER = ladder()
 N = LADDER.nodes
 
 
-def req(start, distance, target=None, checkpoints=(), **kw):
+def req(start, distance, target=None, checkpoints=(), must_reach=False, **kw):
     body = {"route_type": "point_to_point", "start": {"lon": start[0], "lat": start[1], "label": "start"},
             "target_distance_m": distance,
             "direction": {"kind": "towards_place", "place": {"lon": target[0], "lat": target[1], "label": "T"}},
-            "checkpoints": [{"lon": p[0], "lat": p[1], "label": name} for name, p in checkpoints]}
+            "checkpoints": [{"lon": p[0], "lat": p[1], "label": name, "must_reach": must_reach}
+                            for name, p in checkpoints]}
     body.update(kw)
     return RouteRequest.model_validate(body)
 
@@ -60,7 +61,7 @@ def test_over_budget_returns_full_route_cut_and_brute_force_conflict():
         lengths[tuple(n for n, _ in perm)] = r.foot_m
     minimum = min(lengths.values())
     budget = minimum * 0.6
-    res = run(req(N["m0"], budget, target=N["m40"], checkpoints=stops))
+    res = run(req(N["m0"], budget, target=N["m40"], checkpoints=stops, must_reach=True))
     assert res.outcome == "over_budget"
     full, cut = res.candidates
     assert (full.option, cut.option) == ("full_route", "cut_at_target")
@@ -102,7 +103,7 @@ def test_route_around_an_estuary_never_takes_the_ferry():
     edges = [GEdge("a", "x"), GEdge("a", "b"), GEdge("b", "c"), GEdge("c", "d"), GEdge("d", "y"), GEdge("d", "e"),
              GEdge("x", "y", ferry=True, name="Ferry")]
     g = FakeGraph(nodes, edges)
-    res = run(req(nodes["a"], 40000, target=nodes["e"], checkpoints=[("Y", nodes["y"])]), g)
+    res = run(req(nodes["a"], 40000, target=nodes["e"], checkpoints=[("Y", nodes["y"])], must_reach=True), g)
     round_the_estuary = geodesy.line_length_m([nodes[k] for k in "abcdy"])
     assert res.facts["l_min_m"] == pytest.approx(round_the_estuary, abs=0.1)
     assert all(c.ferry_m == 0 for c in res.candidates)
@@ -157,3 +158,43 @@ def test_out_and_back_is_exact_and_retraces_itself():
     half = len(c.geometry) // 2
     assert c.geometry[:half + 1] == list(reversed(c.geometry[half:]))
     assert c.end.kind == "start"
+
+
+# ------------------------------------------------------------------ pass near (Phase 3 amendment 3)
+
+def test_pass_near_adds_nothing_when_the_route_already_passes_within_1_km():
+    # A side street end 220 m east of the main road: passing along the main road is within 1 km on foot.
+    stop = N["s10"]
+    res = run(req(N["m0"], geodesy.line_length_m([N[f"m{i}"] for i in range(31)]), target=N["m40"],
+                  checkpoints=[("Side 10", stop)]))
+    assert res.outcome == "ok"
+    c = res.candidates[0]
+    cp = next(s for s in c.stops if s.role == "checkpoint")
+    assert cp.how == "on_route" and cp.pass_walk_m <= 1000
+    assert res.facts["stops"]["Side 10"]["added_m"] == 0.0
+    # it did not walk the side street (no spur): no repeated edges at all
+    assert c.repeat_share == 0
+
+
+def test_must_reach_walks_into_the_side_street():
+    stop = N["s10"]
+    budget = geodesy.line_length_m([N[f"m{i}"] for i in range(31)])
+    near = run(req(N["m0"], budget, target=N["m40"], checkpoints=[("Side 10", stop)]))
+    reach = run(req(N["m0"], budget, target=N["m40"], checkpoints=[("Side 10", stop)], must_reach=True))
+    assert reach.facts["l_min_m"] > near.facts["l_min_m"]
+    cp = next(s for s in reach.candidates[0].stops if s.role == "checkpoint")
+    assert cp.how == "reached" and cp.offset_m < 1.0
+
+
+def test_pass_near_place_over_1_km_on_foot_is_detoured_to():
+    # A point 1.5 km east of the main road at m20, reachable by a long side road: needs a via.
+    g = ladder()
+    far = (N["m20"][0] + 0.02, N["m20"][1])
+    g.nodes["far"] = far
+    g.nodes["mid"] = (N["m20"][0] + 0.011, N["m20"][1])
+    g.edges += [GEdge("s20", "mid", name="Long Road"), GEdge("mid", "far", name="Long Road")]
+    budget = geodesy.line_length_m([N[f"m{i}"] for i in range(41)]) + 4000
+    res = run(req(N["m0"], budget, target=N["m40"], checkpoints=[("Far", far)]), g)
+    assert res.outcome == "ok"
+    cp = next(s for s in res.candidates[0].stops if s.role == "checkpoint")
+    assert cp.how in ("via", "spur") and cp.pass_walk_m <= 1000

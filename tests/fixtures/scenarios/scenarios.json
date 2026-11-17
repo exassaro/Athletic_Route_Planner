@@ -146,10 +146,11 @@
      "Beypore"
     ],
     "minimum_m": 25889.7,
-    "outcome": "ok",
+    "outcome": "pass_near",
     "remainder_m": 2110.3,
     "tail_foot_m": 9206.0,
-    "case": "A"
+    "case": "A",
+    "reach_outcome": "ok"
    }
   },
   {
@@ -203,7 +204,7 @@
      "Beypore"
     ],
     "minimum_m": 25889.7,
-    "outcome": "over_budget",
+    "outcome": "pass_near",
     "savings": [
      {
       "action": "drop_checkpoint",
@@ -223,7 +224,8 @@
       "saves_m": 9368.6,
       "fits": false
      }
-    ]
+    ],
+    "reach_outcome": "over_budget"
    }
   },
   {
@@ -355,10 +357,11 @@
      "Beypore"
     ],
     "minimum_m": 25889.7,
-    "outcome": "ok",
+    "outcome": "pass_near",
     "remainder_m": 6110.3,
     "tail_foot_m": 9206.0,
-    "case": "A"
+    "case": "A",
+    "reach_outcome": "ok"
    }
   },
   {
@@ -478,6 +481,221 @@
       "place_id": "osm:node/1683145417"
      },
      {
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "label": "Beypore",
+      "place_id": "osm:node/1683149581"
+     }
+    ]
+   },
+   "reference": {
+    "budget_upper_m": 25500.0,
+    "order": [
+     "Kadalundi",
+     "Chaliyam",
+     "Beypore"
+    ],
+    "minimum_m": 25889.7,
+    "outcome": "pass_near",
+    "savings": [
+     {
+      "action": "drop_checkpoint",
+      "label": "Kadalundi",
+      "saves_m": 2850.9,
+      "fits": true
+     },
+     {
+      "action": "drop_checkpoint",
+      "label": "Chaliyam",
+      "saves_m": 1886.2,
+      "fits": true
+     },
+     {
+      "action": "drop_checkpoint",
+      "label": "Beypore",
+      "saves_m": 9368.6,
+      "fits": true
+     }
+    ],
+    "reach_outcome": "over_budget"
+   }
+  },
+  {
+   "id": "S05m",
+   "title": "S05 with every stop must_reach (reached, not passed near)",
+   "base": "S05m",
+   "status": "active",
+   "request": {
+    "route_type": "point_to_point",
+    "start": {
+     "lon": 75.86,
+     "lat": 11.05,
+     "label": "start_south_of_kadalundi"
+    },
+    "target_distance_m": 28000,
+    "direction": {
+     "kind": "towards_place",
+     "place": {
+      "lon": 75.7754716,
+      "lat": 11.2450558,
+      "label": "Kozhikode",
+      "place_id": "osm:node/1348192542"
+     }
+    },
+    "checkpoints": [
+     {
+      "must_reach": true,
+      "lon": 75.8334302,
+      "lat": 11.1381083,
+      "label": "Kadalundi",
+      "place_id": "osm:node/7728008448"
+     },
+     {
+      "must_reach": true,
+      "lon": 75.8095217,
+      "lat": 11.1559577,
+      "label": "Chaliyam",
+      "place_id": "osm:node/1683145417"
+     },
+     {
+      "must_reach": true,
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "label": "Beypore",
+      "place_id": "osm:node/1683149581"
+     }
+    ]
+   },
+   "reference": {
+    "budget_upper_m": 28500.0,
+    "order": [
+     "Kadalundi",
+     "Chaliyam",
+     "Beypore"
+    ],
+    "minimum_m": 25889.7,
+    "outcome": "ok",
+    "remainder_m": 2110.3,
+    "tail_foot_m": 9206.0,
+    "case": "A"
+   }
+  },
+  {
+   "id": "S07m",
+   "title": "S07 with every stop must_reach",
+   "base": "S07m",
+   "status": "active",
+   "request": {
+    "route_type": "point_to_point",
+    "start": {
+     "lon": 75.86,
+     "lat": 11.05,
+     "label": "start_south_of_kadalundi"
+    },
+    "target_distance_m": 15000,
+    "direction": {
+     "kind": "towards_place",
+     "place": {
+      "lon": 75.7754716,
+      "lat": 11.2450558,
+      "label": "Kozhikode",
+      "place_id": "osm:node/1348192542"
+     }
+    },
+    "checkpoints": [
+     {
+      "must_reach": true,
+      "lon": 75.8334302,
+      "lat": 11.1381083,
+      "label": "Kadalundi",
+      "place_id": "osm:node/7728008448"
+     },
+     {
+      "must_reach": true,
+      "lon": 75.8095217,
+      "lat": 11.1559577,
+      "label": "Chaliyam",
+      "place_id": "osm:node/1683145417"
+     },
+     {
+      "must_reach": true,
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "label": "Beypore",
+      "place_id": "osm:node/1683149581"
+     }
+    ]
+   },
+   "reference": {
+    "budget_upper_m": 15500.0,
+    "order": [
+     "Kadalundi",
+     "Chaliyam",
+     "Beypore"
+    ],
+    "minimum_m": 25889.7,
+    "outcome": "over_budget",
+    "savings": [
+     {
+      "action": "drop_checkpoint",
+      "label": "Kadalundi",
+      "saves_m": 2850.9,
+      "fits": false
+     },
+     {
+      "action": "drop_checkpoint",
+      "label": "Chaliyam",
+      "saves_m": 1886.2,
+      "fits": false
+     },
+     {
+      "action": "drop_checkpoint",
+      "label": "Beypore",
+      "saves_m": 9368.6,
+      "fits": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "S15m",
+   "title": "S15 with every stop must_reach",
+   "base": "S15m",
+   "status": "active",
+   "request": {
+    "route_type": "point_to_point",
+    "start": {
+     "lon": 75.86,
+     "lat": 11.05,
+     "label": "start_south_of_kadalundi"
+    },
+    "target_distance_m": 25000,
+    "direction": {
+     "kind": "towards_place",
+     "place": {
+      "lon": 75.7754716,
+      "lat": 11.2450558,
+      "label": "Kozhikode",
+      "place_id": "osm:node/1348192542"
+     }
+    },
+    "checkpoints": [
+     {
+      "must_reach": true,
+      "lon": 75.8334302,
+      "lat": 11.1381083,
+      "label": "Kadalundi",
+      "place_id": "osm:node/7728008448"
+     },
+     {
+      "must_reach": true,
+      "lon": 75.8095217,
+      "lat": 11.1559577,
+      "label": "Chaliyam",
+      "place_id": "osm:node/1683145417"
+     },
+     {
+      "must_reach": true,
       "lon": 75.8101768,
       "lat": 11.1790668,
       "label": "Beypore",
@@ -755,10 +973,11 @@
      "Beypore"
     ],
     "minimum_m": 27056.1,
-    "outcome": "ok",
+    "outcome": "pass_near",
     "remainder_m": 943.9,
     "tail_foot_m": 9206.0,
-    "case": "A"
+    "case": "A",
+    "reach_outcome": "ok"
    }
   },
   {
@@ -813,10 +1032,11 @@
      "Beypore"
     ],
     "minimum_m": 24464.0,
-    "outcome": "ok",
+    "outcome": "pass_near",
     "remainder_m": 3536.0,
     "tail_foot_m": 9206.0,
-    "case": "A"
+    "case": "A",
+    "reach_outcome": "ok"
    }
   },
   {
@@ -871,10 +1091,11 @@
      "Beypore"
     ],
     "minimum_m": 27509.2,
-    "outcome": "ok",
+    "outcome": "pass_near",
     "remainder_m": 490.8,
     "tail_foot_m": 9206.0,
-    "case": "A"
+    "case": "A",
+    "reach_outcome": "ok"
    }
   },
   {
@@ -929,10 +1150,11 @@
      "Beypore"
     ],
     "minimum_m": 25780.8,
-    "outcome": "ok",
+    "outcome": "pass_near",
     "remainder_m": 2219.2,
     "tail_foot_m": 9206.0,
-    "case": "A"
+    "case": "A",
+    "reach_outcome": "ok"
    }
   },
   {
@@ -987,7 +1209,7 @@
      "Beypore"
     ],
     "minimum_m": 26199.2,
-    "outcome": "over_budget",
+    "outcome": "pass_near",
     "savings": [
      {
       "action": "drop_checkpoint",
@@ -1007,7 +1229,8 @@
       "saves_m": 9368.6,
       "fits": false
      }
-    ]
+    ],
+    "reach_outcome": "over_budget"
    }
   },
   {
@@ -1062,7 +1285,7 @@
      "Beypore"
     ],
     "minimum_m": 28225.4,
-    "outcome": "over_budget",
+    "outcome": "pass_near",
     "savings": [
      {
       "action": "drop_checkpoint",
@@ -1082,7 +1305,8 @@
       "saves_m": 9368.6,
       "fits": false
      }
-    ]
+    ],
+    "reach_outcome": "over_budget"
    }
   },
   {
@@ -1409,7 +1633,7 @@
      "Beypore"
     ],
     "minimum_m": 27546.2,
-    "outcome": "over_budget",
+    "outcome": "pass_near",
     "savings": [
      {
       "action": "drop_checkpoint",
@@ -1429,7 +1653,8 @@
       "saves_m": 9368.6,
       "fits": true
      }
-    ]
+    ],
+    "reach_outcome": "over_budget"
    }
   },
   {
@@ -1484,10 +1709,11 @@
      "Beypore"
     ],
     "minimum_m": 23521.8,
-    "outcome": "ok",
+    "outcome": "pass_near",
     "remainder_m": 1478.2,
     "tail_foot_m": 9206.0,
-    "case": "A"
+    "case": "A",
+    "reach_outcome": "ok"
    }
   },
   {
@@ -1542,7 +1768,7 @@
      "Beypore"
     ],
     "minimum_m": 28193.2,
-    "outcome": "over_budget",
+    "outcome": "pass_near",
     "savings": [
      {
       "action": "drop_checkpoint",
@@ -1562,7 +1788,8 @@
       "saves_m": 9368.6,
       "fits": true
      }
-    ]
+    ],
+    "reach_outcome": "over_budget"
    }
   },
   {
@@ -1722,6 +1949,128 @@
    }
   },
   {
+   "id": "S15m-n1",
+   "title": "S15 with every stop must_reach; start 1 sampled nearby",
+   "base": "S15m",
+   "status": "active",
+   "request": {
+    "route_type": "point_to_point",
+    "start": {
+     "lon": 75.8593127,
+     "lat": 11.0651708,
+     "label": "near start_south_of_kadalundi (residential)",
+     "place_id": "osm:node/7114932281"
+    },
+    "target_distance_m": 25000,
+    "direction": {
+     "kind": "towards_place",
+     "place": {
+      "lon": 75.7754716,
+      "lat": 11.2450558,
+      "label": "Kozhikode",
+      "place_id": "osm:node/1348192542"
+     }
+    },
+    "checkpoints": [
+     {
+      "must_reach": true,
+      "lon": 75.8334302,
+      "lat": 11.1381083,
+      "label": "Kadalundi",
+      "place_id": "osm:node/7728008448"
+     },
+     {
+      "must_reach": true,
+      "lon": 75.8095217,
+      "lat": 11.1559577,
+      "label": "Chaliyam",
+      "place_id": "osm:node/1683145417"
+     },
+     {
+      "must_reach": true,
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "label": "Beypore",
+      "place_id": "osm:node/1683149581"
+     }
+    ]
+   },
+   "reference": {
+    "budget_upper_m": 25500.0,
+    "order": [
+     "Kadalundi",
+     "Chaliyam",
+     "Beypore"
+    ],
+    "minimum_m": 24605.9,
+    "outcome": "ok",
+    "remainder_m": 394.1,
+    "tail_foot_m": 9206.0,
+    "case": "A"
+   }
+  },
+  {
+   "id": "S15m-n2",
+   "title": "S15 with every stop must_reach; start 2 sampled nearby",
+   "base": "S15m",
+   "status": "active",
+   "request": {
+    "route_type": "point_to_point",
+    "start": {
+     "lon": 75.8491422,
+     "lat": 11.0694382,
+     "label": "near start_south_of_kadalundi (unclassified)",
+     "place_id": "osm:node/7756881061"
+    },
+    "target_distance_m": 25000,
+    "direction": {
+     "kind": "towards_place",
+     "place": {
+      "lon": 75.7754716,
+      "lat": 11.2450558,
+      "label": "Kozhikode",
+      "place_id": "osm:node/1348192542"
+     }
+    },
+    "checkpoints": [
+     {
+      "must_reach": true,
+      "lon": 75.8334302,
+      "lat": 11.1381083,
+      "label": "Kadalundi",
+      "place_id": "osm:node/7728008448"
+     },
+     {
+      "must_reach": true,
+      "lon": 75.8095217,
+      "lat": 11.1559577,
+      "label": "Chaliyam",
+      "place_id": "osm:node/1683145417"
+     },
+     {
+      "must_reach": true,
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "label": "Beypore",
+      "place_id": "osm:node/1683149581"
+     }
+    ]
+   },
+   "reference": {
+    "budget_upper_m": 25500.0,
+    "order": [
+     "Kadalundi",
+     "Chaliyam",
+     "Beypore"
+    ],
+    "minimum_m": 23263.0,
+    "outcome": "ok",
+    "remainder_m": 1737.0,
+    "tail_foot_m": 9206.0,
+    "case": "A"
+   }
+  },
+  {
    "id": "S04-d15",
    "title": "25 km towards Kozhikode from south of Kadalundi; budget 15000 m",
    "base": "S04",
@@ -1871,10 +2220,11 @@
      "Beypore"
     ],
     "minimum_m": 25889.7,
-    "outcome": "ok",
+    "outcome": "pass_near",
     "remainder_m": 4110.3,
     "tail_foot_m": 9206.0,
-    "case": "A"
+    "case": "A",
+    "reach_outcome": "ok"
    }
   },
   {
@@ -1928,10 +2278,11 @@
      "Beypore"
     ],
     "minimum_m": 25889.7,
-    "outcome": "ok",
+    "outcome": "pass_near",
     "remainder_m": 9110.3,
     "tail_foot_m": 9206.0,
-    "case": "A"
+    "case": "A",
+    "reach_outcome": "ok"
    }
   },
   {

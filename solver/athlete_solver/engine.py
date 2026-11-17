@@ -91,6 +91,7 @@ class Engine(Protocol):
     calls: int
 
     def matrix(self, points: list[LonLat]) -> list[list[float | None]]: ...
+    def distances_from(self, origin: LonLat, targets: list[LonLat]) -> list[float | None]: ...
     def route(self, points: list[LonLat], through: set[int] | None = None, detail: bool = False) -> Routed: ...
     def locate(self, points: list[LonLat]) -> list[LonLat | None]: ...
     def isodistance_ring(self, origin: LonLat, km: float) -> list[LonLat]: ...
@@ -114,6 +115,15 @@ class ValhallaEngine:
     def locate(self, points: list[LonLat]) -> list[LonLat | None]:
         self.calls += 1
         return self.client.locate(points, costing_options=self.options)
+
+    def distances_from(self, origin: LonLat, targets: list[LonLat]) -> list[float | None]:
+        """Walking distance (engine metres) from one point to many. Decisions only (pass-near); never shown."""
+        out: list[float | None] = []
+        for i in range(0, len(targets), 50):
+            self.calls += 1
+            row = self.client.matrix([origin], targets[i:i + 50], costing_options=self.options)["sources_to_targets"][0]
+            out += [None if c.get("distance") is None else c["distance"] * 1000.0 for c in row]
+        return out
 
     def heights(self, points: list[LonLat]) -> list[float | None]:
         """Terrain height in metres at each point (Valhalla's elevation tiles)."""

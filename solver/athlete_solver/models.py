@@ -38,9 +38,40 @@ class Point(Strict):
         return (self.lon, self.lat)
 
 
+LineCoords = list[tuple[Lon, Lat]]
+
+
 class Checkpoint(Point):
+    """A stop on the run (Phase 3 amendment 3, decisions 11, 16, 17).
+
+    kind "place" (default): the route passes within 1 km on foot of the point, without a spur; with
+    must_reach it reaches the point itself (a break location, within 50 m of where it meets the network).
+    kind "junction": the route passes through the point. kind "bridge" / "road": the route uses one of the
+    OSM ways in `way_ids` (geometry in `lines`, from OSM). The point (lon, lat) is the item's middle and is
+    used for ordering. `boundary` is the place's OSM boundary polygon (GeoJSON), for the fallback.
+    """
+
     label: str
     mandatory: bool = True
+    kind: Literal["place", "junction", "bridge", "road"] = "place"
+    must_reach: bool = False
+    way_ids: list[int] = Field(default_factory=list)
+    lines: list[LineCoords] = Field(default_factory=list)
+    boundary: dict | None = None
+
+    @model_validator(mode="after")
+    def _kind_rules(self) -> "Checkpoint":
+        if self.kind in ("bridge", "road") and (not self.way_ids or not self.lines):
+            raise ValueError(f"{self.kind} checkpoint {self.label!r} needs its OSM way_ids and lines")
+        if self.must_reach and self.kind != "place":
+            raise ValueError("must_reach applies to place checkpoints")
+        if self.boundary is not None and self.boundary.get("type") not in ("Polygon", "MultiPolygon"):
+            raise ValueError("boundary must be a GeoJSON Polygon or MultiPolygon")
+        return self
+
+    @property
+    def pass_near(self) -> bool:
+        return self.kind == "place" and not self.must_reach
 
 
 class TowardsPlace(Strict):
@@ -128,6 +159,8 @@ FlagCode = Literal[
     "spur",                     # dead-end excursion over 100 m
     "alternative_unavailable",  # an alternative could not be produced (engine down, no route)
     "alternative_over_budget",  # this alternative's own route through the stops exceeds the budget
+    "pass_near_boundary",       # no spur-free pass point within 1 km on foot: passes inside the OSM boundary
+    "pass_near_spur",           # no spur-free pass point at all: the stop is reached with a spur
 ]
 
 
@@ -141,10 +174,14 @@ class StopOnRoute(Strict):
     role: Literal["start", "checkpoint", "end"]
     label: str | None = None
     requested: Point
-    snapped_lon: float
+    snapped_lon: float       # where the route passes the stop (pass-near: the pass point on the route)
     snapped_lat: float
-    offset_m: float          # requested point to where the route meets the network (straight line)
+    offset_m: float          # requested point to that point (straight line)
     at_m: float              # distance on foot along the route to this stop
+    kind: Literal["place", "junction", "bridge", "road"] | None = None
+    must_reach: bool = False
+    pass_walk_m: float | None = None   # pass-near: walking distance from the place to the route (Valhalla)
+    how: Literal["reached", "on_route", "via", "boundary", "spur", "uses"] | None = None
 
 
 class EndPoint(Strict):

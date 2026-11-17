@@ -156,6 +156,17 @@ class FakeEngine:
             out.append(row)
         return out
 
+    def distances_from(self, origin, targets):
+        self.calls += 1
+        out = []
+        for t in targets:
+            try:
+                shape, _, _ = self._path(origin, t)
+                out.append(geodesy.sphere_line_length_m(shape))
+            except NoRoute:
+                out.append(None)
+        return out
+
     def route(self, points, through=None, detail=False):
         self.calls += 1
         legs, leg_foot, edges, junctions = [], [], [], []

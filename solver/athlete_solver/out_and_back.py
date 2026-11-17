@@ -59,6 +59,6 @@ def solve_out_and_back(req: RouteRequest, eng: Engine, alternative: str) -> tupl
     facts["turnaround"] = {"lon": turn[0], "lat": turn[1], "kind": kind,
                            "bearing_deg": round(geodesy.bearing_deg(start, turn), 1)}
     full = mirrored(out)
-    cand = make_candidate(req, full, "main", "start", [], flags, alternative)
+    cand = make_candidate(req, full, "main", "start", None, flags, alternative)
     facts["deviation_m"] = round(cand.deviation_m, 1)
     return [(cand, full.edges)], facts, []

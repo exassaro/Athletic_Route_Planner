@@ -48,9 +48,22 @@ def resolve(req: dict) -> dict:
     d = req.get("direction")
     if d and d["kind"] == "towards_place" and isinstance(d["place"], str):
         d["place"] = point(d["place"])
-    req["checkpoints"] = [{**point(c), "label": PLACES[c].get("name") or c} if isinstance(c, str) else c
-                          for c in req.get("checkpoints", [])]
+    defaults = req.pop("checkpoint_defaults", {})
+    out = []
+    for c in req.get("checkpoints", []):
+        if isinstance(c, str):
+            c = {"place": c}
+        if "place" in c:   # {"place": key, ...extra fields such as must_reach}
+            key = c["place"]
+            c = {**point(key), "label": PLACES[key].get("name") or key, **{k: v for k, v in c.items() if k != "place"}}
+        out.append({**defaults, **c})
+    req["checkpoints"] = out
     return req
+
+
+def pass_near_request(req: dict) -> bool:
+    """True if any checkpoint is passed near rather than reached (the default kind and must_reach false)."""
+    return any(c.get("kind", "place") != "place" or not c.get("must_reach", False) for c in req.get("checkpoints", []))
 
 
 def main() -> int:
@@ -118,6 +131,11 @@ def main() -> int:
                 tolerance_m=r.get("tolerance_m", 500.0),
                 fixed_order=r.get("checkpoint_order") == "fixed",
             )
+            if pass_near_request(r):
+                # The brute-force reference reaches every stop: for a pass-near request it is an upper bound
+                # on the minimum, kept for comparison. The outcome itself is checked for consistency.
+                f["reference"] = {**f["reference"], "reach_outcome": f["reference"]["outcome"],
+                                  "outcome": "pass_near"}
             ref = f["reference"]
             extra = (f" min {ref['minimum_m'] / 1000:.2f} km" if ref.get("minimum_m") else "") + \
                     (f" case {ref['case']}" if "case" in ref else "")

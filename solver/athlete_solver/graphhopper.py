@@ -76,6 +76,9 @@ class GraphHopperEngine:
     def locate(self, points):
         return self.yard.locate(points)
 
+    def distances_from(self, origin, targets):
+        return self.yard.distances_from(origin, targets)
+
     def isodistance_ring(self, origin, km):
         return self.yard.isodistance_ring(origin, km)
 
