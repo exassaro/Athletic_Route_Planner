@@ -5,7 +5,7 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 3b** (routing-rule changes from the product owner, still solver only, in `solver/`). No FastAPI, no frontend, no LLM. First a rules spike (`docs/reports/phase3b/rules_spike.md`, at most 2 days), then wait for the developer's decision before changing the solver. Loops only after the point-to-point KPIs pass under the Phase 3 amendments.
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 3b** (routing-rule changes from the product owner, still solver only, in `solver/`). No FastAPI, no frontend, no LLM. Steps 0 to 9 are built; status and open decisions in `docs/reports/phase3b/summary.md`. Loops only after the point-to-point KPIs pass under the Phase 3 amendments.
 - **Plan first.** Give a plan and wait for approval before writing code.
 - **Small steps.** Each step ends in something the developer can run and check. Commit after each step.
 - **No invented distances.** Never hardcode or estimate a distance. Every distance comes from the routing engine or from measuring geometry (`athlete_engine.geodesy`). The leg distances in the blueprint's section 8 worked example are made up: never use them as test expectations. Straight-line distance is allowed only for snap distances and pre-filters and must never be presented as a route distance.
@@ -71,7 +71,7 @@ Solo developer, comfortable with Python and Next.js. Windows 11, 8 GB RAM, Intel
 - `docs/reports/phase2/` generated reports and GeoJSON.
 - `tests/unit/` no network. `tests/integration/` needs Valhalla running. `tests/fixtures/` coordinates with OSM ids.
 - `data/` is gitignored (extract, tiles, index).
-- `solver/athlete_solver/` Phase 3 solver package (models, engine adapter, ordering, gate, truncation, scoring) with a CLI (`python -m athlete_solver`). It calls the engine only through `athlete_engine`.
+- `solver/athlete_solver/` solver package with a CLI (`python -m athlete_solver`): `models` (request, candidate, conflict), `engine` (Valhalla adapter, the yardstick), `graphhopper` (the "recommended" generator, model R5, measured by Valhalla), `passnear` (checkpoints into route points), `avoid`, `ordering`, `p2p` (base route, gate, cut, truncation), `out_and_back`, `scoring` (hard rules, NH flag, diversity), `solve` (both alternatives in parallel). It calls Valhalla only through `athlete_engine`.
 - `tests/fixtures/scenarios/` solver scenarios (section 16); `docs/reports/phase3/` Phase 3 KPI report and the quieter spike; `docs/reports/phase3b/` Phase 3b KPI report and the rules spike.
 - `api/`, `web/` are placeholders for later phases.
 
@@ -90,7 +90,7 @@ uv run python engine/experiments/<name>.py
 Valhalla (Docker Desktop must be running; serves on http://localhost:8002):
 
 ```
-docker compose up -d valhalla            # first run builds tiles + elevation, about 7 min
+docker compose up -d valhalla graphhopper   # Valhalla: first run builds tiles + elevation, about 7 min; GraphHopper: first run imports, about 3 min, about 2 GB
 docker compose logs -f valhalla
 uv run python engine/scripts/configure_valhalla.py   # apply engine/valhalla/overrides.json
 docker compose restart valhalla          # needed after changing overrides
@@ -111,7 +111,7 @@ uv run python engine/experiments/05_worked_example.py
 uv run python engine/experiments/05b_quieter_probe.py
 ```
 
-Solver and KPI harness (Phase 3; Valhalla must be running):
+Solver and KPI harness (Valhalla and GraphHopper must be running; without GraphHopper the solver returns "shortest" only, flagged):
 
 ```
 uv run python -m athlete_solver solve request.json [--geojson out.geojson]
@@ -121,15 +121,13 @@ uv run python tests/kpi/run_kpi.py [--only S05,S15]   # -> docs/reports/phase3b/
 
 Scenario requests live in `tests/fixtures/scenarios/base.json`. Never edit `scenarios.json` by hand: its reference values come from `tests/kpi/reference.py` (every stop order routed and measured, no matrix, no DP), kept independent of the solver.
 
-GraphHopper (profile `spike`, http://localhost:8989; the Phase 3b generator, still started with the spike profile until it is wired into the solver). It runs alongside Valhalla (about 1.9 GiB), so stop Photon first:
+GraphHopper (http://localhost:8989, the "recommended" generator; started with Valhalla above). It runs alongside Valhalla (about 1.9 GiB), so stop Photon first. Delete `data/graphhopper/graph-cache` to re-import (needed after changing `engine/graphhopper/config.yml` or the custom models; rebuild the image with `docker compose build graphhopper`). Spike experiments:
 
 ```
-docker compose --profile spike up -d graphhopper   # imports the pinned extract, about 3 min, about 2 GB RAM
 uv run python engine/experiments/07_quieter_spike.py
 uv run python engine/scripts/build_rules_fixtures.py     # Phase 3b acceptance places by OSM id -> tests/fixtures/rules_places.json
 uv run python engine/experiments/08a_road_priority.py    # Phase 3b: priority models (profile foot_rules) -> docs/reports/phase3b/
 uv run python engine/experiments/08b_pass_near.py --model "R5 trunk-last" --proximity network   # pass-near prototype
-docker compose --profile spike stop graphhopper
 ```
 
 Photon (profile `geocode`, http://localhost:2322):
@@ -155,6 +153,8 @@ docker compose --profile geocode stop photon
 - Valhalla stores edge lengths in whole metres: routes with many short edges drift from the spherical measurement by about 0.1 m per edge.
 - Isodistance contours are outlines: vertices are often far nearer by route than the contour value. Route and measure every sample.
 
-## Phase 3b implementation (steps 3 to 9 of the plan)
+## Open decisions (Phase 3b, see docs/reports/phase3b/summary.md; do not resolve silently)
 
-Spike questions are settled by decisions 10 to 17 above. Order: (3) remove the ferry opt-in; (4) ±500 m tolerance, `over_budget`, repetition and consistency rules; (5) GraphHopper generator, "recommended" and "shortest", NH flag; (6) pass-near checkpoints; (7) `via`, `avoid`, `must_use`; (8) acceptance fixture and 10 fixtures outside Kozhikode; (9) report. Loops wait until the point-to-point KPIs pass.
+(1) "Trunk last" against the direction-adherence KPI: on the Wayanad ghat "recommended" detours 56% to avoid NH 766 (proposal: re-solve with trunk x0.3 when "recommended" is over 30% longer than "shortest"). (2) Road-suitability KPI against "primary, mild penalty": 11 "recommended" routes carry 10-24% primary (proposal: measure trunk/motorway share, primary as info). (3) Implementation defaults to confirm: junction = through via; no spur-free pass point and no boundary = shortest spur, flagged; outcome decided over both alternatives; avoided place without polygon = 300 m circle.
+
+Phase 3b facts: a pass-near plan depends on the engine, so `over_budget` means every alternative's way through the stops exceeds D + 500 m. Runs are cut from the whole route's geometry (a separately routed tail can begin with a U-turn the re-route cannot repeat). GraphHopper's lengths use a 6,371 km sphere. Valhalla exclusion limits are raised in `engine/valhalla/overrides.json`.

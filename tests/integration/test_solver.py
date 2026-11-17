@@ -34,12 +34,32 @@ def test_s05_meets_the_budget_through_all_stops(engine):
     assert c.ferry_m == 0
 
 
-def test_s15_is_over_budget_with_measured_savings(engine):
+def test_s15_fits_when_the_stops_are_passed_near(engine):
+    """Phase 3 amendment 3: passing near Chaliyam avoids the dead-end, so the 25 km request fits."""
     res = run(engine, "S15")
-    ref = FIX["S15"]["reference"]
+    assert res.outcome == "ok"
+    rec = next(c for c in res.candidates if c.label == "recommended")
+    assert abs(rec.foot_m - res.request.target_distance_m) <= res.request.tolerance_m
+    assert all(s.pass_walk_m is not None and s.pass_walk_m <= 1000 for s in rec.stops if s.role == "checkpoint")
+
+
+def test_acceptance_corridor_in_order_without_ferry_or_spur(engine):
+    res = run(engine, "A01")
+    rec = next(c for c in res.candidates if c.label == "recommended")
+    order = [s.label for s in rec.stops if s.role in ("checkpoint", "must_use")]
+    assert order == FIX["A01"]["expect_order"]
+    assert rec.ferry_m == 0 and (rec.repeat_share or 0) < 0.02
+    assert not any(f.code in ("spur", "pass_near_spur") for f in rec.flags)
+    assert abs(rec.foot_m - 25000) <= res.request.tolerance_m
+
+
+def test_s15m_is_over_budget_with_measured_savings(engine):
+    res = run(engine, "S15m")
+    ref = FIX["S15m"]["reference"]
     assert res.outcome == "over_budget"
-    assert [c.label for c in res.candidates] == ["full_route", "cut_at_target"]
-    assert abs(res.candidates[1].foot_m - res.request.target_distance_m) <= res.request.tolerance_m
+    assert [c.option for c in res.candidates if c.label == "recommended"] == ["full_route", "cut_at_target"]
+    cut = next(c for c in res.candidates if c.option == "cut_at_target")
+    assert abs(cut.foot_m - res.request.target_distance_m) <= res.request.tolerance_m
     assert res.conflict.minimum_m == pytest.approx(ref["minimum_m"], abs=max(10, 0.002 * ref["minimum_m"]))
     assert {s.label for s in res.conflict.savings} == set(ref["order"])
     assert all(s.action == "drop_checkpoint" for s in res.conflict.savings)

@@ -41,10 +41,11 @@ services:
     mem_limit: 3g
     restart: "no"
 
-  # Phase 3 spike only: GraphHopper foot profiles on the same pinned extract.
-  # Started on request:  docker compose --profile spike up -d graphhopper
+  # GraphHopper: the route generator for the "recommended" alternative (Phase 3 amendment 1), on the same
+  # pinned extract as Valhalla. Profile foot_rules plus the Phase 3 spike profiles (foot_direct, foot_quiet).
+  # First start imports Kerala (about 3 minutes, about 2 GB RAM); delete data/graphhopper/graph-cache to re-import.
+  #   docker compose up -d valhalla graphhopper
   graphhopper:
-    profiles: ["spike"]
     build:
       context: ./engine/graphhopper
     image: athlete-graphhopper:11.1

@@ -86,17 +86,18 @@ uv run python engine/experiments/06_photon_smoke.py
 docker compose --profile geocode stop photon
 ```
 
-### Solver (Phase 3)
+### Solver (Phase 3b)
 
-Valhalla must be running.
+Valhalla and GraphHopper must be running (`docker compose up -d valhalla graphhopper`). Without GraphHopper the solver still answers with the "shortest" alternative only, and says so in a flag.
 
 ```powershell
 uv run python -m athlete_solver solve request.json --geojson route.geojson   # one RouteRequest -> SolveResult JSON
-uv run python tests/kpi/run_kpi.py                                           # all scenarios -> docs/reports/phase3/kpi.md
-uv run python tests/kpi/run_kpi.py --only S05,S15                            # a subset
+uv run python tests/kpi/build_scenarios.py                                   # rebuild fixtures + reference values
+uv run python tests/kpi/run_kpi.py                                           # all scenarios -> docs/reports/phase3b/kpi.md
+uv run python tests/kpi/run_kpi.py --only S05,A01                            # a subset
 ```
 
-A request follows blueprint section 4, with coordinates on every point; `tests/fixtures/scenarios/scenarios.json` has 60 examples.
+A request follows blueprint section 4 as amended in Phase 3 (checkpoints passed near by default, `must_reach`, `via`, `avoid`, `must_use`, ±500 m), with coordinates on every point. `tests/fixtures/scenarios/scenarios.json` has 74 active examples, including the acceptance request (A01) and ten outside Kozhikode (X01 to X10).
 
 ### Pinned extract backup
 
@@ -109,10 +110,13 @@ gh release create osm-kerala-2026-11-15 data/osm/kerala.osm.pbf --title "Pinned 
 ### Quieter-route spike (Phase 3, optional)
 
 ```powershell
-docker compose --profile spike up -d graphhopper      # imports Kerala, about 3 minutes, about 2 GB RAM
+docker compose up -d graphhopper                      # also the solver's "recommended" generator; imports Kerala, about 3 minutes, about 2 GB RAM
 uv run python engine/experiments/07_quieter_spike.py
-docker compose --profile spike stop graphhopper
 ```
+
+## Phase 3b status
+
+Start with [docs/reports/phase3b/summary.md](docs/reports/phase3b/summary.md): routing rules from the product owner (GraphHopper "recommended" + Valhalla "shortest", pass-near checkpoints, ferries always excluded, ±500 m, `over_budget`, `via` / `avoid` / `must_use`), the acceptance test and the KPI report.
 
 ## Phase 3 status
 
