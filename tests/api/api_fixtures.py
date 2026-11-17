@@ -21,20 +21,29 @@ def fixture_request(fid: str) -> dict:
     return next(f for f in FIXTURES if f["id"] == fid)["request"]
 
 
-def a01_candidates() -> list[Candidate]:
-    result = json.loads((REPORT / "acceptance_A01.json").read_text(encoding="utf-8"))
+def report_candidates(name: str) -> list[Candidate]:
+    result = json.loads((REPORT / f"acceptance_{name}.json").read_text(encoding="utf-8"))
     shapes = {(f["properties"]["label"], f["properties"]["option"]): f["geometry"]["coordinates"]
-              for f in json.loads((REPORT / "acceptance_A01.geojson").read_text(encoding="utf-8"))["features"]
+              for f in json.loads((REPORT / f"acceptance_{name}.geojson").read_text(encoding="utf-8"))["features"]
               if f["geometry"]["type"] == "LineString"}
     return [Candidate.model_validate({**c, "geometry": shapes[(c["label"], c["option"])]})
             for c in result["candidates"]]
 
 
-def a01_result(request: RouteRequest) -> SolveResult:
-    raw = json.loads((REPORT / "acceptance_A01.json").read_text(encoding="utf-8"))
-    return SolveResult(outcome=raw["outcome"], request=request, candidates=a01_candidates(), conflict=raw["conflict"],
-                       facts=raw["facts"], flags=raw["flags"], graph_build=raw["graph_build"],
+def a01_candidates() -> list[Candidate]:
+    return report_candidates("A01")
+
+
+def report_result(name: str, request: RouteRequest) -> SolveResult:
+    """A01 (ok, 25 km) or A02 (over_budget, the same stops at 20 km), as the solver returned them."""
+    raw = json.loads((REPORT / f"acceptance_{name}.json").read_text(encoding="utf-8"))
+    return SolveResult(outcome=raw["outcome"], request=request, candidates=report_candidates(name),
+                       conflict=raw["conflict"], facts=raw["facts"], flags=raw["flags"], graph_build=raw["graph_build"],
                        engine_calls=raw["engine_calls"], elapsed_ms=raw["elapsed_ms"])
+
+
+def a01_result(request: RouteRequest) -> SolveResult:
+    return report_result("A01", request)
 
 
 def flat_elevation(result: SolveResult, height: float = 12.0) -> list[Elevation]:
@@ -44,7 +53,8 @@ def flat_elevation(result: SolveResult, height: float = 12.0) -> list[Elevation]
 
 
 class FakeSolver:
-    """A SolverPort returning A01's real result for any request. Counts calls; can sleep or fail."""
+    """A SolverPort returning real solver output: A02's (over budget) for a 20 km request, A01's for any other.
+    Counts calls; can sleep or fail."""
 
     def __init__(self, delay_s: float = 0.0, error: Exception | None = None, flags: list | None = None):
         self.delay_s, self.error, self.flags = delay_s, error, flags
@@ -63,7 +73,7 @@ class FakeSolver:
                 time.sleep(self.delay_s)
             if self.error is not None:
                 raise self.error
-            result = a01_result(request)
+            result = report_result("A02" if request.target_distance_m == 20_000 else "A01", request)
             if self.flags:
                 result.flags = self.flags
             return result, flat_elevation(result)

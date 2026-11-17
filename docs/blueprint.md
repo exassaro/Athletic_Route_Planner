@@ -714,7 +714,7 @@ Rewritten for Phase 4. Every path is under `/v1`. Requests and responses use the
 | `GET /v1/places/search?q=&lat=&lon=&limit=` | Geocoding through Photon, biased to (lat, lon), Kerala only | Ranked candidates with `place_id` (`osm:node/…`), label, district, kind, lon, lat; `ambiguous` with reasons. Never picks. 503 if Photon is down |
 | `GET /v1/places/reverse?lat=&lon=` | Name for a point | 503 if Photon is down |
 | `POST /v1/plans` | Create a plan: body `{request: RouteRequest, source}` | Solves; returns version 1 |
-| `PATCH /v1/plans/{id}` | Body: RFC 6902 patch on the latest request (`application/json-patch+json`) | Re-solves; returns the new version with its diff. Optional `If-Match: "v<n>"`. Undo: `replace` at path `""` with an earlier request |
+| `PATCH /v1/plans/{id}?source=form` | Body: RFC 6902 patch on the latest stored request, defaults filled in (`application/json-patch+json`; plain JSON is accepted too) | Re-solves; returns the new version with its diff. Optional `If-Match: "v<n>"`. Undo: `replace` at path `""` with an earlier request |
 | `GET /v1/plans/{id}` | Latest version, list of version numbers, and `status` (`ready` or `solving`) | |
 | `GET /v1/plans/{id}/versions/{n}` | Any earlier version, in full | |
 | `GET /v1/routes/{id}` | One route as a GeoJSON Feature | LineString with Z; properties are the Candidate's stats, stops and flags |
@@ -747,10 +747,13 @@ Rewritten for Phase 4. Every path is under `/v1`. Requests and responses use the
     "from_version": 1,
     "changed": ["/target_distance_m"],
     "outcome": {"from": "ok", "to": "over_budget"},
+    "length_delta_m": -2742.0, "duration_delta_s": -1979.1, "end_changed": true,
     "candidates": [
       {"label": "recommended", "from_option": "main", "to_option": "full_route",
-       "length_delta_m": -2741.97, "duration_delta_s": "…", "end_changed": true}
+       "from_length_m": 25000.0, "to_length_m": 22258.0,
+       "length_delta_m": -2742.0, "duration_delta_s": -1979.1, "end_changed": true}
     ],
+    "candidates_added": [], "candidates_removed": [],
     "stops_added": [], "stops_removed": []
   },
   "builds": {"osm": "2026-11-15T00:15:25Z", "valhalla": "…", "graphhopper": "…", "solver": "…"},
@@ -758,12 +761,12 @@ Rewritten for Phase 4. Every path is under `/v1`. Requests and responses use the
 }
 ```
 
-The lengths above are A02's from the Phase 3b report, after a patch from 25 km (A01, "recommended" 25,000 m) to 20 km; the OpenAPI examples are generated from live solver output.
+The numbers above are from a live patch of A01 from 25 km to 20 km (2026-11-18, this laptop); lengths rounded here to 0.1 m; the OpenAPI examples are generated from live solver output.
 
 Diff rules:
 - `changed` lists the JSON pointers that differ between the two requests, whatever patch produced them.
 - Candidates are paired by `label`, with `main`, `full_route` and `continue_past_target` treated as each alternative's primary option. Unpaired candidates are listed as added or removed.
-- Deltas are differences of the solver's stored values.
+- Deltas are differences of the solver's stored values. The top-level `length_delta_m`, `duration_delta_s` and `end_changed` repeat the first paired alternative. `duration_delta_s` is a walking-time delta (amendment 11).
 - An end has changed when its coordinates, kind or label differ.
 - Stops are compared by `place_id`, or by label when there is none, across checkpoints, `via` and `must_use`.
 
@@ -776,7 +779,9 @@ Every error has the body `{"error": code, "message": text, "detail": …}`.
 | 401 | `client_required` | Missing or unknown `X-Client-Token` |
 | 404 | `not_found` | Unknown id, or it belongs to another client |
 | 409 | `patch_test_failed` | A `test` operation in the patch failed |
+| 409 | `plan_solving` | PATCH while a solve for the plan is still running, or before it has any version |
 | 412 | `version_mismatch` | `If-Match` names an older version |
+| 422 | `invalid_patch` | The patch is malformed or its path does not exist |
 | 422 | `invalid_request` | The request, or the patched request, fails RouteRequest validation (Pydantic's errors in `detail`) |
 | 429 | `rate_limited` | Per-client or per-IP limit; `Retry-After` |
 | 429 | `solver_busy` | No solve slot within 10 s; `Retry-After` |

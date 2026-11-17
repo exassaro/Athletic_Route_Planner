@@ -23,7 +23,8 @@ from athlete_solver.models import RouteRequest
 from sqlalchemy import func, select
 
 from . import builds as build_ids
-from . import cache
+from . import cache, explain
+from .diff import diff as version_diff
 from .db import Plan, PlanVersion, Route
 from .deps import Services
 from .elevation import ElevationMissing
@@ -68,13 +69,9 @@ class Planner:
             await db.commit()
         return plan.id
 
-    async def solve_into(self, plan_id: uuid.UUID, request: RouteRequest, source: str,
-                         diff_fn=None, explain_fn=None) -> PlanVersionOut:
-        """Solve `request` and store it as the plan's next version; return that version.
-
-        diff_fn(previous PlanVersionOut | None, new candidates/result) and explain_fn(result) are hooks for
-        step 6 (diff and explanation); without them the diff is null and the explanation empty.
-        """
+    async def solve_into(self, plan_id: uuid.UUID, request: RouteRequest, source: str) -> PlanVersionOut:
+        """Solve `request` and store it as the plan's next version, with its explanation and its diff against
+        the version before it; return that version."""
         settings = self.svc.settings
         t_request = time.perf_counter()
         builds = await self.current_builds()
@@ -91,8 +88,7 @@ class Planner:
                                "Try again shortly.", {"slots": self.runner.slots, "retry_after_s": retry},
                                headers={"Retry-After": str(retry)}) from None
         t_budget = time.perf_counter()
-        store = asyncio.create_task(self._finish(plan_id, request, source, key, builds, solved, task,
-                                                 diff_fn, explain_fn))
+        store = asyncio.create_task(self._finish(plan_id, request, source, key, builds, solved, task))
         self._tasks.add(store)
         self.pending[plan_id] += 1
         store.add_done_callback(lambda t: self._stored(plan_id, t))
@@ -116,14 +112,14 @@ class Planner:
         if not task.cancelled() and task.exception() is not None:
             log.warning("solve for plan %s failed: %r", plan_id, task.exception())
 
-    async def _finish(self, plan_id, request, source, key, builds, solved, task, diff_fn, explain_fn) -> int:
+    async def _finish(self, plan_id, request, source, key, builds, solved, task) -> int:
         try:
             if solved is None:
                 result, elev, _ = await task
                 solved = cache.Solved(result=result, elevation=elev, builds=builds)
                 if builds.graphhopper is not None:
                     await cache.put(self.svc.redis, key, solved, self.svc.settings.cache_ttl_s)
-            return await self._store(plan_id, request, source, key, solved, diff_fn, explain_fn)
+            return await self._store(plan_id, request, source, key, solved)
         except ApiError as err:
             await self._remember_error(plan_id, err)
             raise
@@ -136,7 +132,7 @@ class Planner:
         body = {"error": err.error, "message": err.message, "detail": err.detail}
         await self.svc.redis.set(f"plan:{plan_id}:error", json.dumps(body, default=str), ex=ERROR_TTL_S)
 
-    async def _store(self, plan_id, request, source, key, solved: cache.Solved, diff_fn, explain_fn) -> int:
+    async def _store(self, plan_id, request, source, key, solved: cache.Solved) -> int:
         result = solved.result
         dumped = result.model_dump(mode="json", include={"conflict", "facts", "flags"})
         previous = None
@@ -144,13 +140,13 @@ class Planner:
             await db.execute(select(Plan.id).where(Plan.id == plan_id).with_for_update())
             last = (await db.execute(select(func.coalesce(func.max(PlanVersion.version_no), 0))
                                      .where(PlanVersion.plan_id == plan_id))).scalar_one()
-            if diff_fn is not None and last:
+            if last:
                 previous = await self._version_out(db, plan_id, last)
             version = PlanVersion(
                 id=uuid.uuid4(), plan_id=plan_id, version_no=last + 1, request=request.model_dump(mode="json"),
                 source=source, outcome=result.outcome, conflict=dumped["conflict"], facts=dumped["facts"],
-                flags=dumped["flags"], explanation=explain_fn(result) if explain_fn else "",
-                diff=diff_fn(previous, request, result) if diff_fn and previous else None,
+                flags=dumped["flags"], explanation=explain.explain(result),
+                diff=version_diff(previous, request, result) if previous else None,
                 graph_build=result.graph_build, valhalla_build=solved.builds.valhalla,
                 graphhopper_build=solved.builds.graphhopper, solver_hash=solved.builds.solver, cache_key=key,
                 from_cache=solved.from_cache, elapsed_ms=result.elapsed_ms, engine_calls=result.engine_calls)
@@ -193,6 +189,11 @@ class Planner:
         if plan is None or plan.client_id != client_id:
             raise ApiError(404, "not_found", f"No plan {plan_id} for this client.")
         return plan
+
+    async def latest_no(self, plan_id: uuid.UUID) -> int:
+        async with self.svc.sessions() as db:
+            return (await db.execute(select(func.coalesce(func.max(PlanVersion.version_no), 0))
+                                     .where(PlanVersion.plan_id == plan_id))).scalar_one()
 
     async def plan_out(self, plan_id: uuid.UUID) -> PlanOut:
         async with self.svc.sessions() as db:

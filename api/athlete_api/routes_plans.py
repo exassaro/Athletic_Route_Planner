@@ -1,14 +1,19 @@
-"""Plans: create, read, read a version (blueprint section 12). PATCH comes in step 6."""
+"""Plans: create, edit (JSON Patch), read, read a version (blueprint section 12)."""
 
 import uuid
+from typing import Any
 
-from fastapi import APIRouter, Depends, Path, Request
+import jsonpatch
+import jsonpointer
+from athlete_solver.models import RouteRequest
+from fastapi import APIRouter, Body, Depends, Header, Path, Query, Request
+from pydantic import ValidationError
 
 from .db import Client
 from .deps import limited
-from .errors import responses
+from .errors import ApiError, responses
 from .planning import Planner
-from .schemas import PlanCreate, PlanOut, PlanVersionOut
+from .schemas import PlanCreate, PlanOut, PlanVersionOut, Source
 
 router = APIRouter(prefix="/v1/plans", tags=["plans"])
 
@@ -29,6 +34,58 @@ async def create_plan(body: PlanCreate, client: Client = Depends(limited("solve"
     """
     plan_id = await plans.new_plan(client.id)
     return await plans.solve_into(plan_id, body.request, body.source)
+
+
+PATCH_EXAMPLE = [{"op": "replace", "path": "/target_distance_m", "value": 20000}]
+
+
+@router.patch("/{plan_id}", response_model=PlanVersionOut,
+              responses=responses(401, 404, 409, 412, 422, 429, 500, 502, 503, 504),
+              summary="Edit the request with a JSON Patch and re-solve")
+async def patch_plan(plan_id: uuid.UUID,
+                     ops: list[dict[str, Any]] = Body(..., media_type="application/json-patch+json",
+                                                      examples=[PATCH_EXAMPLE]),
+                     source: Source = Query("form", description="Where the edit came from"),
+                     if_match: str | None = Header(None, description='Optional: "v<n>", the version this edit is '
+                                                                     "based on; 412 if a newer one exists"),
+                     client: Client = Depends(limited("solve")),
+                     plans: Planner = Depends(planner)) -> PlanVersionOut:
+    """Applies an RFC 6902 patch to the latest version's RouteRequest, validates it, re-solves and stores the
+    next version, with a diff against the previous one.
+
+    The request it applies to is the stored one, with every default filled in (see the latest version's
+    `request`). Undo: `[{"op": "replace", "path": "", "value": <an earlier version's request>}]`.
+    409 `patch_test_failed` when a `test` operation fails; 409 `plan_solving` while a solve for this plan is
+    still running; 422 `invalid_patch` when the patch cannot be applied, `invalid_request` when the result is
+    not a valid RouteRequest.
+    """
+    await plans.owned_plan(plan_id, client.id)
+    if plan_id in plans.pending:
+        raise ApiError(409, "plan_solving", "A solve for this plan is still running. Try again when it is done.",
+                       {"poll": f"/v1/plans/{plan_id}"})
+    latest = await plans.latest_no(plan_id)
+    if latest == 0:
+        raise ApiError(409, "plan_solving", "This plan has no version to edit yet.", {"poll": f"/v1/plans/{plan_id}"})
+    if if_match is not None and if_match.strip().strip('"').lstrip("W/").strip('"') != f"v{latest}":
+        raise ApiError(412, "version_mismatch", f"The latest version is v{latest}.",
+                       {"latest": latest, "if_match": if_match})
+    base = (await plans.version_out(plan_id, latest)).request.model_dump(mode="json")
+    request = apply_patch(base, ops)
+    return await plans.solve_into(plan_id, request, source)
+
+
+def apply_patch(base: dict, ops: list[dict[str, Any]]) -> RouteRequest:
+    try:
+        patched = jsonpatch.JsonPatch(ops).apply(base)
+    except jsonpatch.JsonPatchTestFailed as err:
+        raise ApiError(409, "patch_test_failed", f"A test operation failed: {err}") from None
+    except (jsonpatch.JsonPatchException, jsonpointer.JsonPointerException, TypeError, KeyError) as err:
+        raise ApiError(422, "invalid_patch", f"The patch cannot be applied: {err}") from None
+    try:
+        return RouteRequest.model_validate(patched)
+    except ValidationError as err:
+        detail = [{k: v for k, v in e.items() if k in ("loc", "msg", "type")} for e in err.errors()]
+        raise ApiError(422, "invalid_request", "The patched request is not valid.", detail) from None
 
 
 @router.get("/{plan_id}", response_model=PlanOut, responses=responses(401, 404, 429), summary="A plan's latest version")
