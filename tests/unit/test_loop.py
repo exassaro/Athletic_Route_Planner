@@ -81,3 +81,32 @@ def test_loop_with_stops_is_not_built_yet():
             "checkpoints": [{"lon": G["7,7"][0], "lat": G["7,7"][1], "label": "S"}]}
     res = solve(RouteRequest.model_validate(body), engine=FakeEngine(GRID), graph_build="fake")
     assert res.outcome == "unsupported"
+
+
+def test_sparse_network_falls_back_to_a_flagged_out_and_back():
+    from fake_engine import ladder   # a main road with side streets: no loop exists
+    graph = ladder()
+    start = graph.nodes["m10"]
+    budget = 3000.0
+    res = solve(loop_req(start, budget), engine=FakeEngine(graph), graph_build="fake")
+    assert res.outcome == "ok"
+    assert any(f.code == "loop_fallback" for f in res.flags)
+    oab = [c for c in res.candidates if c.option == "out_and_back"]
+    assert len(oab) == 1
+    c = oab[0]
+    assert abs(c.foot_m - budget) <= 500.0
+    assert geodesy.distance_m(c.geometry[0], c.geometry[-1]) < 1.0
+    assert "bearing_chosen_deg" in res.facts["fallback"]
+
+
+def test_loop_gate_rejects_a_stop_too_far_to_reach_and_return():
+    start, far = G["0,0"], G["11,11"]
+    there = FakeEngine(GRID).route([start, far]).foot_m
+    budget = there          # reaching it and coming back needs about twice this
+    body = {"route_type": "loop", "start": {"lon": start[0], "lat": start[1]}, "target_distance_m": budget,
+            "checkpoints": [{"lon": far[0], "lat": far[1], "label": "Far", "must_reach": True}]}
+    res = solve(RouteRequest.model_validate(body), engine=FakeEngine(GRID), graph_build="fake")
+    assert res.outcome == "infeasible"
+    assert res.conflict.kind == "loop_stop_too_far" and res.conflict.pair == ["Far"]
+    assert res.conflict.minimum_m == pytest.approx(2 * there, abs=1.0)
+    assert {f.action for f in res.conflict.fixes} == {"set_distance", "drop_checkpoint"}

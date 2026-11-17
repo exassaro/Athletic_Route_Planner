@@ -18,7 +18,7 @@ from athlete_engine.osm import sample_way_points
 from athlete_engine.valhalla import Valhalla
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from reference import reference_for  # noqa: E402
+from reference import loop_gate_reference, reference_for  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "tests" / "fixtures"
@@ -186,7 +186,14 @@ def main() -> int:
                 fixed_order=r.get("checkpoint_order") == "fixed",
                 fixed_end=fixed_end,
             )
-            if pass_near_request(r):
+            if r["route_type"] == "loop" and r.get("checkpoints"):
+                f["reference"] = loop_gate_reference(
+                    engine, (r["start"]["lon"], r["start"]["lat"]),
+                    [(c["label"], (c["lon"], c["lat"]),
+                      c.get("kind", "place") == "place" and not c.get("must_reach", False))
+                     for c in r["checkpoints"]],
+                    r["target_distance_m"], r.get("tolerance_m", 500.0))
+            elif pass_near_request(r):
                 # The brute-force reference reaches every stop: for a pass-near request it is an upper bound
                 # on the minimum, kept for comparison. The outcome itself is checked for consistency.
                 f["reference"] = {**f["reference"], "reach_outcome": f["reference"]["outcome"],

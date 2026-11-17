@@ -450,10 +450,25 @@
   },
   {
    "id": "S14",
-   "title": "Sparse network: loop falls back to out-and-back",
+   "title": "Sparse network: 8 km loop from Chellanam falls back to out-and-back",
    "base": "S14",
-   "status": "later_loops",
-   "request": null
+   "status": "active",
+   "request": {
+    "route_type": "loop",
+    "start": {
+     "lon": 76.2779086,
+     "lat": 9.7908599,
+     "label": "Chellanam",
+     "place_id": "osm:node/3864517957"
+    },
+    "target_distance_m": 8000,
+    "checkpoints": []
+   },
+   "reference": {
+    "budget_upper_m": 8500.0,
+    "minimum_m": 0.0,
+    "outcome": "ok"
+   }
   },
   {
    "id": "S15",
@@ -7691,6 +7706,88 @@
     "remainder_m": 12000.0,
     "tail_foot_m": 11082.7,
     "case": "B"
+   }
+  },
+  {
+   "id": "L04",
+   "title": "Sparse network: 12 km loop from south of Kadalundi (rivers around it)",
+   "base": "L04",
+   "status": "active",
+   "request": {
+    "route_type": "loop",
+    "start": {
+     "lon": 75.86,
+     "lat": 11.05,
+     "label": "start_south_of_kadalundi"
+    },
+    "target_distance_m": 12000,
+    "checkpoints": []
+   },
+   "reference": {
+    "budget_upper_m": 12500.0,
+    "minimum_m": 0.0,
+    "outcome": "ok"
+   }
+  },
+  {
+   "id": "G01",
+   "title": "Loop gate: 10 km loop from Kozhikode reaching Feroke",
+   "base": "G01",
+   "status": "active",
+   "request": {
+    "route_type": "loop",
+    "start": {
+     "lon": 75.7754716,
+     "lat": 11.2450558,
+     "label": "Kozhikode",
+     "place_id": "osm:node/1348192542"
+    },
+    "target_distance_m": 10000,
+    "checkpoints": [
+     {
+      "lon": 75.8375372,
+      "lat": 11.1825447,
+      "label": "Feroke",
+      "place_id": "osm:node/986593739",
+      "must_reach": true
+     }
+    ]
+   },
+   "reference": {
+    "outcome": "loop_stop_too_far",
+    "label": "Feroke",
+    "minimum_m": 22165.5,
+    "there_m": 11082.7
+   }
+  },
+  {
+   "id": "G02",
+   "title": "Loop gate: 10 km loop from Kozhikode passing near Feroke",
+   "base": "G02",
+   "status": "active",
+   "request": {
+    "route_type": "loop",
+    "start": {
+     "lon": 75.7754716,
+     "lat": 11.2450558,
+     "label": "Kozhikode",
+     "place_id": "osm:node/1348192542"
+    },
+    "target_distance_m": 10000,
+    "checkpoints": [
+     {
+      "lon": 75.8375372,
+      "lat": 11.1825447,
+      "label": "Feroke",
+      "place_id": "osm:node/986593739"
+     }
+    ]
+   },
+   "reference": {
+    "outcome": "loop_stop_too_far",
+    "label": "Feroke",
+    "minimum_m": 20165.5,
+    "there_m": 11082.7
    }
   },
   {

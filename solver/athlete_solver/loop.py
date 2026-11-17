@@ -312,6 +312,7 @@ def solve_loop(req: RouteRequest, engine: Engine) -> tuple[list, dict, list]:
             facts.setdefault("lean_error_deg", {})[r.shape.name] = round(err, 1)
         scored.append((r.shape.name, cand, {e.key for e in rt.edges if e.use != "ferry"}))
     scored.sort(key=lambda x: x[1].score)
+    facts["shapes_valid"] = len(scored)
     kept = diversify([(name, [(cand, keys)]) for name, cand, keys in scored], req.alternatives)
     names = {id(cand): name for name, cand, _ in scored}
     facts["kept"] = []

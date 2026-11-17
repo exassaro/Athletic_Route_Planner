@@ -34,7 +34,7 @@ DEFAULT_REPORT = ROOT / "docs" / "reports" / "phase3c" / "kpi.md"
 CHECKPOINT_RADIUS_M = 50.0     # must_reach and junction stops
 PASS_NEAR_M = 1000.0           # pass-near stops: walking distance (Phase 3 amendment 3, decision 11)
 ADHERENCE_STEP_M = 250.0
-BUDGET_OPTIONS = {"main", "continue_past_target", "cut_at_target", "detour_to_target"}
+BUDGET_OPTIONS = {"main", "continue_past_target", "cut_at_target", "detour_to_target", "out_and_back"}
 RADIUS = {"valhalla": VALHALLA_RADIUS_M, "graphhopper": GRAPHHOPPER_RADIUS_M}
 
 
@@ -206,6 +206,16 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
 
     # Outcome classification. over_budget results are checked for their conflict object AND, for each
     # alternative, the full route through the stops and the cut at the target.
+    if ref["outcome"] == "loop_stop_too_far":
+        c = result.conflict
+        if result.outcome != "infeasible" or c is None or c.kind != "loop_stop_too_far":
+            row["problems"].append(f"expected infeasible loop_stop_too_far, got {result.outcome}"
+                                   + (f" {c.kind}" if c else ""))
+        elif c.pair != [ref["label"]] or not close(c.minimum_m, ref["minimum_m"]):
+            row["problems"].append(f"loop gate conflict {c.pair} {c.minimum_m} vs reference {ref['label']} "
+                                   f"{ref['minimum_m']}")
+        row["loop_gate"] = True
+        return row
     if ref["outcome"] == "over_budget":
         if result.outcome != "over_budget":
             row["problems"].append(f"expected over_budget, got {result.outcome}")
@@ -246,6 +256,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
     elif result.outcome != "ok":
         row["problems"].append(f"expected ok, got {result.outcome}")
         return row
+    row["fallback_flag"] = any(f.code == "loop_fallback" for f in result.flags)
     row["case_b"] = any(c.option == "end_at_target" for c in result.candidates) and req.end.kind != "fixed"
     if not result.candidates:
         row["problems"].append(f"{result.outcome} outcome with no candidates")
@@ -275,11 +286,13 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
     lead_keys: dict[str, set] = {}
     forced_keys: dict[str, set] = {}
     for cand in result.candidates:
+        # A loop request on a sparse network may return an out-and-back (flag loop_fallback): judged as one.
+        kind = "out_and_back" if cand.option == "out_and_back" else req.route_type
         name = f"{cand.label}/{cand.option}"
-        cr: dict = {"label": cand.label, "option": cand.option, "name": name}
+        cr: dict = {"label": cand.label, "option": cand.option, "name": name, "engine": cand.engine}
         geom = [tuple(p) for p in cand.geometry]
         pieces = split_at_stops(geom, cand.stops)
-        if req.route_type == "out_and_back":   # the geometry turns round at its middle vertex
+        if kind == "out_and_back":   # the geometry turns round at its middle vertex
             mid = len(geom) // 2
             pieces = [geom[:mid + 1], geom[mid:]]
         m = measure_shapes(engine, pieces)
@@ -320,7 +333,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
             if off > CHECKPOINT_RADIUS_M:
                 row["problems"].append(f"{name}: ends {off:.0f} m from the fixed end")
 
-        if req.route_type == "loop":
+        if kind == "loop":
             # Loops (amendment 22): their own accuracy KPI; closed; no spur at all (section 16).
             cr["loop_err_pct"] = abs(m.foot_m - req.target_distance_m) / req.target_distance_m * 100
             gap = geodesy.distance_m(geom[0], geom[-1])
@@ -391,7 +404,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
             counts[e.key] = counts.get(e.key, 0) + 1
         repeated = sum(e.length_m for e in m.edges if counts[e.key] > 1)
         total = sum(e.length_m for e in m.edges) or 1.0
-        if req.route_type != "out_and_back":
+        if kind != "out_and_back":
             cr["repeat_share"] = repeated / total
             forced = 0.0
             if base_m is not None:
@@ -414,7 +427,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
         near_stops = [cp for cp in all_stops if cp.kind == "place" and not cp.must_reach
                       and cp.label in on_candidate and cp.label not in flagged]
         cr["pass_spurs"] = []
-        if req.route_type != "out_and_back":
+        if kind != "out_and_back":
             for turn, length in turn_points(m.edges):
                 for cp in near_stops:
                     if geodesy.distance_m(turn, cp.lonlat) <= PASS_NEAR_M:
@@ -440,10 +453,10 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
 
         # Direction adherence applies to routes that head for the target; "continue past target"
         # moves away from it by design after passing it, and is judged by its bearing instead.
-        if target is not None and cand.option in ("main", "end_at_target") and req.route_type != "loop":
+        if target is not None and cand.option in ("main", "end_at_target") and kind != "loop":
             last_cp = max((s.at_m for s in cand.stops if s.role == "checkpoint"), default=0.0)
             cr["backtrack"] = direction_adherence(engine, geom, target, last_cp)
-        if req.direction and req.direction.kind == "bearing" and req.route_type == "point_to_point" \
+        if req.direction and req.direction.kind == "bearing" and kind == "point_to_point" \
                 and cand.option == "main":
             cr["bearing_err"] = geodesy.angle_between_deg(geodesy.bearing_deg(geom[0], geom[-1]),
                                                           req.direction.degrees)
@@ -585,8 +598,13 @@ def main() -> int:
     lat_loop = [r["ms"] for r in rows if "ms" in r and r["route_type"] == "loop"]
     loop_err = [c["loop_err_pct"] for c in cands if "loop_err_pct" in c]
     loop_spurs = [x for c in cands for x in c.get("loop_spurs", [])]
-    loop_rows = [r for r in rows if r["route_type"] == "loop" and "error" not in r]
-    loop_gh = [r for r in loop_rows if r["candidates"] and all(c.get("loop_engine") == "graphhopper" for c in r["candidates"])]
+    sparse = [r for r in rows if r["route_type"] == "loop" and "error" not in r and not r.get("loop_gate")
+              and sum(c["option"] == "main" for c in r["candidates"]) < 2]
+    sparse_ok = [r for r in sparse if any(c["option"] == "out_and_back" for c in r["candidates"]) and r.get("fallback_flag")]
+    loop_rows = [r for r in rows if r["route_type"] == "loop" and "error" not in r and not r.get("loop_gate")]
+    loop_gh = [r for r in loop_rows if r["candidates"]
+               and all(c.get("loop_engine", "graphhopper") == "graphhopper" for c in r["candidates"])
+               and all(c.get("engine") == "graphhopper" for c in r["candidates"])]
     reps = [c["repeat_share"] * 100 for c in cands if c.get("repeat_share") is not None]
     excess = [c["excess_repeat_share"] * 100 for c in cands if c.get("excess_repeat_share") is not None]
     # Direction adherence is judged on "shortest" (Phase 3 amendment 20): "recommended" detours by its road
@@ -676,6 +694,9 @@ def main() -> int:
             not lat_loop or pct(lat_loop, .95) < 8000),
         kpi("(info) Loop lean: start-to-centre bearing against the requested direction", "info only",
             ", ".join(f"{c['fixture']} {c['name']} {c['loop_lean_err']:.0f}°" for c in cands if "loop_lean_err" in c) or "none", True),
+        kpi("Sparse network: a loop request with fewer than two loops offers a flagged out-and-back", "100%",
+            f"{len(sparse_ok)} / {len(sparse)}" + (f" ({', '.join(r['id'] for r in sparse)})" if sparse else ""),
+            len(sparse_ok) == len(sparse)),
         kpi("Loops generated by GraphHopper (amendment 23)", "every loop fixture",
             f"{len(loop_gh)} / {len(loop_rows)}", len(loop_gh) == len(loop_rows)),
         kpi("Alternative diversity (edge overlap, recommended vs shortest)", "< 60%",

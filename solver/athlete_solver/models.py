@@ -251,7 +251,8 @@ FlagCode = Literal[
     "detour_eased",             # "recommended" was over 30% longer than "shortest": road penalties eased
     "lengthened",               # section 8 step 10: one via added on the longest leg to reach the distance
     "direction_ignored",        # a fixed end was given, so the requested direction is not used
-    "loop_not_found",           # no loop shape came within tolerance (the out-and-back fallback follows in step 4)
+    "loop_not_found",           # no loop shape came within tolerance and no out-and-back either
+    "loop_fallback",            # fewer than two loop shapes fit: an out-and-back is offered (section 8)
 ]
 
 
@@ -291,6 +292,7 @@ Option = Literal[
     "detour_to_target",        # Case B: end at the target with a detour on an earlier leg (section 8 step 10)
     "full_route",              # over budget: the whole route through the stops (Phase 3 amendment 6)
     "cut_at_target",           # over budget: the same route cut at the requested distance
+    "out_and_back",            # a loop request on a sparse network: out and back instead (flag loop_fallback)
 ]
 
 
@@ -337,7 +339,8 @@ class Fix(Strict):
 
 
 class Conflict(Strict):
-    kind: Literal["checkpoints_exceed_distance", "disconnected", "snap_too_far", "inside_avoided"]
+    kind: Literal["checkpoints_exceed_distance", "disconnected", "snap_too_far", "inside_avoided",
+                  "loop_stop_too_far"]   # a loop cannot reach a stop and come back within the distance
     # checkpoints_exceed_distance comes with outcome "over_budget" and the full and cut candidates
     message: str
     requested_m: float | None = None

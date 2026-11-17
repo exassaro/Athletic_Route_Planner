@@ -30,7 +30,7 @@ NATIONAL_HIGHWAY_STRETCH_M = 200.0   # decision 12
 # Options shown in a fixed order inside one alternative.
 OPTION_ORDER = {"full_route": 0, "cut_at_target": 1, "continue_past_target": 0, "end_at_target": 1,
                 "detour_to_target": 2}
-BUDGET_OPTIONS = ("main", "continue_past_target", "cut_at_target", "detour_to_target")
+BUDGET_OPTIONS = ("main", "continue_past_target", "cut_at_target", "detour_to_target", "out_and_back")
 
 
 @dataclass

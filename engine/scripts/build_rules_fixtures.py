@@ -50,6 +50,9 @@ NODES = {
     "kannur": 290180981, "thalassery": 304002887, "muzhappilangad": 4629397687,
     "kalpetta": 245596484, "sultan_bathery": 393111659, "meenangadi": 2329757020, "mananthavady": 589983022,
     "panamaram": 2640668694,
+    # Phase 3c step 4 (S14, sparse network): chosen by the developer on 2026-11-17 from coastal places ranked
+    # by walkable road length nearby; a village on the strip between the sea and the backwater south of Kochi.
+    "chellanam": 3864517957,
 }
 WAYS = {
     "karuvanthuruthy_bridge": 389396419,

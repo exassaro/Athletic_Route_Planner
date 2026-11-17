@@ -84,3 +84,22 @@ def reference_for(engine: Valhalla, start: LonLat, stops: dict[str, LonLat], tar
         out.update(remainder_m=round(remainder, 1), tail_foot_m=round(tail.foot_m, 1),
                    case="A" if tail.foot_m >= remainder else "B")
     return out
+
+
+def loop_gate_reference(engine: Valhalla, start: LonLat, stops: list[tuple[str, LonLat, bool]],
+                        budget_m: float, tolerance_m: float) -> dict:
+    """Loops with stops: the first stop a loop cannot reach and come back from within the budget.
+
+    `stops` are (label, point, passed_near). The way there is routed and measured; reaching needs twice that,
+    passing near (within 1 km on foot) twice (that - 1 km). Outcome "loop_stop_too_far" or "loop_stops".
+    """
+    upper = budget_m + tolerance_m
+    for label, point, near in stops:
+        m = measure_route(engine, [start, point])
+        if m is None:
+            return {"outcome": "disconnected", "label": label}
+        least = 2 * (m.foot_m - 1000.0) if near else 2 * m.foot_m
+        if least > upper:
+            return {"outcome": "loop_stop_too_far", "label": label, "minimum_m": round(least, 1),
+                    "there_m": round(m.foot_m, 1)}
+    return {"outcome": "loop_stops"}
