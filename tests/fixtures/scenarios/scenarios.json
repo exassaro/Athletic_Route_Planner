@@ -6,7 +6,7 @@
    "id": "S01",
    "title": "5 km loop from Calicut Beach",
    "base": "S01",
-   "status": "later_loops",
+   "status": "active",
    "request": {
     "route_type": "loop",
     "start": {
@@ -17,13 +17,18 @@
     },
     "target_distance_m": 5000,
     "checkpoints": []
+   },
+   "reference": {
+    "budget_upper_m": 5500.0,
+    "minimum_m": 0.0,
+    "outcome": "ok"
    }
   },
   {
    "id": "S02",
    "title": "10 km loop from Mananchira",
    "base": "S02",
-   "status": "later_loops",
+   "status": "active",
    "request": {
     "route_type": "loop",
     "start": {
@@ -34,6 +39,11 @@
     },
     "target_distance_m": 10000,
     "checkpoints": []
+   },
+   "reference": {
+    "budget_upper_m": 10500.0,
+    "minimum_m": 0.0,
+    "outcome": "ok"
    }
   },
   {
@@ -7621,6 +7631,66 @@
     "remainder_m": 7302.1,
     "tail_foot_m": 17142.5,
     "case": "A"
+   }
+  },
+  {
+   "id": "L01",
+   "title": "8 km loop from Kozhikode leaning north",
+   "base": "L01",
+   "status": "active",
+   "request": {
+    "route_type": "loop",
+    "start": {
+     "lon": 75.7754716,
+     "lat": 11.2450558,
+     "label": "Kozhikode",
+     "place_id": "osm:node/1348192542"
+    },
+    "target_distance_m": 8000,
+    "direction": {
+     "kind": "bearing",
+     "degrees": 0
+    },
+    "checkpoints": []
+   },
+   "reference": {
+    "budget_upper_m": 8500.0,
+    "minimum_m": 0.0,
+    "outcome": "ok"
+   }
+  },
+  {
+   "id": "L02",
+   "title": "12 km loop from Kozhikode leaning towards Feroke",
+   "base": "L02",
+   "status": "active",
+   "request": {
+    "route_type": "loop",
+    "start": {
+     "lon": 75.7754716,
+     "lat": 11.2450558,
+     "label": "Kozhikode",
+     "place_id": "osm:node/1348192542"
+    },
+    "target_distance_m": 12000,
+    "direction": {
+     "kind": "towards_place",
+     "place": {
+      "lon": 75.8375372,
+      "lat": 11.1825447,
+      "label": "Feroke",
+      "place_id": "osm:node/986593739"
+     }
+    },
+    "checkpoints": []
+   },
+   "reference": {
+    "budget_upper_m": 12500.0,
+    "minimum_m": 0.0,
+    "outcome": "ok",
+    "remainder_m": 12000.0,
+    "tail_foot_m": 11082.7,
+    "case": "B"
    }
   },
   {

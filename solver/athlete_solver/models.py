@@ -251,6 +251,7 @@ FlagCode = Literal[
     "detour_eased",             # "recommended" was over 30% longer than "shortest": road penalties eased
     "lengthened",               # section 8 step 10: one via added on the longest leg to reach the distance
     "direction_ignored",        # a fixed end was given, so the requested direction is not used
+    "loop_not_found",           # no loop shape came within tolerance (the out-and-back fallback follows in step 4)
 ]
 
 
@@ -281,7 +282,8 @@ class EndPoint(Strict):
     kind: Literal["junction", "mid_road", "target", "fixed", "last_checkpoint", "start"]  # "start": out-and-back
 
 
-Alternative = Literal["recommended", "shortest"]   # Phase 3 amendment 9
+Alternative = Literal["recommended", "shortest",   # Phase 3 amendment 9 (point-to-point, out-and-back)
+                      "loop_1", "loop_2", "loop_3", "loop_4"]   # amendment 23: loops, best first
 Option = Literal[
     "main",                    # the run as requested
     "end_at_target",           # Case B: stop at the target and report the shortfall

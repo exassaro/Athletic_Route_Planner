@@ -198,6 +198,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
     req = RouteRequest.model_validate(fixture["request"])
     ref = fixture["reference"]
     row: dict = {"id": fixture["id"], "ms": elapsed_ms, "problems": [], "candidates": [],
+                 "route_type": fixture["request"]["route_type"],
                  "alternatives": sorted({c.label for c in result.candidates})}
     by_alt: dict[str, list] = {}
     for c in result.candidates:
@@ -319,7 +320,23 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
             if off > CHECKPOINT_RADIUS_M:
                 row["problems"].append(f"{name}: ends {off:.0f} m from the fixed end")
 
-        if cand.option in BUDGET_OPTIONS:
+        if req.route_type == "loop":
+            # Loops (amendment 22): their own accuracy KPI; closed; no spur at all (section 16).
+            cr["loop_err_pct"] = abs(m.foot_m - req.target_distance_m) / req.target_distance_m * 100
+            gap = geodesy.distance_m(geom[0], geom[-1])
+            if gap > CHECKPOINT_RADIUS_M:
+                row["problems"].append(f"{name}: loop ends {gap:.0f} m from its start")
+            cr["loop_spurs"] = [round(length, 1) for _, length in turn_points(m.edges)]
+            for length in cr["loop_spurs"]:
+                row["problems"].append(f"{name}: {length:.0f} m spur on a loop")
+            cr["loop_engine"] = cand.engine
+            if req.direction is not None:
+                lean = req.direction.degrees if req.direction.kind == "bearing" else                     geodesy.bearing_deg(req.start.lonlat, req.direction.place.lonlat)
+                pts = [q for q, _ in geodesy.sample_every(geom, 100.0)]
+                centre = (sum(q[0] for q in pts) / len(pts), sum(q[1] for q in pts) / len(pts))
+                cr["loop_lean_err"] = geodesy.angle_between_deg(geodesy.bearing_deg(geom[0], centre), lean)
+                cr["fixture"] = fixture["id"]
+        elif cand.option in BUDGET_OPTIONS:
             err = abs(m.foot_m - req.target_distance_m) / req.target_distance_m * 100
             # A fixed end whose own shortest way (this alternative) is already over the target cannot land
             # closer: reported as information, not counted in the accuracy KPI.
@@ -423,7 +440,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
 
         # Direction adherence applies to routes that head for the target; "continue past target"
         # moves away from it by design after passing it, and is judged by its bearing instead.
-        if target is not None and cand.option in ("main", "end_at_target"):
+        if target is not None and cand.option in ("main", "end_at_target") and req.route_type != "loop":
             last_cp = max((s.at_m for s in cand.stops if s.role == "checkpoint"), default=0.0)
             cr["backtrack"] = direction_adherence(engine, geom, target, last_cp)
         if req.direction and req.direction.kind == "bearing" and req.route_type == "point_to_point" \
@@ -471,7 +488,7 @@ def evaluate(engine: Valhalla, fixture: dict, result, elapsed_ms: float) -> dict
         row["candidates"].append(cr)
 
     if len(lead_keys) == 2:
-        a, b = lead_keys["recommended"], lead_keys["shortest"]
+        a, b = lead_keys.get("recommended", lead_keys.get("loop_1")), lead_keys.get("shortest", lead_keys.get("loop_2"))
         row["overlap"] = len(a & b) / len(a | b) if a | b else 1.0
     return row
 
@@ -564,7 +581,12 @@ def main() -> int:
     errors = [r for r in rows if "error" in r]
     cands = [c for r in rows for c in r["candidates"]]
     dist = [c["dist_err_pct"] for c in cands if "dist_err_pct" in c]
-    lat = [r["ms"] for r in rows if "ms" in r]
+    lat = [r["ms"] for r in rows if "ms" in r and r["route_type"] != "loop"]
+    lat_loop = [r["ms"] for r in rows if "ms" in r and r["route_type"] == "loop"]
+    loop_err = [c["loop_err_pct"] for c in cands if "loop_err_pct" in c]
+    loop_spurs = [x for c in cands for x in c.get("loop_spurs", [])]
+    loop_rows = [r for r in rows if r["route_type"] == "loop" and "error" not in r]
+    loop_gh = [r for r in loop_rows if r["candidates"] and all(c.get("loop_engine") == "graphhopper" for c in r["candidates"])]
     reps = [c["repeat_share"] * 100 for c in cands if c.get("repeat_share") is not None]
     excess = [c["excess_repeat_share"] * 100 for c in cands if c.get("excess_repeat_share") is not None]
     # Direction adherence is judged on "shortest" (Phase 3 amendment 20): "recommended" detours by its road
@@ -615,7 +637,7 @@ def main() -> int:
             f"{sum(not c['exact_match'] for c in cands)} / {len(cands)} (map-matched instead; see method)", True),
         kpi("Over-budget handling: correct conflict objects and candidates", "100%",
             f"{len(inf_ok)} / {len(infeasible)}", len(inf_ok) == len(infeasible)),
-        kpi("Latency per solve", "p50 < 2 s, p95 < 5 s",
+        kpi("Latency per solve, point-to-point and out-and-back", "p50 < 2 s, p95 < 5 s",
             f"p50 {statistics.median(lat):.0f} ms, p95 {pct(lat, .95):.0f} ms" if lat else "no solves",
             bool(lat) and statistics.median(lat) < 2000 and pct(lat, .95) < 5000),
         kpi("Duplication beyond what must_reach stops force, excluding out-and-back", "median < 2%, none > 10%",
@@ -639,9 +661,23 @@ def main() -> int:
             f"{sum(len(c.get('pass_spurs', [])) for c in cands)}", not any(c.get("pass_spurs") for c in cands)),
         kpi("Checkpoint compliance (must_reach 50 m; pass near 1 km on foot; bridge/road used)", "100%",
             f"{sum(c['checkpoints_ok'] for c in cands)} / {len(cands)}", have and all(c["checkpoints_ok"] for c in cands)),
-        kpi("Recommended alternative returned (GraphHopper, the default)", "every solved fixture",
-            f"{sum('recommended' in r.get('alternatives', []) for r in rows if 'error' not in r)} / {len(rows) - len(errors)}",
-            all("recommended" in r.get("alternatives", []) for r in rows if "error" not in r)),
+        kpi("Recommended alternative returned (GraphHopper, the default)", "every solved non-loop fixture",
+            f"{sum('recommended' in r.get('alternatives', []) for r in rows if 'error' not in r and r['route_type'] != 'loop')}"
+            f" / {sum(1 for r in rows if 'error' not in r and r['route_type'] != 'loop')}",
+            all("recommended" in r.get("alternatives", []) for r in rows if "error" not in r and r["route_type"] != "loop")),
+        kpi("Distance accuracy, loops", "p90 < 3%, none > 5%",
+            f"p90 {pct(loop_err, .90):.2f}%, max {max(loop_err):.2f}% (n={len(loop_err)})" if loop_err else "no loops",
+            not loop_rows or (bool(loop_err) and pct(loop_err, .90) < 3 and max(loop_err) <= 5)),
+        kpi("Spurs on loops (dead-end excursions over 100 m)", "0",
+            f"{len(loop_spurs)}" + (f" ({', '.join(f'{x:.0f} m' for x in loop_spurs)})" if loop_spurs else ""),
+            not loop_spurs),
+        kpi("Latency per solve, loops", "p95 < 8 s",
+            f"p50 {statistics.median(lat_loop):.0f} ms, p95 {pct(lat_loop, .95):.0f} ms" if lat_loop else "no loops",
+            not lat_loop or pct(lat_loop, .95) < 8000),
+        kpi("(info) Loop lean: start-to-centre bearing against the requested direction", "info only",
+            ", ".join(f"{c['fixture']} {c['name']} {c['loop_lean_err']:.0f}°" for c in cands if "loop_lean_err" in c) or "none", True),
+        kpi("Loops generated by GraphHopper (amendment 23)", "every loop fixture",
+            f"{len(loop_gh)} / {len(loop_rows)}", len(loop_gh) == len(loop_rows)),
         kpi("Alternative diversity (edge overlap, recommended vs shortest)", "< 60%",
             f"max {max(overlaps):.0f}% (n={len(overlaps)})" if overlaps else "no fixture returned both",
             not overlaps or max(overlaps) < 60),
