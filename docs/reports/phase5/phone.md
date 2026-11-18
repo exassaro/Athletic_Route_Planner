@@ -6,7 +6,7 @@ Checked on this laptop on 2026-11-18 (LAN address 10.141.255.68):
 - the three Playwright journeys pass through `https://10.141.255.68`;
 - the certificate chain verifies against Caddy's root for both `10.141.255.68` and `localhost`.
 
-**Checked on a real phone on 2026-11-18:** a Redmi 12 5G (Android), by the developer, over the home Wi-Fi, with Caddy's root installed. It ran well. Two things that mattered: the Wi-Fi was set to Public, which blocks the phone until it is set to Private (step 2); and the firewall rule was removed afterwards.
+**Checked on a real phone on 2026-11-18:** a Redmi 12 5G (Android), by the developer, over Wi-Fi on the same network as the laptop, with Caddy's root installed. It ran well. Two things that mattered: the Wi-Fi was set to Public, which blocks the phone until it is set to Private (step 2); and the firewall rule was removed afterwards.
 
 ## 1. Start everything
 
