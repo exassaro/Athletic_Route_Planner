@@ -6,7 +6,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { addA01Stops, addStop, PLACES, pickPlace, planA01Base, setDistance, waitVersion } from "./helpers";
 
-const OUT = "../docs/reports/phase5/screenshots";
+// SHOTS_DIR=../docs/reports/phase5b/before/screenshots for the Phase 5b baseline
+const OUT = process.env.SHOTS_DIR ?? "../docs/reports/phase5/screenshots";
 const SIZES = [{ name: "phone", width: 390, height: 844, mobile: true }, { name: "desktop", width: 1440, height: 900, mobile: false }];
 
 async function shot(page: Page, vp: string, name: string, focus?: string) {

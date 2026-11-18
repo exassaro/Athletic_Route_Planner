@@ -1,0 +1,25 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-18T12:00:00Z"},
+  "title": "GATHO 5b mockups",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Brand.dc.html": {"x": 0, "y": 0, "w": 2238, "h": 900, "title": "Brand: wordmark, app icons, runner, markers, icons, palette, type"},
+    "Light.dc.html": {"x": 0, "y": 1280, "w": 2238, "h": 1000, "title": "Light: peek, half, full, over budget, share page"},
+    "Dark.dc.html": {"x": 0, "y": 2660, "w": 2238, "h": 1000, "title": "Dark: peek, half, full, over budget, share page"},
+    "Setup.dc.html": {"x": 0, "y": 4040, "w": 2238, "h": 1000, "title": "Setup flow (light): start, distance, shape, towards, stops"},
+    "Main.dc.html": {"x": 0, "y": 5420, "w": 390, "h": 844, "title": "Phone component (props: screen, theme)"},
+    "Runner.dc.html": {"x": 2400, "y": 0, "w": 1560, "h": 900, "title": "Runner: supplied ready pose, anchor, hop, 4-frame run cycle (for review)"}
+  },
+  "order": ["Brand.dc.html", "Runner.dc.html", "Light.dc.html", "Dark.dc.html", "Setup.dc.html", "Main.dc.html"],
+  "notes": {
+    "titleBrand": {"x": 0, "y": -260, "text": "GATHO · playful retro, minimal", "kind": "title1", "maxW": 2238},
+    "titleLight": {"x": 0, "y": 1020, "text": "Planner and share page, light (sunlight)", "kind": "title1", "maxW": 2238},
+    "titleDark": {"x": 0, "y": 2400, "text": "Planner and share page, dark (night)", "kind": "title1", "maxW": 2238},
+    "titleSetup": {"x": 0, "y": 3780, "text": "First-time setup: one question per step", "kind": "title1", "maxW": 2238},
+    "provenance": {"x": -560, "y": 1280, "w": 480, "size": "m", "fill": "yellow", "text": "Where the numbers come from\n\nEvery number is from the API's own A01 examples (api/athlete_api/examples: plan_A01, plan_A01_20km, elevation_A01, share_A01), formatted with the rules in web/src/plan/format.ts at the default pace of 6:00 /km. 'Passes 628 m away on foot' is the API's pass_walk_m.\n\nThe map is a schematic, not the basemap: pins sit at the API's snapped points and the line just joins them. The real screens draw the API geometry on the Kerala PMTiles basemap.\n\nThe runner faces west (mirrored): the API's first km mark is west of the start."},
+    "budget": {"x": -560, "y": 2660, "w": 480, "size": "m", "fill": "blue", "text": "Retro budget (at most 3 per screen)\n\nCounted: wordmark, pixel numerals, map markers, hard shadow. The pixel icon set is the icon style everywhere and is not counted.\n\nPeek / half / full / over budget: markers, numerals, hard shadow (selected card or primary button). So the wordmark leaves the top bar once a route is on screen; it lives in the menu and About.\n\nSetup: wordmark, runner, hard shadow on Next. The distance value is Inter, not pixel.\n\nShare page: wordmark, numerals, static runner. Its buttons are secondary (no hard shadow)."}
+  },
+  "designSystems": []
+}

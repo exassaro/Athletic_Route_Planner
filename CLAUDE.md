@@ -5,7 +5,22 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5**, the web front end and map in `web/` (blueprint Phase 5 amendments 1 to 15). It is built; status, measurements and what was left out are in `docs/reports/phase5/summary.md` (checked on a real phone, Redmi 12 5G; the hallway test waits for the developer). Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first.
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5b**, the GATHO mobile-first redesign of `web/` (blueprint Phase 5b amendments 1 to 11). No new features. Step 0 (baseline) is done: `docs/reports/phase5b/before/README.md`. Phase 5 (the web front end) is built: `docs/reports/phase5/summary.md`. Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first (A8, the GPX creator name, is pending).
+
+## Phase 5b amendments (2026-11-18, full text at the top of docs/blueprint.md; they win over earlier ones)
+
+1. Name **GATHO** in the UI, manifest, titles, share page, OpenGraph and about; Python packages, repo and API paths unchanged.
+2. Playful retro, minimal: at most three retro elements per screen (wordmark, pixel numerals, markers, hard shadow); pixel icons are the icon style.
+3. Pixel font (Pixelify Sans, self-hosted subset) only for the wordmark and stat numbers ≥ 24 px; never for body, labels, place names or Malayalam. Body: system font, 15 to 16 px.
+4. Accent **#0F6E56** (dark #3DBFA3), one amber warning colour, second route dashed in ink.
+5. **Light and dark themes, toggle in the menu, default dark.**
+6. Start pin = the supplied pixel **sneaker**; the **runner** is the empty state and its approved 4-frame run cycle the loading animation. Exact strings: `docs/reports/phase5b/sprites.md` (never edit by hand). Build-time static SVG, crispEdges; CSS-only hop on an inner element; none with reduced motion; paused while the map moves or a solve runs.
+7. App icons 512/192/32 show the sneaker.
+8. Bottom sheet (peek, half, full), five-step setup, chips as editors, route cards, stops timeline, one-headline conflicts, Undo message.
+9. The number check runs at every sheet state; A01, S02, G01 keep their intent.
+10. Lighthouse accessibility ≥ 95; touch targets ≥ 44 px; performance measured before and after through Caddy (`https://<LAN IP>`), median of three runs. The start pin adds no measurable main-thread time.
+11. A8 (GPX `creator="GATHO"`) is an API change, pending approval.
+- Phase 5b measurements go through Caddy on the LAN address, because the running `next start` is the same-origin LAN build. `SHOTS_DIR` sets where `e2e/screens.spec.ts` writes.
 
 ## Phase 5 amendments (2026-11-18, full text at the top of docs/blueprint.md; they win over earlier ones)
 

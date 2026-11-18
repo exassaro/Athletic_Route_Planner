@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GATHO runner frames</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+@keyframes g-hop{0%,100%{transform:translateY(0) scale(1,1)}10%{transform:translateY(0) scale(1.08,.9)}42%{transform:translateY(-7px) scale(.96,1.05)}74%{transform:translateY(0) scale(1.1,.88)}84%{transform:translateY(0) scale(1,1)}}
+@keyframes g-shade{0%,100%{transform:scaleX(1);opacity:.32}42%{transform:scaleX(.55);opacity:.16}74%{transform:scaleX(1.12);opacity:.36}84%{transform:scaleX(1);opacity:.32}}
+@keyframes g-run2{from{transform:translateX(0)}to{transform:translateX(-224px)}}
+@keyframes g-run4{from{transform:translateX(0)}to{transform:translateX(-448px)}}
+@keyframes g-shoe{0%,100%{transform:translateY(0) rotate(0deg) scale(1,1)}10%{transform:translateY(0) rotate(0deg) scale(1.08,.9)}42%{transform:translateY(-7px) rotate(-6deg) scale(.97,1.04)}74%{transform:translateY(0) rotate(0deg) scale(1.1,.88)}84%{transform:translateY(0) rotate(0deg) scale(1,1)}}
+.g-shoe{animation:g-shoe 1.1s ease-in-out infinite;transform-origin:25% 100%}
+@media (prefers-reduced-motion: reduce){.g-shoe{animation:none}}
+.g-hop{animation:g-hop 1.1s ease-in-out infinite;transform-origin:50% 100%}
+.g-shade{animation:g-shade 1.1s ease-in-out infinite;transform-origin:50% 50%}
+.g-run2{animation:g-run2 .52s steps(4) infinite}
+.g-run4{animation:g-run4 .52s steps(4) infinite}
+@media (prefers-reduced-motion: reduce){.g-hop,.g-shade,.g-run2,.g-run4{animation:none}}
+</style>
+</helmet>
+<div style="width:1560px;height:900px;box-sizing:border-box;padding:48px;background:#F5F0E6;font-family:Inter,system-ui,sans-serif;color:#1C1B18;display:flex;flex-direction:column;gap:32px">
+
+  <div style="display:flex;gap:48px;align-items:flex-end">
+    <div>
+      <div style="font-size:13px;font-weight:600;color:#5C574D;margin-bottom:8px">Runner (empty state and loading only), ready pose exactly as supplied (28 × 25), shown at 8×. Depth: every non-outline pixel copied 0.3 px down-right, black at 22 %, underneath</div>
+      <svg width="232" height="208" role="img" aria-label="The GATHO runner in the ready pose, enlarged" style="display:block;shape-rendering:crispEdges;background:#ECE9E3">
+        <g transform="translate(4,4) scale(8)">
+          <path d="{{ready.depth}}" style="fill:#000000;fill-opacity:.22"></path>
+          <path d="{{ready.O}}" style="fill:#1E1E1C"></path><path d="{{ready.H}}" style="fill:#2B2118"></path><path d="{{ready.h}}" style="fill:#6B5038"></path><path d="{{ready.B}}" style="fill:#D85A30"></path><path d="{{ready.S}}" style="fill:#E8B488"></path><path d="{{ready.s}}" style="fill:#C68B5E"></path><path d="{{ready.L}}" style="fill:#F6D3AE"></path><path d="{{ready.E}}" style="fill:#1E1E1C"></path><path d="{{ready.T}}" style="fill:#1D9E75"></path><path d="{{ready.t}}" style="fill:#0F6E56"></path><path d="{{ready.Y}}" style="fill:#5DCAA5"></path><path d="{{ready.W}}" style="fill:#F7F5EE"></path><path d="{{ready.w}}" style="fill:#C9C6BC"></path><path d="{{ready.P}}" style="fill:#33332F"></path><path d="{{ready.p}}" style="fill:#5A5A55"></path><path d="{{ready.R}}" style="fill:#D85A30"></path><path d="{{ready.r}}" style="fill:#993C1D"></path><path d="{{ready.Z}}" style="fill:#F7F5EE"></path>
+        </g>
+        <path d="{{anchorMark}}" style="fill:none;stroke:#D85A30;stroke-width:2px"></path>
+      </svg>
+      <div style="font-size:13px;line-height:18px;color:#5C574D;margin-top:4px">The orange cross is the anchor: midway between the two shoes, at the soles.</div>
+    </div>
+    <sc-for list="{{pinDemos}}" as="d" hint-placeholder-count="3">
+      <div>
+        <div style="position:relative;width:140px;height:120px;background:{{d.land}};border:1px solid {{d.edge}}">
+          <div class="g-shade" style="position:absolute;left:54px;top:88px;width:32px;height:4px;background:{{d.shadow}}"></div>
+          <div style="position:absolute;left:46px;top:62px;width:48px;height:26px;transform:{{d.flip}}">
+            <div class="g-shoe" style="width:48px;height:26px">
+              <svg width="48" height="26" aria-hidden="true" style="display:block;shape-rendering:crispEdges">
+                <g transform="scale(1.5)">
+                  <path d="{{shoe.depth}}" style="fill:#000000;fill-opacity:.2"></path>
+                  <path d="{{shoe.O}}" style="fill:#1E1E1C"></path><path d="{{shoe.T}}" style="fill:#1D9E75"></path><path d="{{shoe.t}}" style="fill:#0F6E56"></path><path d="{{shoe.Y}}" style="fill:#5DCAA5"></path><path d="{{shoe.D}}" style="fill:#0B3D30"></path><path d="{{shoe.W}}" style="fill:#F7F5EE"></path><path d="{{shoe.w}}" style="fill:#C9C6BC"></path><path d="{{shoe.R}}" style="fill:#E8673A"></path><path d="{{shoe.r}}" style="fill:#B8481F"></path><path d="{{shoe.K}}" style="fill:#2C2C2A"></path><path d="{{shoe.G}}" style="fill:#9FE1CB"></path>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:13px;line-height:18px;margin-top:4px">{{d.label}}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div>
+    <div style="font-size:13px;font-weight:600;color:#5C574D;margin-bottom:8px">Run cycle for the loading state, 4 frames at 6×: stride, pass, stride on the other leg, pass. Head and torso unchanged from the ready pose; the far arm and leg use the shadow shades (s, w, r)</div>
+    <div style="display:flex;gap:24px">
+      <sc-for list="{{frames}}" as="f" hint-placeholder-count="4">
+        <div>
+          <svg width="176" height="158" role="img" aria-label="{{f.label}}" style="display:block;shape-rendering:crispEdges;background:#ECE9E3">
+            <g transform="translate(4,4) scale(6)">
+              <path d="{{f.p.depth}}" style="fill:#000000;fill-opacity:.22"></path>
+              <path d="{{f.p.O}}" style="fill:#1E1E1C"></path><path d="{{f.p.H}}" style="fill:#2B2118"></path><path d="{{f.p.h}}" style="fill:#6B5038"></path><path d="{{f.p.B}}" style="fill:#D85A30"></path><path d="{{f.p.S}}" style="fill:#E8B488"></path><path d="{{f.p.s}}" style="fill:#C68B5E"></path><path d="{{f.p.L}}" style="fill:#F6D3AE"></path><path d="{{f.p.E}}" style="fill:#1E1E1C"></path><path d="{{f.p.T}}" style="fill:#1D9E75"></path><path d="{{f.p.t}}" style="fill:#0F6E56"></path><path d="{{f.p.Y}}" style="fill:#5DCAA5"></path><path d="{{f.p.W}}" style="fill:#F7F5EE"></path><path d="{{f.p.w}}" style="fill:#C9C6BC"></path><path d="{{f.p.P}}" style="fill:#33332F"></path><path d="{{f.p.p}}" style="fill:#5A5A55"></path><path d="{{f.p.R}}" style="fill:#D85A30"></path><path d="{{f.p.r}}" style="fill:#993C1D"></path><path d="{{f.p.Z}}" style="fill:#F7F5EE"></path>
+            </g>
+          </svg>
+          <div style="font-size:13px;line-height:18px;margin-top:4px">{{f.label}}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div>
+    <div style="font-size:13px;font-weight:600;color:#5C574D;margin-bottom:8px">Running in place while a route is solved: steps(4), 0.52 s per cycle (130 ms a frame), transform only. At pin size (2×) on light and dark, and at 4×</div>
+    <div style="display:flex;gap:24px;align-items:flex-end">
+      <sc-for list="{{runDemos}}" as="d" hint-placeholder-count="2">
+        <div>
+          <div style="position:relative;width:140px;height:96px;background:{{d.land}};border:1px solid {{d.edge}}">
+            <div style="position:absolute;left:42px;top:24px;width:56px;height:50px;overflow:hidden">
+              <div class="g-run2" style="width:224px;height:50px">
+                <svg width="224" height="50" aria-hidden="true" style="display:block;shape-rendering:crispEdges">
+                  <g transform="scale(2)">
+                    <path d="{{strip.depth}}" style="fill:#000000;fill-opacity:.22"></path>
+                    <path d="{{strip.O}}" style="fill:#1E1E1C"></path><path d="{{strip.H}}" style="fill:#2B2118"></path><path d="{{strip.h}}" style="fill:#6B5038"></path><path d="{{strip.B}}" style="fill:#D85A30"></path><path d="{{strip.S}}" style="fill:#E8B488"></path><path d="{{strip.s}}" style="fill:#C68B5E"></path><path d="{{strip.L}}" style="fill:#F6D3AE"></path><path d="{{strip.E}}" style="fill:#1E1E1C"></path><path d="{{strip.T}}" style="fill:#1D9E75"></path><path d="{{strip.t}}" style="fill:#0F6E56"></path><path d="{{strip.Y}}" style="fill:#5DCAA5"></path><path d="{{strip.W}}" style="fill:#F7F5EE"></path><path d="{{strip.w}}" style="fill:#C9C6BC"></path><path d="{{strip.P}}" style="fill:#33332F"></path><path d="{{strip.p}}" style="fill:#5A5A55"></path><path d="{{strip.R}}" style="fill:#D85A30"></path><path d="{{strip.r}}" style="fill:#993C1D"></path><path d="{{strip.Z}}" style="fill:#F7F5EE"></path>
+                  </g>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:13px;line-height:18px;margin-top:4px">{{d.label}}</div>
+        </div>
+      </sc-for>
+      <div>
+        <div style="position:relative;width:140px;height:116px;background:#ECE9E3;border:1px solid #CFC6B4;overflow:hidden">
+          <div style="position:absolute;left:14px;top:8px;width:112px;height:100px;overflow:hidden">
+            <div class="g-run4" style="width:448px;height:100px">
+              <svg width="448" height="100" aria-hidden="true" style="display:block;shape-rendering:crispEdges">
+                <g transform="scale(4)">
+                  <path d="{{strip.depth}}" style="fill:#000000;fill-opacity:.22"></path>
+                  <path d="{{strip.O}}" style="fill:#1E1E1C"></path><path d="{{strip.H}}" style="fill:#2B2118"></path><path d="{{strip.h}}" style="fill:#6B5038"></path><path d="{{strip.B}}" style="fill:#D85A30"></path><path d="{{strip.S}}" style="fill:#E8B488"></path><path d="{{strip.s}}" style="fill:#C68B5E"></path><path d="{{strip.L}}" style="fill:#F6D3AE"></path><path d="{{strip.E}}" style="fill:#1E1E1C"></path><path d="{{strip.T}}" style="fill:#1D9E75"></path><path d="{{strip.t}}" style="fill:#0F6E56"></path><path d="{{strip.Y}}" style="fill:#5DCAA5"></path><path d="{{strip.W}}" style="fill:#F7F5EE"></path><path d="{{strip.w}}" style="fill:#C9C6BC"></path><path d="{{strip.P}}" style="fill:#33332F"></path><path d="{{strip.p}}" style="fill:#5A5A55"></path><path d="{{strip.R}}" style="fill:#D85A30"></path><path d="{{strip.r}}" style="fill:#993C1D"></path><path d="{{strip.Z}}" style="fill:#F7F5EE"></path>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:13px;line-height:18px;margin-top:4px">4×, light</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1560,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var READY = [".................OOOOO......","................OHHHHhO.....","...............OHHHHHHhO....","...............OBBBBBBBBO...","...............OHHSSSESO....","...............OHSSSSSSLO...","................OsSSSSSO....","...............OOOsSSOOO....","..............OYTTTTTsssOO..","...........OOOYTTTTTTOssssO.","..........OSSYWWWWWWWOOsSO..","...........OsSTTTTTTtO.OO...","............OtTTTTTtO.......","...........OPPPPPPPO........","..........OPpPPPPPPPO.......",".........OPPPOOOPPPPPOO.....","........OSSsO...OOOPSSSO....",".......OSSsO.......OsSSO....","......OSSsO........OsSSO....",".....OWWwO.........OWWwO....","....OWWwO..........OWWwOO...","...ORRRrO.........ORRRRRrO..","..ORRrRRO.........ORRRRRRRO.",".OZZZZZO..........OZZZZZZZO.","..OOOOO............OOOOOOO.."];
+    var RUN1 = [".................OOOOO......", "................OHHHHhO.....", "...............OHHHHHHhO....", "...............OBBBBBBBBO...", "...............OHHSSSESO....", "...............OHSSSSSSLO...", "................OsSSSSSO....", "...............OOOsSSOOO....", "..............OYTTTTTsssOO..", "...........OOOYTTTTTTOssssO.", "..........OSSYWWWWWWWOOsSO..", "...........OsSTTTTTTtO.OO...", "............OtTTTTTtO.......", "...........OPPPPPPPO........", "..........OPpPPPPPPPO.......", ".........OPPPOOOOPPPPO......", "........OsssO....OSSsO......", ".......OsssO......OSSsO.....", "......OwwwO........OSSsO....", ".....OwwwO..........OWWwO...", "...OrrrrO............OWWwO..", "..OrrrrrO...........ORRRRRrO", ".OwwwwwO...........ORRRRRRRO", "..OOOOO............OZZZZZZZO", "....................OOOOOOO."];
+    var RUN2 = [".................OOOOO......", "................OHHHHhO.....", "...............OHHHHHHhO....", "...............OBBBBBBBBO...", "...............OHHSSSESO....", "...............OHSSSSSSLO...", "................OsSSSSSO....", "...............OOOsSSOOO....", "..............OYTTTTTsO.....", "............OOYTTTTTTOssO...", "...........OSYWWWWWWWOsO....", "...........OSSTTTTTTtOO.....", "............OtTTTTTtO.......", "...........OPPPPPPPO........", "..........OPpPPPPPPPO.......", "..........OPPPPPPPPPO.......", ".........OsssOOSSsO.........", "..OrrO..OsssO.OSSsO.........", ".OrrrwwsssO...OSSsO.........", ".OwrrOOOOO....OWWwO.........", "..OOO.........OWWwO.........", ".............ORRRRRrO.......", ".............ORRRRRRRO......", ".............OZZZZZZZO......", "..............OOOOOOO......."];
+    var RUN3 = [".................OOOOO......", "................OHHHHhO.....", "...............OHHHHHHhO....", "...............OBBBBBBBBO...", "...............OHHSSSESO....", "...............OHSSSSSSLO...", "................OsSSSSSO....", "...............OOOsSSOOO....", "..............OYTTTTTSSSOO..", "...........OOOYTTTTTTOSSSSO.", "..........OssYWWWWWWWOOSsO..", "...........OssTTTTTTtO.OO...", "............OtTTTTTtO.......", "...........OPPPPPPPO........", "..........OPpPPPPPPPO.......", ".........OPPPOOOOPPPPO......", "........OSSsO....OsssO......", ".......OSSsO......OsssO.....", "......OWWwO........OsssO....", ".....OWWwO..........OwwwO...", "...ORRRrO............OwwwO..", "..ORRrRRO...........OrrrrrrO", ".OZZZZZO...........OrrrrrrrO", "..OOOOO............OwwwwwwwO", "....................OOOOOOO."];
+    var RUN4 = [".................OOOOO......", "................OHHHHhO.....", "...............OHHHHHHhO....", "...............OBBBBBBBBO...", "...............OHHSSSESO....", "...............OHSSSSSSLO...", "................OsSSSSSO....", "...............OOOsSSOOO....", "..............OYTTTTTsO.....", "............OOYTTTTTTOssO...", "...........OSYWWWWWWWOsO....", "...........OSSTTTTTTtOO.....", "............OtTTTTTtO.......", "...........OPPPPPPPO........", "..........OPpPPPPPPPO.......", "..........OPPPPPPPPPO.......", ".........OSSsOOsssO.........", "..ORRO..OSSsO.OsssO.........", ".ORRRWWSSsO...OsssO.........", ".OZRROOOOO....OwwwO.........", "..OOO.........OwwwO.........", ".............OrrrrrrO.......", ".............OrrrrrrrO......", ".............OwwwwwwwO......", "..............OOOOOOO......."];
+    var LETTERS = 'OHhBSsLETtYWwPpRrZ';
+    function paths(frames) {
+      var o = { depth: '' };
+      for (var k = 0; k < LETTERS.length; k++) o[LETTERS[k]] = '';
+      frames.forEach(function (rows, i) {
+        var dx = i * 28;
+        for (var r = 0; r < rows.length; r++) for (var c = 0; c < rows[r].length; c++) {
+          var ch = rows[r][c];
+          if (ch === '.') continue;
+          o[ch] += 'M' + (c + dx) + ' ' + r + 'h1v1h-1z';
+          if (ch !== 'O') o.depth += 'M' + (c + dx + 0.3) + ' ' + (r + 0.3) + 'h1v1h-1z';
+        }
+      });
+      return o;
+    }
+    function shoePaths() {
+      var S = ["....OO.......OO................","...ORROOOOOOOYYO...............","...ORRTTDDDDYYYYO..............","...OTTTTTTTTWYWYWO.............","..OTTTTTTTTTTWYWYWOO...........","..OTYTTTTTTTTTWYWYWTOO.........","..OTYTTTTTTTTRTTWYWYTTOO.......",".OTTYTTTTTTTTRRTTTTTTTTTOO.....",".OTTTRRRRRRRRRRRTTTTTTTTTTOO...",".OTTTRRRRRRRRRRRTTTTTTTTTTTTO..",".OTTTTTTTTTTTRRTTTTTTTTTTTGGGO.",".OtTTTTTTTTTTRtttttttttttTGGGO.",".OtttttttttttttttttttttttttGGO.","OWWWWWWWWWWWWWWWWWWWWWWWWWWWWO.","OwWWWWWWWWWWWWWWWWWWWWWWWWWwwO.",".OKKrrKKrrKKrrKKrrKKrrKKrrKKO..","..OOOOOOOOOOOOOOOOOOOOOOOOOO..."];
+      var o = { depth: '' };
+      'OTtYDWwRrKG'.split('').forEach(function (ch) { o[ch] = ''; });
+      S.forEach(function (row, r) { for (var c = 0; c < row.length; c++) { var ch = row[c]; if (ch === '.') continue;
+        o[ch] += 'M' + c + ' ' + r + 'h1v1h-1z'; if (ch !== 'O') o.depth += 'M' + (c + 0.3) + ' ' + (r + 0.3) + 'h1v1h-1z'; } });
+      return o;
+    }
+    /* anchor: midway between the shoe centres (rear cols 1-8, front cols 18-26), at the soles (y = 25) */
+    var ax = 4 + 13.5 * 8, ay = 4 + 25 * 8;
+    var anchorMark = 'M' + (ax - 8) + ' ' + ay + ' H' + (ax + 8) + ' M' + ax + ' ' + (ay - 8) + ' V' + (ay + 3);
+    var L = { land: '#ECE9E3', edge: '#CFC6B4', shadow: 'rgba(28,27,24,0.32)' };
+    var D = { land: '#1B1E22', edge: '#3A3F46', shadow: 'rgba(0,0,0,0.55)' };
+    return {
+      ready: paths([READY]), strip: paths([RUN1, RUN2, RUN3, RUN4]), anchorMark: anchorMark,
+      frames: [['Run 1: stride, near leg ahead', RUN1], ['Run 2: pass, near leg carries', RUN2], ['Run 3: stride, far leg ahead', RUN3], ['Run 4: pass, far leg carries', RUN4]].map(function (f) { return { label: f[0], p: paths([f[1]]) }; }),
+      shoe: shoePaths(),
+      pinDemos: [
+        { label: 'Start pin: sneaker, 1.5× (46.5 px wide)', flip: 'none', land: L.land, edge: L.edge, shadow: L.shadow },
+        { label: 'Mirrored: route starts west', flip: 'scaleX(-1)', land: L.land, edge: L.edge, shadow: L.shadow },
+        { label: 'Start pin, dark', flip: 'none', land: D.land, edge: D.edge, shadow: D.shadow }
+      ],
+      runDemos: [{ label: '2×, light', land: L.land, edge: L.edge }, { label: '2×, dark', land: D.land, edge: D.edge }]
+    };
+  }
+}
+</script>
+</body>
+</html>

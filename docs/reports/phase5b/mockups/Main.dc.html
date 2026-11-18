@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GATHO phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Pixelify+Sans:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+input::placeholder{color:#6B665C;opacity:1}
+@keyframes g-hop{0%,100%{transform:translateY(0) scale(1,1)}10%{transform:translateY(0) scale(1.08,.9)}42%{transform:translateY(-7px) scale(.96,1.05)}74%{transform:translateY(0) scale(1.1,.88)}84%{transform:translateY(0) scale(1,1)}}
+@keyframes g-shade{0%,100%{transform:scaleX(1);opacity:.32}42%{transform:scaleX(.55);opacity:.16}74%{transform:scaleX(1.12);opacity:.36}84%{transform:scaleX(1);opacity:.32}}
+@keyframes g-shoe{0%,100%{transform:translateY(0) rotate(0deg) scale(1,1)}10%{transform:translateY(0) rotate(0deg) scale(1.08,.9)}42%{transform:translateY(-7px) rotate(-6deg) scale(.97,1.04)}74%{transform:translateY(0) rotate(0deg) scale(1.1,.88)}84%{transform:translateY(0) rotate(0deg) scale(1,1)}}
+.g-shoe{animation:g-shoe 1.1s ease-in-out infinite;transform-origin:25% 100%}
+@media (prefers-reduced-motion: reduce){.g-shoe{animation:none}}
+.g-hop{animation:g-hop 1.1s ease-in-out infinite;transform-origin:50% 100%}
+.g-shade{animation:g-shade 1.1s ease-in-out infinite;transform-origin:50% 50%}
+@media (prefers-reduced-motion: reduce){.g-hop,.g-shade{animation:none}}
+</style>
+</helmet>
+<div style="width:390px;height:844px;position:relative;overflow:hidden;font-family:Inter,system-ui,sans-serif;font-size:16px;line-height:1.5;color:{{t.ink}};background:{{t.land}}">
+
+  <svg width="390" height="844" aria-hidden="true" style="position:absolute;left:0;top:0">
+    <rect x="0" y="0" width="390" height="844" style="fill:{{t.land}}"></rect>
+    <path d="{{map.minor}}" style="fill:none;stroke:{{t.roadMinor}};stroke-width:1.5px"></path>
+    <path d="{{map.roads}}" style="fill:none;stroke:{{t.road}};stroke-width:3.5px;stroke-linecap:round"></path>
+    <path d="{{map.sea}}" style="fill:{{t.water}}"></path>
+    <path d="{{map.rivers}}" style="fill:none;stroke:{{t.water}};stroke-width:9px;stroke-linecap:round;stroke-linejoin:round"></path>
+    <path d="{{map.connectors}}" style="fill:none;stroke:{{t.ink}};stroke-width:1.5px;stroke-dasharray:3 3"></path>
+    <path d="{{map.route}}" style="fill:none;stroke:{{t.casing}};stroke-width:11px;stroke-linecap:round;stroke-linejoin:round"></path>
+    <path d="{{map.route}}" style="fill:none;stroke:{{t.accent}};stroke-width:6px;stroke-linecap:round;stroke-linejoin:round"></path>
+    <path d="{{map.diamonds}}" style="fill:{{t.ink}};shape-rendering:crispEdges"></path>
+  </svg>
+
+  <sc-for list="{{map.labels}}" as="l" hint-placeholder-count="2">
+    <div style="position:absolute;left:{{l.x}}px;top:{{l.y}}px;font-size:12px;font-weight:600;letter-spacing:.02em;color:{{t.mapLabel}}">{{l.text}}</div>
+  </sc-for>
+
+  <sc-for list="{{map.pins}}" as="p" hint-placeholder-count="5">
+    <div role="img" aria-label="{{p.aria}}" style="position:absolute;left:{{p.left}}px;top:{{p.top}}px;width:{{p.w}}px;height:30px">
+      <svg width="{{p.w}}" height="30" aria-hidden="true" style="position:absolute;left:0;top:0;shape-rendering:crispEdges">
+        <path d="{{p.depth}}" style="fill:{{t.pinDepth}}"></path>
+        <path d="{{p.outer}}" style="fill:{{t.ink}}"></path>
+        <path d="{{p.inner}}" style="fill:{{t.surface}}"></path>
+      </svg>
+      <span style="position:absolute;left:0;top:0;width:{{p.wText}}px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:{{t.ink}}">{{p.text}}</span>
+    </div>
+  </sc-for>
+
+  <sc-if value="{{map.hasEnd}}" hint-placeholder-val="{{true}}">
+    <div role="img" aria-label="{{map.end.aria}}" style="position:absolute;left:{{map.end.left}}px;top:{{map.end.top}}px;width:30px;height:38px">
+      <svg width="30" height="38" aria-hidden="true" style="shape-rendering:crispEdges">
+        <path d="{{px.flagDepth}}" style="fill:{{t.pinDepth}}"></path>
+        <path d="{{px.flagInk}}" style="fill:{{t.ink}}"></path>
+        <path d="{{px.flagLight}}" style="fill:{{t.surface}}"></path>
+      </svg>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{map.hasStart}}" hint-placeholder-val="{{true}}">
+    <button type="button" aria-label="{{map.start.aria}}" style="position:absolute;left:{{map.start.left}}px;top:{{map.start.top}}px;width:52px;height:48px;padding:0;border:0;background:transparent;cursor:pointer">
+      <div class="{{map.start.shadeCls}}" style="position:absolute;left:10px;top:42px;width:32px;height:4px;background:{{t.groundShadow}}"></div>
+      <div style="position:absolute;left:2px;top:16px;width:48px;height:26px;transform:{{map.start.flip}}">
+        <div class="{{map.start.hopCls}}" style="width:48px;height:26px">
+          <svg width="48" height="26" aria-hidden="true" style="display:block;shape-rendering:crispEdges">
+            <g transform="scale(1.5)">
+              <path d="{{sk.depth}}" style="fill:#000000;fill-opacity:.2"></path>
+              <path d="{{sk.O}}" style="fill:#1E1E1C"></path><path d="{{sk.T}}" style="fill:#1D9E75"></path><path d="{{sk.t}}" style="fill:#0F6E56"></path><path d="{{sk.Y}}" style="fill:#5DCAA5"></path><path d="{{sk.D}}" style="fill:#0B3D30"></path><path d="{{sk.W}}" style="fill:#F7F5EE"></path><path d="{{sk.w}}" style="fill:#C9C6BC"></path><path d="{{sk.R}}" style="fill:#E8673A"></path><path d="{{sk.r}}" style="fill:#B8481F"></path><path d="{{sk.K}}" style="fill:#2C2C2A"></path><path d="{{sk.G}}" style="fill:#9FE1CB"></path>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </button>
+  </sc-if>
+
+  <sc-if value="{{map.emptyRunner}}" hint-placeholder-val="{{false}}">
+    <div role="img" aria-label="GATHO runner, ready to go" style="position:absolute;left:153px;top:150px;width:84px;height:75px">
+      <svg width="84" height="75" aria-hidden="true" style="shape-rendering:crispEdges">
+          <g transform="scale(3)">
+            <path d="{{rp.depth}}" style="fill:#000000;fill-opacity:.22"></path>
+            <path d="{{rp.O}}" style="fill:#1E1E1C"></path><path d="{{rp.H}}" style="fill:#2B2118"></path><path d="{{rp.h}}" style="fill:#6B5038"></path><path d="{{rp.B}}" style="fill:#D85A30"></path><path d="{{rp.S}}" style="fill:#E8B488"></path><path d="{{rp.s}}" style="fill:#C68B5E"></path><path d="{{rp.L}}" style="fill:#F6D3AE"></path><path d="{{rp.E}}" style="fill:#1E1E1C"></path><path d="{{rp.T}}" style="fill:#1D9E75"></path><path d="{{rp.t}}" style="fill:#0F6E56"></path><path d="{{rp.Y}}" style="fill:#5DCAA5"></path><path d="{{rp.W}}" style="fill:#F7F5EE"></path><path d="{{rp.w}}" style="fill:#C9C6BC"></path><path d="{{rp.P}}" style="fill:#33332F"></path><path d="{{rp.p}}" style="fill:#5A5A55"></path><path d="{{rp.R}}" style="fill:#D85A30"></path><path d="{{rp.r}}" style="fill:#993C1D"></path><path d="{{rp.Z}}" style="fill:#F7F5EE"></path>
+          </g>
+      </svg>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{showTopSearch}}" hint-placeholder-val="{{true}}">
+    <div style="position:absolute;left:16px;right:16px;top:16px;display:flex;gap:8px">
+      <label style="flex:1;min-width:0;height:48px;display:flex;align-items:center;gap:8px;padding:0 12px;box-sizing:border-box;background:{{t.surface}};border:1px solid {{t.hairline}};border-radius:4px;color:{{t.ink}}">
+        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="flex:none;shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.search}}"></path></svg>
+        <span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Search a place</span>
+        <input type="search" placeholder="Search a place in Kerala" style="flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:16px;color:inherit">
+      </label>
+      <button type="button" aria-label="Menu" style="flex:none;width:48px;height:48px;border-radius:4px;border:1px solid {{t.hairline}};background:{{t.surface}};color:{{t.ink}};display:grid;place-items:center;padding:0">
+        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.menu}}"></path></svg>
+      </button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{showTopBrand}}" hint-placeholder-val="{{false}}">
+    <div style="position:absolute;left:0;right:0;top:0;height:64px;padding:8px 16px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;background:{{t.paper}};border-bottom:1px solid {{t.hairline}}">
+      <div style="font-family:'Pixelify Sans',monospace;font-weight:600;font-size:26px;letter-spacing:.06em;color:{{t.ink}}">GATH<span style="color:{{t.accent}}">O</span></div>
+      <sc-if value="{{isShare}}" hint-placeholder-val="{{false}}">
+        <a href="#" style="height:44px;display:flex;align-items:center;padding:0 14px;border:1px solid {{t.ink}};border-radius:4px;font-size:15px;font-weight:600;color:{{t.ink}};text-decoration:none">Plan a run</a>
+      </sc-if>
+      <sc-if value="{{isSetup}}" hint-placeholder-val="{{true}}">
+        <button type="button" aria-label="Menu" style="width:48px;height:48px;border-radius:4px;border:1px solid {{t.hairline}};background:{{t.surface}};color:{{t.ink}};display:grid;place-items:center;padding:0">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.menu}}"></path></svg>
+        </button>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{showMapTools}}" hint-placeholder-val="{{true}}">
+    <button type="button" aria-label="Fit the route" style="position:absolute;right:16px;top:{{fitTop}}px;width:48px;height:48px;border-radius:4px;border:1px solid {{t.hairline}};background:{{t.surface}};color:{{t.ink}};display:grid;place-items:center;padding:0">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.fit}}"></path></svg>
+    </button>
+    <a href="#" style="position:absolute;left:16px;top:{{attrTop}}px;font-size:12px;line-height:20px;padding:0 6px;background:{{t.surface}};color:{{t.ink}};border-radius:2px;text-decoration:none">© OpenStreetMap</a>
+  </sc-if>
+
+  <section aria-label="{{sheetLabel}}" style="position:absolute;left:0;right:0;top:{{sheetTop}}px;bottom:0;background:{{t.paper}};border-top:1px solid {{t.hairline}};border-radius:8px 8px 0 0;padding:0 16px 16px;box-sizing:border-box;overflow:hidden">
+    <sc-if value="{{hasHandle}}" hint-placeholder-val="{{true}}">
+      <button type="button" aria-label="{{handleLabel}}" style="display:block;margin:0 auto;width:96px;height:32px;border:0;background:transparent;padding:0;cursor:grab">
+        <span style="display:block;margin:0 auto;width:40px;height:4px;background:{{t.hairlineStrong}}"></span>
+      </button>
+    </sc-if>
+
+    <!-- PEEK and FULL: the stat bar -->
+    <sc-if value="{{showPeekBar}}" hint-placeholder-val="{{true}}">
+      <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:8px;padding:0 0 8px">
+        <sc-for list="{{peek}}" as="s" hint-placeholder-count="3">
+          <div>
+            <div style="font-family:'Pixelify Sans',monospace;font-weight:600;font-size:{{statSize}}px;line-height:1.1;font-variant-numeric:tabular-nums;color:{{t.ink}};white-space:nowrap" data-value="{{s.raw}}">{{s.big}}<span style="font-family:Inter,system-ui,sans-serif;font-size:15px;font-weight:500">{{s.unit}}</span>{{s.big2}}<span style="font-family:Inter,system-ui,sans-serif;font-size:15px;font-weight:500">{{s.unit2}}</span></div>
+            <div style="font-size:13px;line-height:18px;color:{{t.muted}};margin-top:2px">{{s.label}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- chips -->
+    <sc-if value="{{showChips}}" hint-placeholder-val="{{true}}">
+      <ul aria-label="Your plan: tap to change" style="list-style:none;margin:0 -16px;padding:0 16px 8px;display:flex;gap:8px;overflow:hidden">
+        <sc-for list="{{chips}}" as="c" hint-placeholder-count="5">
+          <li style="flex:none"><button type="button" style="height:44px;padding:0 14px;border-radius:4px;border:1px solid {{c.border}};background:{{c.bg}};color:{{t.ink}};font:inherit;font-size:15px;font-weight:500;white-space:nowrap">{{c.text}}</button></li>
+        </sc-for>
+      </ul>
+    </sc-if>
+
+    <!-- OVER BUDGET -->
+    <sc-if value="{{isOver}}" hint-placeholder-val="{{false}}">
+      <section aria-label="What needs to change" style="margin-top:8px;padding:16px;border-radius:4px;background:{{t.warnSoft}};border:1px solid {{t.warnLine}}">
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="flex:none;shape-rendering:crispEdges;fill:{{t.warn}}"><path d="{{ic.warn}}"></path></svg>
+          <div>
+            <h2 style="margin:0;font-size:20px;line-height:26px;font-weight:700;color:{{t.ink}}">Your stops need <span data-value="21738.6">21.7 km</span></h2>
+            <p style="margin:4px 0 0;font-size:16px;line-height:24px;color:{{t.ink}}"><span data-value="1738.6">1.7 km</span> over your <span data-value="20000">20.0 km</span>.</p>
+          </div>
+        </div>
+        <button type="button" style="margin-top:16px;width:100%;height:48px;border-radius:4px;border:1px solid {{t.ink}};background:{{t.accent}};color:{{t.onAccent}};font:inherit;font-size:16px;font-weight:600;box-shadow:2px 2px 0 {{t.hard}}">Change to <span data-value="21800">21.8 km</span></button>
+        <div style="margin-top:8px;display:grid;gap:8px">
+          <button type="button" style="height:48px;width:100%;display:flex;justify-content:space-between;align-items:center;padding:0 14px;border-radius:4px;border:1px solid {{t.ink}};background:{{t.surface}};color:{{t.ink}};font:inherit;font-size:16px;font-weight:600">Drop Beypore<span style="font-size:15px;font-weight:500;color:{{t.muted}}">saves <span data-value="1954.7">2.0 km</span>, then fits</span></button>
+          <button type="button" style="height:48px;width:100%;display:flex;justify-content:space-between;align-items:center;padding:0 14px;border-radius:4px;border:1px solid {{t.ink}};background:{{t.surface}};color:{{t.ink}};font:inherit;font-size:16px;font-weight:600">Drop Kallai<span style="font-size:15px;font-weight:500;color:{{t.muted}}">saves <span data-value="6600">6.6 km</span>, then fits</span></button>
+        </div>
+        <p style="margin:12px 0 0;font-size:15px;line-height:22px;color:{{t.muted}}">Dropping Kottakkadavu, Kadalundi, Chaliyam or Karuvanthuruthy bridge does not shorten the run.</p>
+      </section>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin:16px 0 8px">
+        <h2 style="margin:0;font-size:17px;line-height:24px;font-weight:600">Routes</h2>
+        <span style="font-size:13px;color:{{t.muted}}">swipe for 4</span>
+      </div>
+    </sc-if>
+
+    <!-- route cards (half, over) -->
+    <sc-if value="{{showCards}}" hint-placeholder-val="{{true}}">
+      <div role="list" aria-label="Routes" style="display:flex;gap:12px;margin:8px -16px 0;padding:0 16px 4px;overflow:hidden">
+        <sc-for list="{{cards}}" as="c" hint-placeholder-count="2">
+          <article role="listitem" style="flex:none;width:300px;box-sizing:border-box;padding:16px;border-radius:4px;background:{{t.surface}};border:1px solid {{c.border}};box-shadow:{{c.shadow}}">
+            <div style="display:flex;align-items:center;gap:8px">
+              <svg width="32" height="10" aria-hidden="true"><line x1="2" y1="5" x2="30" y2="5" style="stroke:{{c.color}};stroke-width:4px;stroke-dasharray:{{c.dash}}"></line></svg>
+              <div style="flex:1;min-width:0;font-size:16px;font-weight:600;line-height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{c.name}}</div>
+              <span style="font-size:13px;color:{{t.muted}}">{{c.pos}}</span>
+            </div>
+            <div style="font-size:13px;line-height:18px;color:{{t.muted}};min-height:18px">{{c.option}}</div>
+            <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:8px;margin-top:12px">
+              <sc-for list="{{c.stats}}" as="s" hint-placeholder-count="3">
+                <div>
+                  <div style="font-family:'Pixelify Sans',monospace;font-weight:600;font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap" data-value="{{s.raw}}">{{s.big}}<span style="font-family:Inter,system-ui,sans-serif;font-size:15px;font-weight:500">{{s.unit}}</span>{{s.big2}}<span style="font-family:Inter,system-ui,sans-serif;font-size:15px;font-weight:500">{{s.unit2}}</span></div>
+                  <div style="font-size:13px;line-height:18px;color:{{t.muted}}">{{s.label}}</div>
+                </div>
+              </sc-for>
+            </div>
+            <p style="margin:12px 0 0;font-size:15px;line-height:22px"><span data-value="{{c.devRaw}}" style="font-weight:600">{{c.dev}}</span> <span style="color:{{t.muted}}">vs your {{c.target}}</span></p>
+            <p style="margin:2px 0 0;font-size:15px;line-height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Ends at {{c.end}} <span style="color:{{t.muted}}">{{c.endNote}}</span></p>
+            <div role="img" aria-label="{{c.roadAria}}" style="display:flex;gap:2px;height:8px;margin-top:12px">
+              <sc-for list="{{c.segs}}" as="g" hint-placeholder-count="4">
+                <span style="display:block;height:8px;width:{{g.w}};background:{{g.bg}}"></span>
+              </sc-for>
+            </div>
+            <p style="margin:6px 0 0;font-size:13px;line-height:18px;color:{{t.muted}}">{{c.roadText}}</p>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px">
+              <div style="display:flex;gap:8px;min-width:0">
+                <sc-for list="{{c.flags}}" as="f" hint-placeholder-count="1">
+                  <button type="button" style="height:32px;padding:0 8px;display:flex;align-items:center;gap:4px;border-radius:4px;border:1px solid {{f.line}};background:{{f.bg}};color:{{f.fg}};font:inherit;font-size:13px;font-weight:600;white-space:nowrap">
+                    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{f.icon}}"></path></svg>{{f.text}}
+                  </button>
+                </sc-for>
+              </div>
+              <button type="button" style="flex:none;height:44px;padding:0 4px;border:0;background:transparent;color:{{t.accentText}};font:inherit;font-size:15px;font-weight:600;display:flex;align-items:center;gap:2px">Why this route?<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.chevR}}"></path></svg></button>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- stops timeline (half shows the top of it; full and share show it all) -->
+    <sc-if value="{{showTimeline}}" hint-placeholder-val="{{true}}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:{{timelineGap}}px 0 4px">
+        <h2 style="margin:0;font-size:17px;line-height:24px;font-weight:600">{{timelineTitle}}</h2>
+        <sc-if value="{{timelineEditable}}" hint-placeholder-val="{{true}}">
+          <button type="button" style="height:44px;padding:0 12px;border-radius:4px;border:1px solid {{t.hairline}};background:{{t.surface}};color:{{t.ink}};font:inherit;font-size:15px;font-weight:600;display:flex;align-items:center;gap:4px"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.plus}}"></path></svg>Add stop</button>
+        </sc-if>
+      </div>
+      <ol style="list-style:none;margin:0;padding:0">
+        <sc-for list="{{timeline}}" as="r" hint-placeholder-count="8">
+          <li style="position:relative;display:flex;align-items:center;gap:12px;min-height:{{rowH}}px">
+            <span style="position:absolute;left:15px;top:{{r.lineTop}};bottom:{{r.lineBottom}};width:2px;background:{{t.hairlineStrong}}"></span>
+            <span style="position:relative;flex:none;width:32px;height:32px;display:grid;place-items:center">
+              <svg width="32" height="32" aria-hidden="true" style="shape-rendering:crispEdges">
+                <path d="{{r.n1}}" style="fill:{{t.pinDepth}}"></path>
+                <path d="{{r.n2}}" style="fill:{{r.c2}}"></path>
+                <path d="{{r.n3}}" style="fill:{{r.c3}}"></path>
+                <path d="{{r.n4}}" style="fill:{{r.c4}}"></path>
+                <path d="{{r.n5}}" style="fill:{{r.c5}}"></path>
+                <path d="{{r.n6}}" style="fill:{{r.c6}}"></path>
+              </svg>
+              <sc-if value="{{r.isStart}}" hint-placeholder-val="{{false}}">
+                <svg width="32" height="32" aria-hidden="true" style="position:absolute;left:0;top:0;shape-rendering:crispEdges">
+                  <g transform="translate(0,8)">
+                    <path d="{{sk.depth}}" style="fill:#000000;fill-opacity:.2"></path>
+                    <path d="{{sk.O}}" style="fill:#1E1E1C"></path><path d="{{sk.T}}" style="fill:#1D9E75"></path><path d="{{sk.t}}" style="fill:#0F6E56"></path><path d="{{sk.Y}}" style="fill:#5DCAA5"></path><path d="{{sk.D}}" style="fill:#0B3D30"></path><path d="{{sk.W}}" style="fill:#F7F5EE"></path><path d="{{sk.w}}" style="fill:#C9C6BC"></path><path d="{{sk.R}}" style="fill:#E8673A"></path><path d="{{sk.r}}" style="fill:#B8481F"></path><path d="{{sk.K}}" style="fill:#2C2C2A"></path><path d="{{sk.G}}" style="fill:#9FE1CB"></path>
+                  </g>
+                </svg>
+              </sc-if>
+              <span style="position:absolute;left:0;top:0;width:28px;height:28px;margin:2px 0 0 2px;display:grid;place-items:center;font-size:13px;font-weight:700;color:{{t.ink}}">{{r.num}}</span>
+            </span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-size:16px;line-height:22px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{r.name}}</span>
+              <span style="display:flex;align-items:center;gap:4px;font-size:13px;line-height:18px;color:{{t.muted}}">{{r.sub}}</span>
+            </span>
+            <span style="flex:none;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums" data-value="{{r.raw}}">{{r.km}}</span>
+            <sc-if value="{{timelineEditable}}" hint-placeholder-val="{{true}}">
+              <button type="button" aria-label="{{r.menuLabel}}" style="flex:none;width:44px;height:44px;margin-right:-10px;border:0;background:transparent;color:{{t.muted}};display:grid;place-items:center;padding:0">
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.more}}"></path></svg>
+              </button>
+            </sc-if>
+          </li>
+        </sc-for>
+      </ol>
+    </sc-if>
+
+    <!-- FULL: elevation and actions -->
+    <sc-if value="{{isFull}}" hint-placeholder-val="{{false}}">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin:16px 0 4px">
+        <h2 style="margin:0;font-size:17px;line-height:24px;font-weight:600">Elevation</h2>
+        <span style="font-size:13px;color:{{t.muted}}">approx.: surface model</span>
+      </div>
+      <svg width="358" height="96" role="img" aria-label="Elevation along the route, 6 to 58 m, with the six stops marked" style="display:block">
+        <path d="{{elev.area}}" style="fill:{{t.accentSoft}}"></path>
+        <path d="{{elev.marks}}" style="fill:none;stroke:{{t.muted}};stroke-width:1px;stroke-dasharray:2 3"></path>
+        <path d="{{elev.line}}" style="fill:none;stroke:{{t.accent}};stroke-width:2px;stroke-linejoin:round"></path>
+        <text x="0" y="12" style="font-size:12px;fill:{{t.muted}}">58 m</text>
+        <text x="0" y="92" style="font-size:12px;fill:{{t.muted}}">6 m</text>
+      </svg>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button type="button" style="flex:1;height:48px;border-radius:4px;border:1px solid {{t.ink}};background:{{t.accent}};color:{{t.onAccent}};font:inherit;font-size:16px;font-weight:600;box-shadow:2px 2px 0 {{t.hard}};display:flex;align-items:center;justify-content:center;gap:4px"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.bookmark}}"></path></svg>Save</button>
+        <button type="button" style="flex:1;height:48px;border-radius:4px;border:1px solid {{t.ink}};background:{{t.surface}};color:{{t.ink}};font:inherit;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:4px"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.share}}"></path></svg>Share</button>
+        <button type="button" style="flex:1;height:48px;border-radius:4px;border:1px solid {{t.ink}};background:{{t.surface}};color:{{t.ink}};font:inherit;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:4px"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.download}}"></path></svg>GPX</button>
+      </div>
+    </sc-if>
+
+    <!-- SHARE PAGE -->
+    <sc-if value="{{isShare}}" hint-placeholder-val="{{false}}">
+      <h1 style="margin:16px 0 0;font-size:22px;line-height:28px;font-weight:600">Coast to Kozhikode</h1>
+      <p style="margin:2px 0 12px;font-size:15px;line-height:22px;color:{{t.muted}}">Athanikkal to Francis Road · shared 18 Nov 2026</p>
+      <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:8px;padding:12px 0;border-top:1px solid {{t.hairline}};border-bottom:1px solid {{t.hairline}}">
+        <sc-for list="{{peek}}" as="s" hint-placeholder-count="3">
+          <div>
+            <div style="font-family:'Pixelify Sans',monospace;font-weight:600;font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap" data-value="{{s.raw}}">{{s.big}}<span style="font-family:Inter,system-ui,sans-serif;font-size:15px;font-weight:500">{{s.unit}}</span>{{s.big2}}<span style="font-family:Inter,system-ui,sans-serif;font-size:15px;font-weight:500">{{s.unit2}}</span></div>
+            <div style="font-size:13px;line-height:18px;color:{{t.muted}}">{{s.label}}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button type="button" style="flex:1;height:48px;border-radius:4px;border:1px solid {{t.ink}};background:{{t.surface}};color:{{t.ink}};font:inherit;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:4px"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.download}}"></path></svg>Download GPX</button>
+        <button type="button" style="flex:1;height:48px;border-radius:4px;border:1px solid {{t.ink}};background:{{t.surface}};color:{{t.ink}};font:inherit;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:4px"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.share}}"></path></svg>Copy link</button>
+      </div>
+    </sc-if>
+
+    <!-- SETUP STEPS -->
+    <sc-if value="{{isSetup}}" hint-placeholder-val="{{false}}">
+      <div style="display:flex;align-items:center;gap:8px;padding-top:12px">
+        <button type="button" aria-label="Back" disabled="{{setup.noBack}}" style="flex:none;width:44px;height:44px;margin-left:-8px;border:0;background:transparent;color:{{setup.backColor}};display:grid;place-items:center;padding:0">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.chevL}}"></path></svg>
+        </button>
+        <div aria-hidden="true" style="flex:1;display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:4px">
+          <sc-for list="{{setup.bars}}" as="b" hint-placeholder-count="5"><span style="display:block;height:6px;background:{{b.bg}}"></span></sc-for>
+        </div>
+        <span style="flex:none;font-size:13px;color:{{t.muted}}">Step {{setup.n}} of 5</span>
+      </div>
+      <p style="margin:8px 0 0;font-size:15px;line-height:22px;color:{{t.muted}};min-height:22px">{{setup.answers}}</p>
+      <h1 style="margin:4px 0 16px;font-size:22px;line-height:28px;font-weight:600">{{setup.title}} <span style="font-size:15px;font-weight:500;color:{{t.muted}}">{{setup.optional}}</span></h1>
+
+      <sc-if value="{{setup.isStart}}" hint-placeholder-val="{{false}}">
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Start</label>
+        <div style="height:48px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid {{t.control}};border-radius:4px;background:{{t.surface}}">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="flex:none;shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.search}}"></path></svg>
+          <input type="search" value="Athanikkal" aria-label="Start" style="flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:16px;color:inherit">
+        </div>
+        <ul style="list-style:none;margin:8px 0 0;padding:0;border:1px solid {{t.hairline}};border-radius:4px;background:{{t.surface}}">
+          <li><button type="button" style="width:100%;min-height:56px;padding:8px 12px;border:0;background:transparent;text-align:left;font:inherit;color:{{t.ink}}"><span style="display:block;font-size:16px;font-weight:600">Athanikkal</span><span style="display:block;font-size:13px;color:{{t.muted}}">Village · Tirurangadi</span></button></li>
+        </ul>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button type="button" style="flex:1;height:48px;border-radius:4px;border:1px solid {{t.ink}};background:{{t.surface}};color:{{t.ink}};font:inherit;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:4px"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.target}}"></path></svg>My location</button>
+          <button type="button" style="flex:1;height:48px;border-radius:4px;border:1px solid {{t.ink}};background:{{t.surface}};color:{{t.ink}};font:inherit;font-size:15px;font-weight:600">Pick on the map</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{setup.isDistance}}" hint-placeholder-val="{{false}}">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <button type="button" aria-label="Shorter by 1 km" style="width:64px;height:64px;border-radius:4px;border:1px solid {{t.ink}};background:{{t.surface}};color:{{t.ink}};display:grid;place-items:center;padding:0"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.minus}}"></path></svg></button>
+          <label style="flex:1;text-align:center"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Distance in km</span><input value="25" inputmode="decimal" style="width:120px;border:0;border-bottom:2px solid {{t.ink}};background:transparent;text-align:center;font:inherit;font-size:44px;font-weight:600;line-height:56px;color:inherit;font-variant-numeric:tabular-nums"><span style="font-size:20px;font-weight:600"> km</span></label>
+          <button type="button" aria-label="Longer by 1 km" style="width:64px;height:64px;border-radius:4px;border:1px solid {{t.ink}};background:{{t.surface}};color:{{t.ink}};display:grid;place-items:center;padding:0"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.plus}}"></path></svg></button>
+        </div>
+        <div role="group" aria-label="Quick picks" style="display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:8px;margin-top:16px">
+          <sc-for list="{{setup.picks}}" as="q" hint-placeholder-count="5">
+            <button type="button" aria-pressed="{{q.on}}" style="height:44px;border-radius:4px;border:1px solid {{q.border}};background:{{q.bg}};color:{{q.fg}};font:inherit;font-size:15px;font-weight:600">{{q.text}}</button>
+          </sc-for>
+        </div>
+        <p style="margin:12px 0 0;font-size:15px;line-height:22px;color:{{t.muted}}">Routes are planned to within 500 m of this.</p>
+      </sc-if>
+
+      <sc-if value="{{setup.isShape}}" hint-placeholder-val="{{false}}">
+        <div role="radiogroup" aria-label="Route shape" style="display:grid;gap:8px">
+          <sc-for list="{{setup.shapes}}" as="o" hint-placeholder-count="3">
+            <button type="button" role="radio" aria-checked="{{o.on}}" style="min-height:64px;display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:4px;border:{{o.border}};background:{{t.surface}};color:{{t.ink}};font:inherit;text-align:left">
+              <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="flex:none;shape-rendering:crispEdges;fill:currentColor"><path d="{{o.icon}}"></path></svg>
+              <span style="flex:1"><span style="display:block;font-size:16px;font-weight:600">{{o.title}}</span><span style="display:block;font-size:13px;line-height:18px;color:{{t.muted}}">{{o.sub}}</span></span>
+              <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="flex:none;shape-rendering:crispEdges;fill:{{o.checkColor}}"><path d="{{ic.check}}"></path></svg>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{setup.isTowards}}" hint-placeholder-val="{{false}}">
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">Towards a place</label>
+        <div style="height:48px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid {{t.control}};border-radius:4px;background:{{t.surface}}">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="flex:none;shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.search}}"></path></svg>
+          <input type="search" value="Kozhikode" aria-label="Towards a place" style="flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:16px;color:inherit">
+        </div>
+        <p style="margin:16px 0 8px;font-size:13px;font-weight:600">Or a compass heading</p>
+        <div role="group" aria-label="Compass heading" style="display:grid;grid-template-columns:repeat(4, minmax(0, 1fr));gap:8px">
+          <sc-for list="{{setup.compass}}" as="d" hint-placeholder-count="8">
+            <button type="button" style="height:44px;border-radius:4px;border:1px solid {{t.hairline}};background:{{t.surface}};color:{{t.ink}};font:inherit;font-size:15px;font-weight:600">{{d}}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{setup.isStops}}" hint-placeholder-val="{{false}}">
+        <div style="height:48px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid {{t.control}};border-radius:4px;background:{{t.surface}}">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="flex:none;shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.search}}"></path></svg>
+          <input type="search" placeholder="Add a place to pass" aria-label="Add a stop" style="flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:16px;color:inherit">
+        </div>
+        <button type="button" style="margin-top:8px;height:44px;padding:0 4px;border:0;background:transparent;color:{{t.accentText}};font:inherit;font-size:15px;font-weight:600">Tap a bridge or road on the map</button>
+        <p style="margin:8px 0 0;font-size:15px;line-height:22px;color:{{t.muted}}">You can add stops later too, from the "stops" chip.</p>
+      </sc-if>
+
+      <div style="position:absolute;left:16px;right:16px;bottom:16px;display:flex;gap:8px">
+        <sc-if value="{{setup.canSkip}}" hint-placeholder-val="{{false}}">
+          <button type="button" style="flex:1;height:52px;border-radius:4px;border:1px solid {{t.ink}};background:{{t.surface}};color:{{t.ink}};font:inherit;font-size:16px;font-weight:600">Skip</button>
+        </sc-if>
+        <sc-if value="{{setup.hasNext}}" hint-placeholder-val="{{true}}">
+          <button type="button" style="flex:2;height:52px;border-radius:4px;border:1px solid {{t.ink}};background:{{t.accent}};color:{{t.onAccent}};font:inherit;font-size:16px;font-weight:600;box-shadow:2px 2px 0 {{t.hard}}">{{setup.next}}</button>
+        </sc-if>
+      </div>
+    </sc-if>
+  </section>
+
+  <sc-if value="{{isOver}}" hint-placeholder-val="{{false}}">
+    <div role="status" style="position:absolute;left:16px;right:16px;bottom:16px;min-height:52px;display:flex;align-items:center;gap:8px;padding:4px 4px 4px 16px;box-sizing:border-box;border-radius:4px;background:{{t.snackBg}};color:{{t.snackFg}}">
+      <span style="flex:1;font-size:15px;line-height:22px"><span data-value="-2742">−2.7 km</span>, new end, over budget</span>
+      <button type="button" style="flex:none;height:44px;padding:0 12px;border:0;background:transparent;color:{{t.snackAction}};font:inherit;font-size:16px;font-weight:700;display:flex;align-items:center;gap:4px"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="shape-rendering:crispEdges;fill:currentColor"><path d="{{ic.undo}}"></path></svg>Undo</button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"screen":{"editor":"enum","options":["s1","s2","s3","s4","s5","peek","half","full","over","share"],"default":"half"},"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var screen = this.props.screen || 'half';
+    var dark = (this.props.theme || 'light') === 'dark';
+
+    /* ---------- tokens ---------- */
+    var L = { paper:'#F5F0E6', surface:'#FBF8F1', ink:'#1C1B18', muted:'#5C574D', hairline:'#CFC6B4', hairlineStrong:'#8A8273', control:'#8A8273',
+      accent:'#0F6E56', accentText:'#0F6E56', onAccent:'#FFFFFF', accentSoft:'#DDEBE5', warn:'#8F4300', warnSoft:'#FBE7C6', warnLine:'#E2B66E',
+      hard:'#1C1B18', land:'#ECE9E3', water:'#CFDDE1', road:'#FFFFFF', roadMinor:'#DEDAD2', mapLabel:'#6B665C', casing:'#FFFFFF',
+      second:'#1C1B18', snackBg:'#1C1B18', snackFg:'#F5F0E6', snackAction:'#8FD9C6', pinDepth:'#1C1B18', groundShadow:'rgba(28,27,24,0.32)',
+      hair:'#2B211A', skin:'#C98A5B', shorts:'#1C1B18', shoes:'#E8A13A' };
+    var D = { paper:'#14161A', surface:'#1C1F24', ink:'#F2ECDF', muted:'#B1AA9C', hairline:'#3A3F46', hairlineStrong:'#7D838C', control:'#7D838C',
+      accent:'#3DBFA3', accentText:'#5FD3B9', onAccent:'#0B1512', accentSoft:'#173A33', warn:'#F2A93B', warnSoft:'#3A2B12', warnLine:'#7A5520',
+      hard:'#E9E2D3', land:'#1B1E22', water:'#1F3138', road:'#2B2F35', roadMinor:'#24282D', mapLabel:'#958F82', casing:'#0B0C0E',
+      second:'#F2ECDF', snackBg:'#F2ECDF', snackFg:'#14161A', snackAction:'#0F6E56', pinDepth:'#000000', groundShadow:'rgba(0,0,0,0.55)',
+      hair:'#2B211A', skin:'#C98A5B', shorts:'#F2ECDF', shoes:'#F2A93B' };
+    var t = dark ? D : L;
+
+    /* ---------- formatting: web/src/plan/format.ts ---------- */
+    var PACE = 360;
+    function km(m, d) { d = d == null ? 1 : d; var s = (m / 1000).toFixed(d); return (Number(s) === 0 ? (0).toFixed(d) : s) + ' km'; }
+    function signedKm(m) { var v = Number((m / 1000).toFixed(1)); if (v === 0) return '±0.0 km'; return (v > 0 ? '+' : '−') + Math.abs(v).toFixed(1) + ' km'; }
+    function hm(m) { var tot = Math.round((m / 1000) * PACE / 60); return { h: Math.floor(tot / 60), m: tot % 60 }; }
+    function metres(m) { return Math.round(m) + ' m'; }
+
+    /* ---------- pixel bitmaps -> crisp paths ---------- */
+    function bits(rows, ch, cell, ox, oy) {
+      var d = '';
+      for (var r = 0; r < rows.length; r++) for (var c = 0; c < rows[r].length; c++)
+        if (ch.indexOf(rows[r][c]) >= 0) d += 'M' + (ox + c * cell) + ' ' + (oy + r * cell) + 'h' + cell + 'v' + cell + 'h-' + cell + 'z';
+      return d;
+    }
+    var I = {
+      search: ['............','.####.......','#....#......','#....#......','#....#......','#....#......','.####.......','.....##.....','......##....','.......##...','........##..','............'],
+      menu: ['............','............','.##########.','............','............','.##########.','............','............','.##########.','............','............','............'],
+      fit: ['............','.###....###.','.#........#.','.#........#.','............','............','............','............','.#........#.','.#........#.','.###....###.','............'],
+      chevL: ['............','............','......#.....','.....#......','....#.......','...#........','....#.......','.....#......','......#.....','............','............','............'],
+      chevR: ['............','............','.....#......','......#.....','.......#....','........#...','.......#....','......#.....','.....#......','............','............','............'],
+      plus: ['............','............','.....##.....','.....##.....','.....##.....','..########..','..########..','.....##.....','.....##.....','.....##.....','............','............'],
+      minus: ['............','............','............','............','............','..########..','..########..','............','............','............','............','............'],
+      more: ['............','.....##.....','.....##.....','............','............','.....##.....','.....##.....','............','............','.....##.....','.....##.....','............'],
+      warn: ['.....##.....','.....##.....','....#..#....','....#..#....','...#.##.#...','...#.##.#...','..#..##..#..','..#......#..','.#...##...#.','.#........#.','.##########.','............'],
+      info: ['............','..########..','.#........#.','.#...##...#.','.#........#.','.#...##...#.','.#...##...#.','.#...##...#.','.#...##...#.','.#........#.','..########..','............'],
+      download: ['.....##.....','.....##.....','.....##.....','.....##.....','..#..##..#..','...#.##.#...','....####....','.....##.....','#..........#','#..........#','############','............'],
+      share: ['.....##.....','....####....','...#.##.#...','..#..##..#..','.....##.....','.....##.....','.....##.....','#....##....#','#..........#','#..........#','############','............'],
+      bookmark: ['............','..########..','..#......#..','..#......#..','..#......#..','..#......#..','..#......#..','..#......#..','..#..##..#..','..#.#..#.#..','..##....##..','............'],
+      check: ['............','............','..........#.','.........#..','........#...','.#.....#....','..#...#.....','...#.#......','....#.......','............','............','............'],
+      undo: ['............','...#........','..##........','.#######....','..##....#...','...#.....#..','..........#.','..........#.','.........#..','...######...','............','............'],
+      target: ['.....##.....','...######...','..#......#..','.#........#.','.#........#.','##...##...##','##...##...##','.#........#.','.#........#.','..#......#..','...######...','.....##.....'],
+      p2p: ['.........###','.........#.#','.........###','.........#..','.......#....','.....#......','...#........','............','##..........','##..........','............','............'],
+      outback: ['............','............','.........#..','##########..','.........#..','............','............','..#.........','..##########','..#.........','............','............'],
+      loop: ['............','...######...','..#......#..','.#........#.','.#........#.','.#........#.','.#........#.','##........#.','##........#.','..#......#..','...######...','............']
+    };
+    var ic = {};
+    for (var k in I) ic[k] = bits(I[k], '#', 2, 0, 0);
+
+    /* runner: 12 x 12 cells, crouched ready-to-run lunge, faces east; H hair (and eye), S skin, T shirt, P shorts, K shoes */
+    var RUN = ['......HHH...', '.....HHHHS..', '.....HHSHS..', '......SSSS..', '.......SS...', '....TTTTTT..', '...TTTTTTTSS', '..STTTTT..S.', '.S..PPPP....', '...PPP..PS..', '..SS.....S..', 'KK......KK..'];
+    function shade(hex, f) { var n = parseInt(hex.slice(1), 16); var r = Math.round(((n >> 16) & 255) * f), g = Math.round(((n >> 8) & 255) * f), b = Math.round((n & 255) * f); return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); }
+    var parts = ['H', 'S', 'T', 'P', 'K'];
+    var cols = [t.hair, t.skin, t.accent, t.shorts, t.shoes];
+    function runnerPaths(cell, off) { var o = {}; for (var i = 0; i < 5; i++) { o['d' + i] = bits(RUN, parts[i], cell, off, off); o['l' + i] = bits(RUN, parts[i], cell, 0, 0); } return o; }
+    var runner = { big: runnerPaths(4, 2), small: runnerPaths(2, 1) };
+    for (var i = 0; i < 5; i++) { runner['c' + i] = cols[i]; runner['f' + i] = shade(cols[i], 0.6); }
+
+    /* stop marker: 7 x 7 cells of 4 px with cut corners; group marker 11 x 7 */
+    var PIN = ['.#####.', '#######', '#######', '#######', '#######', '#######', '.#####.'];
+    var PIN_IN = ['.......', '..###..', '.#####.', '.#####.', '.#####.', '..###..', '.......'];
+    var PIN2 = ['.#########.', '###########', '###########', '###########', '###########', '###########', '.#########.'];
+    var PIN2_IN = ['...........', '..#######..', '.#########.', '.#########.', '.#########.', '..#######..', '...........'];
+    var FLAG = ['#######', '#.#.#.#', '##.#.##', '#.#.#.#', '#######', '#......', '#......', '#......', '##.....'];
+    var FLAG_L = ['.......', '.#.#.#.', '..#.#..', '.#.#.#.', '.......', '.......', '.......', '.......', '.......'];
+    var px = { flagDepth: bits(FLAG, '#', 4, 2, 2), flagInk: bits(FLAG, '#', 4, 0, 0), flagLight: bits(FLAG_L, '#', 4, 0, 0) };
+    var DIAMOND = ['..#..', '.#.#.', '#...#', '.#.#.', '..#..'];
+
+    /* ---------- data: api/athlete_api/examples (A01) ---------- */
+    var START = { label: 'Athanikkal', lon: 75.846193, lat: 11.120867 };
+    var KM1 = { lon: 75.8456817, lat: 11.1296222 };  /* elevation_A01 km_marks[0]: west of the start, so the runner faces west */
+    var STOPS = [
+      { label: 'Kottakkadavu', lon: 75.839486, lat: 11.139215, plon: 75.8393601, plat: 11.1393612, at: 2300.0, kind: 'place', walk: 19.0 },
+      { label: 'Kadalundi', lon: 75.83415, lat: 11.139796, plon: 75.8334302, plat: 11.1381083, at: 2900.0, kind: 'place', walk: 215.0 },
+      { label: 'Chaliyam', lon: 75.813679, lat: 11.152074, plon: 75.8095217, plat: 11.1559577, at: 6000.0, kind: 'place', walk: 628.0 },
+      { label: 'Karuvanthuruthy bridge', lon: 75.816373, lat: 11.161301, plon: 75.8163968, plat: 11.1605711, at: 7234.2, kind: 'bridge', walk: null },
+      { label: 'Beypore', lon: 75.80926, lat: 11.180565, plon: 75.8101768, plat: 11.1790668, at: 15263.0, kind: 'place', walk: 218.0 },
+      { label: 'Kallai', lon: 75.78899, lat: 11.231523, plon: 75.7886846, plat: 11.235104, at: 22258.0, kind: 'place', walk: 459.0 }
+    ];
+    var END = { label: 'Francis Road', lon: 75.775782, lat: 11.245257, at: 25000.0 };
+
+    var isSetup = screen.charAt(0) === 's' && screen !== 'share';
+    var step = isSetup ? Number(screen.charAt(1)) : 0;
+    var isOver = screen === 'over', isFull = screen === 'full', isShare = screen === 'share', isHalf = screen === 'half', isPeek = screen === 'peek';
+
+    var sheetH = isSetup ? 520 : ({ peek: 128, half: 500, full: 764, over: 640, share: 404 })[screen];
+    var sheetTop = 844 - sheetH;
+    var mapTop = (isSetup || isShare) ? 84 : 84;
+
+    /* ---------- schematic map ---------- */
+    var lat0 = 11.18, kx = 111.32 * Math.cos(lat0 * Math.PI / 180), ky = 110.57;
+    var pts = [START, END].concat(STOPS).concat(STOPS.map(function (s) { return { lon: s.plon, lat: s.plat }; }));
+    var minLon = Math.min.apply(null, pts.map(function (p) { return p.lon; })), maxLon = Math.max.apply(null, pts.map(function (p) { return p.lon; }));
+    var minLat = Math.min.apply(null, pts.map(function (p) { return p.lat; })), maxLat = Math.max.apply(null, pts.map(function (p) { return p.lat; }));
+    var fitBottom = isFull ? 760 : Math.max(mapTop + 140, sheetTop - 40);
+    var fitTopY = isFull ? 120 : mapTop + 24;
+    var left = 56, right = 330;
+    var sc = Math.min((right - left) / ((maxLon - minLon) * kx), (fitBottom - fitTopY) / ((maxLat - minLat) * ky));
+    var cxm = (left + right) / 2, cym = (fitTopY + fitBottom) / 2, mLon = (minLon + maxLon) / 2, mLat = (minLat + maxLat) / 2;
+    function P(p) { return [cxm + (p.lon - mLon) * kx * sc, cym - (p.lat - mLat) * ky * sc]; }
+    function f1(v) { return Math.round(v * 10) / 10; }
+    function smooth(a) {
+      if (a.length < 2) return '';
+      var d = 'M' + f1(a[0][0]) + ' ' + f1(a[0][1]);
+      for (var i = 0; i < a.length - 1; i++) {
+        var p0 = a[i - 1] || a[i], p1 = a[i], p2 = a[i + 1], p3 = a[i + 2] || p2;
+        d += ' C' + f1(p1[0] + (p2[0] - p0[0]) / 6) + ' ' + f1(p1[1] + (p2[1] - p0[1]) / 6) + ' ' + f1(p2[0] - (p3[0] - p1[0]) / 6) + ' ' + f1(p2[1] - (p3[1] - p1[1]) / 6) + ' ' + f1(p2[0]) + ' ' + f1(p2[1]);
+      }
+      return d;
+    }
+    var sP = P(START), eP = P(END), sp = STOPS.map(P), pp = STOPS.map(function (s) { return P({ lon: s.plon, lat: s.plat }); });
+    var hasRoute = !isSetup;
+    var routePts = [sP].concat(sp);
+    if (!isOver) routePts.push(eP);
+
+    var coast = [[eP[0] - 30, -20], [eP[0] - 28, eP[1]], [pp[5][0] - 34, pp[5][1]], [sp[4][0] - 26, sp[4][1]], [pp[2][0] - 14, pp[2][1]], [pp[1][0] - 46, pp[1][1] + 14], [sP[0] - 64, sP[1]], [sP[0] - 110, 870]];
+    var sea = smooth(coast) + ' L-20 870 L-20 -20 Z';
+    var rivMouth = [(pp[2][0] + sp[4][0]) / 2 - 26, (pp[2][1] + sp[4][1]) / 2 + 6];
+    var rivers = smooth([rivMouth, [sp[3][0] - 6, sp[3][1] + 4], [sp[3][0] + 40, sp[3][1] + 26], [sp[3][0] + 90, sp[3][1] + 10], [420, sp[3][1] + 40]]) + ' ' +
+      smooth([[pp[1][0] - 40, pp[1][1] + 22], [(sP[0] + sp[0][0]) / 2, (sP[1] + sp[0][1]) / 2 + 6], [sP[0] + 50, sP[1] - 30], [420, sP[1] - 70]]);
+    var seed = 7; function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    var roads = '', minor = '';
+    for (var r = 0; r < 9; r++) { var y0 = rnd() * 844, y1 = y0 + (rnd() - 0.5) * 500; roads += smooth([[-10, y0], [130 + rnd() * 60, (y0 + y1) / 2 + (rnd() - 0.5) * 80], [400, y1]]) + ' '; }
+    for (var r2 = 0; r2 < 5; r2++) { var x0 = 60 + rnd() * 330; roads += smooth([[x0, -10], [x0 + (rnd() - 0.5) * 120, 420], [x0 + (rnd() - 0.5) * 160, 860]]) + ' '; }
+    for (var m = 0; m < 46; m++) { var ax = rnd() * 390, ay = rnd() * 844, ang = rnd() * Math.PI, len = 30 + rnd() * 70; minor += 'M' + f1(ax) + ' ' + f1(ay) + ' L' + f1(ax + Math.cos(ang) * len) + ' ' + f1(ay + Math.sin(ang) * len) + ' '; }
+
+    var connectors = '', diamonds = '';
+    var pins = [];
+    if (hasRoute) {
+      STOPS.forEach(function (s, i) {
+        var a = pp[i], b = sp[i];
+        if (s.kind === 'place' && Math.hypot(a[0] - b[0], a[1] - b[1]) > 16) {
+          connectors += 'M' + f1(a[0]) + ' ' + f1(a[1]) + ' L' + f1(b[0]) + ' ' + f1(b[1]) + ' ';
+          diamonds += bits(DIAMOND, '#', 3, Math.round(a[0] - 7.5), Math.round(a[1] - 7.5));
+        }
+      });
+      /* group stops whose pins overlap on screen (screen distance only; nothing measured on the route) */
+      var groups = [];
+      sp.forEach(function (p, i) {
+        var g = groups[groups.length - 1];
+        if (g && Math.hypot(p[0] - g.x, p[1] - g.y) < 30) { g.n.push(i + 1); g.labels.push(STOPS[i].label); }
+        else groups.push({ x: p[0], y: p[1], n: [i + 1], labels: [STOPS[i].label] });
+      });
+      groups.forEach(function (g) {
+        var two = g.n.length > 1, w = two ? 44 : 28;
+        var aria = g.n.map(function (n, j) { return 'Stop ' + n + ': ' + g.labels[j] + ', at ' + km(STOPS[n - 1].at); }).join('; ');
+        pins.push({ left: Math.round(g.x - w / 2), top: Math.round(g.y - 14), w: w + 2, wText: w, text: g.n.join('·'), aria: aria,
+          depth: bits(two ? PIN2 : PIN, '#', 4, 2, 2), outer: bits(two ? PIN2 : PIN, '#', 4, 0, 0), inner: bits(two ? PIN2_IN : PIN_IN, '#', 4, 0, 0) });
+      });
+    }
+    var endAt = isOver ? sp[5] : eP;
+    var endLabel = isOver ? 'Panniyankara Payyanakkal Meenchanda Road' : 'Francis Road';
+    var endOffset = isOver ? 20 : 0;   /* the 20 km end sits on stop 6: offset so neither hides the other */
+    var mirror = KM1.lon < START.lon;
+    /* the supplied GATHO sprite (28 x 25), drawn at 2x; anchor midway between the shoes, at the soles */
+    var SPRITE = [".................OOOOO......","................OHHHHhO.....","...............OHHHHHHhO....","...............OBBBBBBBBO...","...............OHHSSSESO....","...............OHSSSSSSLO...","................OsSSSSSO....","...............OOOsSSOOO....","..............OYTTTTTsssOO..","...........OOOYTTTTTTOssssO.","..........OSSYWWWWWWWOOsSO..","...........OsSTTTTTTtO.OO...","............OtTTTTTtO.......","...........OPPPPPPPO........","..........OPpPPPPPPPO.......",".........OPPPOOOPPPPPOO.....","........OSSsO...OOOPSSSO....",".......OSSsO.......OsSSO....","......OSSsO........OsSSO....",".....OWWwO.........OWWwO....","....OWWwO..........OWWwOO...","...ORRRrO.........ORRRRRrO..","..ORRrRRO.........ORRRRRRRO.",".OZZZZZO..........OZZZZZZZO.","..OOOOO............OOOOOOO.."];
+    var rp = { depth: '' };
+    'OHhBSsLETtYWwPpRrZ'.split('').forEach(function (ch) { rp[ch] = ''; });
+    SPRITE.forEach(function (row, r) { for (var c = 0; c < row.length; c++) { var ch = row[c]; if (ch === '.') continue;
+      rp[ch] += 'M' + c + ' ' + r + 'h1v1h-1z'; if (ch !== 'O') rp.depth += 'M' + (c + 0.3) + ' ' + (r + 0.3) + 'h1v1h-1z'; } });
+    /* the start pin: the supplied sneaker (31 x 17) at 1.5x, anchored at the middle of the sole */
+    var SNEAKER = ["....OO.......OO................","...ORROOOOOOOYYO...............","...ORRTTDDDDYYYYO..............","...OTTTTTTTTWYWYWO.............","..OTTTTTTTTTTWYWYWOO...........","..OTYTTTTTTTTTWYWYWTOO.........","..OTYTTTTTTTTRTTWYWYTTOO.......",".OTTYTTTTTTTTRRTTTTTTTTTOO.....",".OTTTRRRRRRRRRRRTTTTTTTTTTOO...",".OTTTRRRRRRRRRRRTTTTTTTTTTTTO..",".OTTTTTTTTTTTRRTTTTTTTTTTTGGGO.",".OtTTTTTTTTTTRtttttttttttTGGGO.",".OtttttttttttttttttttttttttGGO.","OWWWWWWWWWWWWWWWWWWWWWWWWWWWWO.","OwWWWWWWWWWWWWWWWWWWWWWWWWWwwO.",".OKKrrKKrrKKrrKKrrKKrrKKrrKKO..","..OOOOOOOOOOOOOOOOOOOOOOOOOO..."];
+    var sk = { depth: '' };
+    'OTtYDWwRrKG'.split('').forEach(function (ch) { sk[ch] = ''; });
+    SNEAKER.forEach(function (row, r) { for (var c = 0; c < row.length; c++) { var ch = row[c]; if (ch === '.') continue;
+      sk[ch] += 'M' + c + ' ' + r + 'h1v1h-1z'; if (ch !== 'O') sk.depth += 'M' + (c + 0.3) + ' ' + (r + 0.3) + 'h1v1h-1z'; } });
+    var anchorX = 26;   /* sole middle: 2 px inset + 14.5 sprite px x 1.5, the same when mirrored about the box centre */
+    runner.transform = mirror ? 'translate(56,0) scale(-2,2)' : 'scale(2)';
+    var animate = !isShare;
+
+    var labels = [];
+    function lab(text, p, dx, dy) { var y = p[1] + dy; if (y > mapTop && y < sheetTop - 24) labels.push({ text: text, x: Math.round(p[0] + dx), y: Math.round(y) }); }
+    lab('Kozhikode', eP, 18, -26); lab('Beypore', sp[4], 22, -2); lab('Feroke', sp[3], 40, 14); lab('Kadalundi', sP, 18, -6);
+
+    var map = {
+      roads: roads, minor: minor, sea: sea, rivers: rivers,
+      route: hasRoute ? smooth(routePts) : '', connectors: connectors, diamonds: diamonds,
+      labels: labels, pins: pins,
+      hasStart: step !== 1, emptyRunner: step === 1,
+      start: { left: Math.round(sP[0] - anchorX), top: Math.round(sP[1] - 42), flip: mirror ? 'scaleX(-1)' : 'none', aria: 'Start: Athanikkal', hopCls: animate ? 'g-shoe' : '', shadeCls: animate ? 'g-shade' : '' },
+      hasEnd: hasRoute, end: { left: Math.round(endAt[0] + endOffset - 2), top: Math.round(endAt[1] - 36 - endOffset), aria: (isOver ? 'End (auto)' : 'End (auto)') + ': ' + endLabel }
+    };
+
+    /* ---------- stats ---------- */
+    function stats(foot, gain) { var t1 = hm(foot); var d = km(foot).replace(' km', '');
+      return [{ raw: foot, big: d, unit: ' km', big2: '', unit2: '', label: 'distance' },
+              { raw: foot, big: String(t1.h), unit: ' h ', big2: String(t1.m).padStart(2, '0'), unit2: ' min', label: 'at 6:00 /km' },
+              { raw: gain, big: '+' + Math.round(gain), unit: ' m', big2: '', unit2: '', label: 'climb, approx.' }]; }
+    var peek = isOver ? stats(22258.026936023176, 100.5) : stats(24999.992411787083, 106.5);
+
+    /* ---------- cards ---------- */
+    var ROAD = { secondary: ['Secondary', dark ? '#C9C2B4' : '#4A463F'], residential: ['Residential', dark ? '#6E6A62' : '#B9B1A1'], primary: ['Primary', t.shoes], unclassified: ['Minor road', dark ? '#45484E' : '#DED7C8'], service_other: ['Service road', dark ? '#3A3D42' : '#EAE4D8'] };
+    function card(o, i, n) {
+      var entries = Object.keys(o.roads).map(function (k) { return [k, o.roads[k]]; }).sort(function (a, b) { return b[1] - a[1]; });
+      var tot = entries.reduce(function (s, e) { return s + e[1]; }, 0);
+      var sel = i === 0;
+      return { name: o.name, option: o.option, pos: (i + 1) + ' of ' + n, color: o.second ? t.second : t.accent, dash: o.second ? '6 4' : 'none',
+        border: sel ? t.ink : t.hairline, shadow: sel ? '2px 2px 0 ' + t.hard : 'none',
+        stats: stats(o.foot, o.gain), dev: signedKm(o.dev), devRaw: o.dev, target: o.target, end: o.end, endNote: '(auto)',
+        segs: entries.map(function (e) { return { w: (100 * e[1] / tot).toFixed(1) + '%', bg: (ROAD[e[0]] || ['', '#999'])[1] }; }),
+        roadText: entries.slice(0, 3).map(function (e) { return (ROAD[e[0]] || [e[0]])[0] + ' ' + km(e[1]); }).join(' · '),
+        roadAria: 'Road mix: ' + entries.map(function (e) { return (ROAD[e[0]] || [e[0]])[0] + ' ' + km(e[1]); }).join(', '),
+        flags: o.flags.map(function (f) { return { text: f, icon: ic.info, bg: t.surface, fg: t.ink, line: t.hairlineStrong }; }) };
+    }
+    var C25 = [
+      { name: 'Recommended', option: ' ', foot: 24999.992411787083, dev: -0.007588212916743942, gain: 106.5, end: 'Francis Road', target: '25.0 km', roads: { secondary: 17647.3, residential: 4698.9, primary: 1575.5, unclassified: 1079.5 }, flags: ['Ends mid-road'] },
+      { name: 'Shortest', option: 'Carries on past the target', second: true, foot: 25052.690610828133, dev: 52.690610828132776, gain: 95.8, end: 'Beach Road', target: '25.0 km', roads: { secondary: 18552.5, residential: 1520.4, primary: 4232.2, unclassified: 624.1, service_other: 123.6 }, flags: [] }
+    ];
+    var C20 = [
+      { name: 'Recommended', option: 'Full route through every stop', foot: 22258.026936023176, dev: 2258.026936023176, gain: 100.5, end: 'Panniyankara Payyanakkal Meenchanda Road', target: '20.0 km', roads: { secondary: 17473.3, residential: 3772.9, primary: 644.3, unclassified: 367.8 }, flags: [] },
+      { name: 'Recommended', option: 'Cut at your distance', second: true, foot: 20000.01466867415, dev: 0.01466867415, gain: 97.1, end: 'Panniyankara Payyanakkal Meenchanda Road', target: '20.0 km', roads: { secondary: 17473.3, residential: 1654.7, primary: 644.3, unclassified: 227.9 }, flags: ['Ends mid-road'] }
+    ];
+    var cards = (isOver ? C20 : C25).map(function (o, i) { return card(o, i, 4); });
+
+    /* ---------- chips ---------- */
+    var chips = [isOver ? '20.0 km' : '25.0 km', 'Point to point', 'Towards Kozhikode', '6 stops', 'Roads first'].map(function (x, i) {
+      var hot = isOver && i === 0;
+      return { text: x, border: hot ? t.warn : t.hairline, bg: hot ? t.warnSoft : t.surface };
+    });
+
+    /* ---------- timeline ---------- */
+    var NODE = PIN, NODE_IN = PIN_IN;
+    var rows = [];
+    var rowsData = [{ kind: 'start', name: 'Athanikkal', sub: 'Start', at: 0 }]
+      .concat(STOPS.map(function (s, i) { return { kind: 'stop', n: i + 1, name: s.label, sub: s.kind === 'bridge' ? 'Bridge: the route crosses it' : 'Passes near · ' + metres(s.walk) + ' away on foot', at: s.at }; }))
+      .concat([{ kind: 'end', name: 'Francis Road', sub: 'End (auto): where 25.0 km runs out', at: 25000 }]);
+    if (isShare) rowsData = rowsData;
+    rowsData.forEach(function (r, i, all) {
+      var row = { name: r.name, sub: r.sub, km: km(r.at), raw: r.at, num: '', menuLabel: 'Options for ' + r.name,
+        lineTop: i === 0 ? '50%' : '0', lineBottom: i === all.length - 1 ? '50%' : '0',
+        n1: '', n2: '', n3: '', n4: '', n5: '', n6: '', c2: t.ink, c3: t.surface, c4: '', c5: '', c6: '' };
+      if (r.kind === 'stop') { row.num = String(r.n); row.n1 = bits(NODE, '#', 4, 2, 2); row.n2 = bits(NODE, '#', 4, 0, 0); row.n3 = bits(NODE_IN, '#', 4, 0, 0); }
+      row.isStart = r.kind === 'start';
+      if (r.kind === 'end') { row.n1 = bits(FLAG, '#', 3, 7, 3); row.n2 = bits(FLAG, '#', 3, 5, 1); row.n3 = bits(FLAG_L, '#', 3, 5, 1); }
+      rows.push(row);
+    });
+
+    /* ---------- elevation (elevation_A01 smoothed, every 9th 30 m sample) ---------- */
+    var E = [46.7, 56.6, 55.2, 47.4, 42.2, 22.0, 12.6, 10.4, 14.7, 7.8, 8.2, 23.2, 14.4, 10.2, 12.0, 11.4, 11.0, 11.6, 16.0, 12.0, 12.8, 11.2, 11.0, 12.8, 16.8, 18.6, 15.9, 15.7, 12.0, 7.2, 9.8, 8.6, 12.2, 12.8, 8.0, 9.4, 11.4, 10.8, 15.2, 21.0, 18.0, 11.8, 13.2, 13.8, 23.4, 20.8, 17.0, 19.4, 21.6, 21.2, 18.6, 17.8, 19.4, 6.8, 9.2, 10.8, 11.4, 15.8, 19.8, 18.8, 20.0, 19.0, 17.8, 17.8, 19.2, 18.8, 16.4, 16.8, 18.4, 18.4, 21.4, 19.8, 20.6, 19.2, 20.8, 23.4, 16.0, 12.4, 12.4, 13.2, 14.0, 15.0, 19.2, 12.0, 11.0, 8.5, 11.2, 12.0, 12.2, 13.6, 14.8, 16.0, 12.2];
+    var W = 358, H = 96, x0e = 40, lo = 5.9, hi = 58.0;
+    function ex(m) { return x0e + (m / 24999.99) * (W - x0e); }
+    function ey(v) { return H - 4 - (v - lo) / (hi - lo) * (H - 12); }
+    var line = '';
+    E.forEach(function (v, i) { line += (i ? ' L' : 'M') + f1(ex(i * 270)) + ' ' + f1(ey(v)); });
+    var elev = { line: line, area: line + ' L' + f1(ex((E.length - 1) * 270)) + ' ' + H + ' L' + x0e + ' ' + H + ' Z', marks: STOPS.map(function (s) { return 'M' + f1(ex(s.at)) + ' 0 L' + f1(ex(s.at)) + ' ' + H; }).join(' ') };
+
+    /* ---------- setup ---------- */
+    var titles = ['Where do you start?', 'How far?', 'What shape?', 'Which way?', 'Any stops on the way?'];
+    var answers = ['', 'Athanikkal', 'Athanikkal · 25.0 km', 'Athanikkal · 25.0 km · Point to point', 'Athanikkal · 25.0 km · Point to point · Towards Kozhikode'];
+    var setup = {
+      n: step, title: titles[step - 1] || '', optional: step >= 4 ? '(optional)' : '', answers: answers[step - 1] || 'Tap a result to go on.',
+      noBack: step === 1, backColor: step === 1 ? 'transparent' : t.ink,
+      bars: [1, 2, 3, 4, 5].map(function (b) { return { bg: b <= step ? t.accent : t.hairline }; }),
+      isStart: step === 1, isDistance: step === 2, isShape: step === 3, isTowards: step === 4, isStops: step === 5,
+      canSkip: step >= 4, hasNext: step >= 2, next: step === 5 ? 'Plan my run' : 'Next',
+      picks: ['5', '10', '15', '21.1', '25'].map(function (x) { var on = x === '25'; return { text: x, on: on ? 'true' : 'false', border: on ? t.ink : t.hairline, bg: on ? t.accent : t.surface, fg: on ? t.onAccent : t.ink }; }),
+      shapes: [['Point to point', 'Start here, finish somewhere else', ic.p2p], ['Out and back', 'Turn round halfway, finish at the start', ic.outback], ['Loop', 'Come back to the start another way', ic.loop]].map(function (o, i) {
+        var on = i === 0; return { title: o[0], sub: o[1], icon: o[2], on: on ? 'true' : 'false', border: on ? '2px solid ' + t.ink : '1px solid ' + t.hairline, checkColor: on ? t.accentText : 'transparent' }; }),
+      compass: ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
+    };
+
+    var labelsFor = { peek: 'Show the routes', half: 'Show everything', full: 'Show the map', over: 'Show everything', share: '' };
+    return {
+      t: t, ic: ic, px: px, runner: runner, rp: rp, sk: sk, map: map, peek: peek, cards: cards, chips: chips, timeline: isHalf ? rows.slice(0, 3) : rows, elev: elev, setup: setup,
+      isSetup: isSetup, isOver: isOver, isFull: isFull, isShare: isShare,
+      sheetTop: sheetTop, fitTop: sheetTop - 64, attrTop: sheetTop - 30,
+      showTopSearch: !isSetup && !isShare, showTopBrand: isSetup || isShare, showMapTools: !isSetup || step > 1,
+      hasHandle: !isSetup && !isShare, handleLabel: labelsFor[screen] || '', sheetLabel: isShare ? 'Shared route' : isSetup ? 'Plan your run' : 'Your run',
+      showPeekBar: isPeek || isFull, statSize: isFull ? 24 : 32,
+      showChips: isHalf || isOver, showCards: isHalf || isOver, showTimeline: isHalf || isFull,
+      timelineTitle: 'Stops', timelineEditable: !isShare, timelineGap: isFull ? 8 : 16, rowH: isFull ? 52 : 52
+    };
+  }
+}
+</script>
+</body>
+</html>
