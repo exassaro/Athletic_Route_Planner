@@ -233,7 +233,7 @@ npm run dev | npm test | npm run typecheck | npm run lint | npm run build
 - PowerShell 5.1 `Set-Content -Encoding utf8` writes a BOM; never use it on package.json.
 - jsdom is pinned to 29.x and ESLint to 9.x: jsdom 30+ needs Node 22.22, and eslint-plugin-react supports ESLint 9 only.
 - MapLibre 6 loads its worker from `public/maplibre/` (copied by `scripts/copy-maplibre-worker.mjs` before dev and build); without it the map stays blank ("Worker failed to load").
-- `@rolldown/binding-win32-x64-msvc` is an optional dependency on purpose: npm otherwise drops it on every `npm install <pkg>`.
+- `@rolldown/binding-win32-x64-msvc` and `@rolldown/binding-linux-x64-gnu` are optional dependencies on purpose: npm otherwise drops the Windows one on every `npm install <pkg>`, and a lockfile made on Windows has no Linux binding, so `npm ci` in CI fails ("Cannot find native binding").
 - End to end (live stack, `next start` on :3000, API with `ATHLETE_RATE_SESSION_PER_IP_HOUR=1000`): `npx playwright test` (journeys A01, S02, G01, phone viewport) and `npx playwright test --project=screens` (screenshots -> docs/reports/phase5/screenshots/). Every on-screen number carries `data-value` (its raw API value); `e2e/helpers.ts` checks them all against the responses.
 - Phone over the LAN: build with `$env:NEXT_PUBLIC_API_BASE="same-origin"`, then `LAN_HOST=<ip> docker compose --profile api --profile web up -d proxy` (Caddy, `tls internal`, `default_sni` for bare IPs). Steps, firewall and certificate install: docs/reports/phase5/phone.md. In PowerShell an empty `$env:X=''` deletes the variable, hence "same-origin".
 - Lighthouse: `npx lighthouse@13.0.1 http://localhost:3000/` with `CHROME_PATH` set to Playwright's Chromium.
