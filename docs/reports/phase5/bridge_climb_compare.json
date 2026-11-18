@@ -1,0 +1,2642 @@
+[
+ {
+  "id": "S01",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 16.3,
+    "gain_after": 12.9,
+    "loss_before": 15.6,
+    "loss_after": 12.2,
+    "bridges": 1
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 9.7,
+    "gain_after": 9.7,
+    "loss_before": 9.0,
+    "loss_after": 9.0,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "S02",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 78.4,
+    "gain_after": 76.6,
+    "loss_before": 78.8,
+    "loss_after": 79.0,
+    "bridges": 2
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 53.4,
+    "gain_after": 53.4,
+    "loss_before": 52.4,
+    "loss_after": 52.4,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "S03",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 30.6,
+    "gain_after": 30.6,
+    "loss_before": 30.7,
+    "loss_after": 30.7,
+    "bridges": 0
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 22.3,
+    "gain_after": 22.3,
+    "loss_before": 23.0,
+    "loss_after": 23.0,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "S04",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 97.0,
+    "gain_after": 76.0,
+    "loss_before": 100.4,
+    "loss_after": 79.4,
+    "bridges": 6
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 105.4,
+    "gain_after": 84.7,
+    "loss_before": 105.5,
+    "loss_after": 84.8,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "S05",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 107.6,
+    "gain_after": 92.0,
+    "loss_before": 111.9,
+    "loss_after": 97.2,
+    "bridges": 6
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 124.6,
+    "gain_after": 104.2,
+    "loss_before": 129.7,
+    "loss_after": 109.3,
+    "bridges": 6
+   }
+  ]
+ },
+ {
+  "id": "S07",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/full_route",
+    "gain_before": 89.8,
+    "gain_after": 74.5,
+    "loss_before": 101.5,
+    "loss_after": 87.2,
+    "bridges": 6
+   },
+   {
+    "candidate": "recommended/cut_at_target",
+    "gain_before": 38.8,
+    "gain_after": 35.3,
+    "loss_before": 39.9,
+    "loss_after": 36.4,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "S08",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 349.9,
+    "gain_after": 332.6,
+    "loss_before": 326.4,
+    "loss_after": 309.1,
+    "bridges": 10
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 192.3,
+    "gain_after": 174.2,
+    "loss_before": 185.0,
+    "loss_after": 167.0,
+    "bridges": 7
+   }
+  ]
+ },
+ {
+  "id": "S09",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/continue_past_target",
+    "gain_before": 106.6,
+    "gain_after": 86.3,
+    "loss_before": 111.7,
+    "loss_after": 91.9,
+    "bridges": 5
+   },
+   {
+    "candidate": "recommended/end_at_target",
+    "gain_before": 68.5,
+    "gain_after": 55.4,
+    "loss_before": 67.9,
+    "loss_after": 54.8,
+    "bridges": 3
+   },
+   {
+    "candidate": "recommended/detour_to_target",
+    "gain_before": 178.0,
+    "gain_after": 177.4,
+    "loss_before": 172.3,
+    "loss_after": 171.7,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "S10",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 110.6,
+    "gain_after": 95.1,
+    "loss_before": 118.1,
+    "loss_after": 100.4,
+    "bridges": 7
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 124.6,
+    "gain_after": 104.2,
+    "loss_before": 129.7,
+    "loss_after": 109.3,
+    "bridges": 7
+   }
+  ]
+ },
+ {
+  "id": "S11",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/continue_past_target",
+    "gain_before": 128.4,
+    "gain_after": 118.5,
+    "loss_before": 132.1,
+    "loss_after": 122.2,
+    "bridges": 6
+   },
+   {
+    "candidate": "recommended/end_at_target",
+    "gain_before": 36.6,
+    "gain_after": 33.1,
+    "loss_before": 37.0,
+    "loss_after": 33.5,
+    "bridges": 2
+   },
+   {
+    "candidate": "recommended/detour_to_target",
+    "gain_before": 306.4,
+    "gain_after": 305.7,
+    "loss_before": 305.1,
+    "loss_after": 304.4,
+    "bridges": 4
+   },
+   {
+    "candidate": "shortest/continue_past_target",
+    "gain_before": 118.0,
+    "gain_after": 105.7,
+    "loss_before": 124.3,
+    "loss_after": 109.7,
+    "bridges": 4
+   },
+   {
+    "candidate": "shortest/end_at_target",
+    "gain_before": 39.8,
+    "gain_after": 33.7,
+    "loss_before": 40.2,
+    "loss_after": 32.4,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "S13",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 180.8,
+    "gain_after": 172.6,
+    "loss_before": 896.8,
+    "loss_after": 888.6,
+    "bridges": 4
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 117.0,
+    "gain_after": 109.6,
+    "loss_before": 835.2,
+    "loss_after": 827.8,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "S14",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/out_and_back",
+    "gain_before": 12.3,
+    "gain_after": 12.3,
+    "loss_before": 10.2,
+    "loss_after": 10.2,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "S15",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 104.2,
+    "gain_after": 88.8,
+    "loss_before": 104.9,
+    "loss_after": 90.2,
+    "bridges": 6
+   }
+  ]
+ },
+ {
+  "id": "S05m",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 112.8,
+    "gain_after": 98.0,
+    "loss_before": 112.1,
+    "loss_after": 98.6,
+    "bridges": 6
+   }
+  ]
+ },
+ {
+  "id": "S07m",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/full_route",
+    "gain_before": 103.4,
+    "gain_after": 88.6,
+    "loss_before": 112.1,
+    "loss_after": 95.2,
+    "bridges": 6
+   },
+   {
+    "candidate": "recommended/cut_at_target",
+    "gain_before": 40.2,
+    "gain_after": 36.7,
+    "loss_before": 46.6,
+    "loss_after": 43.1,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "S15m",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/full_route",
+    "gain_before": 103.4,
+    "gain_after": 88.6,
+    "loss_before": 112.1,
+    "loss_after": 95.2,
+    "bridges": 6
+   },
+   {
+    "candidate": "recommended/cut_at_target",
+    "gain_before": 100.4,
+    "gain_after": 82.5,
+    "loss_before": 107.1,
+    "loss_after": 87.4,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "B01",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 76.6,
+    "gain_after": 57.9,
+    "loss_before": 82.1,
+    "loss_after": 64.6,
+    "bridges": 4
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 175.2,
+    "gain_after": 171.7,
+    "loss_before": 186.7,
+    "loss_after": 183.2,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "B02",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 92.9,
+    "gain_after": 86.3,
+    "loss_before": 89.9,
+    "loss_after": 83.3,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "E01",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 97.0,
+    "gain_after": 76.0,
+    "loss_before": 100.4,
+    "loss_after": 79.4,
+    "bridges": 6
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 105.4,
+    "gain_after": 84.7,
+    "loss_before": 105.5,
+    "loss_after": 84.8,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "E02",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 232.2,
+    "gain_after": 229.2,
+    "loss_before": 239.1,
+    "loss_after": 236.1,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 207.6,
+    "gain_after": 194.1,
+    "loss_before": 218.1,
+    "loss_after": 204.6,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "E03",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 97.0,
+    "gain_after": 76.0,
+    "loss_before": 100.4,
+    "loss_after": 79.4,
+    "bridges": 6
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 105.4,
+    "gain_after": 84.7,
+    "loss_before": 105.5,
+    "loss_after": 84.8,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "A01",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 120.1,
+    "gain_after": 106.5,
+    "loss_before": 153.8,
+    "loss_after": 140.1,
+    "bridges": 6
+   },
+   {
+    "candidate": "shortest/continue_past_target",
+    "gain_before": 110.7,
+    "gain_after": 95.8,
+    "loss_before": 148.2,
+    "loss_after": 133.3,
+    "bridges": 8
+   },
+   {
+    "candidate": "shortest/end_at_target",
+    "gain_before": 110.7,
+    "gain_after": 95.8,
+    "loss_before": 145.2,
+    "loss_after": 130.3,
+    "bridges": 8
+   },
+   {
+    "candidate": "shortest/detour_to_target",
+    "gain_before": 126.9,
+    "gain_after": 123.0,
+    "loss_before": 162.0,
+    "loss_after": 158.0,
+    "bridges": 9
+   }
+  ]
+ },
+ {
+  "id": "A02",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/full_route",
+    "gain_before": 113.5,
+    "gain_after": 100.5,
+    "loss_before": 141.2,
+    "loss_after": 130.3,
+    "bridges": 5
+   },
+   {
+    "candidate": "recommended/cut_at_target",
+    "gain_before": 103.5,
+    "gain_after": 97.1,
+    "loss_before": 130.4,
+    "loss_after": 122.7,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/full_route",
+    "gain_before": 107.3,
+    "gain_after": 92.4,
+    "loss_before": 142.2,
+    "loss_after": 127.1,
+    "bridges": 7
+   },
+   {
+    "candidate": "shortest/cut_at_target",
+    "gain_before": 107.3,
+    "gain_after": 92.4,
+    "loss_before": 136.0,
+    "loss_after": 121.1,
+    "bridges": 6
+   }
+  ]
+ },
+ {
+  "id": "X01",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 38.9,
+    "gain_after": 27.7,
+    "loss_before": 42.6,
+    "loss_after": 32.8,
+    "bridges": 4
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 32.7,
+    "gain_after": 28.7,
+    "loss_before": 36.4,
+    "loss_after": 33.0,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "X02",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/full_route",
+    "gain_before": 66.9,
+    "gain_after": 66.1,
+    "loss_before": 49.8,
+    "loss_after": 49.0,
+    "bridges": 3
+   },
+   {
+    "candidate": "recommended/cut_at_target",
+    "gain_before": 32.7,
+    "gain_after": 30.3,
+    "loss_before": 27.0,
+    "loss_after": 23.2,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 38.7,
+    "gain_after": 40.6,
+    "loss_before": 26.2,
+    "loss_after": 28.2,
+    "bridges": 3
+   }
+  ]
+ },
+ {
+  "id": "X03",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 194.3,
+    "gain_after": 189.3,
+    "loss_before": 205.0,
+    "loss_after": 200.0,
+    "bridges": 7
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 164.9,
+    "gain_after": 152.1,
+    "loss_before": 168.8,
+    "loss_after": 156.1,
+    "bridges": 8
+   }
+  ]
+ },
+ {
+  "id": "X04",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 136.0,
+    "gain_after": 134.6,
+    "loss_before": 88.6,
+    "loss_after": 88.4,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 155.1,
+    "gain_after": 154.7,
+    "loss_before": 83.6,
+    "loss_after": 83.2,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "X05",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 122.6,
+    "gain_after": 123.4,
+    "loss_before": 123.6,
+    "loss_after": 124.4,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 78.8,
+    "gain_after": 75.6,
+    "loss_before": 80.8,
+    "loss_after": 77.6,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "X06",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/end_at_target",
+    "gain_before": 34.7,
+    "gain_after": 34.7,
+    "loss_before": 36.6,
+    "loss_after": 36.6,
+    "bridges": 1
+   }
+  ]
+ },
+ {
+  "id": "X07",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 197.0,
+    "gain_after": 194.0,
+    "loss_before": 206.2,
+    "loss_after": 203.2,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/continue_past_target",
+    "gain_before": 123.1,
+    "gain_after": 113.9,
+    "loss_before": 126.6,
+    "loss_after": 117.4,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/end_at_target",
+    "gain_before": 113.5,
+    "gain_after": 104.3,
+    "loss_before": 126.6,
+    "loss_after": 117.4,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/detour_to_target",
+    "gain_before": 128.3,
+    "gain_after": 116.5,
+    "loss_before": 141.4,
+    "loss_after": 129.0,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "X08",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 139.8,
+    "gain_after": 139.8,
+    "loss_before": 139.2,
+    "loss_after": 139.2,
+    "bridges": 0
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 50.2,
+    "gain_after": 50.2,
+    "loss_before": 50.2,
+    "loss_after": 50.2,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "X09",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/full_route",
+    "gain_before": 285.8,
+    "gain_after": 282.5,
+    "loss_before": 261.7,
+    "loss_after": 258.4,
+    "bridges": 5
+   },
+   {
+    "candidate": "recommended/cut_at_target",
+    "gain_before": 220.4,
+    "gain_after": 217.1,
+    "loss_before": 204.7,
+    "loss_after": 201.4,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 175.8,
+    "gain_after": 175.8,
+    "loss_before": 115.7,
+    "loss_after": 115.7,
+    "bridges": 8
+   }
+  ]
+ },
+ {
+  "id": "X10",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 199.8,
+    "gain_after": 196.4,
+    "loss_before": 220.0,
+    "loss_after": 216.6,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 170.0,
+    "gain_after": 169.6,
+    "loss_before": 162.1,
+    "loss_after": 161.7,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "L01",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 17.1,
+    "gain_after": 17.1,
+    "loss_before": 16.0,
+    "loss_after": 16.0,
+    "bridges": 1
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 38.9,
+    "gain_after": 38.9,
+    "loss_before": 37.8,
+    "loss_after": 37.8,
+    "bridges": 1
+   }
+  ]
+ },
+ {
+  "id": "L02",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 53.2,
+    "gain_after": 43.4,
+    "loss_before": 52.1,
+    "loss_after": 41.9,
+    "bridges": 6
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 29.2,
+    "gain_after": 19.9,
+    "loss_before": 28.7,
+    "loss_after": 19.3,
+    "bridges": 7
+   }
+  ]
+ },
+ {
+  "id": "L04",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/out_and_back",
+    "gain_before": 19.4,
+    "gain_after": 16.8,
+    "loss_before": 19.1,
+    "loss_after": 18.5,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "L05",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 122.5,
+    "gain_after": 121.7,
+    "loss_before": 122.0,
+    "loss_after": 120.6,
+    "bridges": 6
+   }
+  ]
+ },
+ {
+  "id": "L06",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 24.6,
+    "gain_after": 24.6,
+    "loss_before": 25.6,
+    "loss_after": 25.6,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "L07",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 16.7,
+    "gain_after": 16.7,
+    "loss_before": 15.8,
+    "loss_after": 15.8,
+    "bridges": 0
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 46.3,
+    "gain_after": 44.2,
+    "loss_before": 47.6,
+    "loss_after": 44.8,
+    "bridges": 3
+   }
+  ]
+ },
+ {
+  "id": "L08",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/full_route",
+    "gain_before": 6.4,
+    "gain_after": 6.4,
+    "loss_before": 6.6,
+    "loss_after": 6.6,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "G01",
+  "same": true,
+  "problems": [],
+  "gains": []
+ },
+ {
+  "id": "G02",
+  "same": true,
+  "problems": [],
+  "gains": []
+ },
+ {
+  "id": "LX01",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 7.4,
+    "gain_after": 7.4,
+    "loss_before": 9.7,
+    "loss_after": 9.7,
+    "bridges": 2
+   },
+   {
+    "candidate": "recommended/out_and_back",
+    "gain_before": 6.2,
+    "gain_after": 6.2,
+    "loss_before": 6.9,
+    "loss_after": 6.9,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "LX02",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 12.7,
+    "gain_after": 12.7,
+    "loss_before": 13.0,
+    "loss_after": 13.0,
+    "bridges": 4
+   },
+   {
+    "candidate": "recommended/out_and_back",
+    "gain_before": 22.7,
+    "gain_after": 22.7,
+    "loss_before": 22.7,
+    "loss_after": 22.7,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "LX03",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 26.1,
+    "gain_after": 26.1,
+    "loss_before": 26.2,
+    "loss_after": 26.2,
+    "bridges": 1
+   }
+  ]
+ },
+ {
+  "id": "LX04",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 146.1,
+    "gain_after": 142.7,
+    "loss_before": 145.4,
+    "loss_after": 142.0,
+    "bridges": 2
+   },
+   {
+    "candidate": "recommended/out_and_back",
+    "gain_before": 110.7,
+    "gain_after": 110.7,
+    "loss_before": 110.2,
+    "loss_after": 110.2,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "LX05",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 92.0,
+    "gain_after": 94.8,
+    "loss_before": 93.1,
+    "loss_after": 95.9,
+    "bridges": 3
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 125.4,
+    "gain_after": 120.6,
+    "loss_before": 125.9,
+    "loss_after": 121.1,
+    "bridges": 1
+   }
+  ]
+ },
+ {
+  "id": "LX06",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 42.5,
+    "gain_after": 43.5,
+    "loss_before": 40.8,
+    "loss_after": 40.3,
+    "bridges": 2
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 36.0,
+    "gain_after": 35.8,
+    "loss_before": 36.0,
+    "loss_after": 35.8,
+    "bridges": 1
+   }
+  ]
+ },
+ {
+  "id": "LX07",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 48.0,
+    "gain_after": 48.0,
+    "loss_before": 46.2,
+    "loss_after": 46.2,
+    "bridges": 0
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 51.8,
+    "gain_after": 51.7,
+    "loss_before": 51.0,
+    "loss_after": 50.9,
+    "bridges": 1
+   }
+  ]
+ },
+ {
+  "id": "LX08",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 57.2,
+    "gain_after": 56.8,
+    "loss_before": 53.3,
+    "loss_after": 52.9,
+    "bridges": 1
+   }
+  ]
+ },
+ {
+  "id": "LX09",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 22.3,
+    "gain_after": 22.3,
+    "loss_before": 20.0,
+    "loss_after": 20.0,
+    "bridges": 1
+   },
+   {
+    "candidate": "recommended/out_and_back",
+    "gain_before": 13.1,
+    "gain_after": 13.1,
+    "loss_before": 10.8,
+    "loss_after": 10.8,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "LX10",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/out_and_back",
+    "gain_before": 59.6,
+    "gain_after": 58.8,
+    "loss_before": 61.7,
+    "loss_after": 60.8,
+    "bridges": 8
+   }
+  ]
+ },
+ {
+  "id": "LX11",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 185.7,
+    "gain_after": 185.7,
+    "loss_before": 183.2,
+    "loss_after": 183.2,
+    "bridges": 1
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 162.2,
+    "gain_after": 162.2,
+    "loss_before": 158.1,
+    "loss_after": 158.1,
+    "bridges": 3
+   }
+  ]
+ },
+ {
+  "id": "F01",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 78.3,
+    "gain_after": 66.7,
+    "loss_before": 77.7,
+    "loss_after": 66.1,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 91.4,
+    "gain_after": 79.3,
+    "loss_before": 86.3,
+    "loss_after": 74.2,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "F02",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 208.0,
+    "gain_after": 189.9,
+    "loss_before": 215.3,
+    "loss_after": 195.8,
+    "bridges": 11
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 129.8,
+    "gain_after": 110.2,
+    "loss_before": 135.9,
+    "loss_after": 115.2,
+    "bridges": 8
+   }
+  ]
+ },
+ {
+  "id": "F03",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/full_route",
+    "gain_before": 103.0,
+    "gain_after": 82.0,
+    "loss_before": 110.3,
+    "loss_after": 88.5,
+    "bridges": 7
+   },
+   {
+    "candidate": "recommended/cut_at_target",
+    "gain_before": 39.0,
+    "gain_after": 31.5,
+    "loss_before": 50.5,
+    "loss_after": 40.6,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/full_route",
+    "gain_before": 111.4,
+    "gain_after": 90.7,
+    "loss_before": 118.5,
+    "loss_after": 97.8,
+    "bridges": 6
+   },
+   {
+    "candidate": "shortest/cut_at_target",
+    "gain_before": 42.0,
+    "gain_after": 32.5,
+    "loss_before": 53.5,
+    "loss_after": 42.4,
+    "bridges": 3
+   }
+  ]
+ },
+ {
+  "id": "F04",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 42.5,
+    "gain_after": 34.9,
+    "loss_before": 50.0,
+    "loss_after": 42.5,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 35.5,
+    "gain_after": 29.0,
+    "loss_before": 43.2,
+    "loss_after": 36.2,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "S04-n1",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 88.2,
+    "gain_after": 70.8,
+    "loss_before": 84.1,
+    "loss_after": 65.0,
+    "bridges": 6
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 98.2,
+    "gain_after": 75.7,
+    "loss_before": 92.9,
+    "loss_after": 70.4,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "S04-n2",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 177.8,
+    "gain_after": 171.0,
+    "loss_before": 182.4,
+    "loss_after": 175.6,
+    "bridges": 6
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 171.6,
+    "gain_after": 159.8,
+    "loss_before": 177.0,
+    "loss_after": 165.2,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "S04-n3",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 100.5,
+    "gain_after": 84.4,
+    "loss_before": 95.2,
+    "loss_after": 78.1,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 101.3,
+    "gain_after": 94.5,
+    "loss_before": 98.8,
+    "loss_after": 92.1,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "S04-n4",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 103.3,
+    "gain_after": 88.3,
+    "loss_before": 91.6,
+    "loss_after": 76.6,
+    "bridges": 4
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 90.3,
+    "gain_after": 84.4,
+    "loss_before": 88.2,
+    "loss_after": 82.3,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "S05-n1",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 113.9,
+    "gain_after": 94.2,
+    "loss_before": 111.0,
+    "loss_after": 92.3,
+    "bridges": 6
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 113.3,
+    "gain_after": 92.9,
+    "loss_before": 113.0,
+    "loss_after": 92.6,
+    "bridges": 7
+   }
+  ]
+ },
+ {
+  "id": "S05-n2",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 93.2,
+    "gain_after": 76.7,
+    "loss_before": 97.7,
+    "loss_after": 81.2,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 112.8,
+    "gain_after": 93.9,
+    "loss_before": 118.5,
+    "loss_after": 98.0,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "S05-n3",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 110.8,
+    "gain_after": 88.1,
+    "loss_before": 102.7,
+    "loss_after": 79.9,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 134.2,
+    "gain_after": 113.8,
+    "loss_before": 122.7,
+    "loss_after": 102.3,
+    "bridges": 6
+   }
+  ]
+ },
+ {
+  "id": "S05-n4",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 96.9,
+    "gain_after": 77.2,
+    "loss_before": 98.2,
+    "loss_after": 79.6,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 111.9,
+    "gain_after": 94.1,
+    "loss_before": 112.4,
+    "loss_after": 94.6,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "S07-n1",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/full_route",
+    "gain_before": 89.6,
+    "gain_after": 68.5,
+    "loss_before": 100.6,
+    "loss_after": 78.1,
+    "bridges": 5
+   },
+   {
+    "candidate": "recommended/cut_at_target",
+    "gain_before": 44.2,
+    "gain_after": 34.1,
+    "loss_before": 44.0,
+    "loss_after": 33.9,
+    "bridges": 1
+   }
+  ]
+ },
+ {
+  "id": "S07-n2",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/full_route",
+    "gain_before": 99.5,
+    "gain_after": 75.7,
+    "loss_before": 101.6,
+    "loss_after": 77.5,
+    "bridges": 5
+   },
+   {
+    "candidate": "recommended/cut_at_target",
+    "gain_before": 43.5,
+    "gain_after": 36.3,
+    "loss_before": 40.4,
+    "loss_after": 33.2,
+    "bridges": 1
+   },
+   {
+    "candidate": "shortest/full_route",
+    "gain_before": 122.1,
+    "gain_after": 124.4,
+    "loss_before": 108.8,
+    "loss_after": 111.1,
+    "bridges": 6
+   },
+   {
+    "candidate": "shortest/cut_at_target",
+    "gain_before": 42.5,
+    "gain_after": 47.8,
+    "loss_before": 28.8,
+    "loss_after": 36.1,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "S08-n1",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 343.2,
+    "gain_after": 327.4,
+    "loss_before": 328.9,
+    "loss_after": 314.5,
+    "bridges": 12
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 178.8,
+    "gain_after": 165.1,
+    "loss_before": 174.3,
+    "loss_after": 159.6,
+    "bridges": 8
+   }
+  ]
+ },
+ {
+  "id": "S08-n2",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 378.0,
+    "gain_after": 356.1,
+    "loss_before": 374.2,
+    "loss_after": 353.2,
+    "bridges": 11
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 223.0,
+    "gain_after": 198.8,
+    "loss_before": 215.7,
+    "loss_after": 191.5,
+    "bridges": 9
+   }
+  ]
+ },
+ {
+  "id": "S11-n1",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/continue_past_target",
+    "gain_before": 149.0,
+    "gain_after": 135.7,
+    "loss_before": 142.0,
+    "loss_after": 128.7,
+    "bridges": 4
+   },
+   {
+    "candidate": "recommended/end_at_target",
+    "gain_before": 45.5,
+    "gain_after": 38.5,
+    "loss_before": 40.8,
+    "loss_after": 35.6,
+    "bridges": 2
+   },
+   {
+    "candidate": "recommended/detour_to_target",
+    "gain_before": 237.4,
+    "gain_after": 234.5,
+    "loss_before": 234.1,
+    "loss_after": 231.2,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/continue_past_target",
+    "gain_before": 115.3,
+    "gain_after": 99.5,
+    "loss_before": 117.0,
+    "loss_after": 101.2,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/end_at_target",
+    "gain_before": 44.7,
+    "gain_after": 37.9,
+    "loss_before": 39.6,
+    "loss_after": 32.8,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/detour_to_target",
+    "gain_before": 249.4,
+    "gain_after": 245.8,
+    "loss_before": 248.7,
+    "loss_after": 245.1,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "S11-n2",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/continue_past_target",
+    "gain_before": 110.0,
+    "gain_after": 97.7,
+    "loss_before": 110.4,
+    "loss_after": 97.1,
+    "bridges": 5
+   },
+   {
+    "candidate": "recommended/end_at_target",
+    "gain_before": 27.8,
+    "gain_after": 21.1,
+    "loss_before": 26.0,
+    "loss_after": 19.3,
+    "bridges": 1
+   },
+   {
+    "candidate": "recommended/detour_to_target",
+    "gain_before": 132.0,
+    "gain_after": 117.7,
+    "loss_before": 129.8,
+    "loss_after": 115.5,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/continue_past_target",
+    "gain_before": 101.8,
+    "gain_after": 91.4,
+    "loss_before": 107.4,
+    "loss_after": 97.0,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/end_at_target",
+    "gain_before": 27.8,
+    "gain_after": 21.1,
+    "loss_before": 26.0,
+    "loss_after": 19.3,
+    "bridges": 1
+   },
+   {
+    "candidate": "shortest/detour_to_target",
+    "gain_before": 120.8,
+    "gain_after": 110.3,
+    "loss_before": 118.6,
+    "loss_after": 108.1,
+    "bridges": 3
+   }
+  ]
+ },
+ {
+  "id": "S11-n3",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/continue_past_target",
+    "gain_before": 129.9,
+    "gain_after": 119.9,
+    "loss_before": 128.2,
+    "loss_after": 118.2,
+    "bridges": 5
+   },
+   {
+    "candidate": "recommended/end_at_target",
+    "gain_before": 36.9,
+    "gain_after": 33.3,
+    "loss_before": 31.6,
+    "loss_after": 28.0,
+    "bridges": 1
+   },
+   {
+    "candidate": "recommended/detour_to_target",
+    "gain_before": 272.7,
+    "gain_after": 271.3,
+    "loss_before": 268.0,
+    "loss_after": 264.6,
+    "bridges": 4
+   },
+   {
+    "candidate": "shortest/continue_past_target",
+    "gain_before": 112.3,
+    "gain_after": 96.9,
+    "loss_before": 112.0,
+    "loss_after": 96.6,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/end_at_target",
+    "gain_before": 36.9,
+    "gain_after": 33.3,
+    "loss_before": 31.6,
+    "loss_after": 28.0,
+    "bridges": 1
+   },
+   {
+    "candidate": "shortest/detour_to_target",
+    "gain_before": 309.3,
+    "gain_after": 306.3,
+    "loss_before": 302.4,
+    "loss_after": 299.4,
+    "bridges": 3
+   }
+  ]
+ },
+ {
+  "id": "S13-n1",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 170.6,
+    "gain_after": 160.2,
+    "loss_before": 883.7,
+    "loss_after": 873.3,
+    "bridges": 4
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 104.6,
+    "gain_after": 101.2,
+    "loss_before": 796.3,
+    "loss_after": 792.9,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "S13-n2",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 164.4,
+    "gain_after": 154.0,
+    "loss_before": 923.4,
+    "loss_after": 913.0,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 116.6,
+    "gain_after": 109.0,
+    "loss_before": 864.4,
+    "loss_after": 856.8,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "S13-n3",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 170.2,
+    "gain_after": 155.4,
+    "loss_before": 874.3,
+    "loss_after": 858.8,
+    "bridges": 7
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 85.6,
+    "gain_after": 75.8,
+    "loss_before": 799.7,
+    "loss_after": 789.2,
+    "bridges": 7
+   }
+  ]
+ },
+ {
+  "id": "S15-n1",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 104.8,
+    "gain_after": 90.5,
+    "loss_before": 103.5,
+    "loss_after": 89.2,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "S15-n2",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 102.4,
+    "gain_after": 83.9,
+    "loss_before": 99.6,
+    "loss_after": 81.1,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 122.6,
+    "gain_after": 103.7,
+    "loss_before": 126.0,
+    "loss_after": 107.1,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "S15-n3",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/full_route",
+    "gain_before": 105.3,
+    "gain_after": 76.1,
+    "loss_before": 106.2,
+    "loss_after": 76.9,
+    "bridges": 5
+   },
+   {
+    "candidate": "recommended/cut_at_target",
+    "gain_before": 102.1,
+    "gain_after": 76.1,
+    "loss_before": 87.8,
+    "loss_after": 61.8,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/full_route",
+    "gain_before": 139.5,
+    "gain_after": 128.7,
+    "loss_before": 125.0,
+    "loss_after": 114.3,
+    "bridges": 6
+   },
+   {
+    "candidate": "shortest/cut_at_target",
+    "gain_before": 119.1,
+    "gain_after": 108.7,
+    "loss_before": 106.8,
+    "loss_after": 99.0,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "S03-n1",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 47.9,
+    "gain_after": 47.9,
+    "loss_before": 46.0,
+    "loss_after": 46.0,
+    "bridges": 0
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 40.3,
+    "gain_after": 40.3,
+    "loss_before": 38.8,
+    "loss_after": 38.8,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "S03-n2",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 22.0,
+    "gain_after": 22.0,
+    "loss_before": 23.8,
+    "loss_after": 23.8,
+    "bridges": 0
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 9.2,
+    "gain_after": 9.2,
+    "loss_before": 9.8,
+    "loss_after": 9.8,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "S03-n3",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 7.1,
+    "gain_after": 7.1,
+    "loss_before": 6.8,
+    "loss_after": 6.8,
+    "bridges": 0
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 18.5,
+    "gain_after": 18.5,
+    "loss_before": 20.4,
+    "loss_after": 20.4,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "B01-n1",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 192.3,
+    "gain_after": 188.9,
+    "loss_before": 197.8,
+    "loss_after": 194.8,
+    "bridges": 4
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 175.5,
+    "gain_after": 178.8,
+    "loss_before": 182.0,
+    "loss_after": 184.9,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "B01-n2",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 185.2,
+    "gain_after": 178.7,
+    "loss_before": 184.0,
+    "loss_after": 178.3,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 168.2,
+    "gain_after": 164.6,
+    "loss_before": 177.4,
+    "loss_after": 173.8,
+    "bridges": 3
+   }
+  ]
+ },
+ {
+  "id": "B01-n3",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 83.9,
+    "gain_after": 77.8,
+    "loss_before": 81.0,
+    "loss_after": 74.8,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 87.7,
+    "gain_after": 72.8,
+    "loss_before": 89.0,
+    "loss_after": 74.1,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "S15m-n1",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 80.4,
+    "gain_after": 68.6,
+    "loss_before": 88.1,
+    "loss_after": 77.5,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "S15m-n2",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 105.2,
+    "gain_after": 88.9,
+    "loss_before": 104.7,
+    "loss_after": 86.4,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "S02-n1",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 28.4,
+    "gain_after": 28.4,
+    "loss_before": 31.2,
+    "loss_after": 31.2,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "S02-n2",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 117.8,
+    "gain_after": 119.4,
+    "loss_before": 118.4,
+    "loss_after": 120.0,
+    "bridges": 2
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 65.9,
+    "gain_after": 62.3,
+    "loss_before": 63.4,
+    "loss_after": 59.8,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "S02-n3",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 53.1,
+    "gain_after": 49.9,
+    "loss_before": 54.4,
+    "loss_after": 50.8,
+    "bridges": 3
+   }
+  ]
+ },
+ {
+  "id": "L01-n1",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 70.3,
+    "gain_after": 70.6,
+    "loss_before": 68.8,
+    "loss_after": 69.1,
+    "bridges": 2
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 54.5,
+    "gain_after": 54.5,
+    "loss_before": 51.2,
+    "loss_after": 50.7,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "L01-n2",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 36.8,
+    "gain_after": 33.8,
+    "loss_before": 37.9,
+    "loss_after": 34.9,
+    "bridges": 1
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 26.2,
+    "gain_after": 26.2,
+    "loss_before": 25.9,
+    "loss_after": 25.9,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "S04-d15",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 39.0,
+    "gain_after": 31.5,
+    "loss_before": 50.5,
+    "loss_after": 40.6,
+    "bridges": 3
+   }
+  ]
+ },
+ {
+  "id": "S04-d20",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 80.0,
+    "gain_after": 57.9,
+    "loss_before": 78.1,
+    "loss_after": 58.0,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "S04-d30",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 100.0,
+    "gain_after": 79.0,
+    "loss_before": 110.3,
+    "loss_after": 88.5,
+    "bridges": 7
+   },
+   {
+    "candidate": "shortest/continue_past_target",
+    "gain_before": 111.4,
+    "gain_after": 90.7,
+    "loss_before": 118.5,
+    "loss_after": 97.8,
+    "bridges": 6
+   },
+   {
+    "candidate": "shortest/end_at_target",
+    "gain_before": 111.4,
+    "gain_after": 90.7,
+    "loss_before": 118.5,
+    "loss_after": 97.8,
+    "bridges": 6
+   }
+  ]
+ },
+ {
+  "id": "S05-d30",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 107.6,
+    "gain_after": 92.0,
+    "loss_before": 111.9,
+    "loss_after": 97.2,
+    "bridges": 6
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 124.6,
+    "gain_after": 104.2,
+    "loss_before": 129.7,
+    "loss_after": 109.3,
+    "bridges": 7
+   }
+  ]
+ },
+ {
+  "id": "S05-d35",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/continue_past_target",
+    "gain_before": 113.6,
+    "gain_after": 98.3,
+    "loss_before": 124.3,
+    "loss_after": 109.6,
+    "bridges": 7
+   },
+   {
+    "candidate": "recommended/end_at_target",
+    "gain_before": 110.6,
+    "gain_after": 95.1,
+    "loss_before": 118.1,
+    "loss_after": 100.4,
+    "bridges": 7
+   },
+   {
+    "candidate": "shortest/continue_past_target",
+    "gain_before": 127.8,
+    "gain_after": 107.4,
+    "loss_before": 132.9,
+    "loss_after": 112.4,
+    "bridges": 8
+   },
+   {
+    "candidate": "shortest/end_at_target",
+    "gain_before": 127.8,
+    "gain_after": 107.4,
+    "loss_before": 132.9,
+    "loss_after": 112.4,
+    "bridges": 8
+   },
+   {
+    "candidate": "shortest/detour_to_target",
+    "gain_before": 128.2,
+    "gain_after": 109.4,
+    "loss_before": 134.3,
+    "loss_after": 114.5,
+    "bridges": 8
+   }
+  ]
+ },
+ {
+  "id": "S11-d20",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/continue_past_target",
+    "gain_before": 94.6,
+    "gain_after": 87.9,
+    "loss_before": 103.5,
+    "loss_after": 96.8,
+    "bridges": 3
+   },
+   {
+    "candidate": "recommended/end_at_target",
+    "gain_before": 36.6,
+    "gain_after": 33.1,
+    "loss_before": 37.0,
+    "loss_after": 33.5,
+    "bridges": 2
+   },
+   {
+    "candidate": "recommended/detour_to_target",
+    "gain_before": 187.4,
+    "gain_after": 180.1,
+    "loss_before": 185.7,
+    "loss_after": 178.4,
+    "bridges": 4
+   }
+  ]
+ },
+ {
+  "id": "S13-d8",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 68.2,
+    "gain_after": 64.4,
+    "loss_before": 787.2,
+    "loss_after": 783.4,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 48.8,
+    "gain_after": 41.4,
+    "loss_before": 755.8,
+    "loss_after": 748.4,
+    "bridges": 3
+   }
+  ]
+ },
+ {
+  "id": "S13-d25",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/continue_past_target",
+    "gain_before": 332.2,
+    "gain_after": 324.0,
+    "loss_before": 1050.4,
+    "loss_after": 1042.2,
+    "bridges": 5
+   },
+   {
+    "candidate": "recommended/end_at_target",
+    "gain_before": 231.2,
+    "gain_after": 223.0,
+    "loss_before": 949.8,
+    "loss_after": 941.6,
+    "bridges": 4
+   },
+   {
+    "candidate": "recommended/detour_to_target",
+    "gain_before": 306.8,
+    "gain_after": 301.4,
+    "loss_before": 1024.0,
+    "loss_after": 1018.6,
+    "bridges": 4
+   },
+   {
+    "candidate": "shortest/continue_past_target",
+    "gain_before": 220.2,
+    "gain_after": 211.8,
+    "loss_before": 937.9,
+    "loss_after": 929.5,
+    "bridges": 5
+   },
+   {
+    "candidate": "shortest/end_at_target",
+    "gain_before": 147.2,
+    "gain_after": 139.8,
+    "loss_before": 865.2,
+    "loss_after": 857.8,
+    "bridges": 4
+   },
+   {
+    "candidate": "shortest/detour_to_target",
+    "gain_before": 288.0,
+    "gain_after": 283.8,
+    "loss_before": 1005.2,
+    "loss_after": 1001.0,
+    "bridges": 5
+   }
+  ]
+ },
+ {
+  "id": "S03-d5",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 3.2,
+    "gain_after": 3.2,
+    "loss_before": 6.1,
+    "loss_after": 6.1,
+    "bridges": 0
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 6.8,
+    "gain_after": 9.2,
+    "loss_before": 9.3,
+    "loss_after": 12.1,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "S03-d16",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 65.6,
+    "gain_after": 65.6,
+    "loss_before": 65.7,
+    "loss_after": 65.7,
+    "bridges": 0
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 60.5,
+    "gain_after": 60.5,
+    "loss_before": 61.6,
+    "loss_after": 61.6,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "S01-d3",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 6.1,
+    "gain_after": 6.1,
+    "loss_before": 6.2,
+    "loss_after": 6.2,
+    "bridges": 0
+   }
+  ]
+ },
+ {
+  "id": "S01-d8",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 17.9,
+    "gain_after": 20.3,
+    "loss_before": 15.8,
+    "loss_after": 19.4,
+    "bridges": 1
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 16.5,
+    "gain_after": 16.9,
+    "loss_before": 16.3,
+    "loss_after": 16.7,
+    "bridges": 1
+   }
+  ]
+ },
+ {
+  "id": "S02-d15",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 110.6,
+    "gain_after": 111.0,
+    "loss_before": 112.8,
+    "loss_after": 111.4,
+    "bridges": 6
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 137.8,
+    "gain_after": 137.2,
+    "loss_before": 137.2,
+    "loss_after": 136.5,
+    "bridges": 3
+   }
+  ]
+ },
+ {
+  "id": "S02-d21",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "loop_1/main",
+    "gain_before": 158.0,
+    "gain_after": 158.3,
+    "loss_before": 157.0,
+    "loss_after": 157.3,
+    "bridges": 3
+   },
+   {
+    "candidate": "loop_2/main",
+    "gain_before": 241.6,
+    "gain_after": 241.6,
+    "loss_before": 240.6,
+    "loss_after": 240.6,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "B-kzk-000",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 39.3,
+    "gain_after": 39.3,
+    "loss_before": 34.0,
+    "loss_after": 34.0,
+    "bridges": 1
+   }
+  ]
+ },
+ {
+  "id": "B-kzk-045",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 29.7,
+    "gain_after": 26.7,
+    "loss_before": 26.0,
+    "loss_after": 23.0,
+    "bridges": 2
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 45.5,
+    "gain_after": 42.1,
+    "loss_before": 32.6,
+    "loss_after": 29.2,
+    "bridges": 2
+   }
+  ]
+ },
+ {
+  "id": "B-kzk-135",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 29.8,
+    "gain_after": 29.8,
+    "loss_before": 24.1,
+    "loss_after": 24.3,
+    "bridges": 3
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 56.6,
+    "gain_after": 50.1,
+    "loss_before": 51.1,
+    "loss_after": 43.8,
+    "bridges": 3
+   }
+  ]
+ },
+ {
+  "id": "B-kzk-180",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 33.2,
+    "gain_after": 33.2,
+    "loss_before": 31.5,
+    "loss_after": 31.5,
+    "bridges": 2
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 50.4,
+    "gain_after": 46.5,
+    "loss_before": 47.5,
+    "loss_after": 43.6,
+    "bridges": 3
+   }
+  ]
+ },
+ {
+  "id": "B-kzk-315",
+  "same": true,
+  "problems": [],
+  "gains": [
+   {
+    "candidate": "recommended/main",
+    "gain_before": 34.9,
+    "gain_after": 34.9,
+    "loss_before": 27.6,
+    "loss_after": 27.6,
+    "bridges": 0
+   },
+   {
+    "candidate": "shortest/main",
+    "gain_before": 23.5,
+    "gain_after": 23.5,
+    "loss_before": 23.6,
+    "loss_after": 23.6,
+    "bridges": 1
+   }
+  ]
+ }
+]

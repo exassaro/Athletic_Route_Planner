@@ -30,6 +30,13 @@ Decided 2026-11-18 by the product owner at the start of Phase 5, the web front e
 10. **Lighthouse:** accessibility ≥ 90 is a gate; performance is reported as measured.
 11. **Left out:** deleting a saved route (no endpoint) and "Remix this route" (the plan id stays private).
 
+**Decided after the elevation report** (2026-11-18, [docs/reports/phase5/elevation.md](reports/phase5/elevation.md))
+
+12. **Basemap: the fallback of amendment 3.** `pmtiles extract` of the Protomaps daily build of 2026-11-15 (the pin's day) for Kerala, instead of Planetiler, which needed Java 21, Maven and a 908 MB coastline download. The build date is pinned and recorded.
+13. **Climb over bridges (solver change, P3):** the solver's `climb` replaces the heights over bridge edges (Valhalla `edge.bridge`) with a straight line between the bridge's ends before smoothing; the DEM gives the water there, not the deck. Smoothing is otherwise unchanged (5 samples, 3 m). `Candidate.bridges_m` carries the spans so the chart uses the same series. Gain and loss are not used in scoring, so no route changes.
+14. **Smoothed profile (P1):** the elevation endpoint also returns the profile smoothed exactly as the solver smooths it, bridges included; the chart draws that series.
+15. **Approximate climb (P2):** a candidate whose route has a median DEM height under 20 m is marked `climb_approximate`; the card shows "approx." and says why.
+
 ## Phase 4 amendments
 
 Decided 2026-11-18 by the product owner at the start of Phase 4, the backend API in `api/` (evidence: [docs/reports/phase4/memory.md](reports/phase4/memory.md)). There is no front end and no LLM in this phase. The solver's behaviour does not change: if the API needs a solver change, it is raised with the product owner first. Where these amendments conflict with an earlier amendment or a later section, they win. Sections 11, 12 and 15 (Phase 4) are rewritten to match.

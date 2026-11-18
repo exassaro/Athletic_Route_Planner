@@ -20,6 +20,7 @@ from .models import Candidate, Flag, RouteRequest
 ELEVATION_STEP_M = 30.0       # section 9: sample every 25 to 50 m
 SMOOTH_WINDOW = 5             # moving average over samples
 CLIMB_THRESHOLD_M = 3.0       # count gain only above a 2 to 3 m threshold
+BRIDGE_PAD_M = 30.0           # samples this near a bridge are bridged too (Phase 5 amendment 13)
 SPUR_MIN_M = 100.0
 TURN_NEAR_STOP_M = 60.0       # a turn-round this close to a stop that must be reached is required by it
 REPEAT_LIMIT = 0.10           # section 8: hard above 10% unless out-and-back (see module note)
@@ -110,14 +111,56 @@ def spurs(edges: list[Edge], allowed_turns_m: list[float]) -> list[float]:
     return out
 
 
-def climb(engine: Engine, geometry: list) -> tuple[float, float] | tuple[None, None]:
-    """Smoothed gain and loss: sample every 30 m, moving average, count changes above 3 m (hysteresis)."""
-    samples = [p for p, _ in geodesy.sample_every(geometry, ELEVATION_STEP_M)]
-    heights = engine.heights(samples)
+def bridge_spans(edges: list[Edge] | None, length_m: float) -> list[tuple[float, float]]:
+    """[from_m, to_m] of each run of bridge edges along the route. Edge lengths are scaled to the route's
+    measured length, so positions match the 30 m samples to about one sample."""
+    if not edges:
+        return []
+    total = sum(e.length_m for e in edges)
+    if total <= 0:
+        return []
+    scale, at, spans = length_m / total, 0.0, []
+    for e in edges:
+        n = e.length_m * scale
+        if e.bridge:
+            if spans and abs(spans[-1][1] - at) < 1.0:
+                spans[-1] = (spans[-1][0], at + n)
+            else:
+                spans.append((at, at + n))
+        at += n
+    return [(round(a, 1), round(b, 1)) for a, b in spans]
+
+
+def smoothed_heights(distances: list[float], heights: list[float],
+                     bridges: list[tuple[float, float]] | None = None) -> list[float]:
+    """The series the climb is counted on (Phase 5 amendments 13 and 14), also drawn by the front end.
+
+    1. Bridges: the DEM gives the water under a bridge, not the deck. Samples within BRIDGE_PAD_M of a bridge,
+       plus one either side, are replaced by a straight line between the samples just outside.
+    2. A moving average over SMOOTH_WINDOW samples.
+    """
+    h = [float(x) for x in heights]
+    for a, b in bridges or []:
+        idx = [i for i, d in enumerate(distances) if a - BRIDGE_PAD_M <= d <= b + BRIDGE_PAD_M]
+        if not idx:
+            continue
+        i0, i1 = max(idx[0] - 1, 0), min(idx[-1] + 1, len(h) - 1)
+        for i in range(i0 + 1, i1):
+            t = (distances[i] - distances[i0]) / (distances[i1] - distances[i0]) if distances[i1] > distances[i0] else 0.0
+            h[i] = h[i0] + t * (h[i1] - h[i0])
+    k = SMOOTH_WINDOW // 2
+    return [sum(h[max(0, i - k):i + k + 1]) / len(h[max(0, i - k):i + k + 1]) for i in range(len(h))]
+
+
+def climb(engine: Engine, geometry: list,
+          bridges: list[tuple[float, float]] | None = None) -> tuple[float, float] | tuple[None, None]:
+    """Smoothed gain and loss: sample every 30 m, bridge the bridges, moving average, count changes above 3 m
+    (hysteresis)."""
+    samples = geodesy.sample_every(geometry, ELEVATION_STEP_M)
+    heights = engine.heights([p for p, _ in samples])
     if not heights or any(h is None for h in heights):
         return None, None
-    k = SMOOTH_WINDOW // 2
-    smooth = [sum(heights[max(0, i - k):i + k + 1]) / len(heights[max(0, i - k):i + k + 1]) for i in range(len(heights))]
+    smooth = smoothed_heights([d for _, d in samples], heights, bridges)
     gain = loss = 0.0
     anchor = smooth[0]
     for h in smooth[1:]:
@@ -146,7 +189,8 @@ def measure(engine: Engine, req: RouteRequest, cand: Candidate, edges: list[Edge
     rep, forced = repetition(edges, forced_until, turns)
     foot = sum(e.length_m for e in edges if e.use != "ferry") or 1.0
     main = sum(e.length_m for e in edges if e.road_class in MAIN_CLASSES and e.use != "ferry")
-    gain, loss = climb(engine, cand.geometry)
+    cand.bridges_m = bridge_spans(edges, cand.length_m)
+    gain, loss = climb(engine, cand.geometry, cand.bridges_m)
     return Measures(repeat_share=rep, forced_repeat_share=forced, spur_m=spurs(edges, turns),
                     main_share=main / foot, gain_m=gain, loss_m=loss,
                     keys={e.key for e in edges if e.use != "ferry"})

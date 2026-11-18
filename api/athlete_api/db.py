@@ -116,6 +116,7 @@ class Route(Base):
     stops: Mapped[list[Any]] = mapped_column(JSONB)                    # Candidate.stops
     road_class_m: Mapped[dict[str, Any]] = mapped_column(JSONB)
     flags: Mapped[list[Any]] = mapped_column(JSONB)                    # Candidate.flags
+    bridges_m: Mapped[list[Any] | None] = mapped_column(JSONB)         # Candidate.bridges_m (Phase 5 amendment 13)
     elevation: Mapped[list[Any] | None] = mapped_column(JSONB)         # [[distance_m, height_m], ...] every 30 m (amendment 15)
 
 

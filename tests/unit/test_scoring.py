@@ -2,7 +2,7 @@ import pytest
 
 from athlete_engine import geodesy
 from athlete_engine.measure import Edge
-from athlete_solver.scoring import climb, diversify, jaccard, repetition, spurs
+from athlete_solver.scoring import bridge_spans, climb, diversify, jaccard, repetition, smoothed_heights, spurs
 
 
 def chain(points, use="road"):
@@ -104,3 +104,41 @@ def test_national_highway_flag_needs_a_200_m_stretch():
     crossing[1].road_class = "trunk"                  # one 110 m edge of trunk
     assert highway_flag(crossing).code == "crosses_national_highway"
     assert highway_flag(chain(LINE)) is None
+
+
+def _edge(length_m, bridge=False):
+    return Edge(id=1, way_id=1, use="road", road_class="residential", names=[], shape=[(0.0, 0.0), (0.0, 0.0)],
+                length_m=length_m, bridge=bridge)
+
+
+def test_bridge_spans_are_scaled_and_merged():
+    """Phase 5 amendment 13: consecutive bridge edges are one span; positions scaled to the measured length."""
+    edges = [_edge(100), _edge(30, True), _edge(20, True), _edge(50), _edge(10, True)]
+    assert bridge_spans(edges, 420.0) == [(200.0, 300.0), (400.0, 420.0)]
+    assert bridge_spans([], 100.0) == [] and bridge_spans(None, 100.0) == []
+
+
+def test_the_water_under_a_bridge_is_not_climbed():
+    """A 9 m dip under a 90 m bridge on flat ground counts as climb without bridging, none with it."""
+    d = [30.0 * i for i in range(40)]
+    h = [10.0] * 40
+    for i in (19, 20, 21):
+        h[i] = 1.0
+    raw = smoothed_heights(d, h)
+    bridged = smoothed_heights(d, h, [(570.0, 630.0)])
+    assert min(raw) < 7.0
+    assert bridged == [10.0] * 40
+
+
+class Profile:
+    """Heights along LINE by distance from its start (a dip under a bridge in the middle)."""
+
+    def heights(self, points):
+        return [1.0 if 15 <= i <= 17 else 10.0 for i in range(len(points))]
+
+
+def test_climb_uses_the_bridges():
+    gain, _ = climb(Profile(), LINE)
+    assert gain > 3.0
+    gain, loss = climb(Profile(), LINE, [(450.0, 510.0)])
+    assert gain == 0 and loss == 0

@@ -29,6 +29,7 @@ class Edge:
     names: list[str]
     shape: list[LonLat]     # the part of the measured shape this edge covers
     length_m: float         # ellipsoid length of that part
+    bridge: bool = False    # Valhalla edge.bridge (the climb bridges these: Phase 5 amendment 13)
 
     @property
     def key(self) -> tuple:
@@ -53,7 +54,7 @@ class Measurement:
 def edges_for_shape(engine: Valhalla, shape: list[LonLat],
                     costing_options: dict[str, Any] | None = None) -> tuple[list[Edge], bool]:
     """Edges along one leg's shape. Returns (edges, matched_exactly)."""
-    attrs = ["edge.id", "edge.way_id", "edge.use", "edge.road_class", "edge.names",
+    attrs = ["edge.id", "edge.way_id", "edge.use", "edge.road_class", "edge.names", "edge.bridge",
              "edge.begin_shape_index", "edge.end_shape_index", "shape"]
     exact = True
     try:
@@ -71,7 +72,7 @@ def edges_for_shape(engine: Valhalla, shape: list[LonLat],
             continue
         edges.append(Edge(id=e["id"], way_id=e.get("way_id"), use=e.get("use", ""),
                           road_class=e.get("road_class", ""), names=e.get("names", []),
-                          shape=part, length_m=geodesy.line_length_m(part)))
+                          shape=part, length_m=geodesy.line_length_m(part), bridge=bool(e.get("bridge", False))))
     return edges, exact
 
 

@@ -41,6 +41,9 @@ def test_route_geojson_and_elevation(make_client):
     assert [m["km"] for m in marks] == list(range(1, len(marks) + 1))
     assert len(marks) == int(cand["length_m"] // 1000) - (cand["length_m"] % 1000 == 0)
     assert all(abs(m["at_m"] - 1000 * m["km"]) < 1e-6 for m in marks)
+    # Phase 5 amendments 14 and 15: the solver-smoothed series, one per sample; flat 12 m ground is lowland.
+    assert elev["smoothed"] == [12.0] * len(elev["profile"])
+    assert elev["climb_approximate"] is True and cand["climb_approximate"] is True
 
 
 def test_gpx_download_is_valid(make_client):

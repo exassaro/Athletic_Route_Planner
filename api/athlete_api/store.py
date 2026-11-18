@@ -36,6 +36,7 @@ def route_row(cand: Candidate, *, version_id: uuid.UUID, seq: int, heights: list
         geom=from_shape(line_z(cand.geometry, heights), srid=4326),
         end_label=cand.end.label, end_point=dumped["end"], stops=dumped["stops"],
         road_class_m=dumped["road_class_m"], flags=dumped["flags"], elevation=elevation,
+        bridges_m=dumped["bridges_m"],
         **{k: getattr(cand, k) for k in SCALARS},
     )
 
@@ -51,5 +52,5 @@ def candidate_of(route: Route) -> Candidate:
     geometry, _ = geometry_of(route)
     data: dict[str, Any] = {k: getattr(route, k) for k in SCALARS}
     data.update(geometry=geometry, stops=route.stops, end=EndPoint.model_validate(route.end_point),
-                road_class_m=route.road_class_m, flags=route.flags)
+                road_class_m=route.road_class_m, flags=route.flags, bridges_m=route.bridges_m or [])
     return Candidate.model_validate(data)

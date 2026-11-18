@@ -5,7 +5,7 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5**, the web front end and map in `web/` (blueprint Phase 5 amendments 1 to 11). Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first.
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5**, the web front end and map in `web/` (blueprint Phase 5 amendments 1 to 15). Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first.
 
 ## Phase 5 amendments (2026-11-18, full text at the top of docs/blueprint.md; they win over earlier ones)
 
@@ -20,6 +20,9 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 9. Production is one origin behind Caddy (also HTTPS on the LAN); CORS is for development.
 10. Lighthouse: accessibility ≥ 90 is a gate; performance is reported.
 11. Left out: deleting saved routes, "Remix this route".
+12. Basemap = `pmtiles extract` of the Protomaps build of 2026-11-15 (the pin's day), not Planetiler.
+13. Solver `climb` bridges bridge edges (straight line between their ends) before smoothing; `Candidate.bridges_m` carries the spans. Approved solver change (P3); routes unchanged.
+14. Elevation endpoint returns the solver-smoothed profile (P1). 15. `climb_approximate` when the route's median DEM height < 20 m (P2).
 - **Plan first.** Give a plan and wait for approval before writing code.
 - **Small steps.** Each step ends in something the developer can run and check. Commit after each step.
 - **No invented distances.** Never hardcode or estimate a distance. Every distance comes from the routing engine or from measuring geometry (`athlete_engine.geodesy`). The leg distances in the blueprint's section 8 worked example are made up: never use them as test expectations. Straight-line distance is allowed only for snap distances and pre-filters and must never be presented as a route distance.

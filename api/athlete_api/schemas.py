@@ -27,6 +27,9 @@ class CandidateOut(Candidate):
 
     route_id: uuid.UUID
     edge_ids: SkipJsonSchema[list[int]] = Field(default_factory=list, exclude=True)
+    climb_approximate: bool = Field(
+        description="The route's median DEM height is under 20 m: on low ground the surface model's trees and "
+                    "roofs are a large share of the climb, so show it as approximate (Phase 5 amendment 15)")
 
 
 class BuildsOut(BaseModel):
@@ -174,6 +177,10 @@ class ElevationOut(BaseModel):
     points: list[tuple[float, float]] = Field(description="[lon, lat] of each profile sample, same order "
                                                           "(Phase 5 A5): where a chart cursor sits on the map")
     km_marks: list[KmMark] = Field(description="The position of every whole kilometre along the route")
+    smoothed: list[float] = Field(description="Heights as the solver smooths them for gain and loss (bridges "
+                                              "bridged, moving average), one per profile sample: draw this "
+                                              "(Phase 5 amendment 14)")
+    climb_approximate: bool
     gain_m: float | None = Field(description="The solver's smoothed climb (not recomputed from the profile)")
     loss_m: float | None
 

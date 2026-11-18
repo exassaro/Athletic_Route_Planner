@@ -435,6 +435,16 @@ export interface components {
         CandidateOut: {
             /** Backtrack Share */
             backtrack_share?: number | null;
+            /** Bridges M */
+            bridges_m?: [
+                number,
+                number
+            ][];
+            /**
+             * Climb Approximate
+             * @description The route's median DEM height is under 20 m: on low ground the surface model's trees and roofs are a large share of the climb, so show it as approximate (Phase 5 amendment 15)
+             */
+            climb_approximate: boolean;
             /** Deviation M */
             deviation_m: number;
             /** Duration S */
@@ -664,6 +674,8 @@ export interface components {
         };
         /** ElevationOut */
         ElevationOut: {
+            /** Climb Approximate */
+            climb_approximate: boolean;
             /**
              * Gain M
              * @description The solver's smoothed climb (not recomputed from the profile)
@@ -697,6 +709,11 @@ export interface components {
              * Format: uuid
              */
             route_id: string;
+            /**
+             * Smoothed
+             * @description Heights as the solver smooths them for gain and loss (bridges bridged, moving average), one per profile sample: draw this (Phase 5 amendment 14)
+             */
+            smoothed: number[];
             /**
              * Step M
              * @description Sampling step along the route

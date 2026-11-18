@@ -191,7 +191,7 @@ class ValhallaEngine:
                     routed.junctions.append(Junction(at_m=run_foot, point=e.shape[-1], names=list(e.names)))
 
     def _edges_with_junctions(self, shape: list[LonLat]) -> tuple[list[Edge], list[bool]]:
-        attrs = ["edge.id", "edge.way_id", "edge.use", "edge.road_class", "edge.names",
+        attrs = ["edge.id", "edge.way_id", "edge.use", "edge.road_class", "edge.names", "edge.bridge",
                  "edge.begin_shape_index", "edge.end_shape_index", "node.type", "node.intersecting_edge.walkability",
                  "shape"]
         try:
@@ -208,7 +208,8 @@ class ValhallaEngine:
                 continue
             edges.append(Edge(id=e["id"], way_id=e.get("way_id"), use=e.get("use", ""),
                               road_class=e.get("road_class", ""), names=e.get("names", []),
-                              shape=part, length_m=geodesy.line_length_m(part)))
+                              shape=part, length_m=geodesy.line_length_m(part),
+                              bridge=bool(e.get("bridge", False))))
             crossing = [x for x in e.get("end_node", {}).get("intersecting_edges", [])
                         if x.get("walkability") in (None, "both", "forward", "backward")]
             ends.append(bool(crossing))

@@ -15,9 +15,32 @@ from dataclasses import dataclass
 from athlete_engine import geodesy
 from athlete_engine.valhalla import Valhalla
 from athlete_solver.models import Candidate
+from athlete_solver.scoring import smoothed_heights
 
 PROFILE_STEP_M = 30.0     # the solver's ELEVATION_STEP_M (scoring.py)
+LOWLAND_MEDIAN_M = 20.0   # Phase 5 amendment 15: below this median DEM height the climb is marked approximate
 CHUNK = 2000              # points per /height call
+
+
+def climb_approximate(profile: list[list[float]] | None) -> bool:
+    """Phase 5 amendment 15 (P2): on low, flat ground the surface model's canopy and roofs are a large share of
+    the climb, so the card marks it approximate. Measured: 317 of 379 fixture routes (elevation.md)."""
+    if not profile:
+        return False
+    heights = sorted(p[1] for p in profile)
+    n = len(heights)
+    median = heights[n // 2] if n % 2 else (heights[n // 2 - 1] + heights[n // 2]) / 2
+    return median < LOWLAND_MEDIAN_M
+
+
+def smoothed(profile: list[list[float]] | None, bridges: list | None) -> list[float]:
+    """Phase 5 amendment 14 (P1): the profile as the solver smooths it for the climb (bridges bridged, moving
+    average), from the solver's own function. Rounded to 0.1 m."""
+    if not profile:
+        return []
+    series = smoothed_heights([p[0] for p in profile], [p[1] for p in profile],
+                              [tuple(b) for b in bridges or []])
+    return [round(h, 1) for h in series]
 
 
 class ElevationMissing(RuntimeError):

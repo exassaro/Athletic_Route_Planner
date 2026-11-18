@@ -18,7 +18,8 @@ def mirrored(out: Routed) -> Routed:
     """The outward run followed by the same path walked back."""
     back = list(reversed(out.shape))
     back_edges = [Edge(id=e.id, way_id=e.way_id, use=e.use, road_class=e.road_class, names=e.names,
-                       shape=list(reversed(e.shape)), length_m=e.length_m) for e in reversed(out.edges)]
+                       shape=list(reversed(e.shape)), length_m=e.length_m, bridge=e.bridge)
+                  for e in reversed(out.edges)]
     return Routed(legs=[out.shape, back], leg_foot_m=[out.foot_m, out.foot_m], engine_m=2 * out.engine_m,
                   duration_s=None if out.duration_s is None else 2 * out.duration_s, ferry_m=2 * out.ferry_m,
                   edges=out.edges + back_edges, junctions=[], flags=list(out.flags),

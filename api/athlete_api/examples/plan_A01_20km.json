@@ -2,10 +2,10 @@
  "summary": "over_budget: the same stops at 20 km, with the diff",
  "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-18. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point. Version 2, after PATCH target_distance_m 25000 -> 20000.",
  "value": {
-  "plan_id": "76a6439a-5d16-47ef-9c2f-fa261462d16c",
+  "plan_id": "70372592-b3cc-41c4-9f15-66f35f683817",
   "version": 2,
   "source": "form",
-  "created_at": "2026-11-18T03:27:21.664319Z",
+  "created_at": "2026-11-18T04:19:29.316258Z",
   "outcome": "over_budget",
   "request": {
    "activity": "run",
@@ -1641,8 +1641,8 @@
     "edge_count": 193,
     "deviation_m": 2258.026936023176,
     "duration_s": 16067.636,
-    "gain_m": 113.5,
-    "loss_m": 141.2,
+    "gain_m": 100.5,
+    "loss_m": 130.3,
     "stops": [
      {
       "role": "start",
@@ -1801,11 +1801,34 @@
      "primary": 644.3,
      "unclassified": 367.8
     },
+    "bridges_m": [
+     [
+      2040.3,
+      2165.1
+     ],
+     [
+      7072.4,
+      7234.1
+     ],
+     [
+      11326.9,
+      11627.7
+     ],
+     [
+      13150.9,
+      13214.2
+     ],
+     [
+      14395.3,
+      14409.3
+     ]
+    ],
     "repeat_share": 0.0,
     "backtrack_share": null,
     "score": 22.58,
     "flags": [],
-    "route_id": "f268cac2-02ea-482a-a73b-5a22a3a5e984"
+    "route_id": "8fbab045-e266-4a13-818c-ea02aef44e56",
+    "climb_approximate": true
    },
    {
     "label": "recommended",
@@ -1841,8 +1864,8 @@
     "edge_count": 168,
     "deviation_m": 0.014668674150016159,
     "duration_s": 14436.93,
-    "gain_m": 103.5,
-    "loss_m": 130.4,
+    "gain_m": 97.1,
+    "loss_m": 122.7,
     "stops": [
      {
       "role": "start",
@@ -1983,6 +2006,28 @@
      "primary": 644.3,
      "unclassified": 227.9
     },
+    "bridges_m": [
+     [
+      2040.3,
+      2165.1
+     ],
+     [
+      7072.4,
+      7234.1
+     ],
+     [
+      11326.9,
+      11627.7
+     ],
+     [
+      13150.9,
+      13214.3
+     ],
+     [
+      14395.3,
+      14409.4
+     ]
+    ],
     "repeat_share": 0.0,
     "backtrack_share": null,
     "score": 0.0,
@@ -1993,7 +2038,8 @@
       "data": {}
      }
     ],
-    "route_id": "de753780-a28d-40ef-b466-b91c83141c6a"
+    "route_id": "7fcc704f-b32c-4bc7-adda-22169fe98afb",
+    "climb_approximate": true
    },
    {
     "label": "shortest",
@@ -2029,8 +2075,8 @@
     "edge_count": 190,
     "deviation_m": 1738.5570253138721,
     "duration_s": 15947.281,
-    "gain_m": 107.3,
-    "loss_m": 142.2,
+    "gain_m": 92.4,
+    "loss_m": 127.1,
     "stops": [
      {
       "role": "start",
@@ -2188,11 +2234,42 @@
      "residential": 494.2,
      "primary": 3609.3
     },
+    "bridges_m": [
+     [
+      2045.7,
+      2170.6
+     ],
+     [
+      7077.9,
+      7239.6
+     ],
+     [
+      11332.4,
+      11633.3
+     ],
+     [
+      12971.6,
+      13035.0
+     ],
+     [
+      14216.0,
+      14230.1
+     ],
+     [
+      18884.0,
+      18992.0
+     ],
+     [
+      20809.1,
+      21302.1
+     ]
+    ],
     "repeat_share": 0.0,
     "backtrack_share": null,
     "score": 17.386,
     "flags": [],
-    "route_id": "b6521381-039f-412a-aa1b-d3be251fec1b"
+    "route_id": "33897c7c-2890-4cf1-b618-0f59231ea885",
+    "climb_approximate": true
    },
    {
     "label": "shortest",
@@ -2228,8 +2305,8 @@
     "edge_count": 173,
     "deviation_m": 0.011112013380625285,
     "duration_s": 14711.468,
-    "gain_m": 107.3,
-    "loss_m": 136.0,
+    "gain_m": 92.4,
+    "loss_m": 121.1,
     "stops": [
      {
       "role": "start",
@@ -2369,6 +2446,32 @@
      "residential": 494.2,
      "primary": 1870.7
     },
+    "bridges_m": [
+     [
+      2045.7,
+      2170.6
+     ],
+     [
+      7077.9,
+      7239.6
+     ],
+     [
+      11332.4,
+      11633.3
+     ],
+     [
+      12971.6,
+      13035.0
+     ],
+     [
+      14216.0,
+      14230.1
+     ],
+     [
+      18884.0,
+      18992.0
+     ]
+    ],
     "repeat_share": 0.0,
     "backtrack_share": null,
     "score": 0.0,
@@ -2379,7 +2482,8 @@
       "data": {}
      }
     ],
-    "route_id": "29963f2d-8ef8-461c-b56f-bf341c02c2fd"
+    "route_id": "dc6d07e6-3a40-476d-8e84-3ca0c23ef4a4",
+    "climb_approximate": true
    }
   ],
   "conflict": {
@@ -2799,7 +2903,7 @@
      "label": "recommended",
      "from_option": "main",
      "to_option": "full_route",
-     "from_length_m": 24999.99241178757,
+     "from_length_m": 24999.992411787083,
      "to_length_m": 22258.026936023176,
      "length_delta_m": -2742.0,
      "duration_delta_s": -1979.1,
@@ -2809,7 +2913,7 @@
      "label": "shortest",
      "from_option": "continue_past_target",
      "to_option": "full_route",
-     "from_length_m": 25052.690610830086,
+     "from_length_m": 25052.690610828133,
      "to_length_m": 21738.557025313872,
      "length_delta_m": -3314.1,
      "duration_delta_s": -2386.9,
@@ -2825,10 +2929,10 @@
    "osm": "2026-11-15T00:15:25Z",
    "valhalla": "valhalla 3.9.2-2dc688aa7 tiles 2026-11-16T12:07:35Z",
    "graphhopper": "graphhopper 11.1 import 2026-11-17T09:07:35Z",
-   "solver": "6408f21418d9dd58"
+   "solver": "282ee0fa449d3a84"
   },
   "cached": false,
-  "elapsed_ms": 4907.375499999034,
+  "elapsed_ms": 3823.525800005882,
   "engine_calls": 92
  }
 }

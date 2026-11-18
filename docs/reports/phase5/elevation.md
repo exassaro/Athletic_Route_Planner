@@ -60,3 +60,17 @@ Gain per km (median and 90th percentile), and the share of the solver's current 
 | P6 | GPX keeps raw DEM `<ele>` by default; `?ele=false` is offered in the UI as "let the app use its own elevation" | API (done, A2) | Apps that compute climb from `<ele>` may show more than the card. Check during the manual Garmin and Strava import | Keep |
 
 Decisions needed: P1 and P2 (API, A7), P3 (solver), P5 (whether you can supply recorded runs).
+
+## Decided and done (2026-11-18)
+
+Decisions: P1, P2 and P3 yes (blueprint Phase 5 amendments 13 to 15). P4 not done; P5 open.
+
+**P3, the solver change.** `athlete_engine.measure.Edge` gains `bridge` (Valhalla `edge.bridge`, now requested with the other edge attributes). `scoring.climb` bridges each bridge span (samples within 30 m of it, plus one either side, replaced by a straight line between the samples just outside) before the unchanged 5-sample average and 3 m threshold; `Candidate.bridges_m` records the spans. Checked with `api/scripts/compare_routes.py`: all 110 active fixtures solved again on this laptop and compared with the routes the Phase 4 latency run stored:
+- **0 of 110 differ** in outcome, conflict, candidates, geometry (exact), lengths, stops, end, road classes, repetition, score or flags (numbers within 1e-6 m: the stored routes were solved in the Linux container, and the last bits of a geodesic sum differ between it and Windows; the same 1e-9 m difference appears with the change reverted);
+- gain over 234 candidates: median 0.928 of before, range 0.682 to 1.353 (a bridge between banks at different DEM heights can add climb); 44 unchanged (no bridges). A01 "recommended" 120.1 → 106.5 m, S02 loop 1 78.4 → 76.6 m.
+
+Raw: [bridge_climb_compare.json](bridge_climb_compare.json).
+
+**P1.** `GET /v1/routes/{id}/elevation` adds `smoothed`: the solver's series (`scoring.smoothed_heights`, imported, not copied) for each profile sample. Routes stored before `routes.bridges_m` existed are smoothed without bridging.
+
+**P2.** `climb_approximate` on every candidate and on the elevation response: median DEM height under 20 m.

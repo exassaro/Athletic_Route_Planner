@@ -29,7 +29,7 @@ from . import cache, explain
 from .diff import diff as version_diff
 from .db import Plan, PlanVersion, Route
 from .deps import Services
-from .elevation import ElevationMissing
+from .elevation import ElevationMissing, climb_approximate
 from .errors import ApiError
 from .fixes import conflict_out
 from .schemas import BuildsOut, CandidateOut, DiffOut, PlanOut, PlanVersionOut
@@ -165,8 +165,9 @@ class Planner:
         return PlanVersionOut.model_construct(
             plan_id=plan_id, version=version.version_no, source=source, created_at=version.created_at,
             outcome=result.outcome, request=request,
-            candidates=[CandidateOut.model_construct(route_id=rid, **dict(cand)) for rid, cand in
-                        zip(route_ids, result.candidates)],
+            candidates=[CandidateOut.model_construct(route_id=rid, climb_approximate=climb_approximate(elev.profile),
+                                                     **dict(cand))
+                        for rid, cand, elev in zip(route_ids, result.candidates, solved.elevation)],
             conflict=conflict_out(result.conflict, request), facts=version.facts, flags=result.flags,
             explanation=version.explanation,
             diff=None if version.diff is None else DiffOut.model_validate(version.diff), builds=BuildsOut(osm=version.graph_build, valhalla=version.valhalla_build,
@@ -193,7 +194,8 @@ class Planner:
         return PlanVersionOut(
             plan_id=plan_id, version=version.version_no, source=version.source, created_at=version.created_at,
             outcome=version.outcome, request=request,
-            candidates=[CandidateOut(route_id=r.id, **candidate_of(r).model_dump()) for r in routes],
+            candidates=[CandidateOut(route_id=r.id, climb_approximate=climb_approximate(r.elevation),
+                                     **candidate_of(r).model_dump()) for r in routes],
             conflict=conflict_out(version.conflict, request), facts=version.facts, flags=version.flags, explanation=version.explanation,
             diff=version.diff,
             builds=BuildsOut(osm=version.graph_build, valhalla=version.valhalla_build,

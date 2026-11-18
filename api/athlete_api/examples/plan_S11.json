@@ -2,10 +2,10 @@
  "summary": "ok, Case B: the target is nearer than the distance",
  "description": "Real output of the solver through the API for fixture S11 (Target nearer than budget: 25 km towards Kadalundi), measured on the development laptop on 2026-11-18. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
  "value": {
-  "plan_id": "1e0106a3-de83-4ea1-9c89-67a936d5b498",
+  "plan_id": "473fdaa8-9b89-40f8-a85f-55fdc7d813bb",
   "version": 1,
   "source": "form",
-  "created_at": "2026-11-18T03:27:28.709455Z",
+  "created_at": "2026-11-18T04:19:34.238082Z",
   "outcome": "ok",
   "request": {
    "activity": "run",
@@ -77,8 +77,8 @@
     "edge_count": 179,
     "deviation_m": 0.014153097930829972,
     "duration_s": 18048.691,
-    "gain_m": 128.4,
-    "loss_m": 132.1,
+    "gain_m": 118.5,
+    "loss_m": 122.2,
     "stops": [
      {
       "role": "start",
@@ -129,6 +129,32 @@
      "secondary": 19202.7,
      "unclassified": 227.9
     },
+    "bridges_m": [
+     [
+      279.6,
+      769.3
+     ],
+     [
+      9490.1,
+      9788.7
+     ],
+     [
+      15963.4,
+      16072.4
+     ],
+     [
+      20110.0,
+      20410.9
+     ],
+     [
+      21934.0,
+      21997.4
+     ],
+     [
+      23178.4,
+      23192.5
+     ]
+    ],
     "repeat_share": 0.0162,
     "backtrack_share": null,
     "score": 1.013,
@@ -148,7 +174,8 @@
       }
      }
     ],
-    "route_id": "fe948c8d-79a7-4de8-a035-2f1eca378339"
+    "route_id": "52ce5177-8dec-4725-91c1-18081d76e23a",
+    "climb_approximate": true
    },
    {
     "label": "recommended",
@@ -184,8 +211,8 @@
     "edge_count": 100,
     "deviation_m": -12396.916851574033,
     "duration_s": 9104.794,
-    "gain_m": 36.6,
-    "loss_m": 37.0,
+    "gain_m": 33.1,
+    "loss_m": 33.5,
     "stops": [
      {
       "role": "start",
@@ -235,6 +262,16 @@
      "primary": 688.0,
      "secondary": 10878.8
     },
+    "bridges_m": [
+     [
+      279.6,
+      769.3
+     ],
+     [
+      9490.0,
+      9788.6
+     ]
+    ],
     "repeat_share": 0.0,
     "backtrack_share": null,
     "score": 99.175,
@@ -247,7 +284,8 @@
       }
      }
     ],
-    "route_id": "5f8b5b3a-088f-4c66-88bc-bab55f10854a"
+    "route_id": "827e1ff6-7412-461a-9937-02b494aaf9e6",
+    "climb_approximate": true
    },
    {
     "label": "recommended",
@@ -283,8 +321,8 @@
     "edge_count": 140,
     "deviation_m": 363.8611471526565,
     "duration_s": 18296.413,
-    "gain_m": 306.4,
-    "loss_m": 305.1,
+    "gain_m": 305.7,
+    "loss_m": 304.4,
     "stops": [
      {
       "role": "start",
@@ -337,6 +375,24 @@
      "unclassified": 1108.7,
      "service_other": 90.9
     },
+    "bridges_m": [
+     [
+      279.6,
+      769.3
+     ],
+     [
+      6368.1,
+      6447.5
+     ],
+     [
+      13208.5,
+      13217.6
+     ],
+     [
+      21983.9,
+      22025.9
+     ]
+    ],
     "repeat_share": 0.005,
     "backtrack_share": null,
     "score": 3.163,
@@ -353,7 +409,8 @@
       }
      }
     ],
-    "route_id": "2bcbe20e-489f-4c2f-b9aa-3437dff2eec9"
+    "route_id": "6f5c5a39-f81d-46ba-9a09-9baee16d0276",
+    "climb_approximate": false
    },
    {
     "label": "shortest",
@@ -389,8 +446,8 @@
     "edge_count": 204,
     "deviation_m": -1.3552165896144288,
     "duration_s": 18234.582,
-    "gain_m": 118.0,
-    "loss_m": 124.3,
+    "gain_m": 105.7,
+    "loss_m": 109.7,
     "stops": [
      {
       "role": "start",
@@ -443,6 +500,24 @@
      "service_other": 190.5,
      "tertiary": 170.8
     },
+    "bridges_m": [
+     [
+      279.6,
+      769.3
+     ],
+     [
+      9490.3,
+      9788.9
+     ],
+     [
+      16043.5,
+      16152.5
+     ],
+     [
+      20192.3,
+      20493.2
+     ]
+    ],
     "repeat_share": 0.0162,
     "backtrack_share": null,
     "score": 1.024,
@@ -457,7 +532,8 @@
       }
      }
     ],
-    "route_id": "0784ffef-247a-4377-9169-6613da8d21c5"
+    "route_id": "5073ed9c-34fd-4126-a6d9-3f715353e3f5",
+    "climb_approximate": true
    },
    {
     "label": "shortest",
@@ -493,8 +569,8 @@
     "edge_count": 100,
     "deviation_m": -12396.474489686525,
     "duration_s": 9143.529,
-    "gain_m": 39.8,
-    "loss_m": 40.2,
+    "gain_m": 33.7,
+    "loss_m": 32.4,
     "stops": [
      {
       "role": "start",
@@ -544,6 +620,16 @@
      "primary": 688.0,
      "secondary": 10878.8
     },
+    "bridges_m": [
+     [
+      279.6,
+      769.3
+     ],
+     [
+      9490.3,
+      9788.9
+     ]
+    ],
     "repeat_share": 0.0,
     "backtrack_share": null,
     "score": 99.172,
@@ -556,7 +642,8 @@
       }
      }
     ],
-    "route_id": "b8cd1bf6-965a-4b9b-9329-a27e76a89e47"
+    "route_id": "9c65f1a5-e654-4018-9dff-65f97b6798ea",
+    "climb_approximate": true
    }
   ],
   "conflict": null,
@@ -867,10 +954,10 @@
    "osm": "2026-11-15T00:15:25Z",
    "valhalla": "valhalla 3.9.2-2dc688aa7 tiles 2026-11-16T12:07:35Z",
    "graphhopper": "graphhopper 11.1 import 2026-11-17T09:07:35Z",
-   "solver": "6408f21418d9dd58"
+   "solver": "282ee0fa449d3a84"
   },
   "cached": false,
-  "elapsed_ms": 6750.866699992912,
+  "elapsed_ms": 4618.568399993819,
   "engine_calls": 113
  }
 }

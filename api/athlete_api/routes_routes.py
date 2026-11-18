@@ -15,7 +15,7 @@ from sqlalchemy import select
 from . import explain, gpx, ratelimit
 from .db import Client, Plan, PlanVersion, Route, SavedRoute
 from .deps import Services, client_ip, limited, services
-from .elevation import PROFILE_STEP_M
+from .elevation import PROFILE_STEP_M, climb_approximate, smoothed
 from .errors import ApiError, responses
 from .examples import content
 from .schemas import ElevationOut, KmMark, LineStringZ, RouteFeature, SavedOut, SavedRouteOut, SaveIn, SharedRouteOut
@@ -94,6 +94,8 @@ def elevation_out(route: Route) -> ElevationOut:
              for pt, d in geodesy.sample_every(geometry, 1000.0)[1:] if 0.0 < d < total]
     return ElevationOut(route_id=route.id, step_m=PROFILE_STEP_M, profile=profile,
                         points=[(round(pt[0], 7), round(pt[1], 7)) for pt, _ in samples], km_marks=marks,
+                        smoothed=smoothed(route.elevation, route.bridges_m),
+                        climb_approximate=climb_approximate(route.elevation),
                         gain_m=route.gain_m, loss_m=route.loss_m)
 
 

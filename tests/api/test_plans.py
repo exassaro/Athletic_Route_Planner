@@ -30,8 +30,10 @@ def session(api) -> dict:
 
 
 def strip(c: dict) -> dict:
+    """The solver's candidate: drop what the API adds (route id; climb_approximate, Phase 5 amendment 15)."""
     c = dict(c)
     c.pop("route_id")
+    assert isinstance(c.pop("climb_approximate"), bool)
     return c
 
 

@@ -36,7 +36,7 @@ def distance(api, plan_id, metres):
 
 
 def candidates(version: dict) -> list[dict]:
-    return [{k: v for k, v in c.items() if k != "route_id"} for c in version["candidates"]]
+    return [{k: v for k, v in c.items() if k not in ("route_id", "climb_approximate")} for c in version["candidates"]]
 
 
 def assert_same(a: dict, b: dict) -> None:

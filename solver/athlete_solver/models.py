@@ -315,6 +315,8 @@ class Candidate(Strict):
     stops: list[StopOnRoute]
     end: EndPoint
     road_class_m: dict[str, float] = Field(default_factory=dict)
+    # [from_m, to_m] along the route of each bridge: its heights are bridged in the climb (Phase 5 amendment 13)
+    bridges_m: list[tuple[float, float]] = Field(default_factory=list)
     repeat_share: float | None = None
     backtrack_share: float | None = None
     score: float | None = None

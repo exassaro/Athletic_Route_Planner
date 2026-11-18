@@ -3,11 +3,11 @@
  "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-18. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
  "value": {
   "name": "Coast to Kozhikode",
-  "shared_at": "2026-11-18T03:27:31.447425Z",
+  "shared_at": "2026-11-18T04:19:36.371594Z",
   "summary": "The recommended route is 25.0 km, ending at Francis Road.",
   "route": {
    "type": "Feature",
-   "id": "45ea8ded-b8ce-45a8-8b41-7d47ad86b8db",
+   "id": "915b504d-af8f-4156-adad-88c39a4664b7",
    "geometry": {
     "type": "LineString",
     "coordinates": [
@@ -41,17 +41,17 @@
    "properties": {
     "label": "recommended",
     "option": "main",
-    "length_m": 24999.99241178757,
-    "foot_m": 24999.99241178757,
+    "length_m": 24999.992411787083,
+    "foot_m": 24999.992411787083,
     "ferry_m": 0.0,
     "engine_length_m": 25064.898,
-    "sphere_length_m": 25064.99157923431,
+    "sphere_length_m": 25064.99157924046,
     "engine": "graphhopper",
     "edge_count": 228,
-    "deviation_m": -0.0075882124292547815,
+    "deviation_m": -0.007588212916743942,
     "duration_s": 18046.729,
-    "gain_m": 120.1,
-    "loss_m": 153.8,
+    "gain_m": 106.5,
+    "loss_m": 140.1,
     "stops": [
      {
       "role": "start",
@@ -64,7 +64,7 @@
       },
       "snapped_lon": 75.846193,
       "snapped_lat": 11.120867,
-      "offset_m": 15.413560911165208,
+      "offset_m": 15.413560911165037,
       "at_m": 0.0,
       "kind": null,
       "must_reach": false,
@@ -210,6 +210,32 @@
      "residential": 4698.9,
      "unclassified": 1079.5
     },
+    "bridges_m": [
+     [
+      2040.2,
+      2165.1
+     ],
+     [
+      7072.1,
+      7233.8
+     ],
+     [
+      11326.4,
+      11627.2
+     ],
+     [
+      13150.4,
+      13213.7
+     ],
+     [
+      14394.7,
+      14408.8
+     ],
+     [
+      23009.2,
+      23114.6
+     ]
+    ],
     "repeat_share": 0.0,
     "backtrack_share": null,
     "score": 0.0,
@@ -220,10 +246,10 @@
       "data": {}
      }
     ],
-    "route_id": "45ea8ded-b8ce-45a8-8b41-7d47ad86b8db",
+    "route_id": "915b504d-af8f-4156-adad-88c39a4664b7",
     "version": 1
    }
   },
-  "gpx_url": "http://testserver/v1/share/vVyvQQXtsoXv/gpx"
+  "gpx_url": "http://testserver/v1/share/Q23T8V2Ts8sC/gpx"
  }
 }
