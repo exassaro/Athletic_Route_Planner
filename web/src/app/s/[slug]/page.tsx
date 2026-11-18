@@ -10,6 +10,7 @@ import { API_BASE } from "@/api/client";
 import { serverApi } from "@/api/server";
 import { Num } from "@/components/Num";
 import { ShareMap } from "@/components/ShareMap";
+import { Wordmark } from "@/components/Wordmark";
 import { km, metres } from "@/plan/format";
 import { ShareTime } from "./ShareTime";
 import Link from "next/link";
@@ -26,10 +27,14 @@ const getShared = cache(async (slug: string): Promise<Shared | null> => {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const shared = await getShared((await params).slug);
-  if (!shared) return { title: "Route not found · Athlete Router" };
+  if (!shared) return { title: "Route not found" };
   const p = shared.route.properties as { foot_m: number };
-  const title = `${shared.name ?? `${km(p.foot_m)} run`} · Athlete Router`;
-  return { title, description: shared.summary, openGraph: { title, description: shared.summary } };
+  const name = shared.name ?? `${km(p.foot_m)} run`;   // the layout's template adds " · GATHO"
+  return {
+    title: name,
+    description: shared.summary,
+    openGraph: { title: `${name} · GATHO`, description: shared.summary, siteName: "GATHO", type: "article" },
+  };
 }
 
 export default async function SharePage({ params }: Props) {
@@ -42,6 +47,7 @@ export default async function SharePage({ params }: Props) {
     <main className="share-page">
       <div className="share-map"><ShareMap route={shared.route} /></div>
       <section className="share-panel" aria-label="Shared route">
+        <p className="brand-row"><Link href="/" aria-label="GATHO: plan your own run"><Wordmark /></Link></p>
         <h1>{shared.name ?? "A shared run"}</h1>
         <p className="muted small">Shared {new Date(shared.shared_at).toISOString().slice(0, 10)}</p>
         <dl className="stats">

@@ -21,6 +21,7 @@ dist/
 # Node (later phases)
 node_modules/
 .next/
+.next-*/
 out/
 npm-debug.log*
 
@@ -48,6 +49,8 @@ web/e2e-results/
 # Basemap copied from data/basemap by engine/scripts/fetch_basemap.py
 web/public/basemap/
 web/public/maplibre/
+# GATHO icons, generated from web/brand/sprites.json by web/scripts/build-brand.mjs (predev, prebuild)
+web/public/icons/
 web/*.tmp.mjs
 
 # Personal run guide (not shared)

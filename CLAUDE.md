@@ -5,7 +5,7 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5b**, the GATHO mobile-first redesign of `web/` (blueprint Phase 5b amendments 1 to 11). No new features. Step 0 (baseline) is done: `docs/reports/phase5b/before/README.md`. Phase 5 (the web front end) is built: `docs/reports/phase5/summary.md`. Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first (A8, the GPX creator name, is pending).
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5b**, the GATHO mobile-first redesign of `web/` (blueprint Phase 5b amendments 1 to 11). No new features. Step 0 (baseline) is done: `docs/reports/phase5b/before/README.md`. Phase 5 (the web front end) is built: `docs/reports/phase5/summary.md`. Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first (A8, the GPX creator name, is approved).
 
 ## Phase 5b amendments (2026-11-18, full text at the top of docs/blueprint.md; they win over earlier ones)
 
@@ -13,13 +13,13 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 2. Playful retro, minimal: at most three retro elements per screen (wordmark, pixel numerals, markers, hard shadow); pixel icons are the icon style.
 3. Pixel font (Pixelify Sans, self-hosted subset) only for the wordmark and stat numbers ≥ 24 px; never for body, labels, place names or Malayalam. Body: system font, 15 to 16 px.
 4. Accent **#0F6E56** (dark #3DBFA3), one amber warning colour, second route dashed in ink.
-5. **Light and dark themes, toggle in the menu, default dark.**
+5. **Light and dark themes, toggle in the menu, default light.**
 6. Start pin = the supplied pixel **sneaker**; the **runner** is the empty state and its approved 4-frame run cycle the loading animation. Exact strings: `docs/reports/phase5b/sprites.md` (never edit by hand). Build-time static SVG, crispEdges; CSS-only hop on an inner element; none with reduced motion; paused while the map moves or a solve runs.
 7. App icons 512/192/32 show the sneaker.
 8. Bottom sheet (peek, half, full), five-step setup, chips as editors, route cards, stops timeline, one-headline conflicts, Undo message.
 9. The number check runs at every sheet state; A01, S02, G01 keep their intent.
 10. Lighthouse accessibility ≥ 95; touch targets ≥ 44 px; performance measured before and after through Caddy (`https://<LAN IP>`), median of three runs. The start pin adds no measurable main-thread time.
-11. A8 (GPX `creator="GATHO"`) is an API change, pending approval.
+11. A8 (GPX `creator="GATHO"`, an API change) approved; built in step 10.
 - Phase 5b measurements go through Caddy on the LAN address, because the running `next start` is the same-origin LAN build. `SHOTS_DIR` sets where `e2e/screens.spec.ts` writes.
 
 ## Phase 5 amendments (2026-11-18, full text at the top of docs/blueprint.md; they win over earlier ones)
@@ -241,7 +241,13 @@ uv run python api/scripts/export_openapi.py [--check]   # API schema -> web/src/
 cd web; npm ci; npm run gen:api                         # openapi.json -> src/api/schema.d.ts (generated, never edit)
 uv run python engine/scripts/fetch_basemap.py            # Kerala PMTiles (Protomaps build 20261115, engine/basemap_pin.json) + fonts/sprites -> web/public/basemap/ (226 MB, about 1 min)
 npm run dev | npm test | npm run typecheck | npm run lint | npm run build
+$env:NEXT_DIST_DIR=".next-check"; npm run build; npx next start --port 3001   # build and serve beside the running :3000 server (CORS only allows :3000, so the planner there cannot reach the API)
+uv run --no-project --with fonttools --with brotli python web/scripts/subset_pixel_font.py   # Pixelify Sans (pinned google/fonts commit) -> web/src/fonts/pixelify-gatho.woff2 (wordmark + stat characters, weight 600, tabular digits)
 ```
+
+- GATHO icons (`web/public/icons/`, gitignored) are drawn from `web/brand/sprites.json` by `scripts/build-brand.mjs` before dev and build. `sprites.json` must equal `docs/reports/phase5b/sprites.md` (a unit test checks).
+- Themes: `data-theme` on `<html>`, set before first paint by `THEME_SCRIPT` (`src/theme/theme.ts`); tokens in `globals.css`; `src/theme/tokens.test.ts` checks every contrast pair in both themes. React state lives in `src/theme/useTheme.ts`, kept apart so server components can import `theme.ts`.
+- Pixelify Sans has no `tnum` and a narrower "1": the subset widens it, so the stat numbers are tabular.
 
 - **Run web tooling from PowerShell (or a `D:\` path), not Git Bash's `/d/...`.** A lower-case drive letter makes Vitest load itself twice ("failed to find the current suite").
 - `npm install` sometimes skips rolldown's native binary (npm optional-dependency bug): delete `node_modules` and `package-lock.json` and install again.

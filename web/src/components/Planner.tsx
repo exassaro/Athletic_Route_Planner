@@ -24,6 +24,7 @@ import { RouteDetail } from "./RouteDetail";
 import { SaveShare } from "./SaveShare";
 import { StopsPanel } from "./StopsPanel";
 import { HealthBanner } from "./HealthBanner";
+import { ThemeToggle } from "@/theme/ThemeToggle";
 
 /** The form before the first solve: the API fills every field left out with its default. */
 type Draft = Omit<NewRouteRequest, "start"> & { start: Point | null };
@@ -125,7 +126,7 @@ export function Planner() {
           onClick={() => setSheet(sheet === "peek" ? "half" : sheet === "half" ? "full" : "peek")}>
           <span />
         </button>
-        <p className="saved-link"><Link href="/routes">Saved routes</Link></p>
+        <p className="saved-link"><Link href="/routes">Saved routes</Link> · <Link href="/about">About</Link></p>
         <HealthBanner trigger={plan.busy.kind === "error" ? plan.busy.error.code : null} />
         <StatusLine busy={plan.busy} onDismiss={plan.clearError} />
         <Chips request={request} />
@@ -183,6 +184,7 @@ export function Planner() {
               </button>
             )}
             <PaceSetting pace={pace} onChange={setPace} />
+            <ThemeToggle />
           </section>
         </div>
       </section>

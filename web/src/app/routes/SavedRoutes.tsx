@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Schemas } from "@/api/client";
 import { Num } from "@/components/Num";
+import { Wordmark } from "@/components/Wordmark";
 import { downloadGpx, shareUrl } from "@/components/SaveShare";
 import { km } from "@/plan/format";
 import { planClient } from "@/plan/usePlan";
@@ -28,6 +29,7 @@ export function SavedRoutes() {
   };
   return (
     <main className="saved-page">
+      <p className="brand-row"><Link href="/" aria-label="GATHO: plan a run"><Wordmark /></Link></p>
       <h1>Saved routes</h1>
       <p><Link href="/">Plan a run</Link></p>
       {msg && <p role="status">{msg}</p>}
