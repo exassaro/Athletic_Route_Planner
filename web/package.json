@@ -1,0 +1,41 @@
+{
+  "name": "athlete-router-web",
+  "version": "0.5.0",
+  "private": true,
+  "type": "module",
+  "description": "Athlete Router front end (blueprint Phase 5)",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "gen:api": "openapi-typescript src/api/openapi.json -o src/api/schema.d.ts",
+    "check:api": "npm run gen:api && git diff --exit-code -- src/api"
+  },
+  "dependencies": {
+    "maplibre-gl": "6.19.0",
+    "next": "16.4.6",
+    "openapi-fetch": "0.17.0",
+    "pmtiles": "4.5.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.3",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.6",
+    "jsdom": "29.1.1",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3",
+    "vitest": "5.1.0"
+  }
+}

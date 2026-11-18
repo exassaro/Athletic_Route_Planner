@@ -216,6 +216,20 @@ uv run python api/scripts/measure_stack_memory.py    # memory of every container
 
 The app uses asyncpg: psycopg's async mode cannot run on the Windows Proactor event loop. `ATHLETE_CACHE_ENABLED=false` turns the solve cache off (tests and diagnosis only). Settings come from `ATHLETE_*` variables (`athlete_api/config.py`); the engine URLs reuse `VALHALLA_URL` and `GRAPHHOPPER_URL`, like the solver.
 
+Web (Phase 5, `web/`, Node 22.18 on this laptop; http://localhost:3000):
+
+```
+uv run python api/scripts/export_openapi.py [--check]   # API schema -> web/src/api/openapi.json (CI runs --check)
+cd web; npm ci; npm run gen:api                         # openapi.json -> src/api/schema.d.ts (generated, never edit)
+npm run dev | npm test | npm run typecheck | npm run lint | npm run build
+```
+
+- **Run web tooling from PowerShell (or a `D:\` path), not Git Bash's `/d/...`.** A lower-case drive letter makes Vitest load itself twice ("failed to find the current suite").
+- `npm install` sometimes skips rolldown's native binary (npm optional-dependency bug): delete `node_modules` and `package-lock.json` and install again.
+- PowerShell 5.1 `Set-Content -Encoding utf8` writes a BOM; never use it on package.json.
+- jsdom is pinned to 29.x and ESLint to 9.x: jsdom 30+ needs Node 22.22, and eslint-plugin-react supports ESLint 9 only.
+- CI: `.github/workflows/ci.yml` (schema and types not stale, Python unit tests, web typecheck, lint, tests, build).
+
 Photon (profile `geocode`, http://localhost:2322):
 
 ```

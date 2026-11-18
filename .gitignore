@@ -37,3 +37,10 @@ npm-debug.log*
 Thumbs.db
 desktop.ini
 *.log
+
+# Next.js generated
+web/next-env.d.ts
+*.tsbuildinfo
+web/test-results/
+web/playwright-report/
+web/e2e-results/
