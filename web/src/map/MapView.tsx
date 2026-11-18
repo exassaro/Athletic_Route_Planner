@@ -26,7 +26,19 @@ export function MapView({ onReady, className, interactive = true, center = KOZHI
   useEffect(() => {
     let m: MapLibreMap | null = null;
     let cancelled = false;
-    (async () => {
+    // Phase 5b amendment 10 (performance): MapLibre is the heaviest work on the page (parsing about 1 MB, creating
+    // the WebGL context, building the style). It starts after the page has loaded and painted, in an idle moment
+    // (at most 2 s later), so the sheet and its controls come first. Until then the box shows the map's land colour.
+    const whenIdle = (fn: () => void) => {
+      const idle = () => {
+        if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(fn, { timeout: 2000 });
+        else setTimeout(fn, 200);    // Safari before 18.4 has no requestIdleCallback
+      };
+      if (document.readyState === "complete") idle();
+      else window.addEventListener("load", idle, { once: true });
+    };
+    whenIdle(async () => {
+      if (cancelled) return;
       const [maplibregl, { Protocol }] = await Promise.all([import("maplibre-gl"), import("pmtiles")]);
       if (cancelled || !box.current) return;
       maplibregl.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs"); // copied by scripts/copy-maplibre-worker.mjs
@@ -47,7 +59,7 @@ export function MapView({ onReady, className, interactive = true, center = KOZHI
       m.on("load", () => { setMap(ready); onReady?.(ready); });
       // The end-to-end tests tap the map at OSM coordinates through this (map.project): main map only.
       if (interactive) (window as unknown as { athleteMap?: MapLibreMap }).athleteMap = m;
-    })();
+    });
     return () => {
       cancelled = true;
       m?.remove();
@@ -60,5 +72,5 @@ export function MapView({ onReady, className, interactive = true, center = KOZHI
     shown.current = theme;
     map.setStyle(basemapStyle(window.location.origin, theme), { transformStyle: keepDrawn });
   }, [map, theme]);
-  return <div ref={box} className={className} style={{ position: "absolute", inset: 0 }} data-testid="map" />;
+  return <div ref={box} className={`map-box${className ? ` ${className}` : ""}`} style={{ position: "absolute", inset: 0 }} data-testid="map" />;
 }

@@ -605,3 +605,6 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .saved-text h2 { margin: 0; }
 .saved-line { margin: 2px 0 var(--space-1); }
 .saved-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+/* The map's box before MapLibre has started (after first paint): the basemap's land colour, so nothing flashes. */
+.map-box { background: #ECE9E3; }
+[data-theme="dark"] .map-box { background: #1B1E22; }
