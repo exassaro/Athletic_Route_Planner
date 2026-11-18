@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import spec from "@/api/openapi.json";
-import { blocked, patchFor, type Edit, type PatchOp, type RouteRequest } from "./edits";
+import { applyToDraft, blocked, patchFor, type Edit, type PatchOp, type RouteRequest } from "./edits";
 import { km, pace, parsePace, runningTime, signedKm } from "./format";
 
 type Example = { value: { request: RouteRequest; conflict: { fixes: { action: string; patch: PatchOp[] | null }[] } } };
@@ -13,45 +13,8 @@ const examples = (spec as unknown as { paths: Record<string, Record<string, { re
 const createExamples = examples["/v1/plans"]!.post!.responses["201"]!.content["application/json"]!.examples;
 const A01: RouteRequest = createExamples["plan_A01"]!.value.request;
 
-/** Minimal RFC 6902 apply (add/remove/replace/move/test on objects and arrays), for checking results only. */
-function apply(doc: unknown, ops: PatchOp[]): unknown {
-  let root = structuredClone(doc);
-  const parse = (p: string) => (p === "" ? [] : p.slice(1).split("/").map((s) => s.replace(/~1/g, "/").replace(/~0/g, "~")));
-  const parent = (path: string[]) => {
-    let cur: any = root;
-    for (const k of path.slice(0, -1)) cur = cur[k];
-    return [cur, path[path.length - 1]!] as const;
-  };
-  const get = (p: string) => parse(p).reduce((cur: any, k) => cur[k], root);
-  for (const op of ops) {
-    const path = parse(op.path);
-    if (op.op === "test") {
-      expect(get(op.path)).toEqual(op.value);
-      continue;
-    }
-    if (path.length === 0) {
-      root = structuredClone(op.value);
-      continue;
-    }
-    if (op.op === "move") {
-      const value = get(op.from!);
-      const [fp, fk] = parent(parse(op.from!));
-      if (Array.isArray(fp)) fp.splice(Number(fk), 1); else delete fp[fk];
-      const [tp, tk] = parent(path);
-      if (Array.isArray(tp)) tp.splice(Number(tk), 0, value); else tp[tk] = value;
-      continue;
-    }
-    const [p, k] = parent(path);
-    if (op.op === "remove") {
-      if (Array.isArray(p)) p.splice(Number(k), 1); else delete p[k];
-    } else if (op.op === "add" && Array.isArray(p)) {
-      if (k === "-") p.push(op.value); else p.splice(Number(k), 0, op.value);
-    } else {
-      p[k] = op.value;
-    }
-  }
-  return root;
-}
+/** The draft applier is RFC 6902 on plain JSON; the tests use it to check what each patch means. */
+const apply = (doc: unknown, ops: PatchOp[]) => applyToDraft(doc, ops);
 
 const run = (edit: Edit) => {
   const ops = patchFor(A01, edit);

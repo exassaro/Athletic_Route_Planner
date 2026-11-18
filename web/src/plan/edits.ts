@@ -120,3 +120,50 @@ export function blocked(request: RouteRequest, edit: Edit): string | null {
     return "An out-and-back needs a direction.";
   return null;
 }
+
+/**
+ * Applies a patch to the draft form before the first solve (nothing has been sent yet, so there is no version
+ * to patch). After the first solve every edit goes to the API and the screen shows the request it returns.
+ * RFC 6902 add, remove, replace, move and test, on plain JSON.
+ */
+export function applyToDraft<T>(doc: T, ops: PatchOp[]): T {
+  let root: unknown = structuredClone(doc);
+  const parse = (p: string) => (p === "" ? [] : p.slice(1).split("/").map((s) => s.replace(/~1/g, "/").replace(/~0/g, "~")));
+  type Node = Record<string, unknown> | unknown[];
+  const walk = (path: string[]): [Node, string] => {
+    let cur = root as Node;
+    for (const k of path.slice(0, -1)) cur = (cur as Record<string, unknown>)[k] as Node;
+    return [cur, path[path.length - 1]!];
+  };
+  const get = (path: string[]) => path.reduce<unknown>((cur, k) => (cur as Record<string, unknown>)[k], root);
+  const put = (path: string[], value: unknown, insert: boolean) => {
+    const [p, k] = walk(path);
+    if (Array.isArray(p)) {
+      if (k === "-") p.push(value);
+      else p.splice(Number(k), insert ? 0 : 1, value);
+    } else (p as Record<string, unknown>)[k] = value;
+  };
+  const del = (path: string[]) => {
+    const [p, k] = walk(path);
+    if (Array.isArray(p)) p.splice(Number(k), 1);
+    else delete (p as Record<string, unknown>)[k];
+  };
+  for (const op of ops) {
+    const path = parse(op.path);
+    if (op.op === "test") {
+      if (JSON.stringify(get(path)) !== JSON.stringify(op.value)) throw new Error(`test failed at ${op.path}`);
+    } else if (path.length === 0) {
+      root = structuredClone(op.value);
+    } else if (op.op === "remove") {
+      del(path);
+    } else if (op.op === "move") {
+      const from = parse(op.from!);
+      const v = get(from);
+      del(from);
+      put(path, v, true);
+    } else {
+      put(path, structuredClone(op.value), op.op === "add");
+    }
+  }
+  return root as T;
+}

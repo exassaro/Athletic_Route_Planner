@@ -18,6 +18,8 @@ type S = components["schemas"];
 export type PlanVersion = S["PlanVersionOut"];
 export type PlanOut = S["PlanOut"];
 export type RouteRequest = S["RouteRequest"];
+export type { NewRouteRequest } from "@/api/client";
+import type { NewRouteRequest } from "@/api/client";
 export type PatchOp = S["PatchOp"];
 export type ErrorBody = S["ErrorBody"];
 
@@ -161,8 +163,9 @@ export class PlanClient {
     }
   }
 
-  create(request: RouteRequest): Promise<PlanVersion> {
-    return this.solveCall(null, () => this.api.POST("/v1/plans", { body: { request, source: "form" } }), null);
+  create(request: NewRouteRequest): Promise<PlanVersion> {
+    // The API fills the defaulted fields; the body type wants them because responses always carry them.
+    return this.solveCall(null, () => this.api.POST("/v1/plans", { body: { request: request as RouteRequest, source: "form" } }), null);
   }
 
   patch(planId: string, ops: PatchOp[], fromVersion: number): Promise<PlanVersion> {

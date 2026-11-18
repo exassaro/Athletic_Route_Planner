@@ -1,9 +1,5 @@
-import { MapView } from "@/map/MapView";
+import { Planner } from "@/components/Planner";
 
 export default function Home() {
-  return (
-    <main style={{ position: "fixed", inset: 0 }}>
-      <MapView />
-    </main>
-  );
+  return <Planner />;
 }

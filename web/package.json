@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "gen:api": "openapi-typescript src/api/openapi.json -o src/api/schema.d.ts --default-non-nullable false",
+    "gen:api": "openapi-typescript src/api/openapi.json -o src/api/schema.d.ts",
     "check:api": "npm run gen:api && git diff --exit-code -- src/api"
   },
   "dependencies": {
