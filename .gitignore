@@ -49,3 +49,6 @@ web/e2e-results/
 web/public/basemap/
 web/public/maplibre/
 web/*.tmp.mjs
+
+# Personal run guide (not shared)
+/HOW_TO_RUN.md
