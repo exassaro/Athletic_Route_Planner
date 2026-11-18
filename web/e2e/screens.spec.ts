@@ -4,7 +4,7 @@
  * engines-down screens intercept the API's answer, because the live stack does not produce them on demand.
  */
 import { expect, test, type Page } from "@playwright/test";
-import { addA01Stops, addStop, PLACES, pickPlace, planA01Base, setDistance, waitVersion } from "./helpers";
+import { addA01Stops, addStop, PLACES, pickPlace, planA01Base, setDistance, setupRun, waitVersion } from "./helpers";
 
 // SHOTS_DIR=../docs/reports/phase5b/before/screenshots for the Phase 5b baseline
 const OUT = process.env.SHOTS_DIR ?? "../docs/reports/phase5/screenshots";
@@ -80,20 +80,12 @@ for (const vp of SIZES) {
       await shot(page, vp.name, "11-saved-routes");
 
       // S02 loop and G01 conflict
-      await page.goto("/");
-      await pickPlace(page, "start-search", PLACES.mananchira);
-      await page.getByLabel("Loop").check();
-      await setDistance(page, 10);
-      await page.getByTestId("plan-button").click();
+      await setupRun(page, { start: PLACES.mananchira, km: 10, shape: "Loop" });
       await waitVersion(page, 1);
       await page.locator(".sheet-body").evaluate((e) => e.scrollTo(0, 0));
       await shot(page, vp.name, "12-loop-s02");
 
-      await page.goto("/");
-      await pickPlace(page, "start-search", PLACES.kozhikode);
-      await page.getByLabel("Loop").check();
-      await setDistance(page, 10);
-      await page.getByTestId("plan-button").click();
+      await setupRun(page, { start: PLACES.kozhikode, km: 10, shape: "Loop" });
       await waitVersion(page, 1);
       await addStop(page, PLACES.feroke);
       await waitVersion(page, 2);
@@ -133,8 +125,7 @@ for (const vp of SIZES) {
         body: JSON.stringify({ error: "solve_timeout", message: "The solve took longer than 15 s.", detail: { plan_id: "00000000-0000-0000-0000-000000000000", status: "solving", poll: "/v1/plans/00000000-0000-0000-0000-000000000000" } }) }));
       await page.route("**/v1/plans/00000000-0000-0000-0000-000000000000", (route) => route.fulfill({ status: 200,
         contentType: "application/json", body: JSON.stringify({ plan_id: "00000000-0000-0000-0000-000000000000", status: "solving", versions: [], latest: null, error: null }) }));
-      await pickPlace(page, "start-search", PLACES.mananchira);
-      await page.getByTestId("plan-button").click();
+      await setupRun(page, { start: PLACES.mananchira });
       await expect(page.getByTestId("status")).toHaveAttribute("data-state", "waiting", { timeout: 15000 });
       await shot(page, vp.name, "17-timeout-504-polling-mocked");
     });

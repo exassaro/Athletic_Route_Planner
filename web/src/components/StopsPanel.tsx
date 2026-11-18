@@ -26,7 +26,7 @@ type Way = Schemas["NearbyWay"];
 
 const LIST: Record<Role, ListName> = { checkpoint: "checkpoints", via: "via", must_use: "must_use", avoid: "avoid" };
 
-async function featureItem(role: Role, kind: Kind, placeId: string, place?: { lon: number; lat: number; label: string },
+export async function featureItem(role: Role, kind: Kind, placeId: string, place?: { lon: number; lat: number; label: string },
   mustReach = false, label?: string) {
   const { data, error } = await planClient().api.GET("/v1/features/item", {
     params: { query: { role, kind, place_id: placeId, lon: place?.lon, lat: place?.lat, label: label ?? place?.label,

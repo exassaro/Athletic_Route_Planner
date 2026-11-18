@@ -135,13 +135,28 @@ export async function addBridgeStop(page: Page) {
   await page.locator(`button[data-place-id="${BRIDGE.id}"]`).click();
 }
 
+type Pick = { q: string; id: string };
+
+/**
+ * First-time setup (Phase 5b step 6): start (choosing it moves on), distance, shape, towards, stops (skipped), then
+ * "Plan my run". Does not wait for the result.
+ */
+export async function setupRun(page: Page, o: { start: Pick; km?: number; shape?: "Point to point" | "Out and back" | "Loop"; towards?: Pick }) {
+  await page.goto("/");
+  await pickPlace(page, "start-search", o.start);
+  await expect(page.locator(".setup")).toHaveAttribute("data-step", "2");
+  if (o.km != null) await setDistance(page, o.km);
+  await page.getByTestId("setup-next").click();
+  if (o.shape) await page.locator(".shape-tile", { hasText: o.shape }).click();
+  await page.getByTestId("setup-next").click();
+  if (o.towards) await pickPlace(page, "towards-search", o.towards);
+  await page.getByTestId("setup-next").click();
+  await page.getByTestId("plan-button").click();
+}
+
 /** Start, distance and direction, then "Plan my run": version 1. */
 export async function planA01Base(page: Page) {
-  await page.goto("/");
-  await pickPlace(page, "start-search", PLACES.athanikkal);
-  await setDistance(page, 25);
-  await pickPlace(page, "towards-search", PLACES.kozhikode);
-  await page.getByTestId("plan-button").click();
+  await setupRun(page, { start: PLACES.athanikkal, km: 25, towards: PLACES.kozhikode });
   await waitVersion(page, 1);
 }
 

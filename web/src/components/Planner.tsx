@@ -29,6 +29,8 @@ import { BottomSheet, type Snap } from "./sheet/BottomSheet";
 import { EditorDialog } from "./EditorDialog";
 import { PlanChips, type ChipKey } from "./PlanChips";
 import { Button } from "./ui";
+import { SetupFlow } from "./setup/SetupFlow";
+import { RunCycle } from "./Sprite";
 
 /** The form before the first solve: the API fills every field left out with its default. */
 type Draft = Omit<NewRouteRequest, "start"> & { start: Point | null };
@@ -75,7 +77,11 @@ export function Planner() {
 
   const onEdit = useCallback((e: Edit) => {
     if (plan.version) plan.edit(e);
-    else setDraft((d) => applyToDraft(d, patchFor(d as RouteRequest, e)));
+    else setDraft((d) => {
+      // The draft starts without the lists (the API fills its defaults); the first stop added before planning makes one.
+      const base = e.kind === "add" && !(d as Record<string, unknown>)[e.list] ? { ...d, [e.list]: [] } : d;
+      return applyToDraft(base, patchFor(base as RouteRequest, e));
+    });
   }, [plan]);
 
   const setStart = useCallback((point: Point) => {
@@ -156,9 +162,9 @@ export function Planner() {
   );
 
   return (
-    <div className={`planner sheet-${sheet}`}>
+    <div className={`planner sheet-${sheet}${v ? "" : " setup-mode"}`}>
       <MapView onReady={setMap} />
-      <BottomSheet snap={sheet} onSnap={setSheet} label="Plan your run">
+      <BottomSheet snap={sheet} onSnap={setSheet} label="Plan your run" halfRatio={v ? 0.5 : 0.64}>
           {/* what a peeked sheet shows first (step 4 replaces it with the peek bar) */}
           <StatusLine busy={plan.busy} onDismiss={plan.clearError} />
           {toast && <p className="toast" role="status" data-testid="diff-toast">{toast}</p>}
@@ -184,28 +190,17 @@ export function Planner() {
               {candidates[selected] && <SaveShare cand={candidates[selected]!} />}
             </>
           )}
-          {!v ? (
-            // Before the first route: the form (step 6 turns it into the five setup steps).
-            <section className="plan-form" aria-label="Your run">
-              {startControls}
-              <DistanceStepper request={request as RouteRequest} onEdit={onEdit} near={near} live={false} />
-              <RouteTypePicker request={request as RouteRequest} onEdit={onEdit} near={near} live={false} />
-              <DirectionPicker request={request as RouteRequest} onEdit={onEdit} near={near} live={false} />
-              <button type="button" className="primary" disabled={!canPlan || solving} data-testid="plan-button"
-                onClick={() => draft.start && plan.create(draft as NewRouteRequest)}>
-                {solving ? "Planning…" : "Plan my run"}
-              </button>
-              <PaceSetting pace={pace} onChange={setPace} />
-              <ThemeToggle />
-            </section>
-          ) : (
-            // After it, every change goes through the chips; pace and theme move to the menu in step 8.
-            <section className="settings" aria-label="Settings">
-              <h2 className="t-heading">Settings</h2>
-              <PaceSetting pace={pace} onChange={setPace} />
-              <ThemeToggle />
-            </section>
+          {/* Before the first route: the five setup steps. After it, every change goes through the chips. */}
+          {!v && (
+            <SetupFlow draft={draft} onEdit={onEdit} startControls={startControls} near={near} solving={solving}
+              canPlan={canPlan} onPlan={() => draft.start && plan.create(draft as NewRouteRequest)} />
           )}
+          {/* pace and theme move to the menu in step 8 */}
+          <section className="settings" aria-label="Settings">
+            <h2 className="t-heading">Settings</h2>
+            <PaceSetting pace={pace} onChange={setPace} />
+            <ThemeToggle />
+          </section>
       </BottomSheet>
       {v && (
         <EditorDialog open={editor !== null} title={editor ? EDITOR_TITLE[editor] ?? "" : ""} onClose={() => setEditor(null)}
@@ -232,7 +227,7 @@ function StatusLine({ busy, onDismiss }: { busy: Busy; onDismiss: () => void }) 
     : "Finishing the previous change first…";
   return (
     <div aria-live="polite" className="status" data-testid="status" data-state={busy.kind}>
-      {text && <p className="progress"><span className="spinner" aria-hidden="true" />{text}</p>}
+      {text && <p className="progress"><RunCycle scale={1} />{text}</p>}
       {busy.kind === "error" && (
         <div role="alert" className="error-box" data-error={busy.error.code}>
           <p>{busy.error.message}</p>

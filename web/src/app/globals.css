@@ -148,6 +148,7 @@ a { color: var(--accent-text); }
 }
 .planner.sheet-peek { --snap-h: calc(var(--peek-px) + env(safe-area-inset-bottom)); }
 .planner.sheet-half { --snap-h: 50dvh; }
+.planner.setup-mode.sheet-half { --snap-h: 64dvh; }   /* the setup's questions need more room than the map */
 .planner.sheet-full { --snap-h: var(--sheet-full); }
 .sheet {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; height: var(--sheet-full);
@@ -429,3 +430,47 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .editor-body .stepper > .field-label, .editor-body .segmented > legend, .editor-body .direction > .field-label {
   position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
 }
+
+/* ---------- setup flow, sprites (Phase 5b step 6) ---------- */
+.setup { display: flex; flex-direction: column; gap: var(--space-1); min-height: calc(var(--snap-h) - 60px); }
+.setup-head { display: flex; align-items: center; gap: var(--space-1); }
+.setup-head-gap { width: 48px; flex: none; }
+.setup-progress { flex: 1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.setup-progress span { display: block; height: 6px; background: var(--hairline); }
+.setup-progress span.on { background: var(--accent); }
+.setup-answers { margin: 0; }
+.setup-title-row { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-1); }
+.setup-title { margin: 0; }
+.setup-title:focus { outline: none; }
+.setup-runner { flex: none; }
+.setup-body { display: grid; gap: var(--space-2); }
+.setup-body .stepper > .field-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.setup-body .stepper-row { justify-content: space-between; }
+.setup-body .stepper-row button { width: 64px; min-height: 64px; font-size: 1.6rem; }
+.setup-body .stepper-row input { width: 140px; min-height: 64px; font-size: 36px; font-weight: 600; text-align: center; }
+.setup-picks { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.shape-tiles { border: 0; margin: 0; padding: 0; display: grid; gap: var(--space-1); }
+.shape-tile {
+  display: flex; align-items: center; gap: 12px; min-height: 64px; padding: var(--space-1) 12px; cursor: pointer;
+  border-radius: var(--radius); border: 1px solid var(--control); background: var(--surface); color: var(--ink);
+}
+.shape-tile.on { border: 2px solid var(--ink); }
+.shape-tile input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.shape-tile:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+.shape-tile:has(input:disabled) { opacity: 0.45; cursor: not-allowed; }
+.shape-tile-text { flex: 1; display: flex; flex-direction: column; }
+.shape-tile-label { font-size: 16px; font-weight: 600; line-height: 22px; }
+.shape-tile-check { color: var(--accent-text); }
+.setup-stops { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.setup-stops li { display: flex; align-items: center; gap: var(--space-1); }
+.setup-stop-num { display: inline-grid; place-items: center; width: 28px; height: 28px; flex: none; border: 2px solid var(--ink); background: var(--surface); font-weight: 700; font-size: 13px; }
+.setup-stop-name { flex: 1; }
+.setup-foot {
+  position: sticky; bottom: 0; display: flex; gap: var(--space-1); margin-top: auto; padding: var(--space-1) 0 4px;
+  background: var(--paper);
+}
+.setup-foot .btn-block { flex: 2; }
+.run-cycle { display: inline-block; overflow: hidden; flex: none; vertical-align: middle; }
+.run-cycle-strip { display: block; animation: run-cycle 0.52s steps(4) infinite; }
+@keyframes run-cycle { to { transform: translateX(var(--run-shift)); } }
+@media (prefers-reduced-motion: reduce) { .run-cycle-strip { animation: none; } }

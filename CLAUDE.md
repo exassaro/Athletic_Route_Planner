@@ -250,6 +250,8 @@ uv run --no-project --with fonttools --with brotli python web/scripts/subset_pix
 - Themes: `data-theme` on `<html>`, set before first paint by `THEME_SCRIPT` (`src/theme/theme.ts`); tokens in `globals.css`; `src/theme/tokens.test.ts` checks every contrast pair in both themes. React state lives in `src/theme/useTheme.ts`, kept apart so server components can import `theme.ts`.
 - The pixel font (Silkscreen) has no `tnum` and a narrower "1": the subset widens it, so the stat numbers are tabular.
 - Icons: `src/brand/icons.ts` is generated from pixelarticons 2.4.2 (dev dependency, MIT) by `npm run gen:icons`; the list is in `scripts/gen-icons.mjs`, and a unit test fails if the file is stale. Use them through `<Icon>` in `src/components/ui`, 24 px only.
+- Sprites: `src/brand/sprites.ts` is generated from `brand/sprites.json` by `npm run gen:sprites` (a unit test checks it is current and draws exactly the approved pixels). `<Sprite name="sneaker"|"runner">` and `<RunCycle>` (the loading animation) are in `src/components/Sprite.tsx`.
+- Before the first route the planner shows the five setup steps (`src/components/setup/SetupFlow.tsx`); the e2e helper `setupRun` walks them. In setup, "half" is 64 % of the screen.
 - Base components (`src/components/ui`): `Button` (primary has the 2 px hard shadow and drops into it when pressed), `IconButton` (label required), `Chip`, `Badge` (a button with a 44 px tap area when it opens a detail), `Snackbar` (no timeout).
 - `/kit` shows every component in both themes; it answers 404 unless the server runs with `GATHO_UI_KIT=1`.
 

@@ -27,11 +27,12 @@ export function snapAfterDrag(from: Snap, visible: number, velocity: number, hei
   return SNAPS.reduce((best, s) => (Math.abs(heights[s] - visible) < Math.abs(heights[best] - visible) ? s : best), from);
 }
 
-type Props = { snap: Snap; onSnap: (s: Snap) => void; label: string; children: ReactNode };
+/** halfRatio: the share of the screen "half" takes (the planner root's CSS says the same: 0.5, or 0.64 in setup). */
+type Props = { snap: Snap; onSnap: (s: Snap) => void; label: string; children: ReactNode; halfRatio?: number };
 
 type Drag = { id: number; startY: number; startVisible: number; full: number; lastY: number; lastT: number; v: number; moved: boolean };
 
-export function BottomSheet({ snap, onSnap, label, children }: Props) {
+export function BottomSheet({ snap, onSnap, label, children, halfRatio = 0.5 }: Props) {
   const sheet = useRef<HTMLElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
@@ -47,7 +48,7 @@ export function BottomSheet({ snap, onSnap, label, children }: Props) {
     const el = sheet.current!;
     const full = el.offsetHeight;
     const css = getComputedStyle(el);
-    return { peek: parseFloat(css.getPropertyValue("--peek-px")) || 136, half: Math.round(window.innerHeight * 0.5), full };
+    return { peek: parseFloat(css.getPropertyValue("--peek-px")) || 136, half: Math.round(window.innerHeight * halfRatio), full };
   };
 
   const onPointerDown = (e: PointerEvent<HTMLButtonElement>) => {

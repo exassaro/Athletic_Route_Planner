@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { A01_STOPS, addA01Stops, addStop, checkNumbers, checkNumbersEverySnap, PLACES, pickPlace, planA01Base, recordApi, setDistance,
-  waitVersion } from "./helpers";
+  setupRun, waitVersion } from "./helpers";
 
 test("A01: 25 km towards Kozhikode through six stops, then 20 km, a fix, undo, save, share, GPX", async ({ page, browser }) => {
   const api = recordApi(page);
@@ -78,11 +78,7 @@ test("A01: 25 km towards Kozhikode through six stops, then 20 km, a fix, undo, s
 
 test("S02: a 10 km loop from Mananchira", async ({ page }) => {
   const api = recordApi(page);
-  await page.goto("/");
-  await pickPlace(page, "start-search", PLACES.mananchira);
-  await page.getByLabel("Loop").check();
-  await setDistance(page, 10);
-  await page.getByTestId("plan-button").click();
+  await setupRun(page, { start: PLACES.mananchira, km: 10, shape: "Loop" });
   await waitVersion(page, 1);
   await expect(page.getByTestId("card-loop_1-main")).toBeVisible();
   await expect(page.getByTestId("card-loop_2-main")).toBeVisible();
@@ -92,11 +88,7 @@ test("S02: a 10 km loop from Mananchira", async ({ page }) => {
 
 test("G01: a loop that cannot reach Feroke says why, keeps the map, and offers fixes", async ({ page }) => {
   const api = recordApi(page);
-  await page.goto("/");
-  await pickPlace(page, "start-search", PLACES.kozhikode);
-  await page.getByLabel("Loop").check();
-  await setDistance(page, 10);
-  await page.getByTestId("plan-button").click();
+  await setupRun(page, { start: PLACES.kozhikode, km: 10, shape: "Loop" });
   await waitVersion(page, 1);
   await addStop(page, PLACES.feroke);
   await waitVersion(page, 2);
