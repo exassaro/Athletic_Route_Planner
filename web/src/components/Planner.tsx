@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import { MapView } from "@/map/MapView";
 import { setPoint, useRouteLayers } from "@/map/useRouteLayers";
-import { applyToDraft, patchFor, type Edit, type Point, type RouteRequest } from "@/plan/edits";
+import { applyToDraft, blocked, patchFor, type Edit, type Point, type RouteRequest } from "@/plan/edits";
 import { pace as formatPace, parsePace, signedKm } from "@/plan/format";
 import { usePace } from "@/plan/pace";
 import type { Place } from "@/plan/places";
@@ -28,7 +28,9 @@ import { ThemeToggle } from "@/theme/ThemeToggle";
 import { BottomSheet, type Snap } from "./sheet/BottomSheet";
 import { EditorDialog } from "./EditorDialog";
 import { PlanChips, type ChipKey } from "./PlanChips";
-import { Button } from "./ui";
+import { Button, Snackbar } from "./ui";
+import { TopBar, type PlaceAction } from "./TopBar";
+import { featureItem } from "./StopsPanel";
 import { SetupFlow } from "./setup/SetupFlow";
 import { RunCycle } from "./Sprite";
 
@@ -70,9 +72,8 @@ export function Planner() {
     d.stops_added.forEach((s) => parts.push(`added ${s.label}`));
     d.stops_removed.forEach((s) => parts.push(`removed ${s.label}`));
     const fallback = v.candidates.length === 0 ? "Still no route: see what to change below" : "No change to the route";
+    // It stays until the next change or until dismissed (no timer: it must be readable and its Undo reachable).
     setToast(parts.join(", ") || fallback); // eslint-disable-line react-hooks/set-state-in-effect
-    const t = setTimeout(() => setToast(null), 8000);
-    return () => clearTimeout(t);
   }, [v]);
 
   const onEdit = useCallback((e: Edit) => {
@@ -144,6 +145,51 @@ export function Planner() {
   const EDITOR_TITLE: Partial<Record<ChipKey, string>> = { start: "Start", distance: "Distance", type: "Route shape",
     direction: "Direction", paths: "Roads and paths" };
 
+  // A place found from the top bar: start there, run towards it, add it as a stop, or just look at it.
+  const onPlace = async (p: Place, action: PlaceAction) => {
+    const point = placePoint(p);
+    if (action === "start") setStart(point);
+    else if (action === "towards") onEdit({ kind: "towards_place", place: point });
+    else if (action === "show") map?.easeTo({ center: [p.lon, p.lat], zoom: Math.max(map.getZoom(), 14) });
+    else {
+      try {
+        const out = await featureItem("checkpoint", "place", p.place_id, p);
+        const e: Edit = { kind: "add", list: "checkpoints", item: out.checkpoint! };
+        const why = blocked(request as RouteRequest, e);
+        if (why) setToast(why);
+        else onEdit(e);
+      } catch (x) {
+        setToast(String((x as Error).message));
+      }
+    }
+  };
+
+  const menu = (
+    <>
+      {v && (
+        <section className="menu-section" aria-labelledby="menu-versions">
+          <h3 id="menu-versions" className="t-heading">Versions</h3>
+          <p className="t-body-s muted">This is version {v.version} of the plan.</p>
+          <div className="row">
+            <Button icon="undo" onClick={plan.undo} disabled={!plan.canUndo || solving} data-testid="menu-undo">Undo</Button>
+            <Button icon="redo" onClick={plan.redo} disabled={!plan.canRedo || solving} data-testid="menu-redo">Redo</Button>
+          </div>
+        </section>
+      )}
+      <nav className="menu-section menu-links" aria-label="Pages">
+        <Link className="btn btn-block" href="/routes">Saved routes</Link>
+        <Link className="btn btn-block" href="/about">About GATHO</Link>
+      </nav>
+      <section className="menu-section" aria-label="Pace"><PaceSetting pace={pace} onChange={setPace} /></section>
+      <section className="menu-section" aria-label="Theme"><ThemeToggle /></section>
+      <section className="menu-section" aria-labelledby="menu-roads">
+        <h3 id="menu-roads" className="t-heading">Roads and paths</h3>
+        <PathsToggle request={request as RouteRequest} onEdit={onEdit} near={near} live={!!v} />
+      </section>
+      <p className="t-meta muted">Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · basemap by Protomaps</p>
+    </>
+  );
+
   const startControls = (
     <div className="start-field">
       {!v && request.start && (
@@ -162,23 +208,17 @@ export function Planner() {
   );
 
   return (
-    <div className={`planner sheet-${sheet}${v ? "" : " setup-mode"}`}>
+    <div className={`planner sheet-${sheet}${v ? "" : " setup-mode"}${toast ? " has-snack" : ""}`}>
       <MapView onReady={setMap} />
+      <TopBar setupMode={!v} near={near} canAddStop={!!v} onPlace={onPlace} menu={menu} />
       <BottomSheet snap={sheet} onSnap={setSheet} label="Plan your run" halfRatio={v ? 0.5 : 0.64}>
-          {/* what a peeked sheet shows first (step 4 replaces it with the peek bar) */}
+          {/* what a peeked sheet shows first */}
           <StatusLine busy={plan.busy} onDismiss={plan.clearError} />
-          {toast && <p className="toast" role="status" data-testid="diff-toast">{toast}</p>}
           {v && candidates[selected] && <PeekBar cand={candidates[selected]!} pace={pace} />}
-          <p className="saved-link"><Link href="/routes">Saved routes</Link> · <Link href="/about">About</Link></p>
           <HealthBanner trigger={plan.busy.kind === "error" ? plan.busy.error.code : null} />
           {v && <PlanChips request={v.request} attention={attention} onOpen={openChip} />}
-          {v && (
-            <div className="history" role="group" aria-label="Versions">
-              <button type="button" onClick={plan.undo} disabled={!plan.canUndo || solving}>Undo</button>
-              <button type="button" onClick={plan.redo} disabled={!plan.canRedo || solving}>Redo</button>
-              <span className="muted">Version {v.version}</span>
-            </div>
-          )}
+          {/* the version number, for screen readers and the end-to-end tests; undo and redo are in the menu */}
+          {v && <p className="history sr-only">Version {v.version}</p>}
           {v && (
             <>
               <OutcomePanel version={v} onPatch={plan.applyPatch} disabled={solving} />
@@ -195,13 +235,13 @@ export function Planner() {
             <SetupFlow draft={draft} onEdit={onEdit} startControls={startControls} near={near} solving={solving}
               canPlan={canPlan} onPlan={() => draft.start && plan.create(draft as NewRouteRequest)} />
           )}
-          {/* pace and theme move to the menu in step 8 */}
-          <section className="settings" aria-label="Settings">
-            <h2 className="t-heading">Settings</h2>
-            <PaceSetting pace={pace} onChange={setPace} />
-            <ThemeToggle />
-          </section>
       </BottomSheet>
+      {toast && (
+        <Snackbar floating testId="diff-toast" onDismiss={() => setToast(null)}
+          actionLabel={v && plan.canUndo && !solving ? "Undo" : undefined} actionIcon="undo" onAction={plan.undo}>
+          {toast}
+        </Snackbar>
+      )}
       {v && (
         <EditorDialog open={editor !== null} title={editor ? EDITOR_TITLE[editor] ?? "" : ""} onClose={() => setEditor(null)}
           testId="chip-editor">
