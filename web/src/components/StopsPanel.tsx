@@ -37,9 +37,9 @@ async function featureItem(role: Role, kind: Kind, placeId: string, place?: { lo
 }
 
 type Props = { request: RouteRequest; version: Version; selected: Candidate | null; onEdit: (e: Edit) => void;
-  near: [number, number] | null; map?: MapLibreMap | null };
+  near: [number, number] | null; map?: MapLibreMap | null; onMapPick?: (active: boolean) => void };
 
-export function StopsPanel({ request, selected, onEdit, near, map }: Props) {
+export function StopsPanel({ request, selected, onEdit, near, map, onMapPick }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState<Role | null>(null);
   const [tapFor, setTapFor] = useState<Role | null>(null);
@@ -72,6 +72,7 @@ export function StopsPanel({ request, selected, onEdit, near, map }: Props) {
   // Tap the map to list the bridges and roads there.
   useEffect(() => {
     if (!map || !tapFor) return;
+    onMapPick?.(true);            // on a phone the sheet steps aside so the map can be tapped
     map.getCanvas().style.cursor = "crosshair";
     const onClick = async (e: MapMouseEvent) => {
       map.getCanvas().style.cursor = "";
@@ -80,13 +81,14 @@ export function StopsPanel({ request, selected, onEdit, near, map }: Props) {
       const { data } = await planClient().api.GET("/v1/features/nearby", {
         params: { query: { lon: e.lngLat.lng, lat: e.lngLat.lat, radius_m: 40 } } });
       setWays({ role, list: data?.ways ?? [] });
+      onMapPick?.(false);
     };
     map.once("click", onClick);
     return () => {
       map.off("click", onClick);
       map.getCanvas().style.cursor = "";
     };
-  }, [map, tapFor]);
+  }, [map, tapFor, onMapPick]);
 
   const toggleReach = async (i: number) => {
     const c = checkpoints[i]!;

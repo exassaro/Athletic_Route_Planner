@@ -22,6 +22,8 @@ export function DistanceStepper({ request, onEdit, live }: Props) {
     const e: Edit = { kind: "distance", meters: Math.round(v * 1000) };
     if (blocked(request, e)) return;
     if (timer.current) clearTimeout(timer.current);
+    // Leaving the box without changing it sends nothing (a blur must not undo a fix applied meanwhile).
+    if (e.meters === request.target_distance_m) return;
     // After a solve exists, taps are collected for a moment so + + + sends one patch.
     timer.current = setTimeout(() => onEdit(e), live ? 700 : 0);
   };

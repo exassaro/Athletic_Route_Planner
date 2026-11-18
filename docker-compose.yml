@@ -113,6 +113,7 @@ services:
       - ATHLETE_RATE_SOLVE_PER_IP_MIN=${ATHLETE_RATE_SOLVE_PER_IP_MIN:-40}
       - ATHLETE_RATE_READ_PER_CLIENT_MIN=${ATHLETE_RATE_READ_PER_CLIENT_MIN:-300}
       - ATHLETE_RATE_SESSION_PER_IP_HOUR=${ATHLETE_RATE_SESSION_PER_IP_HOUR:-10}
+      - ATHLETE_CORS_ORIGINS=${ATHLETE_CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
     volumes:
       - ./data/manifest.json:/app/data/manifest.json:ro
     depends_on:

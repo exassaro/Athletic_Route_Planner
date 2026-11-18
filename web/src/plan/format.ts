@@ -6,7 +6,8 @@
  */
 
 export function km(meters: number, digits = 1): string {
-  return `${(meters / 1000).toFixed(digits)} km`;
+  const text = (meters / 1000).toFixed(digits);
+  return `${Number(text) === 0 ? (0).toFixed(digits) : text} km`;   // never "-0.0 km"
 }
 
 /** Signed deviation from the target: "+0.1 km", "−0.9 km", "±0.0 km". */

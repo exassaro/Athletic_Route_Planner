@@ -84,6 +84,7 @@ export function Planner() {
     map.getCanvas().style.cursor = "crosshair";
     const onClick = async (e: MapMouseEvent) => {
       setPicking(null);
+      setSheet("half");
       map.getCanvas().style.cursor = "";
       const { lng, lat } = e.lngLat;
       const { data } = await planClient().api.GET("/v1/places/reverse", { params: { query: { lon: lng, lat } } });
@@ -106,6 +107,11 @@ export function Planner() {
         "Location is not available (a phone needs HTTPS for this)."),
       { enableHighAccuracy: true, timeout: 15000 });
   };
+
+  const mapPick = useCallback((active: boolean) => setSheet(active ? "peek" : "half"), []);
+  useEffect(() => {
+    if (picking) setSheet("peek"); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [picking]);
 
   const near: [number, number] | null = request.start ? [request.start.lon, request.start.lat] : null;
   const canPlan = !v && !!draft.start && (draft.route_type !== "out_and_back" || !!draft.direction);
@@ -143,7 +149,8 @@ export function Planner() {
                   </div>
                 ))}
               </div>
-              <StopsPanel request={v.request} version={v} selected={candidates[selected] ?? null} onEdit={onEdit} near={near} map={map} />
+              <StopsPanel request={v.request} version={v} selected={candidates[selected] ?? null} onEdit={onEdit} near={near} map={map}
+                onMapPick={mapPick} />
               {candidates[selected] && <RouteDetail map={map} cand={candidates[selected]!} index={selected} />}
               {candidates[selected] && <SaveShare cand={candidates[selected]!} />}
             </>
