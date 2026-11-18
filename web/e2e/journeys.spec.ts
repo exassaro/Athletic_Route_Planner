@@ -60,7 +60,7 @@ test("A01: 25 km towards Kozhikode through six stops, then 20 km, a fix, undo, s
   expect(gpx).toContain("<ele>");
 
   // the share page, logged out (a new browser context: no token)
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ ignoreHTTPSErrors: process.env.E2E_INSECURE === "1" });
   const share = await ctx.newPage();
   const shareApi = recordApi(share);
   const resp = await share.goto(link!);

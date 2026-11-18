@@ -21,3 +21,8 @@ CI (`.github/workflows/ci.yml`) fails when either file is stale.
 Basemap (Phase 5 amendments 3 and 12): `uv run python engine/scripts/fetch_basemap.py` (repo root) puts the Kerala
 PMTiles file (Protomaps build of 2026-11-15, pinned in `engine/basemap_pin.json`), fonts and sprites into
 `public/basemap/` (gitignored). The dev server answers range requests on it (checked: 206 Partial Content).
+
+End to end and the phone: see `playwright.config.ts` (commands at the top) and `docs/reports/phase5/phone.md`.
+Layout: `src/api/` (generated types, clients), `src/plan/` (request edits as JSON Patches, the plan client and its
+waiting rules, formatting), `src/components/` (planner screens), `src/map/` (MapLibre, basemap, route layers),
+`src/app/` (planner `/`, share page `/s/[slug]` server-rendered, saved routes `/routes`, manifest), `e2e/`.

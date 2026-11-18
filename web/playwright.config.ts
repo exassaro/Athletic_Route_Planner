@@ -6,6 +6,8 @@
  *   ATHLETE_RATE_SESSION_PER_IP_HOUR=1000 docker compose --profile api up -d api
  *   npx playwright test                 (journeys, phone viewport)
  *   npx playwright test --project=screens   (screenshots for docs/reports/phase5/screenshots/)
+ *   E2E_BASE=https://10.141.255.68 E2E_API=https://10.141.255.68 E2E_INSECURE=1 npx playwright test --project=phone
+ *     (through Caddy on the LAN address, web built with NEXT_PUBLIC_API_BASE=same-origin)
  */
 import { defineConfig, devices } from "@playwright/test";
 
@@ -19,7 +21,9 @@ export default defineConfig({
   retries: 0,
   reporter: [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],
   outputDir: "test-results",
-  use: { baseURL: base, trace: "retain-on-failure", screenshot: "only-on-failure", acceptDownloads: true },
+  use: { baseURL: base, trace: "retain-on-failure", screenshot: "only-on-failure", acceptDownloads: true,
+    // E2E_INSECURE=1: through Caddy's local CA (https://<LAN IP>), which this Chromium does not trust
+    ignoreHTTPSErrors: process.env.E2E_INSECURE === "1" },
   projects: [
     { name: "phone", testMatch: /journeys\.spec\.ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "screens", testMatch: /screens\.spec\.ts/, use: { browserName: "chromium" } },

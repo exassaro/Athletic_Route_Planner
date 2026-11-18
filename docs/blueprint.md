@@ -1013,6 +1013,8 @@ Updated 2026-11-18 by the Phase 4 amendments.
 
 Updated 2026-11-18 by the Phase 5 amendments.
 
+**Status (2026-11-18): built.** The A01, S02 and G01 journeys pass end to end, with every number on screen checked against the API response; Lighthouse accessibility 100, performance 63. A real phone over the LAN and the five-runner hallway test wait for the product owner. See [docs/reports/phase5/summary.md](reports/phase5/summary.md).
+
 - **Tasks:**
   - planner (start by search, tap or location; distance stepper; route type; towards a place or bearing; checkpoints with pass-near or must-reach; via, avoid, must-use; paths preference; constraint chips);
   - results: up to two alternatives plus Case B options, drawn in distinct colours and dash patterns; a card per candidate;

@@ -5,7 +5,7 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5**, the web front end and map in `web/` (blueprint Phase 5 amendments 1 to 15). Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first.
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5**, the web front end and map in `web/` (blueprint Phase 5 amendments 1 to 15). It is built; status, measurements and what was left out are in `docs/reports/phase5/summary.md` (a real phone and the hallway test wait for the developer). Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first.
 
 ## Phase 5 amendments (2026-11-18, full text at the top of docs/blueprint.md; they win over earlier ones)
 
@@ -234,6 +234,10 @@ npm run dev | npm test | npm run typecheck | npm run lint | npm run build
 - jsdom is pinned to 29.x and ESLint to 9.x: jsdom 30+ needs Node 22.22, and eslint-plugin-react supports ESLint 9 only.
 - MapLibre 6 loads its worker from `public/maplibre/` (copied by `scripts/copy-maplibre-worker.mjs` before dev and build); without it the map stays blank ("Worker failed to load").
 - `@rolldown/binding-win32-x64-msvc` is an optional dependency on purpose: npm otherwise drops it on every `npm install <pkg>`.
+- End to end (live stack, `next start` on :3000, API with `ATHLETE_RATE_SESSION_PER_IP_HOUR=1000`): `npx playwright test` (journeys A01, S02, G01, phone viewport) and `npx playwright test --project=screens` (screenshots -> docs/reports/phase5/screenshots/). Every on-screen number carries `data-value` (its raw API value); `e2e/helpers.ts` checks them all against the responses.
+- Phone over the LAN: build with `$env:NEXT_PUBLIC_API_BASE="same-origin"`, then `LAN_HOST=<ip> docker compose --profile api --profile web up -d proxy` (Caddy, `tls internal`, `default_sni` for bare IPs). Steps, firewall and certificate install: docs/reports/phase5/phone.md. In PowerShell an empty `$env:X=''` deletes the variable, hence "same-origin".
+- Lighthouse: `npx lighthouse@13.0.1 http://localhost:3000/` with `CHROME_PATH` set to Playwright's Chromium.
+- G01's `set_distance` fix (22.2 km) is a solver estimate: the loop then needs 26.2 km (over_budget). Not changed; reported.
 - CI: `.github/workflows/ci.yml` (schema and types not stale, Python unit tests, web typecheck, lint, tests, build).
 
 Photon (profile `geocode`, http://localhost:2322):

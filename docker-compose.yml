@@ -121,3 +121,23 @@ services:
       - redis
     mem_limit: 1g
     restart: "no"
+
+  # Phase 5 amendment 9: one HTTPS origin (web + /v1 + tiles) for phones on the LAN. Needs the api profile and
+  # `next start` on the host (port 3000), built with NEXT_PUBLIC_API_BASE= (empty: same origin).
+  proxy:
+    profiles: ["web"]
+    image: caddy:2.10.2
+    container_name: athlete-proxy
+    ports:
+      - "443:443"
+      - "80:80"
+    environment:
+      - LAN_HOST=${LAN_HOST:-localhost}
+    volumes:
+      - ./engine/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./data/caddy:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - api
+    restart: "no"

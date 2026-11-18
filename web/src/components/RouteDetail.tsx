@@ -60,6 +60,14 @@ export function RouteDetail({ map, cand, index }: { map: MapLibreMap | null; can
     }
   }, [map, elev]);
 
+  // Leaving this route (another route, or none): take its km marks and cursor off the map.
+  useEffect(() => () => {
+    if (!map) return;
+    const empty = { type: "FeatureCollection" as const, features: [] };
+    (map.getSource("km-marks") as GeoJSONSource | undefined)?.setData(empty);
+    (map.getSource("chart-cursor") as GeoJSONSource | undefined)?.setData(empty);
+  }, [map, cand.route_id]);
+
   // the cursor on the map
   useEffect(() => {
     if (!map || !elev) return;

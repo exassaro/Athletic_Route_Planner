@@ -1,0 +1,21 @@
+# One origin for the web app, the API and the tiles (blueprint Phase 5 amendment 9), with HTTPS from Caddy's own
+# local CA (`tls internal`): a phone on the LAN needs HTTPS for geolocation. See docs/reports/phase5/phone.md.
+#   LAN_HOST=10.141.255.68 docker compose --profile web up -d proxy
+{
+	local_certs
+	# a phone opening https://<LAN IP> sends no server name (no SNI for IP addresses): use the LAN certificate
+	default_sni {$LAN_HOST:localhost}
+}
+
+https://localhost, https://{$LAN_HOST:localhost} {
+	tls internal
+	encode zstd gzip
+	# the API (in compose)
+	handle /v1/* {
+		reverse_proxy api:8000
+	}
+	# everything else, tiles included, from `next start` on the host (it answers Range requests)
+	handle {
+		reverse_proxy host.docker.internal:3000
+	}
+}

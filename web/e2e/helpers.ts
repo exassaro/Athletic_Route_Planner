@@ -84,12 +84,11 @@ export async function setDistance(page: Page, kmValue: number) {
 export async function tapMap(page: Page, lonlat: [number, number]) {
   const xy = await page.evaluate(async (p) => {
     const m = (window as unknown as { athleteMap: import("maplibre-gl").Map }).athleteMap;
-    // put the point in the part of the map the sheet or panel does not cover
+    // put the point in the part of the map the sheet or panel does not cover (a one-off offset; padding would stay)
     const sheet = document.querySelector(".sheet")?.getBoundingClientRect();
     const wide = window.matchMedia("(min-width: 900px)").matches;
-    const padding = !sheet ? { left: 0, top: 0, right: 0, bottom: 0 } : wide ? { left: sheet.width, top: 0, right: 0, bottom: 0 }
-      : { bottom: window.innerHeight - sheet.top, top: 0, left: 0, right: 0 };
-    m.jumpTo({ center: p, zoom: 16, padding });
+    const offset: [number, number] = !sheet ? [0, 0] : wide ? [sheet.width / 2, 0] : [0, -(window.innerHeight - sheet.top) / 2];
+    m.easeTo({ center: p, zoom: 16, offset, duration: 0 });
     await new Promise((r) => setTimeout(r, 400));
     const q = m.project(p);
     const r = m.getCanvas().getBoundingClientRect();

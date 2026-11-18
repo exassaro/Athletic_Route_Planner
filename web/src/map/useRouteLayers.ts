@@ -104,14 +104,23 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
 
   // Fit the view when a new version arrives (not when only the selection changes)
   useEffect(() => {
-    if (!map || !fitKey || candidates.length === 0) return;
+    if (!map || !fitKey) return;
     (async () => {
       const maplibregl = await import("maplibre-gl");
       const b = new maplibregl.LngLatBounds();
       for (const c of candidates) for (const p of c.geometry) b.extend(p as [number, number]);
+      if (candidates.length === 0) {
+        // no route: show the start and the stops as asked
+        if (request?.start) b.extend([request.start.lon, request.start.lat]);
+        for (const cp of request?.checkpoints ?? []) b.extend([cp.lon, cp.lat]);
+      }
+      if (b.isEmpty()) return;
+      // keep the route out from under the sheet (phone) or the panel (desktop): measure it
       const wide = window.matchMedia("(min-width: 900px)").matches;
-      map.fitBounds(b, { padding: wide ? { top: 40, bottom: 40, left: 460, right: 60 } : { top: 60, bottom: 300, left: 30, right: 30 },
-        duration: 600, maxZoom: 15 });
+      const sheet = document.querySelector(".sheet")?.getBoundingClientRect();
+      const under = sheet ? (wide ? sheet.right : Math.max(0, window.innerHeight - sheet.top)) : 0;
+      map.fitBounds(b, { padding: wide ? { top: 40, bottom: 40, left: under + 40, right: 60 }
+        : { top: 50, bottom: under + 30, left: 30, right: 50 }, duration: 600, maxZoom: 15 });
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, fitKey]);

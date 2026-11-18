@@ -26,8 +26,10 @@ export function OutcomePanel({ version, onPatch, disabled }: { version: Version;
     return null;
   }
   const over = version.outcome === "over_budget";
-  const fixes = (c.fixes ?? []).filter((f) => f.patch);
   const savings = c.savings ?? [];
+  // a stop already offered in the savings list is not offered twice
+  const dropped = new Set(savings.filter((s) => s.patch && s.saves_m > 0).map((s) => s.label));
+  const fixes = (c.fixes ?? []).filter((f) => f.patch && !(f.action === "drop_checkpoint" && dropped.has(f.label)));
   return (
     <section className={`outcome ${over ? "over" : "conflict"}`} aria-label="What needs to change" data-testid="outcome"
       data-outcome={version.outcome} data-conflict={c.kind}>

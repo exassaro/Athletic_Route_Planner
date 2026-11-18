@@ -62,7 +62,8 @@ export function Planner() {
     if (d.outcome.from !== d.outcome.to) parts.push(d.outcome.to === "ok" ? "route found" : d.outcome.to.replace(/_/g, " "));
     d.stops_added.forEach((s) => parts.push(`added ${s.label}`));
     d.stops_removed.forEach((s) => parts.push(`removed ${s.label}`));
-    setToast(parts.join(", ") || "No change to the route"); // eslint-disable-line react-hooks/set-state-in-effect
+    const fallback = v.candidates.length === 0 ? "Still no route: see what to change below" : "No change to the route";
+    setToast(parts.join(", ") || fallback); // eslint-disable-line react-hooks/set-state-in-effect
     const t = setTimeout(() => setToast(null), 8000);
     return () => clearTimeout(t);
   }, [v]);
