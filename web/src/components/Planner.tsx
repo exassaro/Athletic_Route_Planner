@@ -10,7 +10,7 @@ import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import { MapView } from "@/map/MapView";
 import { setPoint, useRouteLayers } from "@/map/useRouteLayers";
 import { applyToDraft, patchFor, type Edit, type Point, type RouteRequest } from "@/plan/edits";
-import { km, pace as formatPace, parsePace, signedKm } from "@/plan/format";
+import { pace as formatPace, parsePace, signedKm } from "@/plan/format";
 import { usePace } from "@/plan/pace";
 import type { Place } from "@/plan/places";
 import { planClient, usePlan, type Busy } from "@/plan/usePlan";
@@ -18,7 +18,6 @@ import type { NewRouteRequest } from "@/api/client";
 import { PeekBar } from "./PeekBar";
 import { RouteCards } from "./RouteCards";
 import { DirectionPicker, DistanceStepper, PathsToggle, RouteTypePicker } from "./Controls";
-import { Num } from "./Num";
 import { OutcomePanel } from "./OutcomePanel";
 import { PlaceSearch } from "./PlaceSearch";
 import { RouteDetail } from "./RouteDetail";
@@ -27,6 +26,9 @@ import { StopsPanel } from "./StopsPanel";
 import { HealthBanner } from "./HealthBanner";
 import { ThemeToggle } from "@/theme/ThemeToggle";
 import { BottomSheet, type Snap } from "./sheet/BottomSheet";
+import { EditorDialog } from "./EditorDialog";
+import { PlanChips, type ChipKey } from "./PlanChips";
+import { Button } from "./ui";
 
 /** The form before the first solve: the API fills every field left out with its default. */
 type Draft = Omit<NewRouteRequest, "start"> & { start: Point | null };
@@ -120,6 +122,39 @@ export function Planner() {
   const near: [number, number] | null = request.start ? [request.start.lon, request.start.lat] : null;
   const canPlan = !v && !!draft.start && (draft.route_type !== "out_and_back" || !!draft.direction);
 
+  // Chips: each opens its editor; the stop-like ones go to the stops list.
+  const [editor, setEditor] = useState<ChipKey | null>(null);
+  const goToStops = () => {
+    setSheet("full");
+    setTimeout(() => {
+      const el = document.getElementById("stops-panel");
+      el?.scrollIntoView({ block: "start" });
+      el?.focus({ preventScroll: true });
+    }, 260);
+  };
+  const openChip = (k: ChipKey) => (k === "stops" || k === "via" || k === "must_use" || k === "avoid" ? goToStops() : setEditor(k));
+  const attention: ChipKey[] = v && (v.outcome === "over_budget"
+    || ["checkpoints_exceed_distance", "loop_stop_too_far"].includes(v.conflict?.kind ?? "")) ? ["distance"] : [];
+  const EDITOR_TITLE: Partial<Record<ChipKey, string>> = { start: "Start", distance: "Distance", type: "Route shape",
+    direction: "Direction", paths: "Roads and paths" };
+
+  const startControls = (
+    <div className="start-field">
+      {!v && request.start && (
+        <p className="current" data-testid="start-current">Start: <strong>{request.start.label ?? "a point"}</strong></p>
+      )}
+      <PlaceSearch label={request.start ? "Change the start" : "Start"} near={near}
+        onPick={(p) => { setStart(placePoint(p)); setEditor(null); }} testId="start-search" />
+      <div className="row">
+        <Button icon="gps" onClick={locate}>My location</Button>
+        <Button icon="mapPin" onClick={() => { setEditor(null); setPicking("start"); }} aria-pressed={picking === "start"}>
+          {picking === "start" ? "Tap the map…" : "Pick on the map"}
+        </Button>
+      </div>
+      {locError && <p role="alert" className="error-text">{locError}</p>}
+    </div>
+  );
+
   return (
     <div className={`planner sheet-${sheet}`}>
       <MapView onReady={setMap} />
@@ -130,7 +165,7 @@ export function Planner() {
           {v && candidates[selected] && <PeekBar cand={candidates[selected]!} pace={pace} />}
           <p className="saved-link"><Link href="/routes">Saved routes</Link> · <Link href="/about">About</Link></p>
           <HealthBanner trigger={plan.busy.kind === "error" ? plan.busy.error.code : null} />
-          <Chips request={request} />
+          {v && <PlanChips request={v.request} attention={attention} onOpen={openChip} />}
           {v && (
             <div className="history" role="group" aria-label="Versions">
               <button type="button" onClick={plan.undo} disabled={!plan.canUndo || solving}>Undo</button>
@@ -149,36 +184,39 @@ export function Planner() {
               {candidates[selected] && <SaveShare cand={candidates[selected]!} />}
             </>
           )}
-          <section className={v ? "adjust" : "plan-form"} aria-label={v ? "Adjust the plan" : "Your run"}>
-            {v && <h2>Adjust</h2>}
-            <div className="start-field">
-              {request.start && (
-                <p className="current" data-testid="start-current">Start: <strong>{request.start.label ?? "a point"}</strong></p>
-              )}
-              <PlaceSearch label={request.start ? "Change the start" : "Start"} near={near}
-                onPick={(p) => setStart(placePoint(p))} testId="start-search" />
-              <div className="row">
-                <button type="button" onClick={locate}>Use my location</button>
-                <button type="button" onClick={() => setPicking("start")} aria-pressed={picking === "start"}>
-                  {picking === "start" ? "Tap the map…" : "Pick on map"}
-                </button>
-              </div>
-              {locError && <p role="alert" className="error-text">{locError}</p>}
-            </div>
-            <DistanceStepper request={request as RouteRequest} onEdit={onEdit} near={near} live={!!v} />
-            <RouteTypePicker request={request as RouteRequest} onEdit={onEdit} near={near} live={!!v} />
-            <DirectionPicker request={request as RouteRequest} onEdit={onEdit} near={near} live={!!v} />
-            {v && <PathsToggle request={v.request} onEdit={onEdit} near={near} live />}
-            {!v && (
+          {!v ? (
+            // Before the first route: the form (step 6 turns it into the five setup steps).
+            <section className="plan-form" aria-label="Your run">
+              {startControls}
+              <DistanceStepper request={request as RouteRequest} onEdit={onEdit} near={near} live={false} />
+              <RouteTypePicker request={request as RouteRequest} onEdit={onEdit} near={near} live={false} />
+              <DirectionPicker request={request as RouteRequest} onEdit={onEdit} near={near} live={false} />
               <button type="button" className="primary" disabled={!canPlan || solving} data-testid="plan-button"
                 onClick={() => draft.start && plan.create(draft as NewRouteRequest)}>
                 {solving ? "Planning…" : "Plan my run"}
               </button>
-            )}
-            <PaceSetting pace={pace} onChange={setPace} />
-            <ThemeToggle />
-          </section>
+              <PaceSetting pace={pace} onChange={setPace} />
+              <ThemeToggle />
+            </section>
+          ) : (
+            // After it, every change goes through the chips; pace and theme move to the menu in step 8.
+            <section className="settings" aria-label="Settings">
+              <h2 className="t-heading">Settings</h2>
+              <PaceSetting pace={pace} onChange={setPace} />
+              <ThemeToggle />
+            </section>
+          )}
       </BottomSheet>
+      {v && (
+        <EditorDialog open={editor !== null} title={editor ? EDITOR_TITLE[editor] ?? "" : ""} onClose={() => setEditor(null)}
+          testId="chip-editor">
+          {editor === "start" && startControls}
+          {editor === "distance" && <DistanceStepper request={v.request} onEdit={onEdit} near={near} live />}
+          {editor === "type" && <RouteTypePicker request={v.request} onEdit={onEdit} near={near} live />}
+          {editor === "direction" && <DirectionPicker request={v.request} onEdit={onEdit} near={near} live />}
+          {editor === "paths" && <PathsToggle request={v.request} onEdit={onEdit} near={near} live />}
+        </EditorDialog>
+      )}
     </div>
   );
 }
@@ -202,29 +240,6 @@ function StatusLine({ busy, onDismiss }: { busy: Busy; onDismiss: () => void }) 
         </div>
       )}
     </div>
-  );
-}
-
-function Chips({ request }: { request: Draft }) {
-  const chips: { key: string; text: string }[] = [{ key: "activity", text: "Run" }];
-  chips.push({ key: "distance", text: km(request.target_distance_m) });
-  chips.push({ key: "type", text: { point_to_point: "Point to point", out_and_back: "Out and back", loop: "Loop" }[request.route_type] });
-  const d = request.direction;
-  if (d) chips.push({ key: "direction", text: d.kind === "towards_place" ? `Towards ${d.place.label ?? "a point"}` : `Heading ${d.degrees}°` });
-  const n = request.checkpoints?.length ?? 0;
-  if (n) chips.push({ key: "stops", text: `${n} stop${n > 1 ? "s" : ""}${request.checkpoint_order === "fixed" ? " (my order)" : ""}` });
-  if (request.via?.length) chips.push({ key: "via", text: `via ${request.via.map((x) => x.label ?? "a point").join(", ")}` });
-  if (request.must_use?.length) chips.push({ key: "must_use", text: `uses ${request.must_use.map((x) => x.label).join(", ")}` });
-  if (request.avoid?.length) chips.push({ key: "avoid", text: `avoids ${request.avoid.map((x) => x.label).join(", ")}` });
-  chips.push({ key: "paths", text: request.preferences?.paths === "allow" ? "Paths allowed" : "Roads first" });
-  return (
-    <ul className="chips" aria-label="Your constraints" data-testid="chips">
-      {chips.map((c) => (
-        <li key={c.key} data-chip={c.key}>
-          {c.key === "distance" ? <Num value={request.target_distance_m} format={(m) => km(m)} field="target_distance_m" /> : c.text}
-        </li>
-      ))}
-    </ul>
   );
 }
 

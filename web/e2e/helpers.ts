@@ -93,10 +93,17 @@ export async function waitVersion(page: Page, n: number) {
   await expect(page.getByTestId("status")).toHaveAttribute("data-state", "idle", { timeout: 120_000 });
 }
 
+/** The distance: in the form before the first route; afterwards through the distance chip's editor (Phase 5b). */
 export async function setDistance(page: Page, kmValue: number) {
   const input = page.getByTestId("distance-input");
+  const viaChip = !(await input.isVisible());
+  if (viaChip) await page.locator('[data-chip="distance"] button').click();
   await input.fill(String(kmValue));
   await input.press("Enter");
+  if (viaChip) {
+    await page.waitForTimeout(800);     // the stepper sends its patch 700 ms after the last change
+    await page.getByTestId("chip-editor").getByRole("button", { name: "Done" }).click();
+  }
 }
 
 /** Taps the map at a point (OSM coordinates), through the page's map. */

@@ -52,6 +52,21 @@ describe("controls", () => {
     expect(fresh).toEqual([]);
   });
 
+  it("distance: Enter, then leaving the box before the API answers (tapping Done), sends the value once", () => {
+    vi.useFakeTimers();
+    const edits = setup((onEdit) => <DistanceStepper request={A01} onEdit={onEdit} near={null} live />);
+    const box = screen.getByTestId("distance-input");
+    fireEvent.change(box, { target: { value: "20" } });
+    fireEvent.keyDown(box, { key: "Enter" });
+    act(() => void vi.advanceTimersByTime(800));      // the patch is sent; the request still says 25 km
+    fireEvent.blur(box);
+    act(() => void vi.advanceTimersByTime(800));
+    fireEvent.change(box, { target: { value: "20" } });
+    fireEvent.blur(box);                               // and again, blur before the timer
+    act(() => void vi.advanceTimersByTime(800));
+    expect(edits).toEqual([{ kind: "distance", meters: 20000 }]);
+  });
+
   it("route type: loop is a replace; out-and-back is disabled while there are stops", () => {
     const edits = setup((onEdit) => <RouteTypePicker request={A01} onEdit={onEdit} near={null} live />);
     fireEvent.click(screen.getByLabelText("Loop"));

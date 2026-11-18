@@ -103,7 +103,7 @@ export function StopsPanel({ request, selected, onEdit, near, map, onMapPick }: 
   };
 
   return (
-    <section className="stops" aria-label="Stops">
+    <section className="stops" aria-label="Stops" id="stops-panel" tabIndex={-1}>
       <div className="section-head">
         <h2>Stops</h2>
         {checkpoints.length > 1 && (

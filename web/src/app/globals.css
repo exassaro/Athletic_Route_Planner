@@ -152,7 +152,7 @@ a { color: var(--accent-text); }
 .sheet {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; height: var(--sheet-full);
   transform: translateY(calc(var(--sheet-full) - var(--snap-h)));
-  display: flex; flex-direction: column; padding: 0 16px;
+  display: flex; flex-direction: column; padding: 0;
   background: var(--paper); border-top: 1px solid var(--hairline); border-radius: 8px 8px 0 0;
   transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -164,8 +164,8 @@ a { color: var(--accent-text); }
 .sheet-handle:hover:not(:disabled) { border: none; }
 .sheet-handle span { width: 40px; height: 4px; border-radius: 2px; background: var(--control); }
 .sheet-body {
-  flex: none; height: calc(var(--snap-h) - 44px); overflow-y: auto; overscroll-behavior: contain;
-  padding-bottom: calc(16px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch;
+  flex: none; height: calc(var(--snap-h) - 44px); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+  padding: 0 16px calc(16px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch;
 }
 @media (prefers-reduced-motion: reduce) { .sheet { transition: none; } }
 @media (min-width: 900px) {
@@ -402,3 +402,30 @@ a.button.primary { background: var(--accent); color: var(--accent-fg); border-co
 .kit-row { display: flex; flex-wrap: wrap; gap: var(--space-1); align-items: center; margin: var(--space-1) 0; }
 .kit-icons { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: var(--space-1); }
 .kit-icons li { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: var(--space-1) 0; }
+
+/* ---------- chips row and chip editors (Phase 5b step 5) ---------- */
+.plan-chips {
+  list-style: none; display: flex; gap: var(--space-1); margin: 0 -16px var(--space-1); padding: 2px 16px 4px;
+  overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain;
+}
+.plan-chips::-webkit-scrollbar { display: none; }
+.plan-chips li { flex: none; }
+dialog.editor {
+  width: 100%; max-width: 560px; max-height: 85dvh; margin: auto auto 0; padding: 0; overflow: auto;
+  border: 0; border-top: 1px solid var(--hairline); border-radius: 8px 8px 0 0; background: var(--paper); color: var(--ink);
+}
+dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
+.editor-inner { display: grid; gap: var(--space-2); padding: var(--space-1) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom)); }
+.editor-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-1); }
+.editor-head h2 { margin: 0; }
+.editor-body { display: grid; gap: var(--space-1); }
+@media (min-width: 900px) {
+  dialog.editor { margin: auto; border: 1px solid var(--hairline); border-radius: var(--radius); }
+}
+.settings { border-top: 1px solid var(--hairline); margin-top: var(--space-2); padding-top: var(--space-1); }
+#stops-panel:focus { outline: none; }
+#stops-panel:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+/* inside an editor the dialog's title names the control; its own label stays for screen readers only */
+.editor-body .stepper > .field-label, .editor-body .segmented > legend, .editor-body .direction > .field-label {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}

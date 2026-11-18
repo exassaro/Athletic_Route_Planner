@@ -15,17 +15,28 @@ export function DistanceStepper({ request, onEdit, live }: Props) {
   const id = useId();
   const [km, setKm] = useState(request.target_distance_m / 1000);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => setKm(request.target_distance_m / 1000), [request.target_distance_m]); // eslint-disable-line react-hooks/set-state-in-effect
+  const sent = useRef<number | null>(null);      // the value already on its way: not sent again while it solves
+  useEffect(() => {
+    setKm(request.target_distance_m / 1000); // eslint-disable-line react-hooks/set-state-in-effect
+    sent.current = null;
+  }, [request.target_distance_m]);
   const send = (value: number) => {
     const v = Math.round(value * 10) / 10;
     setKm(v);
     const e: Edit = { kind: "distance", meters: Math.round(v * 1000) };
     if (blocked(request, e)) return;
+    // Leaving the box without changing it sends nothing (a blur must not undo a fix applied meanwhile), and Enter
+    // followed by a blur (tapping Done) sends the value once, even before the API has answered the first.
+    if (e.meters === sent.current && timer.current === null) return;
     if (timer.current) clearTimeout(timer.current);
-    // Leaving the box without changing it sends nothing (a blur must not undo a fix applied meanwhile).
+    timer.current = null;
     if (e.meters === request.target_distance_m) return;
     // After a solve exists, taps are collected for a moment so + + + sends one patch.
-    timer.current = setTimeout(() => onEdit(e), live ? 700 : 0);
+    timer.current = setTimeout(() => {
+      timer.current = null;
+      sent.current = e.meters;
+      onEdit(e);
+    }, live ? 700 : 0);
   };
   const error = blocked(request, { kind: "distance", meters: Math.round(km * 1000) });
   return (
