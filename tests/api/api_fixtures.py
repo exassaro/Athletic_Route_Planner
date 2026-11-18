@@ -10,10 +10,14 @@ import time
 
 from athlete_solver.models import Candidate, RouteRequest, SolveResult
 
+from athlete_api.cache import BuildIds
 from athlete_api.config import ROOT
 from athlete_api.elevation import Elevation
 
 REPORT = ROOT / "docs" / "reports" / "phase3b"
+# The build ids the planner sees in API tests (no engines).
+BUILDS = BuildIds(osm="2026-11-15T00:15:25Z", valhalla="valhalla test tiles 1", graphhopper="graphhopper test import 1",
+                  solver="test-solver")
 FIXTURES = json.loads((ROOT / "tests" / "fixtures" / "scenarios" / "scenarios.json").read_text(encoding="utf-8"))["fixtures"]
 
 

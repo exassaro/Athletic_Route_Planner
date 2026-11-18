@@ -7,16 +7,13 @@ anything that would reach Valhalla, GraphHopper or Photon fails fast instead of 
 import psycopg
 import pytest
 import redis
-from alembic import command
-from alembic.config import Config
 from fastapi.testclient import TestClient
 
-from athlete_api.cache import BuildIds
 from athlete_api.config import ROOT, Settings, sync_database_url
 from athlete_api.main import create_app
+from api_fixtures import BUILDS
+from dbutil import fresh_database
 
-BUILDS = BuildIds(osm="2026-11-15T00:15:25Z", valhalla="valhalla test tiles 1", graphhopper="graphhopper test import 1",
-                  solver="test-solver")
 
 DEV_URL = Settings().database_url
 TEST_DB = "athlete_test"
@@ -54,13 +51,7 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture(scope="session")
 def database_url() -> str:
     """A fresh athlete_test database, migrated to head by Alembic (the migrations are what is tested)."""
-    with psycopg.connect(_admin_dsn(), autocommit=True) as conn:
-        conn.execute(f"DROP DATABASE IF EXISTS {TEST_DB} WITH (FORCE)")
-        conn.execute(f"CREATE DATABASE {TEST_DB}")
-    cfg = Config(str(ROOT / "api" / "alembic.ini"))
-    cfg.attributes["database_url"] = TEST_URL
-    command.upgrade(cfg, "head")
-    return TEST_URL
+    return fresh_database(TEST_DB)
 
 
 @pytest.fixture

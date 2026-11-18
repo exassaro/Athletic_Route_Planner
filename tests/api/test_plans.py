@@ -11,7 +11,7 @@ import httpx
 import pytest
 from athlete_solver.models import Flag
 
-from api_fixtures import FakeSolver, a01_result, fixture_request
+from api_fixtures import BUILDS, FakeSolver, a01_result, fixture_request
 from athlete_api.elevation import ElevationMissing
 from athlete_solver.models import RouteRequest
 
@@ -74,7 +74,6 @@ def test_identical_request_is_a_cache_hit(make_client):
 
 
 def test_a_new_engine_build_misses_the_cache(make_client):
-    from conftest import BUILDS
     fake = FakeSolver()
     builds = [BUILDS]
     api = make_client(solver=fake)

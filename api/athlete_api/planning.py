@@ -76,7 +76,7 @@ class Planner:
         t_request = time.perf_counter()
         builds = await self.current_builds()
         key = cache.key(request, builds)
-        solved = await cache.get(self.svc.redis, key, builds)
+        solved = await cache.get(self.svc.redis, key, builds) if settings.cache_enabled else None
         task = None
         if solved is None:
             try:
@@ -117,7 +117,7 @@ class Planner:
             if solved is None:
                 result, elev, _ = await task
                 solved = cache.Solved(result=result, elevation=elev, builds=builds)
-                if builds.graphhopper is not None:
+                if builds.graphhopper is not None and self.svc.settings.cache_enabled:
                     await cache.put(self.svc.redis, key, solved, self.svc.settings.cache_ttl_s)
             return await self._store(plan_id, request, source, key, solved)
         except ApiError as err:

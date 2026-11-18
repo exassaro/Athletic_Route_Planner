@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     busy_retry_after_s: int = Field(5, ge=1)   # Retry-After on 429 solver_busy
 
     cache_ttl_s: int = 24 * 3600   # amendment 5
+    cache_enabled: bool = True     # off only for tests and diagnosis (fresh solves, nothing read or written)
 
     # Amendment 22: rate limits (fixed windows).
     rate_solve_per_client_min: int = 20

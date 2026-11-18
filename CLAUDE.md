@@ -186,12 +186,13 @@ uv run alembic -c api/alembic.ini upgrade head     # migrations (psycopg); `chec
 uv run uvicorn athlete_api.main:app --port 8000
 uv run pytest tests/unit/api                       # API unit tests, no services
 uv run pytest tests/api                            # the app on a throwaway athlete_test database + Redis db 15, no engines
+uv run pytest tests/integration -k api              # live stack: A01 flow (vs the solver, with and without cache), 6 concurrent solves; athlete_live database + Redis db 14
 uv run python api/scripts/export_sample_gpx.py      # through the running API: GPX for A01 and S02 -> docs/reports/phase4/gpx/ (manual Garmin/Strava check)
 uv run python api/scripts/record_photon_fixtures.py  # needs Photon: re-record tests/fixtures/photon/ (the place tests' Photon responses)
 uv run python api/scripts/build_examples.py          # live stack: OpenAPI examples from real solver output -> api/athlete_api/examples/ (never edit them by hand)
 ```
 
-The app uses asyncpg: psycopg's async mode cannot run on the Windows Proactor event loop. Settings come from `ATHLETE_*` variables (`athlete_api/config.py`); the engine URLs reuse `VALHALLA_URL` and `GRAPHHOPPER_URL`, like the solver.
+The app uses asyncpg: psycopg's async mode cannot run on the Windows Proactor event loop. `ATHLETE_CACHE_ENABLED=false` turns the solve cache off (tests and diagnosis only). Settings come from `ATHLETE_*` variables (`athlete_api/config.py`); the engine URLs reuse `VALHALLA_URL` and `GRAPHHOPPER_URL`, like the solver.
 
 Photon (profile `geocode`, http://localhost:2322):
 
