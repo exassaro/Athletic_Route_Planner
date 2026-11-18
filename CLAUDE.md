@@ -248,6 +248,9 @@ uv run --no-project --with fonttools --with brotli python web/scripts/subset_pix
 - GATHO icons (`web/public/icons/`, gitignored) are drawn from `web/brand/sprites.json` by `scripts/build-brand.mjs` before dev and build. `sprites.json` must equal `docs/reports/phase5b/sprites.md` (a unit test checks).
 - Themes: `data-theme` on `<html>`, set before first paint by `THEME_SCRIPT` (`src/theme/theme.ts`); tokens in `globals.css`; `src/theme/tokens.test.ts` checks every contrast pair in both themes. React state lives in `src/theme/useTheme.ts`, kept apart so server components can import `theme.ts`.
 - Pixelify Sans has no `tnum` and a narrower "1": the subset widens it, so the stat numbers are tabular.
+- Icons: `src/brand/icons.ts` is generated from pixelarticons 2.4.2 (dev dependency, MIT) by `npm run gen:icons`; the list is in `scripts/gen-icons.mjs`, and a unit test fails if the file is stale. Use them through `<Icon>` in `src/components/ui`, 24 px only.
+- Base components (`src/components/ui`): `Button` (primary has the 2 px hard shadow and drops into it when pressed), `IconButton` (label required), `Chip`, `Badge` (a button with a 44 px tap area when it opens a detail), `Snackbar` (no timeout).
+- `/kit` shows every component in both themes; it answers 404 unless the server runs with `GATHO_UI_KIT=1`.
 
 - **Run web tooling from PowerShell (or a `D:\` path), not Git Bash's `/d/...`.** A lower-case drive letter makes Vitest load itself twice ("failed to find the current suite").
 - `npm install` sometimes skips rolldown's native binary (npm optional-dependency bug): delete `node_modules` and `package-lock.json` and install again.

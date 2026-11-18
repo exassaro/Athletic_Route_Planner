@@ -17,7 +17,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "gen:api": "openapi-typescript src/api/openapi.json -o src/api/schema.d.ts",
-    "check:api": "npm run gen:api && git diff --exit-code -- src/api"
+    "check:api": "npm run gen:api && git diff --exit-code -- src/api",
+    "gen:icons": "node scripts/gen-icons.mjs"
   },
   "dependencies": {
     "@protomaps/basemaps": "5.7.2",
@@ -39,6 +40,7 @@
     "eslint-config-next": "16.4.6",
     "jsdom": "29.1.1",
     "openapi-typescript": "7.13.0",
+    "pixelarticons": "2.4.2",
     "typescript": "5.9.3",
     "vitest": "5.1.0"
   },
