@@ -2,11 +2,11 @@
 
 A running route planner that treats distance as the input: "25 km towards Kozhikode via three stops" returns a route of that length, or a clear reason why it cannot. The full design is in [docs/blueprint.md](docs/blueprint.md).
 
-**Status:** Phase 3c of 8, route-generation solver (library and command line): lengthening a run with a via-point (fixed ends), then loops. The decisions are under "Phase 3 amendments" at the top of [docs/blueprint.md](docs/blueprint.md) (21 to 23 for Phase 3c). There is no API or web app yet.
+**Status:** Phase 5 of 8, the web front end and map in `web/`. The solver (Phase 3) and the backend API in `api/` (Phase 4) are built. The decisions are under "Phase 5 amendments" at the top of [docs/blueprint.md](docs/blueprint.md).
 
 ## Requirements
 
-- Windows 10/11 (or Linux/macOS), 8 GB RAM, about 5 GB free disk
+- Windows 10/11 (or Linux/macOS), 16 GB RAM (developed on 16 GB with a 7.7 GiB Docker VM; the full stack uses about 3.7 GiB of it), about 5 GB free disk
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/), running
 - [uv](https://docs.astral.sh/uv/) (installs Python 3.12 for you)
 - git

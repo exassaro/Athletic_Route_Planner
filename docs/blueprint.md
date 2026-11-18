@@ -2,6 +2,34 @@
 
 Nov 16, 2026 · @Azzm
 
+## Phase 5 amendments
+
+Decided 2026-11-18 by the product owner at the start of Phase 5, the web front end and map in `web/`. There is no LLM chat (Phase 6) and no drag-to-edit (Phase 7). The solver does not change; a front-end need that requires an API change is listed and approved first. Where these amendments conflict with an earlier amendment or a later section, they win. Sections 13 and 15 (Phase 5) are updated to match.
+
+**Decisions**
+
+1. **Stack:** Next.js (App Router), TypeScript and MapLibre GL JS. The share page is server-rendered; the planner is client-side.
+2. **API types are generated from the OpenAPI schema** (openapi-typescript, with openapi-fetch as the client). There are no hand-written copies of `RouteRequest` or `SolveResult`. A CI check (GitHub Actions) fails if the generated types are stale.
+3. **Basemap: self-hosted vector tiles for Kerala**, a PMTiles file served as a static file: no API key, no per-load fee. OSM attribution is always visible. The tiles are built with Planetiler (Protomaps basemap profile) from the pinned extract (`engine/osm_pin.json`), so the map shows the roads the router used; fonts and sprites are self-hosted too. Fallback: `pmtiles extract` from the Protomaps build nearest the pin, with its date recorded.
+4. **One source of truth: the current `RouteRequest`.** Every control edits it, and every edit is sent as a JSON Patch to `PATCH /v1/plans/{id}`. The UI never computes a route, a distance, a position along a route or an endpoint. Everything shown comes from the API response.
+5. **Running time = foot length × the user's pace** (stored in the browser, default 6:00 /km, editable). This is arithmetic on a measured distance, not an estimate, and is labelled "at your pace". The engine's walking duration is not shown.
+6. **Mobile first:** a full-screen map with a bottom sheet; a side panel on desktop.
+
+**Implementation choices** (from the Phase 5 plan, accepted 2026-11-18)
+
+7. **API changes in Phase 5** (the solver is unchanged by all of them):
+   - **A1 CORS** for the front end's origins, configurable (`ATHLETE_CORS_ORIGINS`).
+   - **A2 GPX:** the end waypoint of a loop or an out-and-back is named after the start plus "finish"; `?ele=false` leaves out `<ele>`.
+   - **A3 Typed diff:** the PATCH diff gets its own schema model; the JSON is unchanged.
+   - **A4 Fix patches:** every `Fix` and `Saving` carries the RFC 6902 patch that applies it, built by the API from the request (`null` when it cannot be built unambiguously or the action is not supported).
+   - **A5 Positions along the route:** each elevation profile sample carries its position, and the route carries km marks, from the same geometry sampling. The UI never measures geometry.
+   - **A6 OSM features:** `GET /v1/places/{place_id}/feature` returns the OSM way ids, lines and boundaries a request item needs (bridges, roads, the pass-near boundary fallback), from an `osm_features` table loaded from the pinned extract. This is OSM geometry from the pin, not a geocoder cache: amendment 16 of Phase 4 ("no places table") still holds.
+   - **A7 (pending the elevation report):** a smoothed profile for the chart and a noisy-climb flag. Any change to the solver's gain and loss is a separate decision.
+8. **Place picker:** duplicates of the same place (same name and county: village, boundary, station) are grouped in the UI, with each member's kind listed. No distance is involved; the user still picks.
+9. **One origin in production:** a Caddy service serves the web app, `/v1` and the tiles together (and HTTPS on the LAN with `tls internal`, which geolocation on a phone needs). CORS is then needed only for development.
+10. **Lighthouse:** accessibility ≥ 90 is a gate; performance is reported as measured.
+11. **Left out:** deleting a saved route (no endpoint) and "Remix this route" (the plan id stays private).
+
 ## Phase 4 amendments
 
 Decided 2026-11-18 by the product owner at the start of Phase 4, the backend API in `api/` (evidence: [docs/reports/phase4/memory.md](reports/phase4/memory.md)). There is no front end and no LLM in this phase. The solver's behaviour does not change: if the API needs a solver change, it is raised with the product owner first. Where these amendments conflict with an earlier amendment or a later section, they win. Sections 11, 12 and 15 (Phase 4) are rewritten to match.
@@ -800,6 +828,14 @@ Every error has the body `{"error": code, "message": text, "detail": …}`.
 
 ## 13. UI/UX architecture
 
+Updated 2026-11-18 by the Phase 5 amendments, which win over this section:
+- the alternatives are "recommended" and "shortest" plus any Case B options (cut at target, full route, continue past target, out-and-back fallback), not three labelled cards;
+- the chat input waits for Phase 6 and drag editing for Phase 7;
+- time is the measured foot length at the user's own pace, labelled "at your pace";
+- every number shown comes from the API response; the UI computes no distance and no position along a route;
+- the place picker shows the district (Photon's county) and a mini-map, not a distance from the start;
+- the saved routes list has no delete, and the share page has no "Remix" (amendment 11).
+
 One screen does most of the work: a full map with a bottom sheet (side panel on desktop) that always shows the current constraints as chips and the candidate routes as cards.
 
 ### User journey
@@ -968,11 +1004,24 @@ Updated 2026-11-18 by the Phase 4 amendments.
 
 ### Phase 5: Front end and interactive map
 
-- **Tasks:** Planner screen, chips, stops list with reorder, route cards, elevation chart, place picker, saved routes, share page, PWA manifest.
-- **Technologies:** Next.js, TypeScript, MapLibre GL JS, a charting library, vector tiles.
-- **Deliverables:** deployed web app usable on a phone.
+Updated 2026-11-18 by the Phase 5 amendments.
+
+- **Tasks:**
+  - planner (start by search, tap or location; distance stepper; route type; towards a place or bearing; checkpoints with pass-near or must-reach; via, avoid, must-use; paths preference; constraint chips);
+  - results: up to two alternatives plus Case B options, drawn in distinct colours and dash patterns; a card per candidate;
+  - `over_budget` and conflict screens with one-tap fixes;
+  - place picker; stops list with reorder; route detail with an elevation chart linked to the map;
+  - version history with undo and redo, and the diff after every edit;
+  - save, rename, share, GPX; the server-rendered share page;
+  - loading, busy, solving, timeout and engines-down states; PWA manifest and icons (no offline mode).
+- **Technologies:** Next.js (App Router), TypeScript, MapLibre GL JS, PMTiles built from the pinned extract, types generated from OpenAPI.
+- **Deliverables:** the web app, usable on a phone; a report in `docs/reports/phase5/` with screenshots of each screen and state (mobile and desktop), Lighthouse scores, bundle size, the API changes made, and what was left out.
 - **Challenges:** bottom-sheet and map gesture conflicts on mobile; drawing several routes legibly.
-- **Acceptance:** a first-time user completes the section 13 journey without help in a hallway test with five runners.
+- **Acceptance:**
+  - the A01, S02 and G01 journeys pass end to end in Playwright against the live stack;
+  - every number on screen matches the API response;
+  - the planner is usable on a phone over the LAN (HTTPS, documented);
+  - five runners complete the A01 journey without help (run by the product owner).
 
 ### Phase 6: AI natural-language interface
 

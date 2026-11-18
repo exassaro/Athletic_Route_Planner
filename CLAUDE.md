@@ -5,7 +5,21 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 4**, the backend API in `api/` (blueprint Phase 4 amendments 1 to 25). It is built; status, measurements and what was left out are in `docs/reports/phase4/summary.md`. No front end and no LLM until the developer starts Phase 5. **The solver's behaviour must not change**: if the API needs a solver change, say so and wait.
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5**, the web front end and map in `web/` (blueprint Phase 5 amendments 1 to 11). Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first.
+
+## Phase 5 amendments (2026-11-18, full text at the top of docs/blueprint.md; they win over earlier ones)
+
+1. Next.js (App Router) + TypeScript + MapLibre GL JS. Share page server-rendered; planner client-side.
+2. API types generated from OpenAPI (openapi-typescript + openapi-fetch); never hand-copy RouteRequest or SolveResult. CI fails on stale types.
+3. Basemap: self-hosted PMTiles for Kerala, built with Planetiler from the pinned extract; fonts and sprites self-hosted; OSM attribution always visible.
+4. The current RouteRequest is the single source of truth. Every control edits it and sends a JSON Patch to PATCH /v1/plans/{id}. **The UI never computes a route, a distance, a position along a route or an endpoint.**
+5. Running time = foot length × the user's pace (browser storage, default 6:00 /km), labelled "at your pace". The engine's walking duration is hidden.
+6. Mobile first: full-screen map with a bottom sheet; side panel on desktop.
+7. API changes approved: A1 CORS, A2 GPX finish name + `?ele=false`, A3 typed diff, A4 fix patches, A5 positions along the route, A6 OSM features lookup (`osm_features` from the pin). A7 (smoothed profile, noisy-climb flag) waits for `docs/reports/phase5/elevation.md`; a change to the solver's gain/loss is a separate decision.
+8. Place picker groups duplicates by name and county, in the UI.
+9. Production is one origin behind Caddy (also HTTPS on the LAN); CORS is for development.
+10. Lighthouse: accessibility ≥ 90 is a gate; performance is reported.
+11. Left out: deleting saved routes, "Remix this route".
 - **Plan first.** Give a plan and wait for approval before writing code.
 - **Small steps.** Each step ends in something the developer can run and check. Commit after each step.
 - **No invented distances.** Never hardcode or estimate a distance. Every distance comes from the routing engine or from measuring geometry (`athlete_engine.geodesy`). The leg distances in the blueprint's section 8 worked example are made up: never use them as test expectations. Straight-line distance is allowed only for snap distances and pre-filters and must never be presented as a route distance.
