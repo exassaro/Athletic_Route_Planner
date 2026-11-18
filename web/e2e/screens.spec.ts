@@ -89,7 +89,8 @@ for (const vp of SIZES) {
       await waitVersion(page, 1);
       await addStop(page, PLACES.feroke);
       await waitVersion(page, 2);
-      await page.locator('[data-stop="Feroke"]').getByRole("button", { name: /Pass near|Must reach/ }).click();
+      await page.locator('[data-stop="Feroke"]').getByRole("button", { name: /^Options for/ }).click();
+      await page.getByTestId("stop-options").getByRole("button", { name: /Must reach instead|Pass near instead/ }).click();
       await waitVersion(page, 3);
       await page.locator(".sheet-body").evaluate((e) => e.scrollTo(0, 0));
       await shot(page, vp.name, "13-conflict-g01");

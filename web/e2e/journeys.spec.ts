@@ -15,10 +15,13 @@ test("A01: 25 km towards Kozhikode through six stops, then 20 km, a fix, undo, s
   // 25.0 km and the stops in order
   await expect(page.getByTestId("summary")).toContainText("25.0 km");
   await expect(page.getByTestId("card-recommended-main").locator("[data-field=foot_m]").first()).toHaveText("25.0 km");
-  const order = await page.locator("[data-testid=stop-list] li").evaluateAll((els) => els.map((e) => e.getAttribute("data-stop")));
+  const order = await page.locator("[data-testid=stop-list] li[data-stop]").evaluateAll((els) => els.map((e) => e.getAttribute("data-stop")));
   expect(order).toEqual(A01_STOPS);
-  const route = await page.locator(".detail-stops li").allInnerTexts();
-  expect(route.map((t) => t.split(" · ")[0])).toEqual(A01_STOPS);
+  // the timeline: every stop with its distance mark, in the order the route meets them
+  const marks = await page.locator("[data-testid=stop-list] li[data-stop] [data-field='stops.at_m']")
+    .evaluateAll((els) => els.map((e) => Number(e.getAttribute("data-value"))));
+  expect(marks).toHaveLength(A01_STOPS.length);
+  expect([...marks].sort((a, b) => a - b)).toEqual(marks);
   await expect(page.getByTestId("elevation-chart")).toBeVisible();
   await checkNumbersEverySnap(page, api);
 
@@ -92,7 +95,8 @@ test("G01: a loop that cannot reach Feroke says why, keeps the map, and offers f
   await waitVersion(page, 1);
   await addStop(page, PLACES.feroke);
   await waitVersion(page, 2);
-  await page.locator('[data-stop="Feroke"]').getByRole("button", { name: /Pass near|Must reach/ }).click();
+  await page.locator('[data-stop="Feroke"]').getByRole("button", { name: /^Options for/ }).click();
+  await page.getByTestId("stop-options").getByRole("button", { name: /Must reach instead|Pass near instead/ }).click();
   await waitVersion(page, 3);
   const outcome = page.getByTestId("outcome");
   await expect(outcome).toHaveAttribute("data-conflict", "loop_stop_too_far");

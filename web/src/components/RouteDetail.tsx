@@ -147,15 +147,7 @@ export function RouteDetail({ map, cand, index }: { map: MapLibreMap | null; can
           </p>
         </>
       )}
-      {stops.length > 0 && (
-        <ol className="detail-stops">
-          {stops.map((s, i) => (
-            <li key={i}>{s.label} · <Num value={s.at_m} format={(m) => km(m)} field="stops.at_m" />
-              {s.how && <span className="muted"> ({{ on_route: "on the route", via: "passes near", reached: "reached",
-                boundary: "passes through its area", spur: "short detour", uses: "uses it" }[s.how] ?? s.how})</span>}</li>
-          ))}
-        </ol>
-      )}
+      {/* the stops and their distance marks are in the stops timeline (Phase 5b step 7) */}
     </section>
   );
 }

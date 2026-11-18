@@ -8,15 +8,15 @@
  * Reordering with a handle moves the stop and sets the order to "my order". Each stop shows where the selected
  * route meets it (StopOnRoute.at_m, from the API).
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import type { Schemas } from "@/api/client";
 import { blocked, type Edit, type ListName, type RouteRequest } from "@/plan/edits";
-import { km } from "@/plan/format";
 import type { Place } from "@/plan/places";
 import { planClient } from "@/plan/usePlan";
-import { Num } from "./Num";
 import { PlaceSearch } from "./PlaceSearch";
+import { StopsTimeline } from "./StopsTimeline";
+import { Button, Chip, IconButton } from "./ui";
 
 type Version = Schemas["PlanVersionOut"];
 type Candidate = Schemas["CandidateOut"];
@@ -45,7 +45,6 @@ export function StopsPanel({ request, selected, onEdit, near, map, onMapPick }: 
   const [tapFor, setTapFor] = useState<Role | null>(null);
   const [ways, setWays] = useState<{ role: Role; list: Way[] } | null>(null);
   const checkpoints = request.checkpoints ?? [];
-  const meetAt = (label: string) => selected?.stops?.find((s) => s.role === "checkpoint" && s.label === label);
 
   const [pending, setPending] = useState<string | null>(null);
   const add = async (role: Role, kind: Kind, placeId: string, place?: { lon: number; lat: number; label: string }) => {
@@ -105,25 +104,25 @@ export function StopsPanel({ request, selected, onEdit, near, map, onMapPick }: 
   return (
     <section className="stops" aria-label="Stops" id="stops-panel" tabIndex={-1}>
       <div className="section-head">
-        <h2>Stops</h2>
+        <h2 className="t-heading">Stops</h2>
         {checkpoints.length > 1 && (
-          <label className="toggle small">
-            <input type="checkbox" checked={request.checkpoint_order === "fixed"}
-              onChange={() => onEdit({ kind: "checkpoint_order", value: request.checkpoint_order === "fixed" ? "auto" : "fixed" })} />
+          <Chip aria-pressed={request.checkpoint_order === "fixed"}
+            title="On: the stops in the order listed. Off: the order that makes the best route."
+            onClick={() => onEdit({ kind: "checkpoint_order", value: request.checkpoint_order === "fixed" ? "auto" : "fixed" })}>
             My order
-          </label>
+          </Chip>
         )}
       </div>
-      <SortableStops request={request} onEdit={onEdit} meetAt={meetAt} toggleReach={toggleReach} />
+      <StopsTimeline request={request} selected={selected} onEdit={onEdit} toggleReach={toggleReach} />
       <OtherItems request={request} onEdit={onEdit} />
       {error && <p role="alert" className="error-text">{error}</p>}
       {pending && <p role="status" className="muted">Adding {pending}…</p>}
       <div className="add-row">
         {(["checkpoint", "via", "must_use", "avoid"] as Role[]).map((r) => (
-          <button key={r} type="button" aria-expanded={adding === r} onClick={() => setAdding(adding === r ? null : r)}
+          <Chip key={r} icon="plus" aria-expanded={adding === r} onClick={() => setAdding(adding === r ? null : r)}
             data-testid={`add-${r}`}>
-            {{ checkpoint: "+ Stop", via: "+ Via", must_use: "+ Must use", avoid: "+ Avoid" }[r]}
-          </button>
+            {{ checkpoint: "Stop", via: "Via", must_use: "Must use", avoid: "Avoid" }[r]}
+          </Chip>
         ))}
       </div>
       {adding && (
@@ -133,9 +132,9 @@ export function StopsPanel({ request, selected, onEdit, near, map, onMapPick }: 
               near={near} testId={`search-${adding}`}
               onPick={(p: Place) => add(adding, "place", p.place_id, { lon: p.lon, lat: p.lat, label: p.label })} />
           )}
-          <button type="button" onClick={() => setTapFor(adding)} aria-pressed={tapFor === adding} data-testid={`tap-${adding}`}>
+          <Button icon="mapPin" onClick={() => setTapFor(adding)} aria-pressed={tapFor === adding} data-testid={`tap-${adding}`}>
             {tapFor === adding ? "Tap a bridge or road on the map…" : "Pick a bridge or road on the map"}
-          </button>
+          </Button>
         </div>
       )}
       {ways && (
@@ -165,70 +164,6 @@ export function StopsPanel({ request, selected, onEdit, near, map, onMapPick }: 
   );
 }
 
-type StopRef = NonNullable<Candidate["stops"]>[number] | undefined;
-
-function SortableStops({ request, onEdit, meetAt, toggleReach }: {
-  request: RouteRequest; onEdit: (e: Edit) => void; meetAt: (label: string) => StopRef; toggleReach: (i: number) => void;
-}) {
-  const list = useRef<HTMLOListElement>(null);
-  const [drag, setDrag] = useState<{ from: number; over: number } | null>(null);
-  const checkpoints = request.checkpoints ?? [];
-  const move = (from: number, to: number) => {
-    if (to < 0 || to >= checkpoints.length || from === to) return;
-    onEdit({ kind: "move_checkpoint", from, to, label: checkpoints[from]!.label });
-  };
-  const overIndex = (y: number) => {
-    const items = [...(list.current?.querySelectorAll<HTMLElement>("li.stop") ?? [])];
-    const i = items.findIndex((el) => y < el.getBoundingClientRect().top + el.offsetHeight / 2);
-    return i < 0 ? items.length - 1 : i;
-  };
-  if (checkpoints.length === 0) return <p className="muted">No stops yet. Add the places you want to run through.</p>;
-  return (
-    <ol className="stop-list" ref={list} data-testid="stop-list">
-      {checkpoints.map((c, i) => {
-        const at = meetAt(c.label);
-        return (
-          <li key={`${c.label}-${i}`} className={`stop${drag?.over === i ? " drop" : ""}`} data-stop={c.label}>
-            <span className="handle" role="button" tabIndex={0} aria-label={`Drag to reorder ${c.label}`}
-              onPointerDown={(e) => {
-                (e.target as HTMLElement).setPointerCapture(e.pointerId);
-                setDrag({ from: i, over: i });
-              }}
-              onPointerMove={(e) => drag && setDrag({ ...drag, over: overIndex(e.clientY) })}
-              onPointerUp={() => {
-                if (drag) move(drag.from, drag.over);
-                setDrag(null);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "ArrowUp") move(i, i - 1);
-                if (e.key === "ArrowDown") move(i, i + 1);
-              }}>⠿</span>
-            <span className="stop-num">{i + 1}</span>
-            <span className="stop-name">
-              {c.label}
-              {c.kind && c.kind !== "place" && <span className="muted"> ({c.kind})</span>}
-              {at && <span className="stop-at"> · at <Num value={at.at_m} format={(m) => km(m)} field="stops.at_m" /></span>}
-            </span>
-            {(c.kind ?? "place") === "place" && (
-              <button type="button" className="pill" aria-pressed={!!c.must_reach} onClick={() => toggleReach(i)}
-                title="Pass near: within 1 km on foot. Must reach: the run goes to the place itself.">
-                {c.must_reach ? "Must reach" : "Pass near"}
-              </button>
-            )}
-            <span className="stop-moves">
-              <button type="button" aria-label={`Move ${c.label} up`} disabled={i === 0} onClick={() => move(i, i - 1)}>↑</button>
-              <button type="button" aria-label={`Move ${c.label} down`} disabled={i === checkpoints.length - 1}
-                onClick={() => move(i, i + 1)}>↓</button>
-              <button type="button" aria-label={`Remove ${c.label}`}
-                onClick={() => onEdit({ kind: "remove", list: "checkpoints", index: i, label: c.label })}>✕</button>
-            </span>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
 function OtherItems({ request, onEdit }: { request: RouteRequest; onEdit: (e: Edit) => void }) {
   const rows: { list: ListName; i: number; label: string; text: string }[] = [
     ...(request.via ?? []).map((x, i) => ({ list: "via" as const, i, label: x.label ?? "", text: `Via ${x.label ?? "a point"}` })),
@@ -240,9 +175,9 @@ function OtherItems({ request, onEdit }: { request: RouteRequest; onEdit: (e: Ed
     <ul className="other-items">
       {rows.map((r) => (
         <li key={`${r.list}-${r.i}`}>
-          {r.text}
-          <button type="button" aria-label={`Remove ${r.text}`}
-            onClick={() => onEdit({ kind: "remove", list: r.list, index: r.i, label: r.label || null })}>✕</button>
+          <span>{r.text}</span>
+          <IconButton icon="close" label={`Remove ${r.text}`}
+            onClick={() => onEdit({ kind: "remove", list: r.list, index: r.i, label: r.label || null })} />
         </li>
       ))}
     </ul>

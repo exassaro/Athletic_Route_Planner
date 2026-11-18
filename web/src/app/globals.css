@@ -230,20 +230,8 @@ a { color: var(--accent-text); }
 .mini-marker { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--paper); display: grid; place-items: center; font-size: 12px; border: 2px solid var(--paper); }
 .mini-marker.focus { background: var(--warn); transform: scale(1.3); }
 
-/* ---------- stops ---------- */
-.section-head { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
-.stop-list { list-style: none; padding: 0; margin: 6px 0; }
-.stop { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px solid var(--soft); flex-wrap: wrap; }
-.stop.drop { background: var(--accent-soft); }
-.handle { cursor: grab; touch-action: none; display: grid; place-items: center; width: 32px; min-height: var(--tap); font-size: 1.2rem; color: var(--muted); user-select: none; }
-.stop-num { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--paper); font-size: 0.8rem; }
-.stop-name { flex: 1; min-width: 120px; }
-.stop-moves { display: flex; gap: 4px; }
-.stop-moves button { width: 40px; padding: 0; min-height: 40px; }
-.add-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
-.adder { border: 1px dashed var(--line); border-radius: var(--radius); padding: 8px; }
-.other-items { list-style: none; padding: 0; margin: 4px 0; }
-.other-items li { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+/* ---------- stops (the timeline's rules are under "stops timeline") ---------- */
+.adder { border: 1px dashed var(--line); border-radius: var(--radius); padding: 8px; display: grid; gap: var(--space-1); }
 
 /* ---------- outcome ---------- */
 .outcome { border-radius: var(--radius); padding: 12px; margin: 12px 0; }
@@ -315,7 +303,7 @@ a { color: var(--accent-text); }
 .chart .smooth { fill: none; stroke: var(--accent); stroke-width: 2.5; }
 .chart .cursor { stroke: var(--warn); stroke-width: 1.5; }
 .chart .stop-tick { stroke: var(--ink); stroke-dasharray: 3 3; }
-.chart .stop-tick-label { font-size: 10px; font-weight: 700; }
+.chart .stop-tick-label { font-size: 10px; font-weight: 700; fill: var(--ink); }
 .detail-stops { padding-left: 20px; margin: 6px 0; }
 .keep { margin: 14px 0; }
 .share { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; word-break: break-all; }
@@ -474,3 +462,43 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .run-cycle-strip { display: block; animation: run-cycle 0.52s steps(4) infinite; }
 @keyframes run-cycle { to { transform: translateX(var(--run-shift)); } }
 @media (prefers-reduced-motion: reduce) { .run-cycle-strip { animation: none; } }
+
+/* ---------- stops timeline (Phase 5b step 7) ---------- */
+.section-head { display: flex; justify-content: space-between; align-items: center; gap: var(--space-1); margin-top: var(--space-2); }
+.section-head h2 { margin: 0; }
+.timeline { list-style: none; margin: var(--space-1) 0; padding: 0; }
+.tl-row { position: relative; display: flex; align-items: center; gap: 12px; min-height: 56px; }
+.tl-row::before {     /* the rail through the nodes */
+  content: ""; position: absolute; left: 21px; top: 0; bottom: 0; width: 2px; background: var(--control);
+}
+.tl-row:first-child::before { top: 50%; }
+.tl-row:last-child::before { bottom: 50%; }
+.tl-row:only-child::before { display: none; }
+.tl-node {
+  position: relative; z-index: 1; flex: none; display: grid; place-items: center; width: 44px; height: 44px; min-height: 44px;
+  padding: 0; border: 0; background: transparent; color: var(--ink);
+}
+.tl-start .tl-node svg { background: var(--paper); }
+.tl-end .tl-node { color: var(--ink); }
+.tl-end .tl-node .icon { background: var(--paper); }
+.tl-num { cursor: grab; touch-action: none; font-weight: 700; font-size: 13px; }
+.tl-num::before {     /* the stop's disc: outlined = pass near, filled = must reach (the words below say it too) */
+  content: ""; position: absolute; inset: 8px; z-index: -1; border: 2px solid var(--ink); background: var(--surface);
+  clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px);
+}
+.tl-num.must { color: var(--paper); }
+.tl-num.must::before { background: var(--ink); }
+.tl-num:hover:not(:disabled) { border: 0; }
+.tl-text { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 6px 0; }
+.tl-name { font-size: 16px; line-height: 22px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-sub { line-height: 18px; }
+.tl-km { flex: none; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tl-gap { flex: none; width: 44px; }
+.tl-more { flex: none; border-color: transparent; background: transparent; }
+.tl-drop { background: var(--accent-soft); }
+.tl-empty { min-height: 44px; }
+.stop-options { display: grid; gap: var(--space-1); }
+.stop-options .btn { justify-content: flex-start; }
+.add-row { display: flex; gap: var(--space-1); flex-wrap: wrap; margin: var(--space-1) 0; }
+.other-items { list-style: none; padding: 0; margin: 4px 0; }
+.other-items li { display: flex; justify-content: space-between; align-items: center; gap: var(--space-1); min-height: 48px; }
