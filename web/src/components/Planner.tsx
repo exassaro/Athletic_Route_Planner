@@ -25,6 +25,7 @@ import { SaveShare } from "./SaveShare";
 import { StopsPanel } from "./StopsPanel";
 import { HealthBanner } from "./HealthBanner";
 import { ThemeToggle } from "@/theme/ThemeToggle";
+import { BottomSheet, type Snap } from "./sheet/BottomSheet";
 
 /** The form before the first solve: the API fills every field left out with its default. */
 type Draft = Omit<NewRouteRequest, "start"> & { start: Point | null };
@@ -41,7 +42,7 @@ export function Planner() {
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [draft, setDraft] = useState<Draft>(NEW_DRAFT);
   const [selected, setSelected] = useState(0);
-  const [sheet, setSheet] = useState<"peek" | "half" | "full">("half");
+  const [sheet, setSheet] = useState<Snap>("half");
   const [picking, setPicking] = useState<null | "start">(null);
   const [locError, setLocError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -119,27 +120,23 @@ export function Planner() {
   const canPlan = !v && !!draft.start && (draft.route_type !== "out_and_back" || !!draft.direction);
 
   return (
-    <div className="planner">
+    <div className={`planner sheet-${sheet}`}>
       <MapView onReady={setMap} />
-      <section className={`sheet ${sheet}`} aria-label="Plan your run">
-        <button type="button" className="sheet-handle" aria-label={sheet === "full" ? "Shrink panel" : "Expand panel"}
-          onClick={() => setSheet(sheet === "peek" ? "half" : sheet === "half" ? "full" : "peek")}>
-          <span />
-        </button>
-        <p className="saved-link"><Link href="/routes">Saved routes</Link> · <Link href="/about">About</Link></p>
-        <HealthBanner trigger={plan.busy.kind === "error" ? plan.busy.error.code : null} />
-        <StatusLine busy={plan.busy} onDismiss={plan.clearError} />
-        <Chips request={request} />
-        {v && (
-          <div className="history" role="group" aria-label="Versions">
-            <button type="button" onClick={plan.undo} disabled={!plan.canUndo || solving}>Undo</button>
-            <button type="button" onClick={plan.redo} disabled={!plan.canRedo || solving}>Redo</button>
-            <span className="muted">Version {v.version}</span>
-          </div>
-        )}
-        {toast && <p className="toast" role="status" data-testid="diff-toast">{toast}</p>}
-        {v && candidates[selected] && <Summary cand={candidates[selected]!} pace={pace} />}
-        <div className="sheet-body">
+      <BottomSheet snap={sheet} onSnap={setSheet} label="Plan your run">
+          {/* what a peeked sheet shows first (step 4 replaces it with the peek bar) */}
+          <StatusLine busy={plan.busy} onDismiss={plan.clearError} />
+          {toast && <p className="toast" role="status" data-testid="diff-toast">{toast}</p>}
+          {v && candidates[selected] && <Summary cand={candidates[selected]!} pace={pace} />}
+          <p className="saved-link"><Link href="/routes">Saved routes</Link> · <Link href="/about">About</Link></p>
+          <HealthBanner trigger={plan.busy.kind === "error" ? plan.busy.error.code : null} />
+          <Chips request={request} />
+          {v && (
+            <div className="history" role="group" aria-label="Versions">
+              <button type="button" onClick={plan.undo} disabled={!plan.canUndo || solving}>Undo</button>
+              <button type="button" onClick={plan.redo} disabled={!plan.canRedo || solving}>Redo</button>
+              <span className="muted">Version {v.version}</span>
+            </div>
+          )}
           {v && (
             <>
               <OutcomePanel version={v} onPatch={plan.applyPatch} disabled={solving} />
@@ -186,8 +183,7 @@ export function Planner() {
             <PaceSetting pace={pace} onChange={setPace} />
             <ThemeToggle />
           </section>
-        </div>
-      </section>
+      </BottomSheet>
     </div>
   );
 }

@@ -241,7 +241,8 @@ uv run python api/scripts/export_openapi.py [--check]   # API schema -> web/src/
 cd web; npm ci; npm run gen:api                         # openapi.json -> src/api/schema.d.ts (generated, never edit)
 uv run python engine/scripts/fetch_basemap.py            # Kerala PMTiles (Protomaps build 20261115, engine/basemap_pin.json) + fonts/sprites -> web/public/basemap/ (226 MB, about 1 min)
 npm run dev | npm test | npm run typecheck | npm run lint | npm run build
-$env:NEXT_DIST_DIR=".next-check"; npm run build; npx next start --port 3001   # build and serve beside the running :3000 server (CORS only allows :3000, so the planner there cannot reach the API)
+$env:NEXT_DIST_DIR=".next-check"; $env:NEXT_PUBLIC_API_BASE="same-origin"; $env:NEXT_API_PROXY="http://localhost:8000"; npm run build; npx next start --port 3001   # a test build beside the running :3000 server; /v1/* is proxied to the API (same origin, no CORS entry needed)
+$env:E2E_BASE="http://localhost:3001"; $env:E2E_API="http://localhost:8000"; npx playwright test --project=phone   # the journeys against that build
 uv run --no-project --with fonttools --with brotli python web/scripts/subset_pixel_font.py   # Pixelify Sans (pinned google/fonts commit) -> web/src/fonts/pixelify-gatho.woff2 (wordmark + stat characters, weight 600, tabular digits)
 ```
 

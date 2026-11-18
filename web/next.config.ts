@@ -8,6 +8,13 @@ const config: NextConfig = {
   // amendment 9). Unset: the dev API on :8000. Read at build time.
   env: { NEXT_PUBLIC_API_BASE: process.env.NEXT_PUBLIC_API_BASE === "same-origin" ? ""
     : (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") },
+  // Testing only: NEXT_API_PROXY=http://localhost:8000 (with NEXT_PUBLIC_API_BASE=same-origin) forwards /v1/* to the
+  // API, so a build on another port is same-origin and needs no CORS entry. Read at build time. Unset in production,
+  // where Caddy does this.
+  async rewrites() {
+    const proxy = process.env.NEXT_API_PROXY;
+    return proxy ? [{ source: "/v1/:path*", destination: `${proxy.replace(/\/$/, "")}/v1/:path*` }] : [];
+  },
 };
 
 export default config;

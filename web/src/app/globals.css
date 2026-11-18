@@ -119,30 +119,49 @@ a { color: var(--accent-text); }
 .error-text { color: var(--err-fg); font-size: 0.9rem; }
 .current { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
-/* ---------- layout: full-screen map, bottom sheet (phone) / side panel (desktop) ---------- */
-.planner { position: fixed; inset: 0; }
-.sheet {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--panel);
-  border-radius: 16px 16px 0 0; box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.18);
-  display: flex; flex-direction: column; padding: 0 16px calc(12px + env(safe-area-inset-bottom));
-  transition: height 0.2s ease;
+/* ---------- layout: full-screen map, bottom sheet (phone) / side panel (desktop); Phase 5b step 3 ---------- */
+/* The planner root's sheet-* class sets --snap-h, the visible height; the sheet is full height and moved down by a
+   transform, so a drag (inline transform) and the settle animation never re-lay out its content. */
+.planner {
+  position: fixed; inset: 0;
+  --peek-px: 136px;
+  --top-gap: 64px;
+  --sheet-full: calc(100dvh - var(--top-gap));
+  --snap-h: 50dvh;
 }
-.sheet.peek { height: 170px; }
-.sheet.half { height: 52vh; }
-.sheet.full { height: 92vh; }
-.sheet-handle { min-height: 28px; width: 100%; border: none; background: none; display: flex; justify-content: center; align-items: center; }
-.sheet-handle span { width: 44px; height: 5px; border-radius: 3px; background: var(--control); }
-.sheet-body { overflow-y: auto; flex: 1; padding-bottom: 24px; -webkit-overflow-scrolling: touch; }
+.planner.sheet-peek { --snap-h: calc(var(--peek-px) + env(safe-area-inset-bottom)); }
+.planner.sheet-half { --snap-h: 50dvh; }
+.planner.sheet-full { --snap-h: var(--sheet-full); }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; height: var(--sheet-full);
+  transform: translateY(calc(var(--sheet-full) - var(--snap-h)));
+  display: flex; flex-direction: column; padding: 0 16px;
+  background: var(--paper); border-top: 1px solid var(--hairline); border-radius: 8px 8px 0 0;
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sheet.dragging { transition: none; }
+.sheet-handle {
+  flex: none; align-self: center; display: grid; place-items: center; width: 120px; height: 44px; min-height: 44px; padding: 0;
+  border: none; background: none; touch-action: none; cursor: grab;
+}
+.sheet-handle:hover:not(:disabled) { border: none; }
+.sheet-handle span { width: 40px; height: 4px; border-radius: 2px; background: var(--control); }
+.sheet-body {
+  flex: none; height: calc(var(--snap-h) - 44px); overflow-y: auto; overscroll-behavior: contain;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch;
+}
+@media (prefers-reduced-motion: reduce) { .sheet { transition: none; } }
 @media (min-width: 900px) {
   .sheet, .sheet.peek, .sheet.half, .sheet.full {
-    top: 0; right: auto; width: 440px; height: 100%; border-radius: 0; box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
-    padding-top: 12px;
+    top: 0; right: auto; width: 440px; height: 100%; transform: none; padding-top: 12px;
+    border-top: 0; border-right: 1px solid var(--hairline); border-radius: 0;
   }
   .sheet-handle { display: none; }
+  .sheet-body { flex: 1; height: auto; }
 }
 .maplibregl-ctrl-attrib { font-size: 12px; }
 @media (max-width: 899px) {
-  .planner .maplibregl-ctrl-bottom-right { bottom: 170px; }
+  .planner .maplibregl-ctrl-bottom-right { bottom: var(--snap-h); transition: bottom 0.22s; }
 }
 
 /* ---------- status, banners, toast ---------- */
