@@ -207,6 +207,8 @@ uv run pytest tests/integration -k api              # live stack: A01 flow (vs t
 uv run python api/scripts/export_sample_gpx.py      # through the running API: GPX for A01 and S02 -> docs/reports/phase4/gpx/ (manual Garmin/Strava check)
 uv run python api/scripts/record_photon_fixtures.py  # needs Photon: re-record tests/fixtures/photon/ (the place tests' Photon responses)
 uv run python api/scripts/build_examples.py          # live stack: OpenAPI examples from real solver output -> api/athlete_api/examples/ (never edit them by hand)
+uv run python api/scripts/load_osm_features.py [--dsn postgresql://athlete:athlete@localhost:5433/athlete]   # OSM ways + boundaries from the pin -> osm_ways, osm_boundaries (Phase 5 A6; once per database, about 3 min)
+uv run python api/scripts/measure_climb.py [--bridges]   # elevation smoothing measurements -> docs/reports/phase5/climb_data.json
 docker compose --profile api up -d --build api        # the containerised API on :8000 (migrates on start; one worker)
 uv run python api/scripts/measure_latency.py         # through the container, every active fixture -> docs/reports/phase4/latency.md (raise ATHLETE_RATE_* first; see the script)
 uv run python api/scripts/measure_stack_memory.py    # memory of every container during six concurrent solves through the API

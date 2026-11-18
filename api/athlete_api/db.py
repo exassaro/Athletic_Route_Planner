@@ -9,8 +9,8 @@ from datetime import datetime
 
 from typing import Any
 
-from geoalchemy2 import Geography
-from sqlalchemy import (Boolean, CheckConstraint, DateTime, Float, ForeignKey, Index, Integer, LargeBinary, MetaData,
+from geoalchemy2 import Geography, Geometry
+from sqlalchemy import (BigInteger, Boolean, CheckConstraint, DateTime, Float, ForeignKey, Index, Integer, LargeBinary, MetaData,
                         Text, UniqueConstraint, func)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
@@ -130,6 +130,39 @@ class SavedRoute(Base):
     rating: Mapped[int | None] = mapped_column(Integer)                # post-run feedback (later phases)
     feedback: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(TZ, server_default=func.now())
+
+
+class OsmWay(Base):
+    """A highway way from the pinned extract (Phase 5 A6): ids and geometry for bridges and named roads."""
+
+    __tablename__ = "osm_ways"
+    __table_args__ = (Index("ix_osm_ways_geom", "geom", postgresql_using="gist"),)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
+    name: Mapped[str | None] = mapped_column(Text, index=True)
+    highway: Mapped[str] = mapped_column(Text)
+    bridge: Mapped[bool] = mapped_column(Boolean)
+    tags: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    geom: Mapped[Any] = mapped_column(Geometry("LINESTRING", srid=4326, spatial_index=False))
+
+
+class OsmBoundary(Base):
+    """An administrative or local-authority boundary, admin_level 8 to 10 (the pass-near fallback)."""
+
+    __tablename__ = "osm_boundaries"
+    __table_args__ = (Index("ix_osm_boundaries_geom", "geom", postgresql_using="gist"),)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)   # relation id
+    name: Mapped[str | None] = mapped_column(Text)
+    boundary: Mapped[str] = mapped_column(Text)
+    admin_level: Mapped[int] = mapped_column(Integer)
+    geom: Mapped[Any] = mapped_column(Geometry("MULTIPOLYGON", srid=4326, spatial_index=False))
+
+
+class OsmFeaturesMeta(Base):
+    """Which extract osm_ways and osm_boundaries came from (name, md5, osm_timestamp, loaded_at, counts)."""
+
+    __tablename__ = "osm_features_meta"
+    key: Mapped[str] = mapped_column(Text, primary_key=True)
+    value: Mapped[str] = mapped_column(Text)
 
 
 def make_engine(url: str) -> AsyncEngine:

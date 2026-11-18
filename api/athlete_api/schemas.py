@@ -9,7 +9,8 @@ import uuid
 from datetime import datetime
 from typing import Any, Literal
 
-from athlete_solver.models import Candidate, Conflict, Fix, Flag, RouteRequest, Saving
+from athlete_solver.models import (AvoidItem, Candidate, Checkpoint, Conflict, Fix, Flag, MustUse, RouteRequest,
+                                    Saving, Via)
 from pydantic import BaseModel, ConfigDict, Field, model_serializer
 from pydantic.json_schema import SkipJsonSchema
 
@@ -241,3 +242,31 @@ class PlaceSearchOut(BaseModel):
 class ReverseOut(BaseModel):
     source: Literal["photon"]
     place: PlaceOut | None = Field(description="Null when Photon has nothing in Kerala at that point")
+
+
+# ---------------------------------------------------------------- OSM features (Phase 5 A6)
+
+
+class FeatureItemOut(BaseModel):
+    """A request item built from OSM data in the pinned extract. Exactly one of the four is set, matching
+    `role`; insert it into the request's list of that name (`avoid` for avoid) with a JSON Patch `add`."""
+
+    role: Literal["checkpoint", "via", "must_use", "avoid"]
+    checkpoint: Checkpoint | None = None
+    via: Via | None = None
+    must_use: MustUse | None = None
+    avoid: AvoidItem | None = None
+    extract: str = Field(description="The OSM extract's timestamp (the pin) the geometry comes from")
+
+
+class NearbyWay(BaseModel):
+    place_id: str = Field(description='"osm:way/N": pass it to /v1/features/item as a bridge or road')
+    label: str = Field(description="The OSM name, or a description when the way has none")
+    name: str | None
+    highway: str
+    bridge: bool
+
+
+class NearbyOut(BaseModel):
+    ways: list[NearbyWay] = Field(description="Highway ways near the point, nearest first")
+    extract: str

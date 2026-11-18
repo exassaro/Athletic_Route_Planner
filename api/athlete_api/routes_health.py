@@ -81,9 +81,20 @@ async def health(svc: Services = Depends(services)):
         info = await svc.redis.info("server")
         return f"redis {info.get('redis_version', 'unknown')}"
 
-    names = ("valhalla", "graphhopper", "photon", "postgres", "redis")
+    async def osm_features():
+        """Phase 5 A6: the OSM ways and boundaries are loaded, from the pinned extract."""
+        async with svc.db_engine.connect() as conn:
+            meta = dict((await conn.execute(text("SELECT key, value FROM osm_features_meta"))).all())
+        pin = builds.osm_pin(s.manifest_path)
+        if "osm_timestamp" not in meta:
+            raise RuntimeError("not loaded: run api/scripts/load_osm_features.py")
+        if pin != "unknown" and meta["osm_timestamp"] != pin:
+            raise RuntimeError(f"loaded from {meta['osm_timestamp']}, the pin is {pin}: load again")
+        return f"osm {meta['osm_timestamp']} ({meta.get('ways', '?')} ways, {meta.get('boundaries', '?')} boundaries)"
+
+    names = ("valhalla", "graphhopper", "photon", "postgres", "redis", "osm_features")
     results = await asyncio.gather(*(_timed(f(), s.health_timeout_s)
-                                     for f in (valhalla, graphhopper, photon, postgres, redis)))
+                                     for f in (valhalla, graphhopper, photon, postgres, redis, osm_features)))
     status = dict(zip(names, results))
     up = all(status[n].ok for n in REQUIRED)
     overall = "ok" if up and all(r.ok for r in results) else ("degraded" if up else "down")

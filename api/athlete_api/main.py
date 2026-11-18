@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from redis.asyncio import Redis
 
-from . import errors, routes_health, routes_places, routes_plans, routes_routes, routes_session
+from . import errors, routes_features, routes_health, routes_places, routes_plans, routes_routes, routes_session
 from .config import Settings, get_settings
 from .db import make_engine, make_sessionmaker
 from .deps import Services
@@ -62,6 +62,7 @@ def create_app(settings: Settings | None = None, solver: SolverPort | None = Non
             max_age=600)
     app.include_router(routes_session.router)
     app.include_router(routes_places.router)
+    app.include_router(routes_features.router)
     app.include_router(routes_plans.router)
     app.include_router(routes_routes.router)
     app.include_router(routes_health.router)
