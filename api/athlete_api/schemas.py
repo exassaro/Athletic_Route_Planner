@@ -118,3 +118,39 @@ class SharedRouteOut(BaseModel):
     summary: str = Field(description="Template text for this route; numbers from the solver's result only")
     route: RouteFeature
     gpx_url: str
+
+
+# ---------------------------------------------------------------- places
+
+
+class PlaceOut(BaseModel):
+    place_id: str = Field(description='OSM id, e.g. "osm:node/1770460252": use it with the coordinates in a request')
+    label: str
+    kind: str = Field(description="OSM key=value, e.g. place=village")
+    county: str | None = Field(description="Photon's county: a district or a taluk")
+    city: str | None
+    street: str | None
+    state: str
+    lon: float
+    lat: float
+    extent: list[float] | None = Field(None, description="Bounding box of an area result (Photon)")
+
+
+class AmbiguityReason(BaseModel):
+    reason: Literal["same_name", "same_name_different_areas", "no_exact_match"]
+    name: str
+    count: int | None = None
+    counties: list[str] | None = None
+
+
+class PlaceSearchOut(BaseModel):
+    query: str
+    source: Literal["photon"]
+    ambiguous: bool = Field(description="Show a picker: the API never picks a place")
+    reasons: list[AmbiguityReason]
+    candidates: list[PlaceOut] = Field(description="Every Kerala result, in Photon's order")
+
+
+class ReverseOut(BaseModel):
+    source: Literal["photon"]
+    place: PlaceOut | None = Field(description="Null when Photon has nothing in Kerala at that point")

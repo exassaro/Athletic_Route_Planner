@@ -10,10 +10,11 @@ import httpx
 from fastapi import FastAPI
 from redis.asyncio import Redis
 
-from . import errors, routes_health, routes_plans, routes_routes, routes_session
+from . import errors, routes_health, routes_places, routes_plans, routes_routes, routes_session
 from .config import Settings, get_settings
 from .db import make_engine, make_sessionmaker
 from .deps import Services
+from .places import Photon
 from .planning import Planner
 from .solving import SolveRunner, SolverPort, real_solver
 
@@ -37,6 +38,7 @@ def create_app(settings: Settings | None = None, solver: SolverPort | None = Non
         svc = Services(settings=settings, db_engine=db_engine, sessions=make_sessionmaker(db_engine), redis=redis,
                        http=http)
         app.state.services = svc
+        app.state.photon = Photon(settings.photon_url, http)
         app.state.planner = Planner(svc, SolveRunner(solver or real_solver(settings), settings.solve_slots,
                                                      settings.slot_wait_s))
         try:
@@ -50,6 +52,7 @@ def create_app(settings: Settings | None = None, solver: SolverPort | None = Non
     app = FastAPI(title="Athlete Router API", version="0.4.0", description=DESCRIPTION, lifespan=lifespan)
     errors.install(app)
     app.include_router(routes_session.router)
+    app.include_router(routes_places.router)
     app.include_router(routes_plans.router)
     app.include_router(routes_routes.router)
     app.include_router(routes_health.router)

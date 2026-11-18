@@ -73,6 +73,9 @@ Decided 2026-11-18 by the product owner at the start of Phase 4, the backend API
     The gain and loss shown are always the solver's smoothed values, never recomputed from Z.
 16. **Explanation numbers come only from the SolveResult**: its facts, its conflict (the savings live there) and its candidates' measured stats, formatted but never computed by the API. A test extracts every number from each explanation and finds it in the result.
 17. **No `places` table.** A geocoder cache would be a fallback while Photon is down. Search always returns a ranked list, with `ambiguous: true` and the reasons when results share a name, also across districts (Photon's `county`). If Photon exposes no score, "close in score" cannot be measured, and the name rule applies alone.
+    - Measured 2026-11-18: Photon 1.3.0 returns no score, so the name rule applies alone.
+    - Its `county` is sometimes a district (Kozhikode, Palakkad) and sometimes a taluk (Tirur, Iritty).
+    - OSM often holds a place several times (village node, boundary, station), so most common names are ambiguous. "Kadalundi" returns three in Kozhikode; "Chungam" appears in 7 districts or taluks.
 18. **Clients and ownership.**
     - `clients` replaces the `users` table until Phase 8, and the token is stored only as a hash.
     - Plans and routes are readable only by the client that created them; any other client gets 404.
@@ -711,7 +714,7 @@ Rewritten for Phase 4. Every path is under `/v1`. Requests and responses use the
 | Method and path | Purpose | Notes |
 | --- | --- | --- |
 | `POST /v1/session` | Issue an anonymous client token | Returns `{client_id, token}`. The token goes in `X-Client-Token` on every other call except share and health |
-| `GET /v1/places/search?q=&lat=&lon=&limit=` | Geocoding through Photon, biased to (lat, lon), Kerala only | Ranked candidates with `place_id` (`osm:node/…`), label, district, kind, lon, lat; `ambiguous` with reasons. Never picks. 503 if Photon is down |
+| `GET /v1/places/search?q=&lat=&lon=&limit=` | Geocoding through Photon, biased to (lat, lon), English names, Kerala only (the pinned extract's bounding box as a pre-filter, then `state` = Kerala) | Every Kerala result in Photon's order with `place_id` (`osm:node/…`), label, kind, `county` (Photon's: a district or a taluk), lon, lat; `ambiguous` with reasons (`same_name`, `same_name_different_areas`, `no_exact_match`). Never picks. 503 if Photon is down |
 | `GET /v1/places/reverse?lat=&lon=` | Name for a point | 503 if Photon is down |
 | `POST /v1/plans` | Create a plan: body `{request: RouteRequest, source}` | Solves; returns version 1 |
 | `PATCH /v1/plans/{id}?source=form` | Body: RFC 6902 patch on the latest stored request, defaults filled in (`application/json-patch+json`; plain JSON is accepted too) | Re-solves; returns the new version with its diff. Optional `If-Match: "v<n>"`. Undo: `replace` at path `""` with an earlier request |

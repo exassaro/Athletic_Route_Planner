@@ -48,6 +48,8 @@ Implementation choices (accepted 2026-11-18):
 Phase 4 facts:
 - **`ST_Length` on a geography `LINESTRING Z` counts the Z changes** (PostGIS 3.4). The `routes.geom` Z is the DEM height, so a cross-check must use `ST_Length(ST_Force2D(geom::geometry)::geography)`. With that, A01 agrees with the solver to about 1e-8 m.
 - Postgres is on host port 5433, because a native Windows PostgreSQL holds 5432.
+- Photon returns no relevance score. Its `county` is a district or a taluk. OSM often holds the same place several times, so most names come back `ambiguous` and the picker shows.
+- The Kerala bounding box for Photon is the pinned extract's own, from GraphHopper `/info`, with `state == "Kerala"` as the real filter.
 
 ## Phase 3 amendments (2026-11-17, full text at the top of docs/blueprint.md; they win over Phase 2)
 
@@ -185,6 +187,7 @@ uv run uvicorn athlete_api.main:app --port 8000
 uv run pytest tests/unit/api                       # API unit tests, no services
 uv run pytest tests/api                            # the app on a throwaway athlete_test database + Redis db 15, no engines
 uv run python api/scripts/export_sample_gpx.py      # through the running API: GPX for A01 and S02 -> docs/reports/phase4/gpx/ (manual Garmin/Strava check)
+uv run python api/scripts/record_photon_fixtures.py  # needs Photon: re-record tests/fixtures/photon/ (the place tests' Photon responses)
 ```
 
 The app uses asyncpg: psycopg's async mode cannot run on the Windows Proactor event loop. Settings come from `ATHLETE_*` variables (`athlete_api/config.py`); the engine URLs reuse `VALHALLA_URL` and `GRAPHHOPPER_URL`, like the solver.
