@@ -1,0 +1,876 @@
+{
+ "summary": "ok, Case B: the target is nearer than the distance",
+ "description": "Real output of the solver through the API for fixture S11 (Target nearer than budget: 25 km towards Kadalundi), measured on the development laptop on 2026-11-18. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
+ "value": {
+  "plan_id": "5b8743dc-76fe-4894-9786-013e779a4dc3",
+  "version": 1,
+  "source": "form",
+  "created_at": "2026-11-18T02:09:51.307743Z",
+  "outcome": "ok",
+  "request": {
+   "activity": "run",
+   "route_type": "point_to_point",
+   "start": {
+    "lon": 75.86,
+    "lat": 11.05,
+    "label": "start_south_of_kadalundi",
+    "place_id": null
+   },
+   "target_distance_m": 25000.0,
+   "tolerance_m": 500.0,
+   "direction": {
+    "kind": "towards_place",
+    "place": {
+     "lon": 75.8334302,
+     "lat": 11.1381083,
+     "label": "Kadalundi",
+     "place_id": "osm:node/7728008448"
+    }
+   },
+   "end": {
+    "kind": "auto"
+   },
+   "checkpoints": [],
+   "checkpoint_order": "auto",
+   "via": [],
+   "must_use": [],
+   "avoid": [],
+   "preferences": {
+    "hills": "any",
+    "surface": "any",
+    "paths": "avoid"
+   },
+   "alternatives": 2
+  },
+  "candidates": [
+   {
+    "label": "recommended",
+    "option": "continue_past_target",
+    "geometry": [
+     [
+      75.86005,
+      11.049737
+     ],
+     [
+      75.859833,
+      11.049698
+     ],
+     [
+      75.859764,
+      11.049662
+     ],
+     [
+      75.806387,
+      11.19114
+     ],
+     [
+      75.806376,
+      11.19115
+     ]
+    ],
+    "length_m": 25000.01415309793,
+    "foot_m": 25000.01415309793,
+    "ferry_m": 0.0,
+    "engine_length_m": 25067.636,
+    "sphere_length_m": 25067.890580971307,
+    "engine": "graphhopper",
+    "edge_count": 179,
+    "deviation_m": 0.014153097930829972,
+    "duration_s": 18048.691,
+    "gain_m": 128.4,
+    "loss_m": 132.1,
+    "stops": [
+     {
+      "role": "start",
+      "label": "start_south_of_kadalundi",
+      "requested": {
+       "lon": 75.86,
+       "lat": 11.05,
+       "label": "start_south_of_kadalundi",
+       "place_id": null
+      },
+      "snapped_lon": 75.86005,
+      "snapped_lat": 11.049737,
+      "offset_m": 29.600340590520503,
+      "at_m": 0.0,
+      "kind": null,
+      "must_reach": false,
+      "pass_walk_m": null,
+      "how": null
+     },
+     {
+      "role": "end",
+      "label": "Beypoor - Cheruvannur Road",
+      "requested": {
+       "lon": 75.806376,
+       "lat": 11.19115,
+       "label": null,
+       "place_id": null
+      },
+      "snapped_lon": 75.806376,
+      "snapped_lat": 11.19115,
+      "offset_m": 0.0,
+      "at_m": 25000.0,
+      "kind": null,
+      "must_reach": false,
+      "pass_walk_m": null,
+      "how": null
+     }
+    ],
+    "end": {
+     "lon": 75.806376,
+     "lat": 11.19115,
+     "label": "Beypoor - Cheruvannur Road",
+     "kind": "mid_road"
+    },
+    "road_class_m": {
+     "primary": 1332.2,
+     "secondary": 19202.7,
+     "residential": 4237.8,
+     "unclassified": 227.9
+    },
+    "repeat_share": 0.0162,
+    "backtrack_share": null,
+    "score": 1.013,
+    "flags": [
+     {
+      "code": "endpoint_mid_road",
+      "message": "no junction within the snap window; the run ends at the exact distance",
+      "data": {}
+     },
+     {
+      "code": "spur",
+      "message": "1 dead-end excursion(s) over 100 m",
+      "data": {
+       "spur_m": [
+        202.6
+       ]
+      }
+     }
+    ],
+    "route_id": "2b96bac4-41bb-4f43-bbbf-7cc187424e0c"
+   },
+   {
+    "label": "recommended",
+    "option": "end_at_target",
+    "geometry": [
+     [
+      75.86005,
+      11.049737
+     ],
+     [
+      75.859833,
+      11.049698
+     ],
+     [
+      75.859764,
+      11.049662
+     ],
+     [
+      75.833886,
+      11.138724
+     ],
+     [
+      75.833784,
+      11.138056
+     ]
+    ],
+    "length_m": 12603.083148425967,
+    "foot_m": 12603.083148425967,
+    "ferry_m": 0.0,
+    "engine_length_m": 12645.553,
+    "sphere_length_m": 12645.506365768617,
+    "engine": "graphhopper",
+    "edge_count": 100,
+    "deviation_m": -12396.916851574033,
+    "duration_s": 9104.794,
+    "gain_m": 36.6,
+    "loss_m": 37.0,
+    "stops": [
+     {
+      "role": "start",
+      "label": "start_south_of_kadalundi",
+      "requested": {
+       "lon": 75.86,
+       "lat": 11.05,
+       "label": "start_south_of_kadalundi",
+       "place_id": null
+      },
+      "snapped_lon": 75.86005,
+      "snapped_lat": 11.049737,
+      "offset_m": 29.600340590520503,
+      "at_m": 0.0,
+      "kind": null,
+      "must_reach": false,
+      "pass_walk_m": null,
+      "how": null
+     },
+     {
+      "role": "end",
+      "label": "Chaliyam - Kadalundi - Kottakadavu Road",
+      "requested": {
+       "lon": 75.833784,
+       "lat": 11.138056,
+       "label": null,
+       "place_id": null
+      },
+      "snapped_lon": 75.833784,
+      "snapped_lat": 11.138056,
+      "offset_m": 0.0,
+      "at_m": 12603.1,
+      "kind": null,
+      "must_reach": false,
+      "pass_walk_m": null,
+      "how": null
+     }
+    ],
+    "end": {
+     "lon": 75.833784,
+     "lat": 11.138056,
+     "label": "Kadalundi",
+     "kind": "target"
+    },
+    "road_class_m": {
+     "primary": 688.0,
+     "secondary": 10878.8,
+     "residential": 1036.8
+    },
+    "repeat_share": 0.0,
+    "backtrack_share": null,
+    "score": 99.175,
+    "flags": [
+     {
+      "code": "short_of_budget",
+      "message": "Kadalundi is 12.6 km away by this route, 12.4 km short of the 25.0 km requested.",
+      "data": {
+       "short_by_m": 12396.9
+      }
+     }
+    ],
+    "route_id": "701b5d6b-518e-4897-bf7b-fc92b41b6e57"
+   },
+   {
+    "label": "recommended",
+    "option": "detour_to_target",
+    "geometry": [
+     [
+      75.86005,
+      11.049737
+     ],
+     [
+      75.859833,
+      11.049698
+     ],
+     [
+      75.859764,
+      11.049662
+     ],
+     [
+      75.833886,
+      11.138724
+     ],
+     [
+      75.833784,
+      11.138056
+     ]
+    ],
+    "length_m": 25363.861147152656,
+    "foot_m": 25363.861147152656,
+    "ferry_m": 0.0,
+    "engine_length_m": 25411.683,
+    "sphere_length_m": 25411.790633160716,
+    "engine": "graphhopper",
+    "edge_count": 140,
+    "deviation_m": 363.8611471526565,
+    "duration_s": 18296.413,
+    "gain_m": 306.4,
+    "loss_m": 305.1,
+    "stops": [
+     {
+      "role": "start",
+      "label": "start_south_of_kadalundi",
+      "requested": {
+       "lon": 75.86,
+       "lat": 11.05,
+       "label": "start_south_of_kadalundi",
+       "place_id": null
+      },
+      "snapped_lon": 75.86005,
+      "snapped_lat": 11.049737,
+      "offset_m": 29.600340590520503,
+      "at_m": 0.0,
+      "kind": null,
+      "must_reach": false,
+      "pass_walk_m": null,
+      "how": null
+     },
+     {
+      "role": "end",
+      "label": "Chaliyam - Kadalundi - Kottakadavu Road",
+      "requested": {
+       "lon": 75.833784,
+       "lat": 11.138056,
+       "label": null,
+       "place_id": null
+      },
+      "snapped_lon": 75.833784,
+      "snapped_lat": 11.138056,
+      "offset_m": 0.0,
+      "at_m": 25363.9,
+      "kind": null,
+      "must_reach": false,
+      "pass_walk_m": null,
+      "how": null
+     }
+    ],
+    "end": {
+     "lon": 75.833784,
+     "lat": 11.138056,
+     "label": "Kadalundi",
+     "kind": "target"
+    },
+    "road_class_m": {
+     "primary": 688.0,
+     "tertiary": 2382.9,
+     "secondary": 11693.1,
+     "residential": 9401.3,
+     "unclassified": 1108.7,
+     "service_other": 90.9
+    },
+    "repeat_share": 0.005,
+    "backtrack_share": null,
+    "score": 3.163,
+    "flags": [
+     {
+      "code": "lengthened",
+      "message": "a detour of 12.8 km was added on the longest leg to reach the distance",
+      "data": {
+       "via": [
+        75.905402,
+        11.134755
+       ],
+       "added_m": 12760.8
+      }
+     }
+    ],
+    "route_id": "7812521d-1f3a-4443-ac6f-e3a4432e7bd0"
+   },
+   {
+    "label": "shortest",
+    "option": "continue_past_target",
+    "geometry": [
+     [
+      75.86005,
+      11.049738
+     ],
+     [
+      75.859833,
+      11.049698
+     ],
+     [
+      75.859764,
+      11.049662
+     ],
+     [
+      75.80708,
+      11.210696
+     ],
+     [
+      75.806887,
+      11.210997
+     ]
+    ],
+    "length_m": 24998.644783410386,
+    "foot_m": 24998.644783410386,
+    "ferry_m": 0.0,
+    "engine_length_m": 25093.0,
+    "sphere_length_m": 25098.29593649852,
+    "engine": "valhalla",
+    "edge_count": 204,
+    "deviation_m": -1.3552165896144288,
+    "duration_s": 18234.582,
+    "gain_m": 118.0,
+    "loss_m": 124.3,
+    "stops": [
+     {
+      "role": "start",
+      "label": "start_south_of_kadalundi",
+      "requested": {
+       "lon": 75.86,
+       "lat": 11.05,
+       "label": "start_south_of_kadalundi",
+       "place_id": null
+      },
+      "snapped_lon": 75.86005,
+      "snapped_lat": 11.049738,
+      "offset_m": 29.491633103388438,
+      "at_m": 0.0,
+      "kind": null,
+      "must_reach": false,
+      "pass_walk_m": null,
+      "how": null
+     },
+     {
+      "role": "end",
+      "label": "Old NH17 Road",
+      "requested": {
+       "lon": 75.806887,
+       "lat": 11.210997,
+       "label": null,
+       "place_id": null
+      },
+      "snapped_lon": 75.806887,
+      "snapped_lat": 11.210997,
+      "offset_m": 0.0,
+      "at_m": 24998.6,
+      "kind": null,
+      "must_reach": false,
+      "pass_walk_m": null,
+      "how": null
+     }
+    ],
+    "end": {
+     "lon": 75.806887,
+     "lat": 11.210997,
+     "label": "Old NH17 Road",
+     "kind": "junction"
+    },
+    "road_class_m": {
+     "primary": 5564.8,
+     "tertiary": 170.8,
+     "secondary": 14952.3,
+     "residential": 2294.7,
+     "unclassified": 1825.6,
+     "service_other": 190.5
+    },
+    "repeat_share": 0.0162,
+    "backtrack_share": null,
+    "score": 1.024,
+    "flags": [
+     {
+      "code": "spur",
+      "message": "1 dead-end excursion(s) over 100 m",
+      "data": {
+       "spur_m": [
+        202.6
+       ]
+      }
+     }
+    ],
+    "route_id": "8fe64055-4964-4cdb-9a3d-9d85a513bc5c"
+   },
+   {
+    "label": "shortest",
+    "option": "end_at_target",
+    "geometry": [
+     [
+      75.86005,
+      11.049738
+     ],
+     [
+      75.859833,
+      11.049698
+     ],
+     [
+      75.859764,
+      11.049662
+     ],
+     [
+      75.833886,
+      11.138724
+     ],
+     [
+      75.833785,
+      11.138056
+     ]
+    ],
+    "length_m": 12603.525510313475,
+    "foot_m": 12603.525510313475,
+    "ferry_m": 0.0,
+    "engine_length_m": 12652.0,
+    "sphere_length_m": 12660.115933051226,
+    "engine": "valhalla",
+    "edge_count": 100,
+    "deviation_m": -12396.474489686525,
+    "duration_s": 9143.529,
+    "gain_m": 39.8,
+    "loss_m": 40.2,
+    "stops": [
+     {
+      "role": "start",
+      "label": "start_south_of_kadalundi",
+      "requested": {
+       "lon": 75.86,
+       "lat": 11.05,
+       "label": "start_south_of_kadalundi",
+       "place_id": null
+      },
+      "snapped_lon": 75.86005,
+      "snapped_lat": 11.049738,
+      "offset_m": 29.491633103388438,
+      "at_m": 0.0,
+      "kind": null,
+      "must_reach": false,
+      "pass_walk_m": null,
+      "how": null
+     },
+     {
+      "role": "end",
+      "label": "Chaliyam - Kadalundi - Kottakadavu Road",
+      "requested": {
+       "lon": 75.833785,
+       "lat": 11.138056,
+       "label": null,
+       "place_id": null
+      },
+      "snapped_lon": 75.833785,
+      "snapped_lat": 11.138056,
+      "offset_m": 0.0,
+      "at_m": 12603.5,
+      "kind": null,
+      "must_reach": false,
+      "pass_walk_m": null,
+      "how": null
+     }
+    ],
+    "end": {
+     "lon": 75.833785,
+     "lat": 11.138056,
+     "label": "Kadalundi",
+     "kind": "target"
+    },
+    "road_class_m": {
+     "primary": 688.0,
+     "secondary": 10878.8,
+     "residential": 1036.8
+    },
+    "repeat_share": 0.0,
+    "backtrack_share": null,
+    "score": 99.172,
+    "flags": [
+     {
+      "code": "short_of_budget",
+      "message": "Kadalundi is 12.6 km away by this route, 12.4 km short of the 25.0 km requested.",
+      "data": {
+       "short_by_m": 12396.5
+      }
+     }
+    ],
+    "route_id": "5711dc29-8b4c-4a1a-a838-fa36ec08f0ec"
+   }
+  ],
+  "conflict": null,
+  "facts": {
+   "case": "B",
+   "order": [],
+   "stops": {},
+   "l_min_m": 0.0,
+   "budget_m": 25000.0,
+   "lengthen": {
+    "leg": 0,
+    "via": [
+     75.905402,
+     11.134755
+    ],
+    "found": true,
+    "tries": [
+     {
+      "ray": 0,
+      "foot_m": 24347.3,
+      "offset_m": 7451.5,
+      "retraced_m": 730.4
+     },
+     {
+      "ray": 0,
+      "foot_m": 25363.9,
+      "offset_m": 7865.6,
+      "retraced_m": 41.6
+     },
+     {
+      "ray": 0,
+      "foot_m": 25514.7,
+      "offset_m": 7717.4,
+      "retraced_m": 117.1
+     },
+     {
+      "ray": 1,
+      "foot_m": 26023.2,
+      "offset_m": 7500.3,
+      "retraced_m": 138.3
+     },
+     {
+      "ray": 1,
+      "foot_m": 24136.6,
+      "offset_m": 6928.4,
+      "retraced_m": 0.0
+     },
+     {
+      "ray": 1,
+      "foot_m": 24882.5,
+      "offset_m": 7190.1,
+      "retraced_m": 382.6
+     },
+     {
+      "ray": 2,
+      "foot_m": 23712.5,
+      "offset_m": 8831.2,
+      "retraced_m": 5227.9
+     },
+     {
+      "ray": 2,
+      "foot_m": 25584.9,
+      "offset_m": 9854.7,
+      "retraced_m": 6422.8
+     },
+     {
+      "ray": 2,
+      "foot_m": 25419.6,
+      "offset_m": 9534.9,
+      "retraced_m": 6340.2
+     },
+     {
+      "ray": 2,
+      "foot_m": 25708.2,
+      "offset_m": 9362.0,
+      "retraced_m": 6484.5
+     },
+     {
+      "ray": 3,
+      "foot_m": 23758.3,
+      "offset_m": 8289.1,
+      "retraced_m": 0.0
+     },
+     {
+      "ray": 3,
+      "foot_m": 25737.8,
+      "offset_m": 9211.8,
+      "retraced_m": 64.0
+     },
+     {
+      "ray": 3,
+      "foot_m": 25398.9,
+      "offset_m": 8867.9,
+      "retraced_m": 885.1
+     },
+     {
+      "ray": 3,
+      "foot_m": 25535.4,
+      "offset_m": 8727.2,
+      "retraced_m": 953.3
+     }
+    ],
+    "added_m": 12760.8
+   },
+   "remainder_m": 25000.0,
+   "shortfall_m": 12396.9,
+   "tolerance_m": 500.0,
+   "by_alternative": {
+    "shortest": {
+     "case": "B",
+     "order": [],
+     "stops": {},
+     "l_min_m": 0.0,
+     "lengthen": {
+      "leg": 0,
+      "via": [
+       75.840411,
+       11.181572
+      ],
+      "found": true,
+      "tries": [
+       {
+        "ray": 0,
+        "foot_m": 25173.7,
+        "offset_m": 7451.5,
+        "retraced_m": 219.5
+       },
+       {
+        "ray": 0,
+        "foot_m": 25173.7,
+        "offset_m": 7348.5,
+        "retraced_m": 219.5
+       },
+       {
+        "ray": 1,
+        "foot_m": 26886.7,
+        "offset_m": 7500.3,
+        "retraced_m": 269.6
+       },
+       {
+        "ray": 1,
+        "foot_m": 25029.2,
+        "offset_m": 6509.5,
+        "retraced_m": 187.3
+       },
+       {
+        "ray": 2,
+        "foot_m": 23878.3,
+        "offset_m": 8831.2,
+        "retraced_m": 5317.7
+       },
+       {
+        "ray": 2,
+        "foot_m": 25976.8,
+        "offset_m": 9709.8,
+        "retraced_m": 0.0
+       },
+       {
+        "ray": 2,
+        "foot_m": 25008.6,
+        "offset_m": 9300.8,
+        "retraced_m": 5590.5
+       },
+       {
+        "ray": 3,
+        "foot_m": 23303.0,
+        "offset_m": 8289.1,
+        "retraced_m": 0.0
+       },
+       {
+        "ray": 3,
+        "foot_m": 27852.4,
+        "offset_m": 9603.8,
+        "retraced_m": 460.4
+       },
+       {
+        "ray": 3,
+        "foot_m": 25100.6,
+        "offset_m": 8779.5,
+        "retraced_m": 834.4
+       }
+      ],
+      "added_m": 13373.3,
+      "outside_tolerance_m": 976.8
+     },
+     "remainder_m": 25000.0,
+     "shortfall_m": 12396.5,
+     "tail_to_target_m": 12603.5,
+     "continue_bearing_error_deg": 3.2
+    },
+    "recommended": {
+     "case": "B",
+     "order": [],
+     "stops": {},
+     "l_min_m": 0.0,
+     "lengthen": {
+      "leg": 0,
+      "via": [
+       75.905402,
+       11.134755
+      ],
+      "found": true,
+      "tries": [
+       {
+        "ray": 0,
+        "foot_m": 24347.3,
+        "offset_m": 7451.5,
+        "retraced_m": 730.4
+       },
+       {
+        "ray": 0,
+        "foot_m": 25363.9,
+        "offset_m": 7865.6,
+        "retraced_m": 41.6
+       },
+       {
+        "ray": 0,
+        "foot_m": 25514.7,
+        "offset_m": 7717.4,
+        "retraced_m": 117.1
+       },
+       {
+        "ray": 1,
+        "foot_m": 26023.2,
+        "offset_m": 7500.3,
+        "retraced_m": 138.3
+       },
+       {
+        "ray": 1,
+        "foot_m": 24136.6,
+        "offset_m": 6928.4,
+        "retraced_m": 0.0
+       },
+       {
+        "ray": 1,
+        "foot_m": 24882.5,
+        "offset_m": 7190.1,
+        "retraced_m": 382.6
+       },
+       {
+        "ray": 2,
+        "foot_m": 23712.5,
+        "offset_m": 8831.2,
+        "retraced_m": 5227.9
+       },
+       {
+        "ray": 2,
+        "foot_m": 25584.9,
+        "offset_m": 9854.7,
+        "retraced_m": 6422.8
+       },
+       {
+        "ray": 2,
+        "foot_m": 25419.6,
+        "offset_m": 9534.9,
+        "retraced_m": 6340.2
+       },
+       {
+        "ray": 2,
+        "foot_m": 25708.2,
+        "offset_m": 9362.0,
+        "retraced_m": 6484.5
+       },
+       {
+        "ray": 3,
+        "foot_m": 23758.3,
+        "offset_m": 8289.1,
+        "retraced_m": 0.0
+       },
+       {
+        "ray": 3,
+        "foot_m": 25737.8,
+        "offset_m": 9211.8,
+        "retraced_m": 64.0
+       },
+       {
+        "ray": 3,
+        "foot_m": 25398.9,
+        "offset_m": 8867.9,
+        "retraced_m": 885.1
+       },
+       {
+        "ray": 3,
+        "foot_m": 25535.4,
+        "offset_m": 8727.2,
+        "retraced_m": 953.3
+       }
+      ],
+      "added_m": 12760.8
+     },
+     "remainder_m": 25000.0,
+     "shortfall_m": 12396.9,
+     "tail_to_target_m": 12603.1,
+     "continue_bearing_error_deg": 10.1
+    }
+   },
+   "tail_to_target_m": 12603.1,
+   "l_min_by_alternative": {
+    "shortest": 0.0,
+    "recommended": 0.0
+   },
+   "continue_bearing_error_deg": 10.1
+  },
+  "flags": [],
+  "explanation": "The recommended route can carry on past the target: 25.0 km, ending at Beypoor - Cheruvannur Road. The recommended route reaches the target in 12.6 km, 12.4 km short of the distance. The recommended route can end at the target with a detour on the way: 25.4 km. The shortest route can carry on past the target: 25.0 km, ending at Old NH17 Road. The shortest route reaches the target in 12.6 km, 12.4 km short of the distance.",
+  "diff": null,
+  "builds": {
+   "osm": "2026-11-15T00:15:25Z",
+   "valhalla": "valhalla 3.9.2-2dc688aa7 tiles 2026-11-16T12:07:35Z",
+   "graphhopper": "graphhopper 11.1 import 2026-11-17T09:07:35Z",
+   "solver": "6408f21418d9dd58"
+  },
+  "cached": false,
+  "elapsed_ms": 6775.283499999205,
+  "engine_calls": 113
+ }
+}

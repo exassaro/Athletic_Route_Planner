@@ -1,0 +1,26 @@
+{
+ "summary": "Target nearer than budget: 25 km towards Kadalundi",
+ "description": "Request of fixture S11, coordinates from OSM.",
+ "value": {
+  "request": {
+   "route_type": "point_to_point",
+   "start": {
+    "lon": 75.86,
+    "lat": 11.05,
+    "label": "start_south_of_kadalundi"
+   },
+   "target_distance_m": 25000,
+   "direction": {
+    "kind": "towards_place",
+    "place": {
+     "lon": 75.8334302,
+     "lat": 11.1381083,
+     "label": "Kadalundi",
+     "place_id": "osm:node/7728008448"
+    }
+   },
+   "checkpoints": []
+  },
+  "source": "form"
+ }
+}

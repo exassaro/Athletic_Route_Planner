@@ -15,6 +15,7 @@ from . import explain, gpx, ratelimit
 from .db import Client, Plan, PlanVersion, Route, SavedRoute
 from .deps import Services, client_ip, limited, services
 from .errors import ApiError, responses
+from .examples import content
 from .schemas import ElevationOut, LineStringZ, RouteFeature, SavedOut, SavedRouteOut, SaveIn, SharedRouteOut
 from .store import candidate_of, geometry_of
 
@@ -55,7 +56,8 @@ def summary(route: Route) -> str:
     return " ".join([explain.describe(cand), *explain.notes(cand)])
 
 
-@router.get("/routes/{route_id}", response_model=RouteFeature, responses=responses(401, 404, 429),
+@router.get("/routes/{route_id}", response_model=RouteFeature,
+            responses={200: content("route_A01"), **responses(401, 404, 429)},
             summary="One route as GeoJSON")
 async def get_route(route_id: uuid.UUID, client: Client = Depends(limited("read")),
                     svc: Services = Depends(services)) -> RouteFeature:
@@ -63,7 +65,8 @@ async def get_route(route_id: uuid.UUID, client: Client = Depends(limited("read"
     return feature(route, version)
 
 
-@router.get("/routes/{route_id}/elevation", response_model=ElevationOut, responses=responses(401, 404, 429),
+@router.get("/routes/{route_id}/elevation", response_model=ElevationOut,
+            responses={200: content("elevation_A01"), **responses(401, 404, 429)},
             summary="Elevation profile")
 async def get_elevation(route_id: uuid.UUID, client: Client = Depends(limited("read")),
                         svc: Services = Depends(services)) -> ElevationOut:
@@ -92,7 +95,7 @@ def _saved_out(saved: SavedRoute, request: Request) -> dict:
 
 
 @router.post("/routes/{route_id}/save", response_model=SavedOut, status_code=201,
-             responses={200: {"model": SavedOut, "description": "Already saved: name updated"},
+             responses={201: content("saved_A01"), 200: {"model": SavedOut, "description": "Already saved: name updated"},
                         **responses(401, 404, 422, 429)}, summary="Save a route and get its share link")
 async def save_route(route_id: uuid.UUID, request: Request, response: Response, body: SaveIn | None = None,
                      client: Client = Depends(limited("read")), svc: Services = Depends(services)) -> SavedOut:
@@ -139,7 +142,8 @@ async def _shared(svc: Services, slug: str, ip: str) -> tuple[SavedRoute, Route,
     return row[0], row[1], row[2]
 
 
-@router.get("/share/{slug}", response_model=SharedRouteOut, responses=responses(404, 429), tags=["share"],
+@router.get("/share/{slug}", response_model=SharedRouteOut,
+            responses={200: content("share_A01"), **responses(404, 429)}, tags=["share"],
             summary="A shared route (public, no token)")
 async def get_shared(slug: str, request: Request, ip: str = Depends(client_ip),
                      svc: Services = Depends(services)) -> SharedRouteOut:

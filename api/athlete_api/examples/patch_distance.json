@@ -1,0 +1,11 @@
+{
+ "summary": "Change the distance",
+ "description": "RFC 6902 patch on the stored request.",
+ "value": [
+  {
+   "op": "replace",
+   "path": "/target_distance_m",
+   "value": 20000
+  }
+ ]
+}

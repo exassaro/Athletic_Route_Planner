@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from .db import Client
 from .deps import limited
 from .errors import ApiError, responses
+from .examples import content, examples, plan_wrapped
 from .planning import Planner
 from .schemas import PlanCreate, PlanOut, PlanVersionOut, Source
 
@@ -23,8 +24,11 @@ def planner(request: Request) -> Planner:
 
 
 @router.post("", response_model=PlanVersionOut, status_code=201,
-             responses=responses(401, 422, 429, 500, 502, 503, 504), summary="Create a plan from a route request")
-async def create_plan(body: PlanCreate, client: Client = Depends(limited("solve")),
+             responses={201: content("plan_A01", "plan_S11", "plan_S02", "plan_G01"),
+                        **responses(401, 422, 429, 500, 502, 503, 504)}, summary="Create a plan from a route request")
+async def create_plan(body: PlanCreate = Body(openapi_examples=examples("request_A01", "request_S11", "request_S02",
+                                                                        "request_G01")),
+                      client: Client = Depends(limited("solve")),
                       plans: Planner = Depends(planner)) -> PlanVersionOut:
     """Solves the request and stores it as version 1.
 
@@ -36,15 +40,12 @@ async def create_plan(body: PlanCreate, client: Client = Depends(limited("solve"
     return await plans.solve_into(plan_id, body.request, body.source)
 
 
-PATCH_EXAMPLE = [{"op": "replace", "path": "/target_distance_m", "value": 20000}]
-
-
 @router.patch("/{plan_id}", response_model=PlanVersionOut,
-              responses=responses(401, 404, 409, 412, 422, 429, 500, 502, 503, 504),
+              responses={200: content("plan_A01_20km"), **responses(401, 404, 409, 412, 422, 429, 500, 502, 503, 504)},
               summary="Edit the request with a JSON Patch and re-solve")
 async def patch_plan(plan_id: uuid.UUID,
                      ops: list[dict[str, Any]] = Body(..., media_type="application/json-patch+json",
-                                                      examples=[PATCH_EXAMPLE]),
+                                                      openapi_examples=examples("patch_distance", "patch_undo")),
                      source: Source = Query("form", description="Where the edit came from"),
                      if_match: str | None = Header(None, description='Optional: "v<n>", the version this edit is '
                                                                      "based on; 412 if a newer one exists"),
@@ -88,7 +89,9 @@ def apply_patch(base: dict, ops: list[dict[str, Any]]) -> RouteRequest:
         raise ApiError(422, "invalid_request", "The patched request is not valid.", detail) from None
 
 
-@router.get("/{plan_id}", response_model=PlanOut, responses=responses(401, 404, 429), summary="A plan's latest version")
+@router.get("/{plan_id}", response_model=PlanOut,
+            responses={200: {"content": {"application/json": {"examples": {"plan_A01": plan_wrapped("plan_A01")}}}},
+                       **responses(401, 404, 429)}, summary="A plan's latest version")
 async def get_plan(plan_id: uuid.UUID, client: Client = Depends(limited("read")),
                    plans: Planner = Depends(planner)) -> PlanOut:
     """The latest version, every version number, and `status`: `solving` while a solve for it is running,
@@ -97,7 +100,8 @@ async def get_plan(plan_id: uuid.UUID, client: Client = Depends(limited("read"))
     return await plans.plan_out(plan_id)
 
 
-@router.get("/{plan_id}/versions/{n}", response_model=PlanVersionOut, responses=responses(401, 404, 429),
+@router.get("/{plan_id}/versions/{n}", response_model=PlanVersionOut,
+            responses={200: content("plan_A01_20km"), **responses(401, 404, 429)},
             summary="Any version of a plan")
 async def get_version(plan_id: uuid.UUID, n: int = Path(ge=1), client: Client = Depends(limited("read")),
                       plans: Planner = Depends(planner)) -> PlanVersionOut:

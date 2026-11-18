@@ -1,0 +1,32 @@
+{
+ "summary": "A01's recommended route: elevation profile",
+ "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-18. Profile shortened to its first 3 and last 2 points for this page; the API returns every point.",
+ "value": {
+  "route_id": "7b10b028-3365-400e-885c-15f20f5f5be1",
+  "step_m": 30.0,
+  "profile": [
+   [
+    0.0,
+    45.0
+   ],
+   [
+    30.0,
+    47.0
+   ],
+   [
+    60.0,
+    48.0
+   ],
+   [
+    24990.0,
+    12.0
+   ],
+   [
+    25000.0,
+    12.0
+   ]
+  ],
+  "gain_m": 120.1,
+  "loss_m": 153.8
+ }
+}

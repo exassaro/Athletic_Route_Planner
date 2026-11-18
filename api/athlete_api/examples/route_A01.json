@@ -1,0 +1,224 @@
+{
+ "summary": "A01's recommended route as GeoJSON",
+ "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-18. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
+ "value": {
+  "type": "Feature",
+  "id": "7b10b028-3365-400e-885c-15f20f5f5be1",
+  "geometry": {
+   "type": "LineString",
+   "coordinates": [
+    [
+     75.846193,
+     11.120867,
+     45.0
+    ],
+    [
+     75.846351,
+     11.121136,
+     47.0
+    ],
+    [
+     75.846337,
+     11.121413,
+     48.0
+    ],
+    [
+     75.776016,
+     11.245262,
+     13.0
+    ],
+    [
+     75.775782,
+     11.245257,
+     12.0
+    ]
+   ]
+  },
+  "properties": {
+   "label": "recommended",
+   "option": "main",
+   "length_m": 24999.992411787083,
+   "foot_m": 24999.992411787083,
+   "ferry_m": 0.0,
+   "engine_length_m": 25064.898,
+   "sphere_length_m": 25064.99157924046,
+   "engine": "graphhopper",
+   "edge_count": 228,
+   "deviation_m": -0.007588212916743942,
+   "duration_s": 18046.729,
+   "gain_m": 120.1,
+   "loss_m": 153.8,
+   "stops": [
+    {
+     "role": "start",
+     "label": "Athanikkal",
+     "requested": {
+      "lon": 75.8460689,
+      "lat": 11.1209333,
+      "label": "Athanikkal",
+      "place_id": "osm:node/1770460252"
+     },
+     "snapped_lon": 75.846193,
+     "snapped_lat": 11.120867,
+     "offset_m": 15.413560911165037,
+     "at_m": 0.0,
+     "kind": null,
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": null
+    },
+    {
+     "role": "checkpoint",
+     "label": "Kottakkadavu",
+     "requested": {
+      "lon": 75.8393601,
+      "lat": 11.1393612,
+      "label": "Kottakkadavu",
+      "place_id": "osm:node/3027581412"
+     },
+     "snapped_lon": 75.839486,
+     "snapped_lat": 11.139215,
+     "offset_m": 21.2,
+     "at_m": 2300.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 19.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Kadalundi",
+     "requested": {
+      "lon": 75.8334302,
+      "lat": 11.1381083,
+      "label": "Kadalundi",
+      "place_id": "osm:node/7728008448"
+     },
+     "snapped_lon": 75.83415,
+     "snapped_lat": 11.139796,
+     "offset_m": 202.6,
+     "at_m": 2900.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 215.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Chaliyam",
+     "requested": {
+      "lon": 75.8095217,
+      "lat": 11.1559577,
+      "label": "Chaliyam",
+      "place_id": "osm:node/1683145417"
+     },
+     "snapped_lon": 75.813679,
+     "snapped_lat": 11.152074,
+     "offset_m": 625.1,
+     "at_m": 6000.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 628.0,
+     "how": "on_route"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Karuvanthuruthy bridge",
+     "requested": {
+      "lon": 75.8163968,
+      "lat": 11.1605711,
+      "label": "Karuvanthuruthy bridge",
+      "place_id": "osm:way/389396419"
+     },
+     "snapped_lon": 75.816373,
+     "snapped_lat": 11.161301,
+     "offset_m": 80.8,
+     "at_m": 7234.2,
+     "kind": "bridge",
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": "uses"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Beypore",
+     "requested": {
+      "lon": 75.8101768,
+      "lat": 11.1790668,
+      "label": "Beypore",
+      "place_id": "osm:node/1683149581"
+     },
+     "snapped_lon": 75.80926,
+     "snapped_lat": 11.180565,
+     "offset_m": 193.6,
+     "at_m": 15263.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 218.0,
+     "how": "via"
+    },
+    {
+     "role": "checkpoint",
+     "label": "Kallai",
+     "requested": {
+      "lon": 75.7886846,
+      "lat": 11.235104,
+      "label": "Kallai",
+      "place_id": "osm:node/3797752730"
+     },
+     "snapped_lon": 75.78899,
+     "snapped_lat": 11.231523,
+     "offset_m": 397.5,
+     "at_m": 22258.0,
+     "kind": "place",
+     "must_reach": false,
+     "pass_walk_m": 459.0,
+     "how": "via"
+    },
+    {
+     "role": "end",
+     "label": "Francis Road",
+     "requested": {
+      "lon": 75.775782,
+      "lat": 11.245257,
+      "label": null,
+      "place_id": null
+     },
+     "snapped_lon": 75.775782,
+     "snapped_lat": 11.245257,
+     "offset_m": 0.0,
+     "at_m": 25000.0,
+     "kind": null,
+     "must_reach": false,
+     "pass_walk_m": null,
+     "how": null
+    }
+   ],
+   "end": {
+    "lon": 75.775782,
+    "lat": 11.245257,
+    "label": "Francis Road",
+    "kind": "mid_road"
+   },
+   "road_class_m": {
+    "primary": 1575.5,
+    "secondary": 17647.3,
+    "residential": 4698.9,
+    "unclassified": 1079.5
+   },
+   "repeat_share": 0.0,
+   "backtrack_share": null,
+   "score": 0.0,
+   "flags": [
+    {
+     "code": "endpoint_mid_road",
+     "message": "no junction within the snap window; the run ends at the exact distance",
+     "data": {}
+    }
+   ],
+   "route_id": "7b10b028-3365-400e-885c-15f20f5f5be1",
+   "plan_id": "bb960d4f-5bf6-4e03-876d-ceffb9a5f182",
+   "version": 1
+  }
+ }
+}

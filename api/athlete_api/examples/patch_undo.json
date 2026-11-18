@@ -1,0 +1,21 @@
+{
+ "summary": "Undo: replace the whole request with an earlier one",
+ "description": "The value is an earlier version's `request` (shortened here to its first fields).",
+ "value": [
+  {
+   "op": "replace",
+   "path": "",
+   "value": {
+    "activity": "run",
+    "route_type": "point_to_point",
+    "start": {
+     "lon": 75.8460689,
+     "lat": 11.1209333,
+     "label": "Athanikkal",
+     "place_id": "osm:node/1770460252"
+    },
+    "target_distance_m": 25000.0
+   }
+  }
+ ]
+}

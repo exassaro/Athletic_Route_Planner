@@ -1,0 +1,12 @@
+{
+ "summary": "Saved, with its share link",
+ "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-18. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
+ "value": {
+  "saved_id": "b2b39210-0a34-496d-b119-b11a892c2803",
+  "route_id": "7b10b028-3365-400e-885c-15f20f5f5be1",
+  "name": "Coast to Kozhikode",
+  "share_slug": "pbDURvVcCxIR",
+  "share_url": "http://testserver/v1/share/pbDURvVcCxIR",
+  "created_at": "2026-11-18T02:09:51.695911Z"
+ }
+}

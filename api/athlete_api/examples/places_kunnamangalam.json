@@ -1,0 +1,68 @@
+{
+ "summary": "A name in two areas: shown in a picker",
+ "description": "Real Photon output through the API on 2026-11-18; candidates shortened to the first 3.",
+ "value": {
+  "query": "Kunnamangalam",
+  "source": "photon",
+  "ambiguous": true,
+  "reasons": [
+   {
+    "reason": "same_name_different_areas",
+    "name": "Kunnamangalam",
+    "count": 8,
+    "counties": [
+     "Kozhikode",
+     "Mananthavady"
+    ]
+   }
+  ],
+  "candidates": [
+   {
+    "place_id": "osm:node/1753666642",
+    "label": "Kunnamangalam",
+    "kind": "place=village",
+    "county": "Kozhikode",
+    "city": null,
+    "street": null,
+    "state": "Kerala",
+    "lon": 75.8785617,
+    "lat": 11.3046779,
+    "extent": null
+   },
+   {
+    "place_id": "osm:relation/12692025",
+    "label": "Kunnamangalam",
+    "kind": "boundary=local_authority",
+    "county": "Kozhikode",
+    "city": "Kunnamangalam",
+    "street": null,
+    "state": "Kerala",
+    "lon": 75.8801342,
+    "lat": 11.3022896,
+    "extent": [
+     75.8732772,
+     11.3067083,
+     75.8863556,
+     11.297918
+    ]
+   },
+   {
+    "place_id": "osm:relation/14361446",
+    "label": "Kunnamangalam",
+    "kind": "boundary=political",
+    "county": "Kozhikode",
+    "city": "Vellalashery",
+    "street": null,
+    "state": "Kerala",
+    "lon": 75.9189139,
+    "lat": 11.2795206,
+    "extent": [
+     75.8053758,
+     11.3537631,
+     75.9800968,
+     11.2048402
+    ]
+   }
+  ]
+ }
+}

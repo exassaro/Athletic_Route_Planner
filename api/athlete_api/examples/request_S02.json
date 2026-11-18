@@ -1,0 +1,18 @@
+{
+ "summary": "10 km loop from Mananchira",
+ "description": "Request of fixture S02, coordinates from OSM.",
+ "value": {
+  "request": {
+   "route_type": "loop",
+   "start": {
+    "lon": 75.7815134,
+    "lat": 11.254274,
+    "label": "Mananchira",
+    "place_id": "osm:node/12355175353"
+   },
+   "target_distance_m": 10000,
+   "checkpoints": []
+  },
+  "source": "form"
+ }
+}

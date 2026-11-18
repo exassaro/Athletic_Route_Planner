@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from .db import Client
 from .deps import limited
 from .errors import responses
+from .examples import content
 from .places import Photon
 from .schemas import PlaceSearchOut, ReverseOut
 
@@ -15,7 +16,8 @@ def photon(request: Request) -> Photon:
     return request.app.state.photon
 
 
-@router.get("/search", response_model=PlaceSearchOut, responses=responses(401, 422, 429, 503),
+@router.get("/search", response_model=PlaceSearchOut,
+            responses={200: content("places_kunnamangalam"), **responses(401, 422, 429, 503)},
             summary="Find places in Kerala (never picks one)")
 async def search(q: str = Query(..., min_length=2, max_length=200, description="Place name, Latin script"),
                  lat: float | None = Query(None, ge=-90, le=90, description="Bias results towards this point"),

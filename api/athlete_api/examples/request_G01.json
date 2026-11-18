@@ -1,0 +1,26 @@
+{
+ "summary": "Loop gate: 10 km loop from Kozhikode reaching Feroke",
+ "description": "Request of fixture G01, coordinates from OSM.",
+ "value": {
+  "request": {
+   "route_type": "loop",
+   "start": {
+    "lon": 75.7754716,
+    "lat": 11.2450558,
+    "label": "Kozhikode",
+    "place_id": "osm:node/1348192542"
+   },
+   "target_distance_m": 10000,
+   "checkpoints": [
+    {
+     "lon": 75.8375372,
+     "lat": 11.1825447,
+     "label": "Feroke",
+     "place_id": "osm:node/986593739",
+     "must_reach": true
+    }
+   ]
+  },
+  "source": "form"
+ }
+}
