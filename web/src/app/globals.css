@@ -193,3 +193,17 @@ a { color: #1d4fb8; }
 .share { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; word-break: break-all; }
 .summary { font-weight: 600; margin: 4px 0 6px; }
 .adjust { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 10px; }
+
+/* ---------- share page, saved routes ---------- */
+.share-page { position: fixed; inset: 0; display: grid; grid-template-rows: 45vh 1fr; }
+.share-map { position: relative; }
+.share-panel { overflow-y: auto; padding: 16px; }
+@media (min-width: 900px) {
+  .share-page { grid-template-rows: none; grid-template-columns: 420px 1fr; }
+  .share-panel { order: -1; }
+}
+a.button { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--soft); text-decoration: none; color: var(--fg); }
+a.button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
+.saved-page { max-width: 720px; margin: 0 auto; padding: 16px; }
+.saved-list { list-style: none; padding: 0; display: grid; gap: 10px; }
+.saved-link { font-size: 0.9rem; }

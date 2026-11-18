@@ -28,6 +28,7 @@ def test_route_geojson_and_elevation(make_client):
     assert props["length_m"] == cand["length_m"] and props["foot_m"] == cand["foot_m"]
     assert props["stops"] == cand["stops"] and props["plan_id"] == v1["plan_id"] and props["version"] == 1
     assert "geometry" not in props and "edge_ids" not in props
+    assert props["climb_approximate"] is True              # flat 12 m placeholder heights: lowland
 
     elev = api.get(f"/v1/routes/{cand['route_id']}/elevation", headers=h).json()
     assert elev["step_m"] == 30.0 and elev["gain_m"] == cand["gain_m"] and elev["loss_m"] == cand["loss_m"]

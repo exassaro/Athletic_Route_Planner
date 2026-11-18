@@ -4,6 +4,7 @@
  * side panel on a desktop. Before the first solve the controls fill a draft; "Plan my run" creates the plan, and
  * from then on every control sends a patch and the screen shows what the API returns.
  */
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import { MapView } from "@/map/MapView";
@@ -117,6 +118,7 @@ export function Planner() {
           onClick={() => setSheet(sheet === "peek" ? "half" : sheet === "half" ? "full" : "peek")}>
           <span />
         </button>
+        <p className="saved-link"><Link href="/routes">Saved routes</Link></p>
         <HealthBanner trigger={plan.busy.kind === "error" ? plan.busy.error.code : null} />
         <StatusLine busy={plan.busy} onDismiss={plan.clearError} />
         <Chips request={request} />

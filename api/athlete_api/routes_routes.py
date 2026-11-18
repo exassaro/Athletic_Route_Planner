@@ -41,7 +41,8 @@ async def _owned(svc: Services, route_id: uuid.UUID, client_id: uuid.UUID) -> tu
 def feature(route: Route, version: PlanVersion) -> RouteFeature:
     geometry, heights = geometry_of(route)
     props = candidate_of(route).model_dump(mode="json", exclude={"geometry", "edge_ids"})
-    props.update(route_id=str(route.id), plan_id=str(version.plan_id), version=version.version_no)
+    props.update(route_id=str(route.id), plan_id=str(version.plan_id), version=version.version_no,
+                 climb_approximate=climb_approximate(route.elevation))   # Phase 5 amendment 15
     return RouteFeature(id=route.id, properties=props,
                         geometry=LineStringZ(coordinates=[(lon, lat, z) for (lon, lat), z in zip(geometry, heights)]))
 
