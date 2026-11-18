@@ -43,6 +43,14 @@ class Settings(BaseSettings):
 
     health_timeout_s: float = 3.0
 
+    # Phase 5 A1: browser origins allowed to call the API (comma-separated). In production the web app, the
+    # API and the tiles share one origin behind Caddy, so this matters for development (next dev on :3000).
+    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip().rstrip("/") for o in self.cors_origins.split(",") if o.strip()]
+
 
 def sync_database_url(url: str) -> str:
     """The same database through psycopg (synchronous), for Alembic and test setup."""

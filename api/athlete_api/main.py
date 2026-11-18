@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from redis.asyncio import Redis
 
 from . import errors, routes_health, routes_places, routes_plans, routes_routes, routes_session
@@ -51,6 +52,14 @@ def create_app(settings: Settings | None = None, solver: SolverPort | None = Non
 
     app = FastAPI(title="Athlete Router API", version="0.4.0", description=DESCRIPTION, lifespan=lifespan)
     errors.install(app)
+    if settings.cors_origin_list:   # Phase 5 A1
+        app.add_middleware(
+            CORSMiddleware, allow_origins=settings.cors_origin_list, allow_credentials=False,
+            allow_methods=["GET", "POST", "PATCH"],
+            allow_headers=["Content-Type", "X-Client-Token", "If-Match"],
+            # Retry-After for 429 backoff, Content-Disposition for the GPX file name.
+            expose_headers=["Retry-After", "Content-Disposition", "Location"],
+            max_age=600)
     app.include_router(routes_session.router)
     app.include_router(routes_places.router)
     app.include_router(routes_plans.router)

@@ -44,6 +44,29 @@ def test_gpx_download_is_valid(make_client):
         doc = etree.fromstring(resp.content)
         XSD.assertValid(doc)
         assert len(doc.findall(".//{*}trkpt")) == len(cand["geometry"])
+        assert len(doc.findall(".//{*}trkpt/{*}ele")) == len(cand["geometry"])
+    bare = api.get(f"/v1/routes/{v1['candidates'][0]['route_id']}/gpx", params={"ele": "false"}, headers=h)
+    doc = etree.fromstring(bare.content)
+    XSD.assertValid(doc)
+    assert doc.find(".//{*}trkpt/{*}ele") is None                      # Phase 5 A2
+
+
+def test_cors_allows_the_front_end_origin_only(make_client):
+    """Phase 5 A1: the dev front end may call the API; other origins get no CORS headers."""
+    api = make_client(cors_origins="http://localhost:3000, https://planner.example")
+    pre = api.options("/v1/plans", headers={"Origin": "http://localhost:3000",
+                                            "Access-Control-Request-Method": "PATCH",
+                                            "Access-Control-Request-Headers": "x-client-token,if-match,content-type"})
+    assert pre.status_code == 200
+    assert pre.headers["access-control-allow-origin"] == "http://localhost:3000"
+    assert "PATCH" in pre.headers["access-control-allow-methods"]
+    allowed = pre.headers["access-control-allow-headers"].lower()
+    assert "x-client-token" in allowed and "if-match" in allowed
+    got = api.get("/v1/health", headers={"Origin": "https://planner.example"})
+    assert got.headers["access-control-allow-origin"] == "https://planner.example"
+    assert "retry-after" in got.headers["access-control-expose-headers"].lower()
+    other = api.get("/v1/health", headers={"Origin": "https://evil.example"})
+    assert "access-control-allow-origin" not in other.headers
 
 
 def test_save_list_share(make_client):

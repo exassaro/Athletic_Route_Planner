@@ -2,7 +2,9 @@
 
 - The track is the solver's geometry, every vertex unchanged, with the DEM height of each vertex as <ele>.
 - Waypoints: the start, each checkpoint where the route passes it, the end. `via` items shape the route and
-  `must_use` items are roads, so neither is a waypoint.
+  `must_use` items are roads, so neither is a waypoint. A run that ends where it started (a loop or an
+  out-and-back, end kind "start") names its end after the start plus "finish" (Phase 5 amendment 7, A2).
+- `ele=False` leaves out every <ele> (Phase 5 A2), for apps that should use their own elevation data.
 - No <time>: this is a course or route to follow, not a recorded activity. Garmin Connect imports it as a
   course and Strava as a route.
 - Coordinates are written with Python's shortest round-trip repr, so the track is exactly the solver's
@@ -50,8 +52,16 @@ def course_name(cand: Candidate, title: str | None = None) -> str:
     return title or f"{cand.foot_m / 1000:.1f} km run ({cand.label.replace('_', ' ')})"
 
 
+def end_name(cand: Candidate) -> str:
+    """The end waypoint's name: a run back to its start is "<start> finish", not a second "<start>"."""
+    if cand.end.kind == "start":
+        start = next((s.label for s in cand.stops if s.role == "start" and s.label), None)
+        return f"{start} finish" if start else "Finish"
+    return cand.end.label or "Finish"
+
+
 def build(cand: Candidate, heights: list[float], title: str | None = None,
-          created: datetime | None = None) -> bytes:
+          created: datetime | None = None, ele: bool = True) -> bytes:
     if len(heights) != len(cand.geometry):
         raise ValueError(f"{len(heights)} heights for {len(cand.geometry)} vertices")
     name = course_name(cand, title)
@@ -71,7 +81,7 @@ def build(cand: Candidate, heights: list[float], title: str | None = None,
             label = stop.label or "Checkpoint"
             desc = f"{HOW[stop.how]} {label}" if stop.how in HOW else None
             _wpt(root, stop.snapped_lon, stop.snapped_lat, label, "checkpoint", desc)
-    _wpt(root, cand.end.lon, cand.end.lat, cand.end.label or "Finish", "end")
+    _wpt(root, cand.end.lon, cand.end.lat, end_name(cand), "end")
 
     trk = _el(root, "trk")
     _el(trk, "name", name)
@@ -79,7 +89,8 @@ def build(cand: Candidate, heights: list[float], title: str | None = None,
     seg = _el(trk, "trkseg")
     for (lon, lat), h in zip(cand.geometry, heights):
         pt = _el(seg, "trkpt", lat=num(lat), lon=num(lon))
-        _el(pt, "ele", f"{h:.1f}")
+        if ele:
+            _el(pt, "ele", f"{h:.1f}")
     ET.indent(root, space=" ")
     # Double-quoted declaration: valid either way, but some importers only accept this form.
     return DECLARATION + ET.tostring(root, encoding="unicode").encode("utf-8")

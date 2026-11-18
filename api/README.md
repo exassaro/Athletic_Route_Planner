@@ -15,3 +15,7 @@ The Phase 4 backend: FastAPI over the solver (blueprint Phase 4 amendments, sect
 - `scripts/` `measure_memory.py`, `export_sample_gpx.py`, `record_photon_fixtures.py`, `build_examples.py`.
 
 Run: `uv run uvicorn athlete_api.main:app --port 8000`, docs at http://localhost:8000/docs.
+
+Phase 5 changes (blueprint Phase 5 amendment 7):
+- **CORS (A1):** `ATHLETE_CORS_ORIGINS`, comma-separated, default `http://localhost:3000,http://127.0.0.1:3000` (the `next dev` server). Allowed headers: `Content-Type`, `X-Client-Token`, `If-Match`; exposed: `Retry-After`, `Content-Disposition`, `Location`. Set it to an empty string to turn CORS off (one origin behind Caddy).
+- **GPX (A2):** a loop's or out-and-back's end waypoint is "<start> finish"; `?ele=false` on both GPX endpoints leaves out `<ele>`.

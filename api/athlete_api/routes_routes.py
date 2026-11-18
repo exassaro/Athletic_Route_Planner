@@ -8,7 +8,7 @@ import re
 import secrets
 import uuid
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy import select
 
 from . import explain, gpx, ratelimit
@@ -21,6 +21,8 @@ from .store import candidate_of, geometry_of
 
 router = APIRouter(prefix="/v1", tags=["routes"])
 GPX_TYPE = "application/gpx+xml"
+ELE = Query(True, description="Include each track point's DEM height as <ele>. false: leave it out, so the "
+                               "importing app uses its own elevation data")
 
 
 async def _owned(svc: Services, route_id: uuid.UUID, client_id: uuid.UUID) -> tuple[Route, PlanVersion]:
@@ -42,10 +44,10 @@ def feature(route: Route, version: PlanVersion) -> RouteFeature:
                         geometry=LineStringZ(coordinates=[(lon, lat, z) for (lon, lat), z in zip(geometry, heights)]))
 
 
-def gpx_response(route: Route, title: str | None) -> Response:
+def gpx_response(route: Route, title: str | None, ele: bool = True) -> Response:
     cand = candidate_of(route)
     _, heights = geometry_of(route)
-    body = gpx.build(cand, heights, title=title)
+    body = gpx.build(cand, heights, title=title, ele=ele)
     slug = re.sub(r"[^a-z0-9]+", "-", gpx.course_name(cand, title).lower()).strip("-")
     return Response(content=body, media_type=GPX_TYPE,
                     headers={"Content-Disposition": f'attachment; filename="{slug or "route"}.gpx"'})
@@ -78,7 +80,7 @@ async def get_elevation(route_id: uuid.UUID, client: Client = Depends(limited("r
 @router.get("/routes/{route_id}/gpx", response_class=Response, responses={
     200: {"content": {GPX_TYPE: {}}, "description": "GPX 1.1 course"}, **responses(401, 404, 429)},
     summary="GPX 1.1 course")
-async def get_gpx(route_id: uuid.UUID, client: Client = Depends(limited("read")),
+async def get_gpx(route_id: uuid.UUID, ele: bool = ELE, client: Client = Depends(limited("read")),
                   svc: Services = Depends(services)) -> Response:
     """A track with elevation and waypoints for the start, each checkpoint and the end. No timestamps: import
     it as a course (Garmin Connect) or a route (Strava)."""
@@ -86,7 +88,7 @@ async def get_gpx(route_id: uuid.UUID, client: Client = Depends(limited("read"))
     async with svc.sessions() as db:
         name = (await db.execute(select(SavedRoute.name).where(SavedRoute.route_id == route.id,
                                                                SavedRoute.client_id == client.id))).scalar()
-    return gpx_response(route, name)
+    return gpx_response(route, name, ele)
 
 
 def _saved_out(saved: SavedRoute, request: Request) -> dict:
@@ -157,6 +159,7 @@ async def get_shared(slug: str, request: Request, ip: str = Depends(client_ip),
 @router.get("/share/{slug}/gpx", response_class=Response, responses={
     200: {"content": {GPX_TYPE: {}}, "description": "GPX 1.1 course"}, **responses(404, 429)}, tags=["share"],
     summary="A shared route as GPX (public, no token)")
-async def get_shared_gpx(slug: str, ip: str = Depends(client_ip), svc: Services = Depends(services)) -> Response:
+async def get_shared_gpx(slug: str, ele: bool = ELE, ip: str = Depends(client_ip),
+                         svc: Services = Depends(services)) -> Response:
     saved, route, _ = await _shared(svc, slug, ip)
-    return gpx_response(route, saved.name)
+    return gpx_response(route, saved.name, ele)

@@ -79,3 +79,29 @@ def test_heights_must_match_vertices():
     _, cand = CANDS[0]
     with pytest.raises(ValueError):
         gpx.build(cand, [0.0])
+
+
+def _end_name(doc):
+    return [w for w in doc.findall("g:wpt", NS) if w.find("g:type", NS).text == "end"][0].find("g:name", NS).text
+
+
+def test_a_run_back_to_the_start_ends_at_start_finish():
+    """Phase 5 A2: a loop or out-and-back (end kind "start") names its end "<start> finish"."""
+    _, cand = CANDS[0]
+    start = next(s.label for s in cand.stops if s.role == "start")
+    back = cand.model_copy(update={"end": cand.end.model_copy(update={"kind": "start", "label": start})})
+    doc = etree.fromstring(gpx.build(back, heights(cand)))
+    XSD.assertValid(doc)
+    assert _end_name(doc) == f"{start} finish"
+    unnamed = back.model_copy(update={"stops": [s.model_copy(update={"label": None}) if s.role == "start" else s
+                                                for s in back.stops]})
+    assert _end_name(etree.fromstring(gpx.build(unnamed, heights(cand)))) == "Finish"
+    assert _end_name(etree.fromstring(gpx.build(cand, heights(cand)))) == cand.end.label   # a point-to-point end
+
+
+def test_elevation_can_be_left_out():
+    _, cand = CANDS[0]
+    doc = etree.fromstring(gpx.build(cand, heights(cand), ele=False))
+    XSD.assertValid(doc)
+    assert doc.find(".//g:trkpt/g:ele", NS) is None
+    assert len(doc.findall(".//g:trkpt", NS)) == len(cand.geometry)
