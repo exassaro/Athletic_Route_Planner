@@ -2,10 +2,10 @@
  "summary": "over_budget: the same stops at 20 km, with the diff",
  "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-18. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point. Version 2, after PATCH target_distance_m 25000 -> 20000.",
  "value": {
-  "plan_id": "bb960d4f-5bf6-4e03-876d-ceffb9a5f182",
+  "plan_id": "76a6439a-5d16-47ef-9c2f-fa261462d16c",
   "version": 2,
   "source": "form",
-  "created_at": "2026-11-18T02:09:44.166393Z",
+  "created_at": "2026-11-18T03:27:21.664319Z",
   "outcome": "over_budget",
   "request": {
    "activity": "run",
@@ -1796,16 +1796,16 @@
      "kind": "last_checkpoint"
     },
     "road_class_m": {
-     "primary": 644.3,
      "secondary": 17473.3,
      "residential": 3772.9,
+     "primary": 644.3,
      "unclassified": 367.8
     },
     "repeat_share": 0.0,
     "backtrack_share": null,
     "score": 22.58,
     "flags": [],
-    "route_id": "3456132a-e174-4d27-90b1-9331f8f1ec30"
+    "route_id": "f268cac2-02ea-482a-a73b-5a22a3a5e984"
    },
    {
     "label": "recommended",
@@ -1978,9 +1978,9 @@
      "kind": "mid_road"
     },
     "road_class_m": {
-     "primary": 644.3,
      "secondary": 17473.3,
      "residential": 1654.7,
+     "primary": 644.3,
      "unclassified": 227.9
     },
     "repeat_share": 0.0,
@@ -1993,7 +1993,7 @@
       "data": {}
      }
     ],
-    "route_id": "90548507-a523-4997-b87d-026b37222fdc"
+    "route_id": "de753780-a28d-40ef-b466-b91c83141c6a"
    },
    {
     "label": "shortest",
@@ -2184,15 +2184,15 @@
      "kind": "last_checkpoint"
     },
     "road_class_m": {
-     "primary": 3609.3,
      "secondary": 17635.0,
-     "residential": 494.2
+     "residential": 494.2,
+     "primary": 3609.3
     },
     "repeat_share": 0.0,
     "backtrack_share": null,
     "score": 17.386,
     "flags": [],
-    "route_id": "20ddf583-9eaf-47dd-a550-0c37e6c19884"
+    "route_id": "b6521381-039f-412a-aa1b-d3be251fec1b"
    },
    {
     "label": "shortest",
@@ -2365,9 +2365,9 @@
      "kind": "mid_road"
     },
     "road_class_m": {
-     "primary": 1870.7,
      "secondary": 17635.0,
-     "residential": 494.2
+     "residential": 494.2,
+     "primary": 1870.7
     },
     "repeat_share": 0.0,
     "backtrack_share": null,
@@ -2379,7 +2379,7 @@
       "data": {}
      }
     ],
-    "route_id": "eb8de25e-cf95-42a9-8e89-a653b29479ed"
+    "route_id": "29963f2d-8ef8-461c-b56f-bf341c02c2fd"
    }
   ],
   "conflict": {
@@ -2402,64 +2402,161 @@
      "action": "drop_checkpoint",
      "label": "Kottakkadavu",
      "saves_m": 0.0,
-     "fits": false
+     "fits": false,
+     "patch": [
+      {
+       "op": "test",
+       "path": "/checkpoints/0/label",
+       "value": "Kottakkadavu"
+      },
+      {
+       "op": "remove",
+       "path": "/checkpoints/0"
+      }
+     ]
     },
     {
      "action": "drop_checkpoint",
      "label": "Kadalundi",
      "saves_m": 0.0,
-     "fits": false
+     "fits": false,
+     "patch": [
+      {
+       "op": "test",
+       "path": "/checkpoints/1/label",
+       "value": "Kadalundi"
+      },
+      {
+       "op": "remove",
+       "path": "/checkpoints/1"
+      }
+     ]
     },
     {
      "action": "drop_checkpoint",
      "label": "Chaliyam",
      "saves_m": 0.0,
-     "fits": false
+     "fits": false,
+     "patch": [
+      {
+       "op": "test",
+       "path": "/checkpoints/2/label",
+       "value": "Chaliyam"
+      },
+      {
+       "op": "remove",
+       "path": "/checkpoints/2"
+      }
+     ]
     },
     {
      "action": "drop_checkpoint",
      "label": "Karuvanthuruthy bridge",
      "saves_m": 0.0,
-     "fits": false
+     "fits": false,
+     "patch": [
+      {
+       "op": "test",
+       "path": "/checkpoints/3/label",
+       "value": "Karuvanthuruthy bridge"
+      },
+      {
+       "op": "remove",
+       "path": "/checkpoints/3"
+      }
+     ]
     },
     {
      "action": "drop_checkpoint",
      "label": "Beypore",
      "saves_m": 1954.7,
-     "fits": true
+     "fits": true,
+     "patch": [
+      {
+       "op": "test",
+       "path": "/checkpoints/4/label",
+       "value": "Beypore"
+      },
+      {
+       "op": "remove",
+       "path": "/checkpoints/4"
+      }
+     ]
     },
     {
      "action": "drop_checkpoint",
      "label": "Kallai",
      "saves_m": 6600.0,
-     "fits": true
+     "fits": true,
+     "patch": [
+      {
+       "op": "test",
+       "path": "/checkpoints/5/label",
+       "value": "Kallai"
+      },
+      {
+       "op": "remove",
+       "path": "/checkpoints/5"
+      }
+     ]
     }
    ],
    "fixes": [
     {
      "action": "set_distance",
      "value_m": 21800.0,
-     "label": null
+     "label": null,
+     "patch": [
+      {
+       "op": "replace",
+       "path": "/target_distance_m",
+       "value": 21800.0
+      }
+     ]
     },
     {
      "action": "drop_checkpoint",
      "value_m": null,
-     "label": "Beypore"
+     "label": "Beypore",
+     "patch": [
+      {
+       "op": "test",
+       "path": "/checkpoints/4/label",
+       "value": "Beypore"
+      },
+      {
+       "op": "remove",
+       "path": "/checkpoints/4"
+      }
+     ]
     },
     {
      "action": "make_optional",
      "value_m": null,
-     "label": "Beypore"
+     "label": "Beypore",
+     "patch": null
     },
     {
      "action": "drop_checkpoint",
      "value_m": null,
-     "label": "Kallai"
+     "label": "Kallai",
+     "patch": [
+      {
+       "op": "test",
+       "path": "/checkpoints/5/label",
+       "value": "Kallai"
+      },
+      {
+       "op": "remove",
+       "path": "/checkpoints/5"
+      }
+     ]
     },
     {
      "action": "make_optional",
      "value_m": null,
-     "label": "Kallai"
+     "label": "Kallai",
+     "patch": null
     }
    ]
   },
@@ -2472,51 +2569,40 @@
     "Beypore",
     "Kallai"
    ],
+   "l_min_m": 21738.6,
+   "l_min_by_alternative": {
+    "recommended": 22258.0,
+    "shortest": 21738.6
+   },
+   "budget_m": 20000.0,
+   "tolerance_m": 500.0,
    "stops": {
-    "Kallai": {
-     "how": "on_route",
-     "point": [
-      75.788976,
-      11.235283
-     ],
-     "walk_m": 12.0,
-     "added_m": 0.0
-    },
-    "Beypore": {
-     "how": "via",
-     "point": [
-      75.808759,
-      11.180584
-     ],
-     "walk_m": 272.0,
-     "added_m": 1954.7
-    },
-    "Chaliyam": {
-     "how": "on_route",
-     "point": [
-      75.813873,
-      11.152387
-     ],
-     "walk_m": 632.0,
-     "added_m": 0.0
-    },
-    "Kadalundi": {
-     "how": "on_route",
-     "point": [
-      75.8342,
-      11.139792
-     ],
-     "walk_m": 221.0,
-     "added_m": 0.0
-    },
     "Kottakkadavu": {
      "how": "on_route",
+     "walk_m": 24.0,
+     "added_m": 0.0,
      "point": [
       75.83953,
       11.139191
-     ],
-     "walk_m": 24.0,
-     "added_m": 0.0
+     ]
+    },
+    "Kadalundi": {
+     "how": "on_route",
+     "walk_m": 221.0,
+     "added_m": 0.0,
+     "point": [
+      75.8342,
+      11.139792
+     ]
+    },
+    "Chaliyam": {
+     "how": "on_route",
+     "walk_m": 632.0,
+     "added_m": 0.0,
+     "point": [
+      75.813873,
+      11.152387
+     ]
     },
     "Karuvanthuruthy bridge": {
      "how": "uses",
@@ -2524,94 +2610,29 @@
       75.816373,
       11.161301
      ]
+    },
+    "Beypore": {
+     "how": "via",
+     "added_m": 1954.7,
+     "walk_m": 272.0,
+     "point": [
+      75.808759,
+      11.180584
+     ]
+    },
+    "Kallai": {
+     "how": "on_route",
+     "walk_m": 12.0,
+     "added_m": 0.0,
+     "point": [
+      75.788976,
+      11.235283
+     ]
     }
    },
-   "l_min_m": 21738.6,
-   "budget_m": 20000.0,
    "overshoot_m": 1738.6,
-   "tolerance_m": 500.0,
    "by_alternative": {
-    "shortest": {
-     "cut": {
-      "dropped": [
-       "Kallai"
-      ],
-      "cut_at_m": 20000.0,
-      "end_kind": "mid_road"
-     },
-     "order": [
-      "Kottakkadavu",
-      "Kadalundi",
-      "Chaliyam",
-      "Karuvanthuruthy bridge",
-      "Beypore",
-      "Kallai"
-     ],
-     "stops": {
-      "Kallai": {
-       "how": "on_route",
-       "point": [
-        75.788976,
-        11.235283
-       ],
-       "walk_m": 12.0,
-       "added_m": 0.0
-      },
-      "Beypore": {
-       "how": "via",
-       "point": [
-        75.808759,
-        11.180584
-       ],
-       "walk_m": 272.0,
-       "added_m": 1954.7
-      },
-      "Chaliyam": {
-       "how": "on_route",
-       "point": [
-        75.813873,
-        11.152387
-       ],
-       "walk_m": 632.0,
-       "added_m": 0.0
-      },
-      "Kadalundi": {
-       "how": "on_route",
-       "point": [
-        75.8342,
-        11.139792
-       ],
-       "walk_m": 221.0,
-       "added_m": 0.0
-      },
-      "Kottakkadavu": {
-       "how": "on_route",
-       "point": [
-        75.83953,
-        11.139191
-       ],
-       "walk_m": 24.0,
-       "added_m": 0.0
-      },
-      "Karuvanthuruthy bridge": {
-       "how": "uses",
-       "point": [
-        75.816373,
-        11.161301
-       ]
-      }
-     },
-     "l_min_m": 21738.6,
-     "overshoot_m": 1738.6
-    },
     "recommended": {
-     "cut": {
-      "dropped": [
-       "Kallai"
-      ],
-      "cut_at_m": 20000.0,
-      "end_kind": "mid_road"
-     },
      "order": [
       "Kottakkadavu",
       "Kadalundi",
@@ -2620,51 +2641,42 @@
       "Beypore",
       "Kallai"
      ],
+     "l_min_m": 22258.0,
+     "overshoot_m": 2258.0,
+     "cut": {
+      "cut_at_m": 20000.0,
+      "end_kind": "mid_road",
+      "dropped": [
+       "Kallai"
+      ]
+     },
      "stops": {
-      "Kallai": {
-       "how": "via",
-       "point": [
-        75.788989,
-        11.231523
-       ],
-       "walk_m": 459.0,
-       "added_m": 641.4
-      },
-      "Beypore": {
-       "how": "via",
-       "point": [
-        75.80926,
-        11.180564
-       ],
-       "walk_m": 218.0,
-       "added_m": 67.4
-      },
-      "Chaliyam": {
-       "how": "on_route",
-       "point": [
-        75.813679,
-        11.152074
-       ],
-       "walk_m": 628.0,
-       "added_m": 0.0
-      },
-      "Kadalundi": {
-       "how": "on_route",
-       "point": [
-        75.83415,
-        11.139797
-       ],
-       "walk_m": 215.0,
-       "added_m": 0.0
-      },
       "Kottakkadavu": {
        "how": "on_route",
+       "walk_m": 19.0,
+       "added_m": 0.0,
        "point": [
         75.839486,
         11.139215
-       ],
-       "walk_m": 19.0,
-       "added_m": 0.0
+       ]
+      },
+      "Kadalundi": {
+       "how": "on_route",
+       "walk_m": 215.0,
+       "added_m": 0.0,
+       "point": [
+        75.83415,
+        11.139797
+       ]
+      },
+      "Chaliyam": {
+       "how": "on_route",
+       "walk_m": 628.0,
+       "added_m": 0.0,
+       "point": [
+        75.813679,
+        11.152074
+       ]
       },
       "Karuvanthuruthy bridge": {
        "how": "uses",
@@ -2672,57 +2684,142 @@
         75.816373,
         11.161301
        ]
+      },
+      "Beypore": {
+       "how": "via",
+       "added_m": 67.4,
+       "walk_m": 218.0,
+       "point": [
+        75.80926,
+        11.180564
+       ]
+      },
+      "Kallai": {
+       "how": "via",
+       "added_m": 641.4,
+       "walk_m": 459.0,
+       "point": [
+        75.788989,
+        11.231523
+       ]
       }
+     }
+    },
+    "shortest": {
+     "order": [
+      "Kottakkadavu",
+      "Kadalundi",
+      "Chaliyam",
+      "Karuvanthuruthy bridge",
+      "Beypore",
+      "Kallai"
+     ],
+     "l_min_m": 21738.6,
+     "overshoot_m": 1738.6,
+     "cut": {
+      "cut_at_m": 20000.0,
+      "end_kind": "mid_road",
+      "dropped": [
+       "Kallai"
+      ]
      },
-     "l_min_m": 22258.0,
-     "overshoot_m": 2258.0
+     "stops": {
+      "Kottakkadavu": {
+       "how": "on_route",
+       "walk_m": 24.0,
+       "added_m": 0.0,
+       "point": [
+        75.83953,
+        11.139191
+       ]
+      },
+      "Kadalundi": {
+       "how": "on_route",
+       "walk_m": 221.0,
+       "added_m": 0.0,
+       "point": [
+        75.8342,
+        11.139792
+       ]
+      },
+      "Chaliyam": {
+       "how": "on_route",
+       "walk_m": 632.0,
+       "added_m": 0.0,
+       "point": [
+        75.813873,
+        11.152387
+       ]
+      },
+      "Karuvanthuruthy bridge": {
+       "how": "uses",
+       "point": [
+        75.816373,
+        11.161301
+       ]
+      },
+      "Beypore": {
+       "how": "via",
+       "added_m": 1954.7,
+       "walk_m": 272.0,
+       "point": [
+        75.808759,
+        11.180584
+       ]
+      },
+      "Kallai": {
+       "how": "on_route",
+       "walk_m": 12.0,
+       "added_m": 0.0,
+       "point": [
+        75.788976,
+        11.235283
+       ]
+      }
+     }
     }
-   },
-   "l_min_by_alternative": {
-    "shortest": 21738.6,
-    "recommended": 22258.0
    }
   },
   "flags": [],
   "explanation": "The stops need at least 21.7 km on foot, 1.7 km over the 20.0 km requested. Dropping Kottakkadavu does not shorten the run. Dropping Kadalundi does not shorten the run. Dropping Chaliyam does not shorten the run. Dropping Karuvanthuruthy bridge does not shorten the run. Dropping Beypore saves 2.0 km (then it fits). Dropping Kallai saves 6.6 km (then it fits). Stops in order: Kottakkadavu, Kadalundi, Chaliyam, Karuvanthuruthy bridge, Beypore, Kallai. The recommended route through every stop is 22.3 km, ending at Panniyankara Payyanakkal Meenchanda Road. The recommended route cut at the requested distance is 20.0 km, ending at Panniyankara Payyanakkal Meenchanda Road. The shortest route through every stop is 21.7 km, ending at Kallai Road. The shortest route cut at the requested distance is 20.0 km, ending at Old NH17 Road.",
   "diff": {
+   "from_version": 1,
    "changed": [
     "/target_distance_m"
    ],
    "outcome": {
-    "to": "over_budget",
-    "from": "ok"
+    "from": "ok",
+    "to": "over_budget"
    },
+   "length_delta_m": -2742.0,
+   "duration_delta_s": -1979.1,
+   "end_changed": true,
    "candidates": [
     {
      "label": "recommended",
-     "to_option": "full_route",
-     "end_changed": true,
      "from_option": "main",
+     "to_option": "full_route",
+     "from_length_m": 24999.99241178757,
      "to_length_m": 22258.026936023176,
-     "from_length_m": 24999.992411787083,
      "length_delta_m": -2742.0,
-     "duration_delta_s": -1979.1
+     "duration_delta_s": -1979.1,
+     "end_changed": true
     },
     {
      "label": "shortest",
-     "to_option": "full_route",
-     "end_changed": true,
      "from_option": "continue_past_target",
+     "to_option": "full_route",
+     "from_length_m": 25052.690610830086,
      "to_length_m": 21738.557025313872,
-     "from_length_m": 25052.690610828133,
      "length_delta_m": -3314.1,
-     "duration_delta_s": -2386.9
+     "duration_delta_s": -2386.9,
+     "end_changed": true
     }
    ],
-   "end_changed": true,
-   "stops_added": [],
-   "from_version": 1,
-   "stops_removed": [],
-   "length_delta_m": -2742.0,
    "candidates_added": [],
-   "duration_delta_s": -1979.1,
-   "candidates_removed": []
+   "candidates_removed": [],
+   "stops_added": [],
+   "stops_removed": []
   },
   "builds": {
    "osm": "2026-11-15T00:15:25Z",
@@ -2730,8 +2827,8 @@
    "graphhopper": "graphhopper 11.1 import 2026-11-17T09:07:35Z",
    "solver": "6408f21418d9dd58"
   },
-  "cached": true,
-  "elapsed_ms": 4711.813100002473,
+  "cached": false,
+  "elapsed_ms": 4907.375499999034,
   "engine_calls": 92
  }
 }

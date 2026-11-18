@@ -8,11 +8,12 @@ import json
 import threading
 import time
 
+from athlete_engine import geodesy
 from athlete_solver.models import Candidate, RouteRequest, SolveResult
 
 from athlete_api.cache import BuildIds
 from athlete_api.config import ROOT
-from athlete_api.elevation import Elevation
+from athlete_api.elevation import PROFILE_STEP_M, Elevation
 
 REPORT = ROOT / "docs" / "reports" / "phase3b"
 # The build ids the planner sees in API tests (no engines).
@@ -51,8 +52,10 @@ def a01_result(request: RouteRequest) -> SolveResult:
 
 
 def flat_elevation(result: SolveResult, height: float = 12.0) -> list[Elevation]:
-    """Test placeholder heights (never a length): every vertex at `height`, profile at both ends."""
-    return [Elevation(heights=[height] * len(c.geometry), profile=[[0.0, height], [round(c.length_m, 1), height]])
+    """Test placeholder heights (never a length): every vertex and every profile sample at `height`. The profile's
+    distances are the real 30 m sampling of the geometry, as the API stores them."""
+    return [Elevation(heights=[height] * len(c.geometry),
+                      profile=[[round(d, 1), height] for _, d in geodesy.sample_every(c.geometry, PROFILE_STEP_M)])
             for c in result.candidates]
 
 

@@ -2,10 +2,10 @@
  "summary": "ok, Case B: the target is nearer than the distance",
  "description": "Real output of the solver through the API for fixture S11 (Target nearer than budget: 25 km towards Kadalundi), measured on the development laptop on 2026-11-18. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
  "value": {
-  "plan_id": "5b8743dc-76fe-4894-9786-013e779a4dc3",
+  "plan_id": "1e0106a3-de83-4ea1-9c89-67a936d5b498",
   "version": 1,
   "source": "form",
-  "created_at": "2026-11-18T02:09:51.307743Z",
+  "created_at": "2026-11-18T03:27:28.709455Z",
   "outcome": "ok",
   "request": {
    "activity": "run",
@@ -124,9 +124,9 @@
      "kind": "mid_road"
     },
     "road_class_m": {
+     "residential": 4237.8,
      "primary": 1332.2,
      "secondary": 19202.7,
-     "residential": 4237.8,
      "unclassified": 227.9
     },
     "repeat_share": 0.0162,
@@ -148,7 +148,7 @@
       }
      }
     ],
-    "route_id": "2b96bac4-41bb-4f43-bbbf-7cc187424e0c"
+    "route_id": "fe948c8d-79a7-4de8-a035-2f1eca378339"
    },
    {
     "label": "recommended",
@@ -231,9 +231,9 @@
      "kind": "target"
     },
     "road_class_m": {
+     "residential": 1036.8,
      "primary": 688.0,
-     "secondary": 10878.8,
-     "residential": 1036.8
+     "secondary": 10878.8
     },
     "repeat_share": 0.0,
     "backtrack_share": null,
@@ -247,7 +247,7 @@
       }
      }
     ],
-    "route_id": "701b5d6b-518e-4897-bf7b-fc92b41b6e57"
+    "route_id": "5f8b5b3a-088f-4c66-88bc-bab55f10854a"
    },
    {
     "label": "recommended",
@@ -330,10 +330,10 @@
      "kind": "target"
     },
     "road_class_m": {
-     "primary": 688.0,
-     "tertiary": 2382.9,
-     "secondary": 11693.1,
      "residential": 9401.3,
+     "primary": 688.0,
+     "secondary": 11693.1,
+     "tertiary": 2382.9,
      "unclassified": 1108.7,
      "service_other": 90.9
     },
@@ -345,15 +345,15 @@
       "code": "lengthened",
       "message": "a detour of 12.8 km was added on the longest leg to reach the distance",
       "data": {
+       "added_m": 12760.8,
        "via": [
         75.905402,
         11.134755
-       ],
-       "added_m": 12760.8
+       ]
       }
      }
     ],
-    "route_id": "7812521d-1f3a-4443-ac6f-e3a4432e7bd0"
+    "route_id": "2bcbe20e-489f-4c2f-b9aa-3437dff2eec9"
    },
    {
     "label": "shortest",
@@ -436,12 +436,12 @@
      "kind": "junction"
     },
     "road_class_m": {
-     "primary": 5564.8,
-     "tertiary": 170.8,
-     "secondary": 14952.3,
      "residential": 2294.7,
+     "primary": 5564.8,
+     "secondary": 14952.3,
      "unclassified": 1825.6,
-     "service_other": 190.5
+     "service_other": 190.5,
+     "tertiary": 170.8
     },
     "repeat_share": 0.0162,
     "backtrack_share": null,
@@ -457,7 +457,7 @@
       }
      }
     ],
-    "route_id": "8fe64055-4964-4cdb-9a3d-9d85a513bc5c"
+    "route_id": "0784ffef-247a-4377-9169-6613da8d21c5"
    },
    {
     "label": "shortest",
@@ -540,9 +540,9 @@
      "kind": "target"
     },
     "road_class_m": {
+     "residential": 1036.8,
      "primary": 688.0,
-     "secondary": 10878.8,
-     "residential": 1036.8
+     "secondary": 10878.8
     },
     "repeat_share": 0.0,
     "backtrack_share": null,
@@ -556,309 +556,309 @@
       }
      }
     ],
-    "route_id": "5711dc29-8b4c-4a1a-a838-fa36ec08f0ec"
+    "route_id": "b8cd1bf6-965a-4b9b-9329-a27e76a89e47"
    }
   ],
   "conflict": null,
   "facts": {
-   "case": "B",
    "order": [],
-   "stops": {},
    "l_min_m": 0.0,
+   "l_min_by_alternative": {
+    "recommended": 0.0,
+    "shortest": 0.0
+   },
    "budget_m": 25000.0,
+   "tolerance_m": 500.0,
+   "stops": {},
+   "remainder_m": 25000.0,
+   "tail_to_target_m": 12603.1,
+   "case": "B",
+   "shortfall_m": 12396.9,
    "lengthen": {
+    "found": true,
     "leg": 0,
     "via": [
      75.905402,
      11.134755
     ],
-    "found": true,
+    "added_m": 12760.8,
     "tries": [
      {
       "ray": 0,
-      "foot_m": 24347.3,
       "offset_m": 7451.5,
+      "foot_m": 24347.3,
       "retraced_m": 730.4
      },
      {
       "ray": 0,
-      "foot_m": 25363.9,
       "offset_m": 7865.6,
+      "foot_m": 25363.9,
       "retraced_m": 41.6
      },
      {
       "ray": 0,
-      "foot_m": 25514.7,
       "offset_m": 7717.4,
+      "foot_m": 25514.7,
       "retraced_m": 117.1
      },
      {
       "ray": 1,
-      "foot_m": 26023.2,
       "offset_m": 7500.3,
+      "foot_m": 26023.2,
       "retraced_m": 138.3
      },
      {
       "ray": 1,
-      "foot_m": 24136.6,
       "offset_m": 6928.4,
+      "foot_m": 24136.6,
       "retraced_m": 0.0
      },
      {
       "ray": 1,
-      "foot_m": 24882.5,
       "offset_m": 7190.1,
+      "foot_m": 24882.5,
       "retraced_m": 382.6
      },
      {
       "ray": 2,
-      "foot_m": 23712.5,
       "offset_m": 8831.2,
+      "foot_m": 23712.5,
       "retraced_m": 5227.9
      },
      {
       "ray": 2,
-      "foot_m": 25584.9,
       "offset_m": 9854.7,
+      "foot_m": 25584.9,
       "retraced_m": 6422.8
      },
      {
       "ray": 2,
-      "foot_m": 25419.6,
       "offset_m": 9534.9,
+      "foot_m": 25419.6,
       "retraced_m": 6340.2
      },
      {
       "ray": 2,
-      "foot_m": 25708.2,
       "offset_m": 9362.0,
+      "foot_m": 25708.2,
       "retraced_m": 6484.5
      },
      {
       "ray": 3,
-      "foot_m": 23758.3,
       "offset_m": 8289.1,
+      "foot_m": 23758.3,
       "retraced_m": 0.0
      },
      {
       "ray": 3,
-      "foot_m": 25737.8,
       "offset_m": 9211.8,
+      "foot_m": 25737.8,
       "retraced_m": 64.0
      },
      {
       "ray": 3,
-      "foot_m": 25398.9,
       "offset_m": 8867.9,
+      "foot_m": 25398.9,
       "retraced_m": 885.1
      },
      {
       "ray": 3,
-      "foot_m": 25535.4,
       "offset_m": 8727.2,
+      "foot_m": 25535.4,
       "retraced_m": 953.3
      }
-    ],
-    "added_m": 12760.8
+    ]
    },
-   "remainder_m": 25000.0,
-   "shortfall_m": 12396.9,
-   "tolerance_m": 500.0,
+   "continue_bearing_error_deg": 10.1,
    "by_alternative": {
-    "shortest": {
-     "case": "B",
-     "order": [],
-     "stops": {},
-     "l_min_m": 0.0,
-     "lengthen": {
-      "leg": 0,
-      "via": [
-       75.840411,
-       11.181572
-      ],
-      "found": true,
-      "tries": [
-       {
-        "ray": 0,
-        "foot_m": 25173.7,
-        "offset_m": 7451.5,
-        "retraced_m": 219.5
-       },
-       {
-        "ray": 0,
-        "foot_m": 25173.7,
-        "offset_m": 7348.5,
-        "retraced_m": 219.5
-       },
-       {
-        "ray": 1,
-        "foot_m": 26886.7,
-        "offset_m": 7500.3,
-        "retraced_m": 269.6
-       },
-       {
-        "ray": 1,
-        "foot_m": 25029.2,
-        "offset_m": 6509.5,
-        "retraced_m": 187.3
-       },
-       {
-        "ray": 2,
-        "foot_m": 23878.3,
-        "offset_m": 8831.2,
-        "retraced_m": 5317.7
-       },
-       {
-        "ray": 2,
-        "foot_m": 25976.8,
-        "offset_m": 9709.8,
-        "retraced_m": 0.0
-       },
-       {
-        "ray": 2,
-        "foot_m": 25008.6,
-        "offset_m": 9300.8,
-        "retraced_m": 5590.5
-       },
-       {
-        "ray": 3,
-        "foot_m": 23303.0,
-        "offset_m": 8289.1,
-        "retraced_m": 0.0
-       },
-       {
-        "ray": 3,
-        "foot_m": 27852.4,
-        "offset_m": 9603.8,
-        "retraced_m": 460.4
-       },
-       {
-        "ray": 3,
-        "foot_m": 25100.6,
-        "offset_m": 8779.5,
-        "retraced_m": 834.4
-       }
-      ],
-      "added_m": 13373.3,
-      "outside_tolerance_m": 976.8
-     },
-     "remainder_m": 25000.0,
-     "shortfall_m": 12396.5,
-     "tail_to_target_m": 12603.5,
-     "continue_bearing_error_deg": 3.2
-    },
     "recommended": {
-     "case": "B",
      "order": [],
-     "stops": {},
      "l_min_m": 0.0,
+     "stops": {},
+     "remainder_m": 25000.0,
+     "tail_to_target_m": 12603.1,
+     "case": "B",
+     "shortfall_m": 12396.9,
      "lengthen": {
+      "found": true,
       "leg": 0,
       "via": [
        75.905402,
        11.134755
       ],
-      "found": true,
+      "added_m": 12760.8,
       "tries": [
        {
         "ray": 0,
-        "foot_m": 24347.3,
         "offset_m": 7451.5,
+        "foot_m": 24347.3,
         "retraced_m": 730.4
        },
        {
         "ray": 0,
-        "foot_m": 25363.9,
         "offset_m": 7865.6,
+        "foot_m": 25363.9,
         "retraced_m": 41.6
        },
        {
         "ray": 0,
-        "foot_m": 25514.7,
         "offset_m": 7717.4,
+        "foot_m": 25514.7,
         "retraced_m": 117.1
        },
        {
         "ray": 1,
-        "foot_m": 26023.2,
         "offset_m": 7500.3,
+        "foot_m": 26023.2,
         "retraced_m": 138.3
        },
        {
         "ray": 1,
-        "foot_m": 24136.6,
         "offset_m": 6928.4,
+        "foot_m": 24136.6,
         "retraced_m": 0.0
        },
        {
         "ray": 1,
-        "foot_m": 24882.5,
         "offset_m": 7190.1,
+        "foot_m": 24882.5,
         "retraced_m": 382.6
        },
        {
         "ray": 2,
-        "foot_m": 23712.5,
         "offset_m": 8831.2,
+        "foot_m": 23712.5,
         "retraced_m": 5227.9
        },
        {
         "ray": 2,
-        "foot_m": 25584.9,
         "offset_m": 9854.7,
+        "foot_m": 25584.9,
         "retraced_m": 6422.8
        },
        {
         "ray": 2,
-        "foot_m": 25419.6,
         "offset_m": 9534.9,
+        "foot_m": 25419.6,
         "retraced_m": 6340.2
        },
        {
         "ray": 2,
-        "foot_m": 25708.2,
         "offset_m": 9362.0,
+        "foot_m": 25708.2,
         "retraced_m": 6484.5
        },
        {
         "ray": 3,
-        "foot_m": 23758.3,
         "offset_m": 8289.1,
+        "foot_m": 23758.3,
         "retraced_m": 0.0
        },
        {
         "ray": 3,
-        "foot_m": 25737.8,
         "offset_m": 9211.8,
+        "foot_m": 25737.8,
         "retraced_m": 64.0
        },
        {
         "ray": 3,
-        "foot_m": 25398.9,
         "offset_m": 8867.9,
+        "foot_m": 25398.9,
         "retraced_m": 885.1
        },
        {
         "ray": 3,
-        "foot_m": 25535.4,
         "offset_m": 8727.2,
+        "foot_m": 25535.4,
         "retraced_m": 953.3
        }
-      ],
-      "added_m": 12760.8
+      ]
      },
-     "remainder_m": 25000.0,
-     "shortfall_m": 12396.9,
-     "tail_to_target_m": 12603.1,
      "continue_bearing_error_deg": 10.1
+    },
+    "shortest": {
+     "order": [],
+     "l_min_m": 0.0,
+     "stops": {},
+     "remainder_m": 25000.0,
+     "tail_to_target_m": 12603.5,
+     "case": "B",
+     "shortfall_m": 12396.5,
+     "lengthen": {
+      "found": true,
+      "leg": 0,
+      "via": [
+       75.840411,
+       11.181572
+      ],
+      "added_m": 13373.3,
+      "tries": [
+       {
+        "ray": 0,
+        "offset_m": 7451.5,
+        "foot_m": 25173.7,
+        "retraced_m": 219.5
+       },
+       {
+        "ray": 0,
+        "offset_m": 7348.5,
+        "foot_m": 25173.7,
+        "retraced_m": 219.5
+       },
+       {
+        "ray": 1,
+        "offset_m": 7500.3,
+        "foot_m": 26886.7,
+        "retraced_m": 269.6
+       },
+       {
+        "ray": 1,
+        "offset_m": 6509.5,
+        "foot_m": 25029.2,
+        "retraced_m": 187.3
+       },
+       {
+        "ray": 2,
+        "offset_m": 8831.2,
+        "foot_m": 23878.3,
+        "retraced_m": 5317.7
+       },
+       {
+        "ray": 2,
+        "offset_m": 9709.8,
+        "foot_m": 25976.8,
+        "retraced_m": 0.0
+       },
+       {
+        "ray": 2,
+        "offset_m": 9300.8,
+        "foot_m": 25008.6,
+        "retraced_m": 5590.5
+       },
+       {
+        "ray": 3,
+        "offset_m": 8289.1,
+        "foot_m": 23303.0,
+        "retraced_m": 0.0
+       },
+       {
+        "ray": 3,
+        "offset_m": 9603.8,
+        "foot_m": 27852.4,
+        "retraced_m": 460.4
+       },
+       {
+        "ray": 3,
+        "offset_m": 8779.5,
+        "foot_m": 25100.6,
+        "retraced_m": 834.4
+       }
+      ],
+      "outside_tolerance_m": 976.8
+     },
+     "continue_bearing_error_deg": 3.2
     }
-   },
-   "tail_to_target_m": 12603.1,
-   "l_min_by_alternative": {
-    "shortest": 0.0,
-    "recommended": 0.0
-   },
-   "continue_bearing_error_deg": 10.1
+   }
   },
   "flags": [],
   "explanation": "The recommended route can carry on past the target: 25.0 km, ending at Beypoor - Cheruvannur Road. The recommended route reaches the target in 12.6 km, 12.4 km short of the distance. The recommended route can end at the target with a detour on the way: 25.4 km. The shortest route can carry on past the target: 25.0 km, ending at Old NH17 Road. The shortest route reaches the target in 12.6 km, 12.4 km short of the distance.",
@@ -870,7 +870,7 @@
    "solver": "6408f21418d9dd58"
   },
   "cached": false,
-  "elapsed_ms": 6775.283499999205,
+  "elapsed_ms": 6750.866699992912,
   "engine_calls": 113
  }
 }

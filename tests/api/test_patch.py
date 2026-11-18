@@ -103,3 +103,25 @@ def test_patch_needs_the_owner(make_client):
     other = {"X-Client-Token": api.post("/v1/session").json()["token"]}
     resp = patch(api, other, v1["plan_id"], [{"op": "replace", "path": "/tolerance_m", "value": 400}])
     assert resp.status_code == 404
+
+
+def test_fix_and_saving_patches_apply_as_sent(make_client):
+    """Phase 5 A4: every fix and saving carries the patch a one-tap button sends back unchanged."""
+    api, _, h, v1 = setup(make_client)
+    pid = v1["plan_id"]
+    v2 = patch(api, h, pid, [{"op": "replace", "path": "/target_distance_m", "value": 20000}]).json()
+    labels = [c["label"] for c in v2["request"]["checkpoints"]]
+    fixes = v2["conflict"]["fixes"]
+    raise_to = next(f for f in fixes if f["action"] == "set_distance")
+    assert raise_to["patch"] == [{"op": "replace", "path": "/target_distance_m", "value": raise_to["value_m"]}]
+    assert all(f["patch"] is None for f in fixes if f["action"] == "make_optional")
+    for s in v2["conflict"]["savings"]:
+        i = labels.index(s["label"])
+        assert s["patch"] == [{"op": "test", "path": f"/checkpoints/{i}/label", "value": s["label"]},
+                              {"op": "remove", "path": f"/checkpoints/{i}"}]
+    kallai = next(s for s in v2["conflict"]["savings"] if s["label"] == "Kallai")
+    v3 = patch(api, h, pid, kallai["patch"]).json()
+    assert [s["label"] for s in v3["diff"]["stops_removed"]] == ["Kallai"]
+    # The same button pressed again on the new version: the test op fails instead of dropping another stop.
+    again = patch(api, h, pid, kallai["patch"])
+    assert again.status_code in (409, 422) and again.json()["error"] in ("patch_test_failed", "invalid_patch")

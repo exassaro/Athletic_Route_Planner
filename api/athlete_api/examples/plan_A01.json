@@ -2,10 +2,10 @@
  "summary": "ok: point to point past six stops",
  "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-18. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
  "value": {
-  "plan_id": "bb960d4f-5bf6-4e03-876d-ceffb9a5f182",
+  "plan_id": "76a6439a-5d16-47ef-9c2f-fa261462d16c",
   "version": 1,
   "source": "form",
-  "created_at": "2026-11-18T02:09:44.001068Z",
+  "created_at": "2026-11-18T03:27:16.476953Z",
   "outcome": "ok",
   "request": {
    "activity": "run",
@@ -1632,14 +1632,14 @@
       11.245257
      ]
     ],
-    "length_m": 24999.992411787083,
-    "foot_m": 24999.992411787083,
+    "length_m": 24999.99241178757,
+    "foot_m": 24999.99241178757,
     "ferry_m": 0.0,
     "engine_length_m": 25064.898,
-    "sphere_length_m": 25064.99157924046,
+    "sphere_length_m": 25064.99157923431,
     "engine": "graphhopper",
     "edge_count": 228,
-    "deviation_m": -0.007588212916743942,
+    "deviation_m": -0.0075882124292547815,
     "duration_s": 18046.729,
     "gain_m": 120.1,
     "loss_m": 153.8,
@@ -1655,7 +1655,7 @@
       },
       "snapped_lon": 75.846193,
       "snapped_lat": 11.120867,
-      "offset_m": 15.413560911165037,
+      "offset_m": 15.413560911165208,
       "at_m": 0.0,
       "kind": null,
       "must_reach": false,
@@ -1796,9 +1796,9 @@
      "kind": "mid_road"
     },
     "road_class_m": {
-     "primary": 1575.5,
      "secondary": 17647.3,
      "residential": 4698.9,
+     "primary": 1575.5,
      "unclassified": 1079.5
     },
     "repeat_share": 0.0,
@@ -1811,7 +1811,7 @@
       "data": {}
      }
     ],
-    "route_id": "7b10b028-3365-400e-885c-15f20f5f5be1"
+    "route_id": "45ea8ded-b8ce-45a8-8b41-7d47ad86b8db"
    },
    {
     "label": "shortest",
@@ -1838,14 +1838,14 @@
       11.251214
      ]
     ],
-    "length_m": 25052.690610828133,
-    "foot_m": 25052.690610828133,
+    "length_m": 25052.690610830086,
+    "foot_m": 25052.690610830086,
     "ferry_m": 0.0,
     "engine_length_m": 25145.0,
-    "sphere_length_m": 25149.2942554283,
+    "sphere_length_m": 25149.294255419372,
     "engine": "valhalla",
     "edge_count": 234,
-    "deviation_m": 52.690610828132776,
+    "deviation_m": 52.69061083008637,
     "duration_s": 18334.187,
     "gain_m": 110.7,
     "loss_m": 148.2,
@@ -1861,7 +1861,7 @@
       },
       "snapped_lon": 75.846193,
       "snapped_lat": 11.120868,
-      "offset_m": 15.361237800126139,
+      "offset_m": 15.361237800126618,
       "at_m": 0.0,
       "kind": null,
       "must_reach": false,
@@ -2002,9 +2002,9 @@
      "kind": "junction"
     },
     "road_class_m": {
-     "primary": 4232.2,
      "secondary": 18552.5,
      "residential": 1520.4,
+     "primary": 4232.2,
      "unclassified": 624.1,
      "service_other": 123.6
     },
@@ -2012,7 +2012,7 @@
     "backtrack_share": null,
     "score": 0.491,
     "flags": [],
-    "route_id": "593cc881-bf7d-4949-9e24-ac1a93b423ae"
+    "route_id": "a6330f4d-f73c-4826-8e84-9280b6306a73"
    },
    {
     "label": "shortest",
@@ -2039,14 +2039,14 @@
       11.245049
      ]
     ],
-    "length_m": 24071.603403135276,
-    "foot_m": 24071.603403135276,
+    "length_m": 24071.603403139343,
+    "foot_m": 24071.603403139343,
     "ferry_m": 0.0,
     "engine_length_m": 24159.0,
-    "sphere_length_m": 24164.004190982687,
+    "sphere_length_m": 24164.004190973577,
     "engine": "valhalla",
     "edge_count": 221,
-    "deviation_m": -928.3965968647244,
+    "deviation_m": -928.3965968606572,
     "duration_s": 17629.433,
     "gain_m": 110.7,
     "loss_m": 145.2,
@@ -2062,7 +2062,7 @@
       },
       "snapped_lon": 75.846193,
       "snapped_lat": 11.120868,
-      "offset_m": 15.361237800126139,
+      "offset_m": 15.361237800126618,
       "at_m": 0.0,
       "kind": null,
       "must_reach": false,
@@ -2203,9 +2203,9 @@
      "kind": "target"
     },
     "road_class_m": {
-     "primary": 4232.2,
      "secondary": 17809.0,
      "residential": 1282.7,
+     "primary": 4232.2,
      "unclassified": 624.1,
      "service_other": 123.6
     },
@@ -2221,7 +2221,7 @@
       }
      }
     ],
-    "route_id": "99ba7bfa-b3bc-4d19-970f-13314bd91a8d"
+    "route_id": "c8c47f34-8137-48e2-b5ce-33fec9eb3265"
    },
    {
     "label": "shortest",
@@ -2248,14 +2248,14 @@
       11.245049
      ]
     ],
-    "length_m": 24678.550151123196,
-    "foot_m": 24678.550151123196,
+    "length_m": 24678.550151121628,
+    "foot_m": 24678.550151121628,
     "ferry_m": 0.0,
     "engine_length_m": 24765.0,
-    "sphere_length_m": 24769.755518901267,
+    "sphere_length_m": 24769.755518894544,
     "engine": "valhalla",
     "edge_count": 216,
-    "deviation_m": -321.449848876804,
+    "deviation_m": -321.449848878372,
     "duration_s": 18181.427,
     "gain_m": 126.9,
     "loss_m": 162.0,
@@ -2271,7 +2271,7 @@
       },
       "snapped_lon": 75.846193,
       "snapped_lat": 11.120868,
-      "offset_m": 15.361237800126139,
+      "offset_m": 15.361237800126618,
       "at_m": 0.0,
       "kind": null,
       "must_reach": false,
@@ -2412,10 +2412,10 @@
      "kind": "target"
     },
     "road_class_m": {
-     "primary": 4232.2,
      "secondary": 14592.1,
      "residential": 4878.2,
      "unclassified": 852.5,
+     "primary": 4232.2,
      "service_other": 123.6
     },
     "repeat_share": 0.0,
@@ -2426,20 +2426,19 @@
       "code": "lengthened",
       "message": "a detour of 0.6 km was added on the longest leg to reach the distance",
       "data": {
+       "added_m": 606.9,
        "via": [
         75.834006,
         11.172662
-       ],
-       "added_m": 606.9
+       ]
       }
      }
     ],
-    "route_id": "713375b6-1368-4b01-a685-5a1a6f63bafd"
+    "route_id": "0e3b571c-3294-475d-ae91-89a841efaedd"
    }
   ],
   "conflict": null,
   "facts": {
-   "case": "A",
    "order": [
     "Kottakkadavu",
     "Kadalundi",
@@ -2448,51 +2447,40 @@
     "Beypore",
     "Kallai"
    ],
+   "l_min_m": 21738.6,
+   "l_min_by_alternative": {
+    "recommended": 22258.0,
+    "shortest": 21738.6
+   },
+   "budget_m": 25000.0,
+   "tolerance_m": 500.0,
    "stops": {
-    "Kallai": {
-     "how": "on_route",
-     "point": [
-      75.788976,
-      11.235283
-     ],
-     "walk_m": 12.0,
-     "added_m": 0.0
-    },
-    "Beypore": {
-     "how": "via",
-     "point": [
-      75.808759,
-      11.180584
-     ],
-     "walk_m": 272.0,
-     "added_m": 1954.7
-    },
-    "Chaliyam": {
-     "how": "on_route",
-     "point": [
-      75.813873,
-      11.152387
-     ],
-     "walk_m": 632.0,
-     "added_m": 0.0
-    },
-    "Kadalundi": {
-     "how": "on_route",
-     "point": [
-      75.8342,
-      11.139792
-     ],
-     "walk_m": 221.0,
-     "added_m": 0.0
-    },
     "Kottakkadavu": {
      "how": "on_route",
+     "walk_m": 24.0,
+     "added_m": 0.0,
      "point": [
       75.83953,
       11.139191
-     ],
-     "walk_m": 24.0,
-     "added_m": 0.0
+     ]
+    },
+    "Kadalundi": {
+     "how": "on_route",
+     "walk_m": 221.0,
+     "added_m": 0.0,
+     "point": [
+      75.8342,
+      11.139792
+     ]
+    },
+    "Chaliyam": {
+     "how": "on_route",
+     "walk_m": 632.0,
+     "added_m": 0.0,
+     "point": [
+      75.813873,
+      11.152387
+     ]
     },
     "Karuvanthuruthy bridge": {
      "how": "uses",
@@ -2500,19 +2488,35 @@
       75.816373,
       11.161301
      ]
+    },
+    "Beypore": {
+     "how": "via",
+     "added_m": 1954.7,
+     "walk_m": 272.0,
+     "point": [
+      75.808759,
+      11.180584
+     ]
+    },
+    "Kallai": {
+     "how": "on_route",
+     "walk_m": 12.0,
+     "added_m": 0.0,
+     "point": [
+      75.788976,
+      11.235283
+     ]
     }
    },
-   "l_min_m": 21738.6,
-   "budget_m": 25000.0,
+   "remainder_m": 2742.0,
+   "tail_to_target_m": 2801.6,
+   "case": "A",
    "cut_at_m": 25000.0,
    "end_kind": "mid_road",
    "end_label": "Francis Road",
-   "deviation_m": 0.0,
-   "remainder_m": 2742.0,
-   "tolerance_m": 500.0,
+   "deviation_m": -0.0,
    "by_alternative": {
-    "shortest": {
-     "case": "B",
+    "recommended": {
      "order": [
       "Kottakkadavu",
       "Kadalundi",
@@ -2521,51 +2525,34 @@
       "Beypore",
       "Kallai"
      ],
+     "l_min_m": 22258.0,
      "stops": {
-      "Kallai": {
+      "Kottakkadavu": {
        "how": "on_route",
+       "walk_m": 19.0,
+       "added_m": 0.0,
        "point": [
-        75.788976,
-        11.235283
-       ],
-       "walk_m": 12.0,
-       "added_m": 0.0
-      },
-      "Beypore": {
-       "how": "via",
-       "point": [
-        75.808759,
-        11.180584
-       ],
-       "walk_m": 272.0,
-       "added_m": 1954.7
-      },
-      "Chaliyam": {
-       "how": "on_route",
-       "point": [
-        75.813873,
-        11.152387
-       ],
-       "walk_m": 632.0,
-       "added_m": 0.0
+        75.839486,
+        11.139215
+       ]
       },
       "Kadalundi": {
        "how": "on_route",
+       "walk_m": 215.0,
+       "added_m": 0.0,
        "point": [
-        75.8342,
-        11.139792
-       ],
-       "walk_m": 221.0,
-       "added_m": 0.0
+        75.83415,
+        11.139797
+       ]
       },
-      "Kottakkadavu": {
+      "Chaliyam": {
        "how": "on_route",
+       "walk_m": 628.0,
+       "added_m": 0.0,
        "point": [
-        75.83953,
-        11.139191
-       ],
-       "walk_m": 24.0,
-       "added_m": 0.0
+        75.813679,
+        11.152074
+       ]
       },
       "Karuvanthuruthy bridge": {
        "how": "uses",
@@ -2573,186 +2560,199 @@
         75.816373,
         11.161301
        ]
+      },
+      "Beypore": {
+       "how": "via",
+       "added_m": 67.4,
+       "walk_m": 218.0,
+       "point": [
+        75.80926,
+        11.180564
+       ]
+      },
+      "Kallai": {
+       "how": "via",
+       "added_m": 641.4,
+       "walk_m": 459.0,
+       "point": [
+        75.788989,
+        11.231523
+       ]
       }
      },
+     "remainder_m": 2742.0,
+     "tail_to_target_m": 2801.6,
+     "case": "A",
+     "cut_at_m": 25000.0,
+     "end_kind": "mid_road",
+     "end_label": "Francis Road",
+     "deviation_m": -0.0
+    },
+    "shortest": {
+     "order": [
+      "Kottakkadavu",
+      "Kadalundi",
+      "Chaliyam",
+      "Karuvanthuruthy bridge",
+      "Beypore",
+      "Kallai"
+     ],
      "l_min_m": 21738.6,
+     "stops": {
+      "Kottakkadavu": {
+       "how": "on_route",
+       "walk_m": 24.0,
+       "added_m": 0.0,
+       "point": [
+        75.83953,
+        11.139191
+       ]
+      },
+      "Kadalundi": {
+       "how": "on_route",
+       "walk_m": 221.0,
+       "added_m": 0.0,
+       "point": [
+        75.8342,
+        11.139792
+       ]
+      },
+      "Chaliyam": {
+       "how": "on_route",
+       "walk_m": 632.0,
+       "added_m": 0.0,
+       "point": [
+        75.813873,
+        11.152387
+       ]
+      },
+      "Karuvanthuruthy bridge": {
+       "how": "uses",
+       "point": [
+        75.816373,
+        11.161301
+       ]
+      },
+      "Beypore": {
+       "how": "via",
+       "added_m": 1954.7,
+       "walk_m": 272.0,
+       "point": [
+        75.808759,
+        11.180584
+       ]
+      },
+      "Kallai": {
+       "how": "on_route",
+       "walk_m": 12.0,
+       "added_m": 0.0,
+       "point": [
+        75.788976,
+        11.235283
+       ]
+      }
+     },
+     "remainder_m": 3261.4,
+     "tail_to_target_m": 2333.0,
+     "case": "B",
+     "shortfall_m": 928.4,
      "lengthen": {
+      "found": true,
       "leg": 5,
       "via": [
        75.834006,
        11.172662
       ],
-      "found": true,
+      "added_m": 606.9,
       "tries": [
        {
         "ray": 0,
-        "foot_m": 24727.0,
         "offset_m": 2968.7,
+        "foot_m": 24727.0,
         "retraced_m": 327.7
        },
        {
         "ray": 0,
-        "foot_m": 27674.4,
         "offset_m": 4205.5,
+        "foot_m": 27674.4,
         "retraced_m": 1316.5
        },
        {
         "ray": 0,
-        "foot_m": 24727.0,
         "offset_m": 3083.3,
+        "foot_m": 24727.0,
         "retraced_m": 327.7
        },
        {
         "ray": 1,
-        "foot_m": 24678.6,
         "offset_m": 2349.5,
+        "foot_m": 24678.6,
         "retraced_m": 0.0
        },
        {
         "ray": 1,
-        "foot_m": 28537.0,
         "offset_m": 3593.8,
+        "foot_m": 28537.0,
         "retraced_m": 189.9
        },
        {
         "ray": 1,
-        "foot_m": 24678.6,
         "offset_m": 2453.1,
+        "foot_m": 24678.6,
         "retraced_m": 0.0
        },
        {
         "ray": 2,
-        "foot_m": 25556.8,
         "offset_m": 2524.2,
+        "foot_m": 25556.8,
         "retraced_m": 0.0
        },
        {
         "ray": 2,
-        "foot_m": 24071.6,
         "offset_m": 1577.9,
+        "foot_m": 24071.6,
         "retraced_m": 0.0
        },
        {
         "ray": 2,
-        "foot_m": 26919.2,
         "offset_m": 2169.5,
+        "foot_m": 26919.2,
         "retraced_m": 1097.4
        },
        {
         "ray": 3,
-        "foot_m": 27753.3,
         "offset_m": 2364.5,
+        "foot_m": 27753.3,
         "retraced_m": 1537.4
        },
        {
         "ray": 3,
-        "foot_m": 24486.2,
         "offset_m": 596.2,
+        "foot_m": 24486.2,
         "retraced_m": 112.3
        },
        {
         "ray": 3,
-        "foot_m": 24624.6,
         "offset_m": 874.3,
+        "foot_m": 24624.6,
         "retraced_m": 207.4
        },
        {
         "ray": 3,
-        "foot_m": 25361.2,
         "offset_m": 1053.1,
+        "foot_m": 25361.2,
         "retraced_m": 467.6
        },
        {
         "ray": 3,
-        "foot_m": 24624.6,
         "offset_m": 965.5,
+        "foot_m": 24624.6,
         "retraced_m": 207.4
        }
-      ],
-      "added_m": 606.9
+      ]
      },
-     "remainder_m": 3261.4,
-     "shortfall_m": 928.4,
-     "tail_to_target_m": 2333.0,
      "continue_bearing_error_deg": 20.1
-    },
-    "recommended": {
-     "case": "A",
-     "order": [
-      "Kottakkadavu",
-      "Kadalundi",
-      "Chaliyam",
-      "Karuvanthuruthy bridge",
-      "Beypore",
-      "Kallai"
-     ],
-     "stops": {
-      "Kallai": {
-       "how": "via",
-       "point": [
-        75.788989,
-        11.231523
-       ],
-       "walk_m": 459.0,
-       "added_m": 641.4
-      },
-      "Beypore": {
-       "how": "via",
-       "point": [
-        75.80926,
-        11.180564
-       ],
-       "walk_m": 218.0,
-       "added_m": 67.4
-      },
-      "Chaliyam": {
-       "how": "on_route",
-       "point": [
-        75.813679,
-        11.152074
-       ],
-       "walk_m": 628.0,
-       "added_m": 0.0
-      },
-      "Kadalundi": {
-       "how": "on_route",
-       "point": [
-        75.83415,
-        11.139797
-       ],
-       "walk_m": 215.0,
-       "added_m": 0.0
-      },
-      "Kottakkadavu": {
-       "how": "on_route",
-       "point": [
-        75.839486,
-        11.139215
-       ],
-       "walk_m": 19.0,
-       "added_m": 0.0
-      },
-      "Karuvanthuruthy bridge": {
-       "how": "uses",
-       "point": [
-        75.816373,
-        11.161301
-       ]
-      }
-     },
-     "l_min_m": 22258.0,
-     "cut_at_m": 25000.0,
-     "end_kind": "mid_road",
-     "end_label": "Francis Road",
-     "deviation_m": 0.0,
-     "remainder_m": 2742.0,
-     "tail_to_target_m": 2801.6
     }
-   },
-   "tail_to_target_m": 2801.6,
-   "l_min_by_alternative": {
-    "shortest": 21738.6,
-    "recommended": 22258.0
    }
   },
   "flags": [],
@@ -2765,7 +2765,7 @@
    "solver": "6408f21418d9dd58"
   },
   "cached": true,
-  "elapsed_ms": 4638.704800003325,
+  "elapsed_ms": 1182.806584998616,
   "engine_calls": 148
  }
 }

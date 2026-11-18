@@ -2,10 +2,10 @@
  "summary": "ok: a loop",
  "description": "Real output of the solver through the API for fixture S02 (10 km loop from Mananchira), measured on the development laptop on 2026-11-18. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
  "value": {
-  "plan_id": "ced75161-58a2-4493-a3db-5d48f079bfb7",
+  "plan_id": "1c30ea49-7a35-4de9-9ef1-5131b93baf6f",
   "version": 1,
   "source": "form",
-  "created_at": "2026-11-18T02:09:51.420866Z",
+  "created_at": "2026-11-18T03:27:31.191389Z",
   "outcome": "ok",
   "request": {
    "activity": "run",
@@ -117,17 +117,17 @@
     },
     "road_class_m": {
      "primary": 1107.2,
-     "tertiary": 2497.2,
+     "service_other": 599.9,
      "secondary": 1248.8,
-     "residential": 3480.2,
+     "tertiary": 2497.2,
      "unclassified": 1049.4,
-     "service_other": 599.9
+     "residential": 3480.2
     },
     "repeat_share": 0.0066,
     "backtrack_share": null,
     "score": 0.682,
     "flags": [],
-    "route_id": "5a6c8c6a-564d-4cfb-a1d0-67c3428fc3ed"
+    "route_id": "116fe251-1d00-4932-aee1-291f9ee404aa"
    },
    {
     "label": "loop_2",
@@ -211,43 +211,40 @@
     },
     "road_class_m": {
      "primary": 1350.4,
-     "tertiary": 1121.5,
-     "secondary": 988.3,
      "residential": 5110.8,
-     "unclassified": 994.2,
-     "service_other": 283.3
+     "service_other": 283.3,
+     "secondary": 988.3,
+     "tertiary": 1121.5,
+     "unclassified": 994.2
     },
     "repeat_share": 0.0084,
     "backtrack_share": null,
     "score": 3.458,
     "flags": [],
-    "route_id": "5d051315-6a8d-4a9b-87cf-41f9a34893a7"
+    "route_id": "452d0c72-9a70-49dd-a68a-645778a90652"
    }
   ],
   "conflict": null,
   "facts": {
-   "kept": [
-    "circle 120",
-    "circle 0"
-   ],
    "goal_m": 300.0,
+   "circuity": 1.3,
    "shapes": [
     {
      "shape": "circle 0",
      "tries": [
       {
-       "foot_m": 8994.1,
        "scale_m": 1224.3,
+       "foot_m": 8994.1,
        "retraced_m": 0.0
       },
       {
-       "foot_m": 12116.8,
        "scale_m": 1361.2,
+       "foot_m": 12116.8,
        "retraced_m": 0.0
       },
       {
-       "foot_m": 9848.2,
        "scale_m": 1268.4,
+       "foot_m": 9848.2,
        "retraced_m": 0.0
       }
      ]
@@ -256,18 +253,18 @@
      "shape": "circle 60",
      "tries": [
       {
-       "foot_m": 9405.3,
        "scale_m": 1224.3,
+       "foot_m": 9405.3,
        "retraced_m": 0.0
       },
       {
-       "foot_m": 10376.8,
        "scale_m": 1301.7,
+       "foot_m": 10376.8,
        "retraced_m": 38.4
       },
       {
-       "foot_m": 10238.4,
        "scale_m": 1271.7,
+       "foot_m": 10238.4,
        "retraced_m": 38.4
       }
      ]
@@ -276,13 +273,13 @@
      "shape": "circle 120",
      "tries": [
       {
-       "foot_m": 9066.1,
        "scale_m": 1224.3,
+       "foot_m": 9066.1,
        "retraced_m": 0.0
       },
       {
-       "foot_m": 9982.4,
        "scale_m": 1350.4,
+       "foot_m": 9982.4,
        "retraced_m": 0.0
       }
      ]
@@ -291,38 +288,38 @@
      "shape": "circle 180",
      "tries": [
       {
-       "foot_m": 8102.6,
        "scale_m": 1224.3,
+       "foot_m": 8102.6,
        "retraced_m": 0.0
       },
       {
-       "foot_m": 10756.5,
        "scale_m": 1511.0,
+       "foot_m": 10756.5,
        "retraced_m": 183.8
       },
       {
-       "foot_m": 8716.6,
        "scale_m": 1511.0,
+       "foot_m": 8716.6,
        "retraced_m": 0.0
       },
       {
-       "foot_m": 13620.3,
        "scale_m": 2110.2,
+       "foot_m": 13620.3,
        "retraced_m": 229.2
       },
       {
-       "foot_m": 10864.9,
        "scale_m": 1667.8,
+       "foot_m": 10864.9,
        "retraced_m": 0.0
       },
       {
-       "foot_m": 9517.7,
        "scale_m": 1604.6,
+       "foot_m": 9517.7,
        "retraced_m": 0.0
       },
       {
-       "foot_m": 10765.7,
        "scale_m": 1627.2,
+       "foot_m": 10765.7,
        "retraced_m": 0.0
       }
      ]
@@ -331,10 +328,10 @@
      "shape": "circle 240",
      "tries": [
       {
-       "foot_m": null,
-       "reason": "via 2 is not near a path",
        "scale_m": 1224.3,
-       "retraced_m": 0.0
+       "foot_m": null,
+       "retraced_m": 0.0,
+       "reason": "via 2 is not near a path"
       }
      ]
     },
@@ -342,15 +339,15 @@
      "shape": "circle 300",
      "tries": [
       {
-       "foot_m": 6686.4,
        "scale_m": 1224.3,
+       "foot_m": 6686.4,
        "retraced_m": 0.0
       },
       {
-       "foot_m": null,
-       "reason": "via 3 is not near a path",
        "scale_m": 1831.0,
-       "retraced_m": 0.0
+       "foot_m": null,
+       "retraced_m": 0.0,
+       "reason": "via 3 is not near a path"
       }
      ]
     },
@@ -358,8 +355,8 @@
      "shape": "oval 30",
      "tries": [
       {
-       "foot_m": 10276.0,
        "scale_m": 1149.7,
+       "foot_m": 10276.0,
        "retraced_m": 0.0
       }
      ]
@@ -368,17 +365,20 @@
      "shape": "oval 210",
      "tries": [
       {
-       "foot_m": null,
-       "reason": "via 2 is not near a path",
        "scale_m": 1149.7,
-       "retraced_m": 0.0
+       "foot_m": null,
+       "retraced_m": 0.0,
+       "reason": "via 2 is not near a path"
       }
      ]
     }
    ],
-   "circuity": 1.3,
+   "shapes_within_tolerance": 5,
    "shapes_valid": 4,
-   "shapes_within_tolerance": 5
+   "kept": [
+    "circle 120",
+    "circle 0"
+   ]
   },
   "flags": [],
   "explanation": "Loop 1 is 10.0 km, ending at Wayanad Road. Loop 2 is 9.8 km, ending at Wayanad Road.",
@@ -389,8 +389,8 @@
    "graphhopper": "graphhopper 11.1 import 2026-11-17T09:07:35Z",
    "solver": "6408f21418d9dd58"
   },
-  "cached": true,
-  "elapsed_ms": 2221.049599997059,
+  "cached": false,
+  "elapsed_ms": 2312.509299998055,
   "engine_calls": 88
  }
 }

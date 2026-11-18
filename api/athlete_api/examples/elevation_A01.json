@@ -1,8 +1,8 @@
 {
  "summary": "A01's recommended route: elevation profile",
- "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-18. Profile shortened to its first 3 and last 2 points for this page; the API returns every point.",
+ "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-18. Profile, points and km marks shortened to its first 3 and last 2 points for this page; the API returns every point.",
  "value": {
-  "route_id": "7b10b028-3365-400e-885c-15f20f5f5be1",
+  "route_id": "45ea8ded-b8ce-45a8-8b41-7d47ad86b8db",
   "step_m": 30.0,
   "profile": [
    [
@@ -25,6 +25,60 @@
     25000.0,
     12.0
    ]
+  ],
+  "points": [
+   [
+    75.846193,
+    11.120867
+   ],
+   [
+    75.8463308,
+    11.1211016
+   ],
+   [
+    75.8463393,
+    11.1213672
+   ],
+   [
+    75.7758735,
+    11.245259
+   ],
+   [
+    75.775782,
+    11.245257
+   ]
+  ],
+  "km_marks": [
+   {
+    "km": 1,
+    "at_m": 1000.0,
+    "lon": 75.8456817,
+    "lat": 11.1296222
+   },
+   {
+    "km": 2,
+    "at_m": 2000.0,
+    "lon": 75.8416496,
+    "lat": 11.1375739
+   },
+   {
+    "km": 3,
+    "at_m": 3000.0,
+    "lon": 75.8332357,
+    "lat": 11.1398049
+   },
+   {
+    "km": 23,
+    "at_m": 23000.0,
+    "lon": 75.7875451,
+    "lat": 11.2371387
+   },
+   {
+    "km": 24,
+    "at_m": 24000.0,
+    "lon": 75.781343,
+    "lat": 11.2413533
+   }
   ],
   "gain_m": 120.1,
   "loss_m": 153.8

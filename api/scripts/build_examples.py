@@ -90,8 +90,10 @@ def main() -> int:
         write("route_A01", "A01's recommended route as GeoJSON", note("A01"), feat)
         elev = api.get(f"/v1/routes/{rid}/elevation", headers=h).json()
         elev["profile"] = shorten(elev["profile"])
+        elev["points"] = shorten(elev["points"])
+        elev["km_marks"] = shorten(elev["km_marks"])
         write("elevation_A01", "A01's recommended route: elevation profile",
-              note("A01").replace("Geometry shortened", "Profile shortened"), elev)
+              note("A01").replace("Geometry shortened", "Profile, points and km marks shortened"), elev)
         saved = api.post(f"/v1/routes/{rid}/save", json={"name": "Coast to Kozhikode"}, headers=h).json()
         write("saved_A01", "Saved, with its share link", note("A01"), saved)
         shared = api.get(f"/v1/share/{saved['share_slug']}").json()

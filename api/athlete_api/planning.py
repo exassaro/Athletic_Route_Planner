@@ -31,7 +31,8 @@ from .db import Plan, PlanVersion, Route
 from .deps import Services
 from .elevation import ElevationMissing
 from .errors import ApiError
-from .schemas import BuildsOut, CandidateOut, PlanOut, PlanVersionOut
+from .fixes import conflict_out
+from .schemas import BuildsOut, CandidateOut, DiffOut, PlanOut, PlanVersionOut
 from .solving import Busy, SolveRunner
 from .store import candidate_of, route_row
 
@@ -166,8 +167,9 @@ class Planner:
             outcome=result.outcome, request=request,
             candidates=[CandidateOut.model_construct(route_id=rid, **dict(cand)) for rid, cand in
                         zip(route_ids, result.candidates)],
-            conflict=result.conflict, facts=version.facts, flags=result.flags, explanation=version.explanation,
-            diff=version.diff, builds=BuildsOut(osm=version.graph_build, valhalla=version.valhalla_build,
+            conflict=conflict_out(result.conflict, request), facts=version.facts, flags=result.flags,
+            explanation=version.explanation,
+            diff=None if version.diff is None else DiffOut.model_validate(version.diff), builds=BuildsOut(osm=version.graph_build, valhalla=version.valhalla_build,
                                                 graphhopper=version.graphhopper_build, solver=version.solver_hash),
             cached=version.from_cache, elapsed_ms=version.elapsed_ms, engine_calls=version.engine_calls)
 
@@ -187,11 +189,12 @@ class Planner:
             return None
         routes = (await db.execute(select(Route).where(Route.plan_version_id == version.id)
                                    .order_by(Route.seq))).scalars().all()
+        request = RouteRequest.model_validate(version.request)
         return PlanVersionOut(
             plan_id=plan_id, version=version.version_no, source=version.source, created_at=version.created_at,
-            outcome=version.outcome, request=RouteRequest.model_validate(version.request),
+            outcome=version.outcome, request=request,
             candidates=[CandidateOut(route_id=r.id, **candidate_of(r).model_dump()) for r in routes],
-            conflict=version.conflict, facts=version.facts, flags=version.flags, explanation=version.explanation,
+            conflict=conflict_out(version.conflict, request), facts=version.facts, flags=version.flags, explanation=version.explanation,
             diff=version.diff,
             builds=BuildsOut(osm=version.graph_build, valhalla=version.valhalla_build,
                              graphhopper=version.graphhopper_build, solver=version.solver_hash),

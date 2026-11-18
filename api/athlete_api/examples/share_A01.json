@@ -3,11 +3,11 @@
  "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-18. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
  "value": {
   "name": "Coast to Kozhikode",
-  "shared_at": "2026-11-18T02:09:51.695911Z",
+  "shared_at": "2026-11-18T03:27:31.447425Z",
   "summary": "The recommended route is 25.0 km, ending at Francis Road.",
   "route": {
    "type": "Feature",
-   "id": "7b10b028-3365-400e-885c-15f20f5f5be1",
+   "id": "45ea8ded-b8ce-45a8-8b41-7d47ad86b8db",
    "geometry": {
     "type": "LineString",
     "coordinates": [
@@ -41,14 +41,14 @@
    "properties": {
     "label": "recommended",
     "option": "main",
-    "length_m": 24999.992411787083,
-    "foot_m": 24999.992411787083,
+    "length_m": 24999.99241178757,
+    "foot_m": 24999.99241178757,
     "ferry_m": 0.0,
     "engine_length_m": 25064.898,
-    "sphere_length_m": 25064.99157924046,
+    "sphere_length_m": 25064.99157923431,
     "engine": "graphhopper",
     "edge_count": 228,
-    "deviation_m": -0.007588212916743942,
+    "deviation_m": -0.0075882124292547815,
     "duration_s": 18046.729,
     "gain_m": 120.1,
     "loss_m": 153.8,
@@ -64,7 +64,7 @@
       },
       "snapped_lon": 75.846193,
       "snapped_lat": 11.120867,
-      "offset_m": 15.413560911165037,
+      "offset_m": 15.413560911165208,
       "at_m": 0.0,
       "kind": null,
       "must_reach": false,
@@ -220,10 +220,10 @@
       "data": {}
      }
     ],
-    "route_id": "7b10b028-3365-400e-885c-15f20f5f5be1",
+    "route_id": "45ea8ded-b8ce-45a8-8b41-7d47ad86b8db",
     "version": 1
    }
   },
-  "gpx_url": "http://testserver/v1/share/pbDURvVcCxIR/gpx"
+  "gpx_url": "http://testserver/v1/share/vVyvQQXtsoXv/gpx"
  }
 }

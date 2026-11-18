@@ -31,7 +31,16 @@ def test_route_geojson_and_elevation(make_client):
 
     elev = api.get(f"/v1/routes/{cand['route_id']}/elevation", headers=h).json()
     assert elev["step_m"] == 30.0 and elev["gain_m"] == cand["gain_m"] and elev["loss_m"] == cand["loss_m"]
-    assert elev["profile"] == [[0.0, 12.0], [round(cand["length_m"], 1), 12.0]]
+    assert elev["profile"][0] == [0.0, 12.0] and elev["profile"][-1] == [round(cand["length_m"], 1), 12.0]
+    assert all(h == 12.0 for _, h in elev["profile"])
+    # Phase 5 A5: a position for every sample, the first and last at the route's ends; whole-km marks in order.
+    assert len(elev["points"]) == len(elev["profile"])
+    ends = [[round(x, 7) for x in cand["geometry"][k]] for k in (0, -1)]
+    assert [elev["points"][0], elev["points"][-1]] == ends
+    marks = elev["km_marks"]
+    assert [m["km"] for m in marks] == list(range(1, len(marks) + 1))
+    assert len(marks) == int(cand["length_m"] // 1000) - (cand["length_m"] % 1000 == 0)
+    assert all(abs(m["at_m"] - 1000 * m["km"]) < 1e-6 for m in marks)
 
 
 def test_gpx_download_is_valid(make_client):

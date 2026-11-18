@@ -9,8 +9,8 @@ import uuid
 from datetime import datetime
 from typing import Any, Literal
 
-from athlete_solver.models import Candidate, Conflict, Flag, RouteRequest
-from pydantic import BaseModel, Field
+from athlete_solver.models import Candidate, Conflict, Fix, Flag, RouteRequest, Saving
+from pydantic import BaseModel, ConfigDict, Field, model_serializer
 from pydantic.json_schema import SkipJsonSchema
 
 Source = Literal["form", "chat", "drag"]
@@ -35,6 +35,83 @@ class BuildsOut(BaseModel):
     solver: str = Field(description="Hash of the solver and athlete_engine source")
 
 
+class PatchOp(BaseModel):
+    """One RFC 6902 operation. Fields left unset are not sent (a `remove` has no `value`)."""
+
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+    op: Literal["add", "remove", "replace", "move", "copy", "test"]
+    path: str
+    value: Any = None
+    from_: str | None = Field(None, alias="from")
+
+    @model_serializer(mode="wrap")
+    def _only_set(self, handler):
+        data = handler(self)
+        keep = {"op", "path"} | {("from" if f == "from_" else f) for f in self.model_fields_set}
+        return {k: v for k, v in data.items() if k in keep}
+
+
+class FixOut(Fix):
+    """The solver's fix, plus the patch that applies it (Phase 5 A4). Null: no unambiguous patch (the label
+    matches no checkpoint or several), or the action has no effect in this version (`make_optional`)."""
+
+    patch: list[PatchOp] | None
+
+
+class SavingOut(Saving):
+    """The solver's saving, plus the patch that drops that checkpoint (null when the label is ambiguous)."""
+
+    patch: list[PatchOp] | None
+
+
+class ConflictOut(Conflict):
+    """The solver's Conflict, unchanged, with a patch on every fix and saving (Phase 5 A4)."""
+
+    fixes: list[FixOut] = Field(default_factory=list)
+    savings: list[SavingOut] = Field(default_factory=list)
+
+
+class DiffOutcome(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+    from_: str = Field(alias="from")
+    to: str
+
+
+class DiffCandidate(BaseModel):
+    """One alternative in both versions, each at its primary option. Deltas are differences of stored values."""
+
+    label: str
+    from_option: str
+    to_option: str
+    from_length_m: float
+    to_length_m: float
+    length_delta_m: float
+    duration_delta_s: float | None = Field(description="Walking-time delta (Phase 4 amendment 11)")
+    end_changed: bool
+
+
+class DiffStop(BaseModel):
+    role: Literal["checkpoint", "via", "must_use"]
+    label: str
+    place_id: str | None
+
+
+class DiffOut(BaseModel):
+    """The diff against the previous version (Phase 4 amendment 6; typed in Phase 5, A3)."""
+
+    from_version: int
+    changed: list[str] = Field(description="JSON pointers that differ between the two requests")
+    outcome: DiffOutcome
+    length_delta_m: float | None = Field(description="The first paired alternative's foot-length delta")
+    duration_delta_s: float | None
+    end_changed: bool | None
+    candidates: list[DiffCandidate]
+    candidates_added: list[str] = Field(description='"label/option" of alternatives new in this version')
+    candidates_removed: list[str]
+    stops_added: list[DiffStop]
+    stops_removed: list[DiffStop]
+
+
 class PlanVersionOut(BaseModel):
     plan_id: uuid.UUID
     version: int
@@ -43,11 +120,11 @@ class PlanVersionOut(BaseModel):
     outcome: Literal["ok", "over_budget", "infeasible", "disconnected", "unsupported"]
     request: RouteRequest
     candidates: list[CandidateOut]
-    conflict: Conflict | None
+    conflict: ConflictOut | None
     facts: dict[str, Any] = Field(description="The solver's facts object, unchanged")
     flags: list[Flag]
     explanation: str
-    diff: dict[str, Any] | None = Field(description="Against the previous version; null for version 1")
+    diff: DiffOut | None = Field(description="Against the previous version; null for version 1")
     builds: BuildsOut
     cached: bool = Field(description="The solve came from the cache (same request and builds within 24 h)")
     elapsed_ms: float | None = Field(description="The solver's own time; on a cache hit, that of the original solve")
@@ -81,11 +158,21 @@ class RouteFeature(BaseModel):
     properties: dict[str, Any]
 
 
+class KmMark(BaseModel):
+    km: int
+    at_m: float = Field(description="Distance along the route, measured from the geometry")
+    lon: float
+    lat: float
+
+
 class ElevationOut(BaseModel):
     route_id: uuid.UUID
     step_m: float = Field(description="Sampling step along the route")
     profile: list[tuple[float, float]] = Field(description="[distance along the route in m, height in m]. "
                                                            "Distances measured from the geometry, heights raw DEM")
+    points: list[tuple[float, float]] = Field(description="[lon, lat] of each profile sample, same order "
+                                                          "(Phase 5 A5): where a chart cursor sits on the map")
+    km_marks: list[KmMark] = Field(description="The position of every whole kilometre along the route")
     gain_m: float | None = Field(description="The solver's smoothed climb (not recomputed from the profile)")
     loss_m: float | None
 

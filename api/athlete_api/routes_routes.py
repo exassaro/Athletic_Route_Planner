@@ -8,15 +8,17 @@ import re
 import secrets
 import uuid
 
+from athlete_engine import geodesy
 from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy import select
 
 from . import explain, gpx, ratelimit
 from .db import Client, Plan, PlanVersion, Route, SavedRoute
 from .deps import Services, client_ip, limited, services
+from .elevation import PROFILE_STEP_M
 from .errors import ApiError, responses
 from .examples import content
-from .schemas import ElevationOut, LineStringZ, RouteFeature, SavedOut, SavedRouteOut, SaveIn, SharedRouteOut
+from .schemas import ElevationOut, KmMark, LineStringZ, RouteFeature, SavedOut, SavedRouteOut, SaveIn, SharedRouteOut
 from .store import candidate_of, geometry_of
 
 router = APIRouter(prefix="/v1", tags=["routes"])
@@ -73,7 +75,25 @@ async def get_route(route_id: uuid.UUID, client: Client = Depends(limited("read"
 async def get_elevation(route_id: uuid.UUID, client: Client = Depends(limited("read")),
                         svc: Services = Depends(services)) -> ElevationOut:
     route, _ = await _owned(svc, route_id, client.id)
-    return ElevationOut(route_id=route.id, step_m=30.0, profile=[tuple(p) for p in route.elevation or []],
+    return elevation_out(route)
+
+
+def elevation_out(route: Route) -> ElevationOut:
+    """The stored profile, plus where each sample and each whole kilometre lies (Phase 5 A5).
+
+    Positions come from sampling the stored geometry again with the same function and step, so they line up
+    with the stored distances (checked). Positions are rounded to 7 decimals (about 1 cm). The front end never
+    measures the geometry."""
+    geometry, _ = geometry_of(route)
+    profile = [tuple(p) for p in route.elevation or []]
+    samples = geodesy.sample_every(geometry, PROFILE_STEP_M)
+    if len(samples) != len(profile) or any(abs(round(d, 1) - p[0]) > 0.05 for (_, d), p in zip(samples, profile)):
+        raise ApiError(500, "profile_mismatch", "The stored profile does not match the route geometry.")
+    total = samples[-1][1]
+    marks = [KmMark(km=round(d / 1000.0), at_m=round(d, 1), lon=round(pt[0], 7), lat=round(pt[1], 7))
+             for pt, d in geodesy.sample_every(geometry, 1000.0)[1:] if 0.0 < d < total]
+    return ElevationOut(route_id=route.id, step_m=PROFILE_STEP_M, profile=profile,
+                        points=[(round(pt[0], 7), round(pt[1], 7)) for pt, _ in samples], km_marks=marks,
                         gain_m=route.gain_m, loss_m=route.loss_m)
 
 
