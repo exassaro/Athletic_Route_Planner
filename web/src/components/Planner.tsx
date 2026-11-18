@@ -10,12 +10,13 @@ import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import { MapView } from "@/map/MapView";
 import { setPoint, useRouteLayers } from "@/map/useRouteLayers";
 import { applyToDraft, patchFor, type Edit, type Point, type RouteRequest } from "@/plan/edits";
-import { km, pace as formatPace, parsePace, runningTime, signedKm } from "@/plan/format";
+import { km, pace as formatPace, parsePace, signedKm } from "@/plan/format";
 import { usePace } from "@/plan/pace";
 import type { Place } from "@/plan/places";
 import { planClient, usePlan, type Busy } from "@/plan/usePlan";
-import type { NewRouteRequest, Schemas } from "@/api/client";
-import { CandidateCard } from "./CandidateCard";
+import type { NewRouteRequest } from "@/api/client";
+import { PeekBar } from "./PeekBar";
+import { RouteCards } from "./RouteCards";
 import { DirectionPicker, DistanceStepper, PathsToggle, RouteTypePicker } from "./Controls";
 import { Num } from "./Num";
 import { OutcomePanel } from "./OutcomePanel";
@@ -126,7 +127,7 @@ export function Planner() {
           {/* what a peeked sheet shows first (step 4 replaces it with the peek bar) */}
           <StatusLine busy={plan.busy} onDismiss={plan.clearError} />
           {toast && <p className="toast" role="status" data-testid="diff-toast">{toast}</p>}
-          {v && candidates[selected] && <Summary cand={candidates[selected]!} pace={pace} />}
+          {v && candidates[selected] && <PeekBar cand={candidates[selected]!} pace={pace} />}
           <p className="saved-link"><Link href="/routes">Saved routes</Link> · <Link href="/about">About</Link></p>
           <HealthBanner trigger={plan.busy.kind === "error" ? plan.busy.error.code : null} />
           <Chips request={request} />
@@ -140,14 +141,8 @@ export function Planner() {
           {v && (
             <>
               <OutcomePanel version={v} onPatch={plan.applyPatch} disabled={solving} />
-              {v.explanation && <p className="explanation" data-testid="explanation">{v.explanation}</p>}
-              <div className="cards" role="list">
-                {candidates.map((c, i) => (
-                  <div role="listitem" key={c.route_id}>
-                    <CandidateCard cand={c} index={i} selected={i === selected} pace={pace} onSelect={() => setSelected(i)} />
-                  </div>
-                ))}
-              </div>
+              <RouteCards candidates={candidates} selected={selected} onSelect={setSelected} pace={pace}
+                target={v.request.target_distance_m} explanation={v.explanation} versionKey={`${v.plan_id}/${v.version}`} />
               <StopsPanel request={v.request} version={v} selected={candidates[selected] ?? null} onEdit={onEdit} near={near} map={map}
                 onMapPick={mapPick} />
               {candidates[selected] && <RouteDetail map={map} cand={candidates[selected]!} index={selected} />}
@@ -185,17 +180,6 @@ export function Planner() {
           </section>
       </BottomSheet>
     </div>
-  );
-}
-
-/** The one-line summary of the selected route (visible with the sheet collapsed). */
-function Summary({ cand, pace }: { cand: Schemas["CandidateOut"]; pace: number }) {
-  return (
-    <p className="summary" data-testid="summary">
-      <Num value={cand.foot_m} format={(m) => km(m)} field="foot_m" /> ·{" "}
-      <span data-value={cand.foot_m} data-field="foot_m" data-pace={pace}>{runningTime(cand.foot_m, pace)}</span> at your pace · ends at{" "}
-      <span data-field="end.label">{cand.end.label ?? "an unnamed road"}</span>
-    </p>
   );
 }
 

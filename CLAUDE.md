@@ -11,7 +11,7 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 
 1. Name **GATHO** in the UI, manifest, titles, share page, OpenGraph and about; Python packages, repo and API paths unchanged.
 2. Playful retro, minimal: at most three retro elements per screen (wordmark, pixel numerals, markers, hard shadow); pixel icons are the icon style.
-3. Pixel font (Pixelify Sans, self-hosted subset) only for the wordmark and stat numbers ≥ 24 px; never for body, labels, place names or Malayalam. Body: system font, 15 to 16 px.
+3. Pixel font (Silkscreen, self-hosted subset; replaced Pixelify Sans, whose "5" reads as "S") only for the wordmark and stat numbers ≥ 24 px; never for body, labels, place names or Malayalam. Body: system font, 15 to 16 px.
 4. Accent **#0F6E56** (dark #3DBFA3), one amber warning colour, second route dashed in ink.
 5. **Light and dark themes, toggle in the menu, default light.**
 6. Start pin = the supplied pixel **sneaker**; the **runner** is the empty state and its approved 4-frame run cycle the loading animation. Exact strings: `docs/reports/phase5b/sprites.md` (never edit by hand). Build-time static SVG, crispEdges; CSS-only hop on an inner element; none with reduced motion; paused while the map moves or a solve runs.
@@ -243,12 +243,12 @@ uv run python engine/scripts/fetch_basemap.py            # Kerala PMTiles (Proto
 npm run dev | npm test | npm run typecheck | npm run lint | npm run build
 $env:NEXT_DIST_DIR=".next-check"; $env:NEXT_PUBLIC_API_BASE="same-origin"; $env:NEXT_API_PROXY="http://localhost:8000"; npm run build; npx next start --port 3001   # a test build beside the running :3000 server; /v1/* is proxied to the API (same origin, no CORS entry needed)
 $env:E2E_BASE="http://localhost:3001"; $env:E2E_API="http://localhost:8000"; npx playwright test --project=phone   # the journeys against that build
-uv run --no-project --with fonttools --with brotli python web/scripts/subset_pixel_font.py   # Pixelify Sans (pinned google/fonts commit) -> web/src/fonts/pixelify-gatho.woff2 (wordmark + stat characters, weight 600, tabular digits)
+uv run --no-project --with fonttools --with brotli python web/scripts/subset_pixel_font.py   # Silkscreen Regular (pinned google/fonts commit) -> web/src/fonts/pixel-gatho.woff2 (wordmark + stat characters, tabular digits)
 ```
 
 - GATHO icons (`web/public/icons/`, gitignored) are drawn from `web/brand/sprites.json` by `scripts/build-brand.mjs` before dev and build. `sprites.json` must equal `docs/reports/phase5b/sprites.md` (a unit test checks).
 - Themes: `data-theme` on `<html>`, set before first paint by `THEME_SCRIPT` (`src/theme/theme.ts`); tokens in `globals.css`; `src/theme/tokens.test.ts` checks every contrast pair in both themes. React state lives in `src/theme/useTheme.ts`, kept apart so server components can import `theme.ts`.
-- Pixelify Sans has no `tnum` and a narrower "1": the subset widens it, so the stat numbers are tabular.
+- The pixel font (Silkscreen) has no `tnum` and a narrower "1": the subset widens it, so the stat numbers are tabular.
 - Icons: `src/brand/icons.ts` is generated from pixelarticons 2.4.2 (dev dependency, MIT) by `npm run gen:icons`; the list is in `scripts/gen-icons.mjs`, and a unit test fails if the file is stale. Use them through `<Icon>` in `src/components/ui`, 24 px only.
 - Base components (`src/components/ui`): `Button` (primary has the 2 px hard shadow and drops into it when pressed), `IconButton` (label required), `Chip`, `Badge` (a button with a 44 px tap area when it opens a detail), `Snackbar` (no timeout).
 - `/kit` shows every component in both themes; it answers 404 unless the server runs with `GATHO_UI_KIT=1`.

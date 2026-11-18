@@ -9,3 +9,5 @@ The source of the GATHO design canvas (a private claude.ai Design artifact). The
 - `Main.dc.html`: the phone component they all import.
 
 The exact sprite strings are in [../sprites.md](../sprites.md).
+
+Note (2026-11-18): the mockups set the numbers and the wordmark in Pixelify Sans. The app uses **Silkscreen** instead: Pixelify's "5" reads as an "S" at every weight (blueprint Phase 5b amendment 3).

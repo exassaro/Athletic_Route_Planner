@@ -21,6 +21,14 @@
   --snack-fg: #F5F0E6;
   --snack-action: #8FD9C6;
   --focus: #0F6E56;
+  --road-motorway: #5C1A0B;
+  --road-trunk: #8F4300;
+  --road-primary: #E8A13A;
+  --road-secondary: #3E3A33;
+  --road-tertiary: #6E685D;
+  --road-residential: #A39A88;
+  --road-minor: #CFC6B4;
+  --road-service: #E2DACB;
 }
 [data-theme="dark"] {
   color-scheme: dark;
@@ -43,6 +51,14 @@
   --snack-fg: #14161A;
   --snack-action: #0F6E56;
   --focus: #5FD3B9;
+  --road-motorway: #FF9E7A;
+  --road-trunk: #F2A93B;
+  --road-primary: #B07C2A;
+  --road-secondary: #D9D2C3;
+  --road-tertiary: #A9A396;
+  --road-residential: #7E796F;
+  --road-minor: #5E5A53;
+  --road-service: #4A4E55;
 }
 :root {
   /* Phase 5 names, kept while the screens are redesigned step by step */
@@ -85,12 +101,13 @@ p { margin: 4px 0; }
 .good { color: var(--good); font-weight: 600; }
 
 /* ---------- type scale: pixel only for the wordmark and stat numbers at 24 px or more ---------- */
-.t-wordmark { font-family: var(--font-pixel-stack); font-weight: 600; letter-spacing: 0.06em; line-height: 1; }
-.t-stat-xl, .t-stat-l, .t-stat-m { font-family: var(--font-pixel-stack); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.t-stat-xl { font-size: 32px; line-height: 36px; }
-.t-stat-l { font-size: 28px; line-height: 32px; }
+.t-wordmark { font-family: var(--font-pixel-stack); font-weight: 400; letter-spacing: 0.02em; line-height: 1; }
+/* Silkscreen: wide pixel digits, so the spacing is tightened a little; units keep normal spacing */
+.t-stat-xl, .t-stat-l, .t-stat-m { font-family: var(--font-pixel-stack); font-weight: 400; letter-spacing: -0.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.t-stat-xl { font-size: 28px; line-height: 32px; }
+.t-stat-l { font-size: 26px; line-height: 32px; }
 .t-stat-m { font-size: 24px; line-height: 32px; }
-.t-unit { font-family: var(--font-sans); font-size: 15px; font-weight: 500; }
+.t-unit { font-family: var(--font-sans); font-size: 15px; font-weight: 500; letter-spacing: 0; }
 .t-title { font-size: 22px; line-height: 28px; font-weight: 600; }
 .t-alert { font-size: 20px; line-height: 24px; font-weight: 700; }
 .t-heading { font-size: 17px; line-height: 24px; font-weight: 600; }
@@ -234,13 +251,44 @@ a { color: var(--accent-text); }
 .outcome .savings { list-style: none; padding: 0; }
 .outcome .savings li { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 4px 0; flex-wrap: wrap; }
 .fixes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-.explanation { background: var(--soft); border-radius: var(--radius); padding: 8px 12px; margin: 10px 0; }
-
-/* ---------- cards ---------- */
-.cards { display: grid; gap: 10px; margin: 10px 0; }
-.card { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; background: var(--surface); }
-.card.selected { border: 2px solid var(--accent); }
-.card-head { width: 100%; display: flex; gap: 10px; align-items: center; background: none; border: none; padding: 0; text-align: left; font-weight: 700; }
+/* ---------- peek bar and route cards (Phase 5b step 4) ---------- */
+.stat-number { white-space: nowrap; }
+.climb { display: inline-flex; align-items: baseline; white-space: nowrap; }
+.peek-bar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-1); padding: 0 0 var(--space-1); }
+.peek-stat { display: flex; flex-direction: column; min-width: 0; }
+.route-cards { margin: var(--space-1) 0 var(--space-2); }
+.route-row {
+  display: flex; gap: 12px; margin: 0 -16px; padding: 4px 16px 8px; overflow-x: auto; scroll-snap-type: x mandatory;
+  scroll-padding: 0 16px; overscroll-behavior-x: contain; scrollbar-width: none;
+}
+.route-row::-webkit-scrollbar { display: none; }
+.route-slot { flex: none; width: min(300px, calc(100% - 40px)); scroll-snap-align: center; }
+.route-card {
+  height: 100%; padding: var(--space-2); border-radius: var(--radius); border: 1px solid var(--hairline); background: var(--surface);
+}
+.route-card.selected { border-color: var(--ink); box-shadow: 2px 2px 0 var(--hard); }
+.route-card-head {
+  display: flex; align-items: center; gap: var(--space-1); width: 100%; min-height: 44px; margin: -8px 0 0; padding: 0;
+  border: 0; background: transparent; color: var(--ink); text-align: left;
+}
+.route-card-head:hover:not(:disabled) { border: 0; }
+.route-card-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 600; line-height: 22px; }
+.route-card-pos { flex: none; }
+.route-card-option { margin: -6px 0 0; min-height: 16px; }
+.route-card-stats { display: grid; grid-template-columns: repeat(3, auto); justify-content: space-between; column-gap: var(--space-1); margin-top: 12px; }
+.route-card-stats .t-unit { font-size: 13px; }
+.route-card-stats > div { display: flex; flex-direction: column; min-width: 0; }
+.route-card-line { margin: 8px 0 0; }
+.route-card-end { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0; }
+.roadmix { margin-top: 12px; }
+.roadbar { display: flex; gap: 2px; height: 8px; }
+.roadbar span { display: block; height: 100%; }
+.roadmix-text { margin: 6px 0 0; }
+.route-card-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-1); margin-top: 4px; flex-wrap: wrap; }
+.route-card-flags { list-style: none; display: flex; flex-wrap: wrap; gap: 0 var(--space-1); margin: 0; padding: 0; }
+.route-card-why { margin-left: auto; padding: 0 4px; }
+.route-card-detail { margin: 4px 0 0; }
+.why { margin: var(--space-1) 0 0; padding: 12px var(--space-2); border-radius: var(--radius); background: var(--soft); }
 .swatch { flex: none; }
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin: 8px 0; }
 .stats dt { font-size: 0.8rem; color: var(--muted); }
@@ -248,13 +296,7 @@ a { color: var(--accent-text); }
 .stats .big { font-size: 1.25rem; }
 .approx { margin-left: 6px; font-size: 0.75rem; font-weight: 600; background: var(--warn-bg); color: var(--warn-fg); border-radius: var(--radius); padding: 1px 6px; text-decoration: none; }
 .note { font-size: 0.85rem; color: var(--warn-fg); }
-.roadbar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--soft); }
-.roadbar span { display: block; height: 100%; }
-.roadbar-legend { list-style: none; padding: 0; margin: 6px 0 0; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.8rem; color: var(--muted); }
-.roadbar-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
-.flags { list-style: none; padding: 0; margin: 8px 0 0; font-size: 0.85rem; }
-.flags li { padding: 4px 8px; border-radius: var(--radius); margin-top: 4px; background: var(--soft); }
-.flags li.warn { background: var(--warn-bg); color: var(--warn-fg); }
+.card { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; background: var(--surface); }
 
 /* ---------- map pins ---------- */
 .pin { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; font-weight: 700; font-size: 13px; border: 2px solid var(--paper); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); }
@@ -276,7 +318,6 @@ a { color: var(--accent-text); }
 .detail-stops { padding-left: 20px; margin: 6px 0; }
 .keep { margin: 14px 0; }
 .share { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; word-break: break-all; }
-.summary { font-weight: 600; margin: 4px 0 6px; }
 .adjust { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 10px; }
 
 /* ---------- share page, saved routes ---------- */

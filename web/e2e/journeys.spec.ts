@@ -4,7 +4,7 @@
  */
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { A01_STOPS, addA01Stops, addStop, checkNumbers, PLACES, pickPlace, planA01Base, recordApi, setDistance,
+import { A01_STOPS, addA01Stops, addStop, checkNumbers, checkNumbersEverySnap, PLACES, pickPlace, planA01Base, recordApi, setDistance,
   waitVersion } from "./helpers";
 
 test("A01: 25 km towards Kozhikode through six stops, then 20 km, a fix, undo, save, share, GPX", async ({ page, browser }) => {
@@ -20,7 +20,7 @@ test("A01: 25 km towards Kozhikode through six stops, then 20 km, a fix, undo, s
   const route = await page.locator(".detail-stops li").allInnerTexts();
   expect(route.map((t) => t.split(" · ")[0])).toEqual(A01_STOPS);
   await expect(page.getByTestId("elevation-chart")).toBeVisible();
-  await checkNumbers(page, api);
+  await checkNumbersEverySnap(page, api);
 
   // 20 km: over budget, with the full route, the cut and the savings
   await setDistance(page, 20);
@@ -30,7 +30,7 @@ test("A01: 25 km towards Kozhikode through six stops, then 20 km, a fix, undo, s
   await expect(outcome).toContainText("doesn't shorten the run");
   await expect(page.getByTestId("card-recommended-full_route")).toBeVisible();
   await expect(page.getByTestId("card-recommended-cut_at_target")).toBeVisible();
-  await checkNumbers(page, api);
+  await checkNumbersEverySnap(page, api);
 
   // a one-tap fix: the distance the stops need
   const fix = page.getByTestId("fix-set_distance");
@@ -39,7 +39,7 @@ test("A01: 25 km towards Kozhikode through six stops, then 20 km, a fix, undo, s
   await waitVersion(page, 9);
   await expect(page.locator('[data-chip="distance"] [data-value]')).toHaveAttribute("data-value", String(needed));
   await expect(page.getByTestId("diff-toast")).toBeVisible();
-  await checkNumbers(page, api);
+  await checkNumbersEverySnap(page, api);
 
   // undo: back to the 20 km request, over budget again
   await page.getByRole("button", { name: "Undo" }).click();
@@ -87,7 +87,7 @@ test("S02: a 10 km loop from Mananchira", async ({ page }) => {
   await expect(page.getByTestId("card-loop_1-main")).toBeVisible();
   await expect(page.getByTestId("card-loop_2-main")).toBeVisible();
   await expect(page.getByTestId("summary")).toContainText("km");
-  await checkNumbers(page, api);
+  await checkNumbersEverySnap(page, api);
 });
 
 test("G01: a loop that cannot reach Feroke says why, keeps the map, and offers fixes", async ({ page }) => {
@@ -107,12 +107,12 @@ test("G01: a loop that cannot reach Feroke says why, keeps the map, and offers f
   await expect(page.getByTestId("conflict-message")).toContainText("Feroke");
   expect(await page.locator(".pin").count()).toBeGreaterThanOrEqual(2);        // never a blank map
   await expect(page.getByTestId("fix-drop_checkpoint-Feroke")).toBeVisible();
-  await checkNumbers(page, api);
+  await checkNumbersEverySnap(page, api);
   // The fix sets the solver's estimate (there and back on foot). Measured 2026-11-18: the loop through Feroke
   // then needs 26.2 km, so the answer is over_budget with a full route and a cut, not the conflict again.
   await page.getByTestId("fix-set_distance").click();
   await waitVersion(page, 4);
   await expect(page.locator("[data-conflict=loop_stop_too_far]")).toHaveCount(0);
-  await expect(page.locator(".card").first()).toBeVisible();
-  await checkNumbers(page, api);
+  await expect(page.locator(".route-card").first()).toBeVisible();
+  await checkNumbersEverySnap(page, api);
 });

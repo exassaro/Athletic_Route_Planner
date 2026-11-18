@@ -6,7 +6,7 @@
  * snapAfterDrag. The handle is a button: tap or Enter cycles, the arrow keys go up and down. Focus moving into a
  * peeked sheet opens it to half, so nothing focused is hidden.
  */
-import { useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 
 export type Snap = "peek" | "half" | "full";
 export const SNAPS: Snap[] = ["peek", "half", "full"];
@@ -33,7 +33,13 @@ type Drag = { id: number; startY: number; startVisible: number; full: number; la
 
 export function BottomSheet({ snap, onSnap, label, children }: Props) {
   const sheet = useRef<HTMLElement>(null);
+  const body = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
+
+  // A peeked sheet shows the top of its content (the peek bar), wherever it was scrolled before.
+  useEffect(() => {
+    if (snap === "peek" && body.current) body.current.scrollTop = 0;
+  }, [snap]);
   const suppressClick = useRef(false);
   const [dragging, setDragging] = useState(false);
 
@@ -107,7 +113,7 @@ export function BottomSheet({ snap, onSnap, label, children }: Props) {
         <span aria-hidden="true" />
       </button>
       <span id="sheet-handle-hint" className="sr-only">Drag, tap, or use the arrow keys to change the panel size.</span>
-      <div className="sheet-body">{children}</div>
+      <div className="sheet-body" ref={body}>{children}</div>
     </section>
   );
 }

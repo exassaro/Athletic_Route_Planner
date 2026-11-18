@@ -1,57 +1,60 @@
 "use client";
 /**
- * One candidate route (section 13 route comparison card). Every number is the API's, formatted: foot distance,
- * deviation from the target, climb; the time is that foot distance at the runner's own pace.
+ * One candidate route (blueprint Phase 5b amendment 8): the big numbers (distance, time at your pace, climb) in
+ * the pixel font, the deviation from the target, the end, the road mix as a bar with words, and the flags as short
+ * badges whose tap shows the API's own detail. Every number is the API's, formatted; the selected card has the hard
+ * shadow. The template explanation sits behind "Why this route?" (RouteCards).
  */
+import { useState } from "react";
 import type { Schemas } from "@/api/client";
 import { flagText } from "@/plan/flags";
-import { km, metres, runningTime, signedKm } from "@/plan/format";
+import { km, signedKm } from "@/plan/format";
 import { lineStyle, svgDash } from "@/plan/routeStyle";
+import { Badge, Button } from "./ui";
 import { Num } from "./Num";
+import { StatNumber } from "./StatNumber";
 
 type Candidate = Schemas["CandidateOut"];
 
-const ROAD_CLASS: Record<string, { name: string; color: string }> = {
-  motorway: { name: "Motorway", color: "#8b1a1a" },
-  trunk: { name: "Trunk (national highway)", color: "#c0392b" },
-  primary: { name: "Primary", color: "#e67e22" },
-  secondary: { name: "Secondary", color: "#f1c40f" },
-  tertiary: { name: "Tertiary", color: "#9bc53d" },
-  unclassified: { name: "Minor road", color: "#5dade2" },
-  residential: { name: "Residential", color: "#48a37a" },
-  service_other: { name: "Service road", color: "#95a5a6" },
-  service: { name: "Service road", color: "#95a5a6" },
+const ROAD_CLASS: Record<string, string> = {
+  motorway: "Motorway", trunk: "National highway", primary: "Primary", secondary: "Secondary", tertiary: "Tertiary",
+  unclassified: "Minor road", residential: "Residential", service_other: "Service road", service: "Service road",
+};
+const ROAD_VAR: Record<string, string> = {
+  motorway: "--road-motorway", trunk: "--road-trunk", primary: "--road-primary", secondary: "--road-secondary",
+  tertiary: "--road-tertiary", unclassified: "--road-minor", residential: "--road-residential",
+  service_other: "--road-service", service: "--road-service",
 };
 
 export function Swatch({ label, option, index }: { label: string; option: string; index: number }) {
   const s = lineStyle(label, option, index);
   return (
-    <svg width="36" height="10" aria-hidden="true" className="swatch">
-      <line x1="2" y1="5" x2="34" y2="5" stroke={s.color} strokeWidth="4" strokeLinecap="butt"
-        strokeDasharray={svgDash(s.dash, 4)} />
+    <svg width="32" height="10" aria-hidden="true" className="swatch">
+      <line x1="2" y1="5" x2="30" y2="5" stroke={s.color} strokeWidth="4" strokeLinecap="butt" strokeDasharray={svgDash(s.dash, 4)} />
     </svg>
   );
 }
 
+/** The road mix: a bar (decoration) and the three longest classes in words with their lengths (the information). */
 export function RoadClassBar({ classes }: { classes: Record<string, number> }) {
   const entries = Object.entries(classes).filter(([, m]) => m > 0).sort((a, b) => b[1] - a[1]);
   const total = entries.reduce((t, [, m]) => t + m, 0) || 1;
+  const name = (c: string) => ROAD_CLASS[c] ?? c.replace(/_/g, " ");
   return (
-    <div className="roadbar-wrap">
-      <div className="roadbar" role="img"
-        aria-label={`Road mix: ${entries.map(([c, m]) => `${ROAD_CLASS[c]?.name ?? c} ${km(m)}`).join(", ")}`}>
+    <div className="roadmix">
+      <div className="roadbar" aria-hidden="true">
         {entries.map(([c, m]) => (
-          <span key={c} style={{ width: `${(m / total) * 100}%`, background: ROAD_CLASS[c]?.color ?? "#bbb" }} />
+          <span key={c} style={{ width: `${(m / total) * 100}%`, background: `var(${ROAD_VAR[c] ?? "--road-service"})` }} />
         ))}
       </div>
-      <ul className="roadbar-legend">
-        {entries.map(([c, m]) => (
-          <li key={c}>
-            <i style={{ background: ROAD_CLASS[c]?.color ?? "#bbb" }} />
-            {ROAD_CLASS[c]?.name ?? c} <Num value={m} format={(v) => km(v)} field={`road_class_m.${c}`} />
-          </li>
+      <p className="roadmix-text t-meta muted">
+        <span className="sr-only">Road mix: </span>
+        {entries.map(([c, m], i) => (
+          <span key={c} className={i > 2 ? "sr-only" : undefined}>
+            {i > 0 && " · "}{name(c)} <Num value={m} format={(v) => km(v)} field={`road_class_m.${c}`} />
+          </span>
         ))}
-      </ul>
+      </p>
     </div>
   );
 }
@@ -59,65 +62,76 @@ export function RoadClassBar({ classes }: { classes: Record<string, number> }) {
 type Props = {
   cand: Candidate;
   index: number;
+  total: number;
   selected: boolean;
   pace: number;
+  target: number;
   onSelect: () => void;
-  detailed?: boolean;
+  onWhy?: () => void;
+  whyOpen?: boolean;
 };
 
-export function CandidateCard({ cand, index, selected, pace, onSelect, detailed }: Props) {
+export function CandidateCard({ cand, index, total, selected, pace, target, onSelect, onWhy, whyOpen }: Props) {
   const s = lineStyle(cand.label, cand.option, index);
   const flags = (cand.flags ?? []).map(flagText);
+  const [open, setOpen] = useState<number | null>(null);
   const endAuto = cand.end.kind !== "fixed" && cand.end.kind !== "start";
   return (
-    <article className={`card${selected ? " selected" : ""}`} data-testid={`card-${cand.label}-${cand.option}`}
-      data-route-id={cand.route_id}>
-      <button type="button" className="card-head" onClick={onSelect} aria-pressed={selected}>
+    <article className={`route-card${selected ? " selected" : ""}`} data-testid={`card-${cand.label}-${cand.option}`}
+      data-route-id={cand.route_id} aria-label={`${s.name}${s.optionName ? `, ${s.optionName}` : ""}`}>
+      <button type="button" className="route-card-head" onClick={onSelect} aria-pressed={selected}>
         <Swatch label={cand.label} option={cand.option} index={index} />
-        <span className="card-title">{s.name}{s.optionName && <span className="muted"> · {s.optionName}</span>}</span>
+        <span className="route-card-name">{s.name}</span>
+        <span className="t-meta muted route-card-pos">{index + 1} of {total}</span>
       </button>
-      <dl className="stats">
+      {s.optionName && <p className="t-meta muted route-card-option">{s.optionName}</p>}
+      <div className="route-card-stats">
         <div>
-          <dt>Distance</dt>
-          <dd>
-            <Num value={cand.foot_m} format={(v) => km(v)} field="foot_m" className="big" />{" "}
-            <span className="muted">(<Num value={cand.deviation_m} format={(v) => signedKm(v)} field="deviation_m" />)</span>
-          </dd>
+          <StatNumber kind="km" value={cand.foot_m} field="foot_m" size="m" />
+          <span className="t-meta muted">distance</span>
         </div>
         <div>
-          <dt>Time at your pace</dt>
-          <dd><span data-value={cand.foot_m} data-field="foot_m" data-pace={pace}>{runningTime(cand.foot_m, pace)}</span></dd>
+          <StatNumber kind="time" value={cand.foot_m} field="foot_m" pace={pace} size="m" />
+          <span className="t-meta muted">at your pace</span>
         </div>
         <div>
-          <dt>Climb</dt>
-          <dd>
-            {cand.gain_m == null ? "not known" : (
-              <>
-                +<Num value={cand.gain_m} format={metres} field="gain_m" /> / −
-                <Num value={cand.loss_m ?? 0} format={metres} field="loss_m" />
-                {cand.climb_approximate && <abbr className="approx" title="From a satellite surface model that includes trees and buildings; on flat coastal ground much of this may not be real climbing.">approx.</abbr>}
-              </>
-            )}
-          </dd>
+          {cand.gain_m == null ? <span className="t-body-s">not known</span> : (
+            <span className="climb"><span className="t-stat-m" aria-hidden="true">+</span><span className="sr-only">plus </span>
+              <StatNumber kind="m" value={cand.gain_m} field="gain_m" size="m" /></span>
+          )}
+          <span className="t-meta muted">climb{cand.climb_approximate ? ", approx." : ""}</span>
         </div>
-        <div>
-          <dt>End</dt>
-          <dd data-field="end.label">{cand.end.label ?? "Unnamed road"}{endAuto && <span className="muted"> (auto)</span>}</dd>
-        </div>
-      </dl>
-      {cand.climb_approximate && detailed && (
-        <p className="note">Climb is approximate: the elevation data is a satellite surface model that includes trees and
-          buildings, so on flat coastal ground much of it may not be real climbing.</p>
-      )}
+      </div>
+      <p className="t-body-s route-card-line">
+        <strong><Num value={cand.deviation_m} format={(v) => signedKm(v)} field="deviation_m" /></strong>{" "}
+        <span className="muted">vs your <Num value={target} format={(v) => km(v)} field="target_distance_m" /></span>
+      </p>
+      <p className="t-body-s route-card-line route-card-end">
+        Ends at <span data-field="end.label">{cand.end.label ?? "an unnamed road"}</span>
+        {endAuto && <span className="muted"> (auto)</span>}
+      </p>
       <RoadClassBar classes={cand.road_class_m ?? {}} />
-      {flags.length > 0 && (
-        <ul className="flags">
-          {flags.map((f, i) => (
-            <li key={i} className={f.tone}>
-              <strong>{f.title}</strong>{f.detail && <span className="muted"> {f.detail}</span>}
-            </li>
-          ))}
-        </ul>
+      <div className="route-card-foot">
+        {flags.length > 0 && (
+          <ul className="route-card-flags" aria-label="Notes">
+            {flags.map((f, i) => (
+              <li key={i}>
+                <Badge tone={f.tone} onClick={f.detail ? () => setOpen(open === i ? null : i) : undefined} expanded={open === i}>
+                  {f.short}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+        {onWhy && (
+          <Button variant="quiet" icon={whyOpen ? "chevronUp" : "chevronDown"} onClick={onWhy} aria-expanded={!!whyOpen}
+            aria-controls={whyOpen ? "why-this-route" : undefined} className="route-card-why">
+            Why this route?
+          </Button>
+        )}
+      </div>
+      {open !== null && flags[open] && (
+        <p className="t-body-s route-card-detail">{flags[open]!.title}. <span className="muted">{flags[open]!.detail}</span></p>
       )}
     </article>
   );

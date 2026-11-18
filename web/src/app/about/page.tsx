@@ -26,7 +26,7 @@ export default function AboutPage() {
         <li>Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, under the ODbL.</li>
         <li>Basemap built with <a href="https://protomaps.com">Protomaps</a> from OpenStreetMap data.</li>
         <li>Routing by <a href="https://valhalla.github.io/valhalla/">Valhalla</a> and <a href="https://www.graphhopper.com">GraphHopper</a>; place search by <a href="https://photon.komoot.io">Photon</a>.</li>
-        <li>Numbers and the wordmark in Pixelify Sans, under the SIL Open Font License 1.1.</li>
+        <li>Numbers and the wordmark in Silkscreen, under the SIL Open Font License 1.1.</li>
       </ul>
       <p><Link href="/">Plan a run</Link></p>
     </main>

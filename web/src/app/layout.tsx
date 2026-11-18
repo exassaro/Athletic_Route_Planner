@@ -3,11 +3,11 @@ import localFont from "next/font/local";
 import { THEME_COLOR, THEME_SCRIPT } from "@/theme/theme";
 import "./globals.css";
 
-// Pixelify Sans (OFL), cut to the wordmark and the stat numbers by scripts/subset_pixel_font.py (about 1.5 kB).
+// Silkscreen (OFL), cut to the wordmark and the stat numbers by scripts/subset_pixel_font.py (about 3.4 kB).
 const pixel = localFont({
-  src: "../fonts/pixelify-gatho.woff2",
+  src: "../fonts/pixel-gatho.woff2",
   variable: "--font-pixel",
-  weight: "600",
+  weight: "400",
   display: "swap",
   fallback: ["monospace"],
 });

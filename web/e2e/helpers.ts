@@ -64,6 +64,25 @@ export async function checkNumbers(page: Page, bodies: unknown[]): Promise<numbe
   return shown.length;
 }
 
+/**
+ * The number check at every sheet position (blueprint Phase 5b amendment 9): peek, half and full, then back to the
+ * position it started in. On a desktop (no handle) it is one check. Returns how many numbers were checked in all.
+ */
+export async function checkNumbersEverySnap(page: Page, bodies: unknown[]): Promise<number> {
+  const sheet = page.locator(".sheet");
+  const handle = page.locator(".sheet-handle");
+  if (!(await handle.isVisible())) return checkNumbers(page, bodies);
+  const start = await sheet.getAttribute("data-snap");
+  let total = 0;
+  for (const snap of ["peek", "half", "full", start]) {
+    for (let i = 0; i < 3 && (await sheet.getAttribute("data-snap")) !== snap; i++) await handle.click();
+    await expect(sheet).toHaveAttribute("data-snap", snap!);
+    await page.waitForTimeout(300);
+    if (snap !== start || total === 0) total += await checkNumbers(page, bodies);
+  }
+  return total;
+}
+
 export async function pickPlace(page: Page, scope: string, place: { q: string; id: string }) {
   await page.getByTestId(scope).getByRole("searchbox").fill(place.q);
   await page.locator(`[data-testid=${scope}] [data-place-id="${place.id}"]`).first().click();
