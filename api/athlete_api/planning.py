@@ -17,9 +17,11 @@ import logging
 import time
 import uuid
 from collections import Counter
+from datetime import datetime, timezone
+from types import SimpleNamespace
 
 import httpx
-from athlete_solver.models import RouteRequest
+from athlete_solver.models import EndPoint, RouteRequest
 from sqlalchemy import func, select
 
 from . import builds as build_ids
@@ -47,16 +49,14 @@ class Planner:
 
     async def current_builds(self) -> cache.BuildIds:
         s = self.svc.settings
-        try:
-            valhalla = await build_ids.fetch_valhalla_build(self.svc.http, s.valhalla_url)
-        except (httpx.HTTPError, ValueError) as err:
+        valhalla, gh_info = await asyncio.gather(build_ids.fetch_valhalla_build(self.svc.http, s.valhalla_url),
+                                                 build_ids.fetch_graphhopper_info(self.svc.http, s.graphhopper_url),
+                                                 return_exceptions=True)
+        if isinstance(valhalla, BaseException):
             raise ApiError(503, "engine_unavailable", "Valhalla is not answering, so no route can be made.",
-                           {"engine": "valhalla", "reason": str(err)[:200]}) from None
-        try:
-            graphhopper = build_ids.graphhopper_build(await build_ids.fetch_graphhopper_info(self.svc.http,
-                                                                                             s.graphhopper_url))
-        except (httpx.HTTPError, ValueError):
-            graphhopper = None   # the solver then returns "shortest" only, flagged alternative_unavailable
+                           {"engine": "valhalla", "reason": str(valhalla)[:200]}) from None
+        # GraphHopper down: the solver then returns "shortest" only, flagged alternative_unavailable.
+        graphhopper = None if isinstance(gh_info, BaseException) else build_ids.graphhopper_build(gh_info)
         return cache.BuildIds(osm=build_ids.osm_pin(s.manifest_path), valhalla=valhalla, graphhopper=graphhopper,
                               solver=build_ids.solver_hash())
 
@@ -93,7 +93,7 @@ class Planner:
         self.pending[plan_id] += 1
         store.add_done_callback(lambda t: self._stored(plan_id, t))
         try:
-            version_no = await asyncio.wait_for(asyncio.shield(store), settings.solve_budget_s)
+            out = await asyncio.wait_for(asyncio.shield(store), settings.solve_budget_s)
         except TimeoutError:
             elapsed = (time.perf_counter() - t_budget) * 1000
             raise ApiError(504, "solve_timeout",
@@ -102,7 +102,7 @@ class Planner:
                            {"plan_id": str(plan_id), "status": "solving", "elapsed_ms": round(elapsed, 1),
                             "waited_for_slot_ms": round((t_budget - t_request) * 1000, 1),
                             "poll": f"/v1/plans/{plan_id}"}) from None
-        return await self.version_out(plan_id, version_no)
+        return out
 
     def _stored(self, plan_id: uuid.UUID, task: asyncio.Task) -> None:
         self._tasks.discard(task)
@@ -112,7 +112,7 @@ class Planner:
         if not task.cancelled() and task.exception() is not None:
             log.warning("solve for plan %s failed: %r", plan_id, task.exception())
 
-    async def _finish(self, plan_id, request, source, key, builds, solved, task) -> int:
+    async def _finish(self, plan_id, request, source, key, builds, solved, task) -> PlanVersionOut:
         try:
             if solved is None:
                 result, elev, _ = await task
@@ -132,7 +132,9 @@ class Planner:
         body = {"error": err.error, "message": err.message, "detail": err.detail}
         await self.svc.redis.set(f"plan:{plan_id}:error", json.dumps(body, default=str), ex=ERROR_TTL_S)
 
-    async def _store(self, plan_id, request, source, key, solved: cache.Solved) -> int:
+    async def _store(self, plan_id, request, source, key, solved: cache.Solved) -> PlanVersionOut:
+        """Store the version and its routes; return the version as the API shows it, built from the objects just
+        stored (the reads build the same from the rows; the tests check both agree)."""
         result = solved.result
         dumped = result.model_dump(mode="json", include={"conflict", "facts", "flags"})
         previous = None
@@ -141,7 +143,7 @@ class Planner:
             last = (await db.execute(select(func.coalesce(func.max(PlanVersion.version_no), 0))
                                      .where(PlanVersion.plan_id == plan_id))).scalar_one()
             if last:
-                previous = await self._version_out(db, plan_id, last)
+                previous = await self._previous(db, plan_id, last)
             version = PlanVersion(
                 id=uuid.uuid4(), plan_id=plan_id, version_no=last + 1, request=request.model_dump(mode="json"),
                 source=source, outcome=result.outcome, conflict=dumped["conflict"], facts=dumped["facts"],
@@ -149,13 +151,25 @@ class Planner:
                 diff=version_diff(previous, request, result) if previous else None,
                 graph_build=result.graph_build, valhalla_build=solved.builds.valhalla,
                 graphhopper_build=solved.builds.graphhopper, solver_hash=solved.builds.solver, cache_key=key,
-                from_cache=solved.from_cache, elapsed_ms=result.elapsed_ms, engine_calls=result.engine_calls)
+                from_cache=solved.from_cache, elapsed_ms=result.elapsed_ms, engine_calls=result.engine_calls,
+                created_at=datetime.now(timezone.utc))
             db.add(version)
             await db.flush()
+            route_ids = []
             for seq, (cand, elev) in enumerate(zip(result.candidates, solved.elevation, strict=True)):
-                db.add(route_row(cand, version_id=version.id, seq=seq, heights=elev.heights, elevation=elev.profile))
+                row = route_row(cand, version_id=version.id, seq=seq, heights=elev.heights, elevation=elev.profile)
+                route_ids.append(row.id)
+                db.add(row)
         await self.svc.redis.delete(f"plan:{plan_id}:error")
-        return last + 1
+        return PlanVersionOut.model_construct(
+            plan_id=plan_id, version=version.version_no, source=source, created_at=version.created_at,
+            outcome=result.outcome, request=request,
+            candidates=[CandidateOut.model_construct(route_id=rid, **dict(cand)) for rid, cand in
+                        zip(route_ids, result.candidates)],
+            conflict=result.conflict, facts=version.facts, flags=result.flags, explanation=version.explanation,
+            diff=version.diff, builds=BuildsOut(osm=version.graph_build, valhalla=version.valhalla_build,
+                                                graphhopper=version.graphhopper_build, solver=version.solver_hash),
+            cached=version.from_cache, elapsed_ms=version.elapsed_ms, engine_calls=version.engine_calls)
 
     # ------------------------------------------------------------------ reads
 
@@ -183,17 +197,34 @@ class Planner:
                              graphhopper=version.graphhopper_build, solver=version.solver_hash),
             cached=version.from_cache, elapsed_ms=version.elapsed_ms, engine_calls=version.engine_calls)
 
+    async def _previous(self, db, plan_id: uuid.UUID, version_no: int) -> SimpleNamespace:
+        """What the diff needs of the previous version: its request, outcome and each candidate's label, option,
+        length, duration and end. No geometry is read."""
+        version = (await db.execute(select(PlanVersion.request, PlanVersion.outcome)
+                                    .where(PlanVersion.plan_id == plan_id, PlanVersion.version_no == version_no))).one()
+        rows = (await db.execute(
+            select(Route.label, Route.option, Route.foot_m, Route.duration_s, Route.end_point)
+            .join(PlanVersion, Route.plan_version_id == PlanVersion.id)
+            .where(PlanVersion.plan_id == plan_id, PlanVersion.version_no == version_no).order_by(Route.seq))).all()
+        cands = [SimpleNamespace(label=r.label, option=r.option, foot_m=r.foot_m, duration_s=r.duration_s,
+                                 end=EndPoint.model_validate(r.end_point)) for r in rows]
+        return SimpleNamespace(version=version_no, request=RouteRequest.model_validate(version.request),
+                               outcome=version.outcome, candidates=cands)
+
+    async def latest_request(self, plan_id: uuid.UUID) -> tuple[int, dict]:
+        """(latest version number, its stored request), without reading routes. (0, {}) if there is none."""
+        async with self.svc.sessions() as db:
+            row = (await db.execute(select(PlanVersion.version_no, PlanVersion.request)
+                                    .where(PlanVersion.plan_id == plan_id)
+                                    .order_by(PlanVersion.version_no.desc()).limit(1))).first()
+        return (row.version_no, row.request) if row else (0, {})
+
     async def owned_plan(self, plan_id: uuid.UUID, client_id: uuid.UUID) -> Plan:
         async with self.svc.sessions() as db:
             plan = await db.get(Plan, plan_id)
         if plan is None or plan.client_id != client_id:
             raise ApiError(404, "not_found", f"No plan {plan_id} for this client.")
         return plan
-
-    async def latest_no(self, plan_id: uuid.UUID) -> int:
-        async with self.svc.sessions() as db:
-            return (await db.execute(select(func.coalesce(func.max(PlanVersion.version_no), 0))
-                                     .where(PlanVersion.plan_id == plan_id))).scalar_one()
 
     async def plan_out(self, plan_id: uuid.UUID) -> PlanOut:
         async with self.svc.sessions() as db:

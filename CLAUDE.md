@@ -5,7 +5,7 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 4**, the backend API in `api/` (blueprint Phase 4 amendments 1 to 25). No front end and no LLM. **The solver's behaviour must not change**: if the API needs a solver change, say so and wait. Phase 3c (lengthening, loops) is finished; see `docs/reports/phase3c/summary.md`.
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 4**, the backend API in `api/` (blueprint Phase 4 amendments 1 to 25). It is built; status, measurements and what was left out are in `docs/reports/phase4/summary.md`. No front end and no LLM until the developer starts Phase 5. **The solver's behaviour must not change**: if the API needs a solver change, say so and wait.
 - **Plan first.** Give a plan and wait for approval before writing code.
 - **Small steps.** Each step ends in something the developer can run and check. Commit after each step.
 - **No invented distances.** Never hardcode or estimate a distance. Every distance comes from the routing engine or from measuring geometry (`athlete_engine.geodesy`). The leg distances in the blueprint's section 8 worked example are made up: never use them as test expectations. Straight-line distance is allowed only for snap distances and pre-filters and must never be presented as a route distance.
@@ -50,6 +50,9 @@ Phase 4 facts:
 - Postgres is on host port 5433, because a native Windows PostgreSQL holds 5432.
 - Photon returns no relevance score. Its `county` is a district or a taluk. OSM often holds the same place several times, so most names come back `ambiguous` and the picker shows.
 - The Kerala bounding box for Photon is the pinned extract's own, from GraphHopper `/info`, with `state == "Kerala"` as the real filter.
+- **Solves are about three times faster inside Docker than from the host**: point-to-point p50 515 ms in the API container, 1.80 s for the KPI harness on the host. Every engine call from the host crosses Docker Desktop's port forwarding. Compare latencies only when they were measured from the same place.
+- Create and PATCH build their response from the objects they have just stored; the GET endpoints read the rows. Tests check that both agree.
+- `tests/kpi/run_kpi.py` crashes on its final print when `--report` is relative. Pass an absolute path; the report is written either way.
 
 ## Phase 3 amendments (2026-11-17, full text at the top of docs/blueprint.md; they win over Phase 2)
 
@@ -190,6 +193,9 @@ uv run pytest tests/integration -k api              # live stack: A01 flow (vs t
 uv run python api/scripts/export_sample_gpx.py      # through the running API: GPX for A01 and S02 -> docs/reports/phase4/gpx/ (manual Garmin/Strava check)
 uv run python api/scripts/record_photon_fixtures.py  # needs Photon: re-record tests/fixtures/photon/ (the place tests' Photon responses)
 uv run python api/scripts/build_examples.py          # live stack: OpenAPI examples from real solver output -> api/athlete_api/examples/ (never edit them by hand)
+docker compose --profile api up -d --build api        # the containerised API on :8000 (migrates on start; one worker)
+uv run python api/scripts/measure_latency.py         # through the container, every active fixture -> docs/reports/phase4/latency.md (raise ATHLETE_RATE_* first; see the script)
+uv run python api/scripts/measure_stack_memory.py    # memory of every container during six concurrent solves through the API
 ```
 
 The app uses asyncpg: psycopg's async mode cannot run on the Windows Proactor event loop. `ATHLETE_CACHE_ENABLED=false` turns the solve cache off (tests and diagnosis only). Settings come from `ATHLETE_*` variables (`athlete_api/config.py`); the engine URLs reuse `VALHALLA_URL` and `GRAPHHOPPER_URL`, like the solver.

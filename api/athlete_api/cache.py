@@ -12,6 +12,7 @@ import zlib
 from dataclasses import dataclass
 
 from athlete_solver.models import RouteRequest, SolveResult
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from .elevation import Elevation
@@ -52,16 +53,24 @@ def cacheable(result: SolveResult) -> bool:
     return not any(f.code in NOT_CACHED_FLAGS for f in result.flags)
 
 
+class _Cached(BaseModel):
+    """The cached value, parsed in one pass by pydantic's JSON parser."""
+
+    result: SolveResult
+    elevation: list[dict]
+
+
 def encode(solved: Solved) -> bytes:
-    body = {"result": solved.result.model_dump(mode="json", exclude=RESULT_EXCLUDE),
-            "elevation": [e.to_json() for e in solved.elevation]}
-    return zlib.compress(json.dumps(body, separators=(",", ":")).encode(), 6)
+    body = (b'{"result":' + solved.result.model_dump_json(exclude=RESULT_EXCLUDE).encode()
+            + b',"elevation":' + json.dumps([e.to_json() for e in solved.elevation], separators=(",", ":")).encode()
+            + b"}")
+    return zlib.compress(body, 6)
 
 
 def decode(blob: bytes, builds: BuildIds) -> Solved:
-    body = json.loads(zlib.decompress(blob))
-    return Solved(result=SolveResult.model_validate(body["result"]),
-                  elevation=[Elevation.from_json(e) for e in body["elevation"]], builds=builds, from_cache=True)
+    body = _Cached.model_validate_json(zlib.decompress(blob))
+    return Solved(result=body.result, elevation=[Elevation.from_json(e) for e in body.elevation], builds=builds,
+                  from_cache=True)
 
 
 async def get(redis: Redis, cache_key: str, builds: BuildIds) -> Solved | None:

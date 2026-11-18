@@ -6,7 +6,7 @@ from typing import Any
 import jsonpatch
 import jsonpointer
 from athlete_solver.models import RouteRequest
-from fastapi import APIRouter, Body, Depends, Header, Path, Query, Request
+from fastapi import APIRouter, Body, Depends, Header, Path, Query, Request, Response
 from pydantic import ValidationError
 
 from .db import Client
@@ -37,7 +37,7 @@ async def create_plan(body: PlanCreate = Body(openapi_examples=examples("request
     solve carries on and the version appears at `GET /v1/plans/{id}` (the id is in the error's detail).
     """
     plan_id = await plans.new_plan(client.id)
-    return await plans.solve_into(plan_id, body.request, body.source)
+    return as_json(await plans.solve_into(plan_id, body.request, body.source), 201)
 
 
 @router.patch("/{plan_id}", response_model=PlanVersionOut,
@@ -64,15 +64,20 @@ async def patch_plan(plan_id: uuid.UUID,
     if plan_id in plans.pending:
         raise ApiError(409, "plan_solving", "A solve for this plan is still running. Try again when it is done.",
                        {"poll": f"/v1/plans/{plan_id}"})
-    latest = await plans.latest_no(plan_id)
+    latest, base = await plans.latest_request(plan_id)
     if latest == 0:
         raise ApiError(409, "plan_solving", "This plan has no version to edit yet.", {"poll": f"/v1/plans/{plan_id}"})
     if if_match is not None and if_match.strip().strip('"').lstrip("W/").strip('"') != f"v{latest}":
         raise ApiError(412, "version_mismatch", f"The latest version is v{latest}.",
                        {"latest": latest, "if_match": if_match})
-    base = (await plans.version_out(plan_id, latest)).request.model_dump(mode="json")
     request = apply_patch(base, ops)
-    return await plans.solve_into(plan_id, request, source)
+    return as_json(await plans.solve_into(plan_id, request, source), 200)
+
+
+def as_json(out: PlanVersionOut, status: int) -> Response:
+    """Serialise once: the version is built from validated solver models, so FastAPI's second validation of a
+    large response is skipped (the response_model above still documents it)."""
+    return Response(content=out.model_dump_json(), media_type="application/json", status_code=status)
 
 
 def apply_patch(base: dict, ops: list[dict[str, Any]]) -> RouteRequest:

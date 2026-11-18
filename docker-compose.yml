@@ -89,3 +89,34 @@ services:
               "--maxmemory-policy", "allkeys-lru"]
     mem_limit: 320m
     restart: "no"
+
+  # Phase 4: the API (FastAPI over the solver). Started only on request:
+  #   docker compose --profile api up -d --build api
+  # Runs migrations on start. One worker (amendment 20). Rate limits can be raised for load measurements with
+  # the ATHLETE_RATE_* variables (defaults: amendment 22).
+  api:
+    profiles: ["api"]
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    image: athlete-api:0.4.0
+    container_name: athlete-api
+    ports:
+      - "8000:8000"
+    environment:
+      - VALHALLA_URL=http://valhalla:8002
+      - GRAPHHOPPER_URL=http://graphhopper:8989
+      - ATHLETE_PHOTON_URL=http://photon:2322
+      - ATHLETE_DATABASE_URL=postgresql+asyncpg://athlete:athlete@postgres:5432/athlete
+      - ATHLETE_REDIS_URL=redis://redis:6379/0
+      - ATHLETE_RATE_SOLVE_PER_CLIENT_MIN=${ATHLETE_RATE_SOLVE_PER_CLIENT_MIN:-20}
+      - ATHLETE_RATE_SOLVE_PER_IP_MIN=${ATHLETE_RATE_SOLVE_PER_IP_MIN:-40}
+      - ATHLETE_RATE_READ_PER_CLIENT_MIN=${ATHLETE_RATE_READ_PER_CLIENT_MIN:-300}
+      - ATHLETE_RATE_SESSION_PER_IP_HOUR=${ATHLETE_RATE_SESSION_PER_IP_HOUR:-10}
+    volumes:
+      - ./data/manifest.json:/app/data/manifest.json:ro
+    depends_on:
+      - postgres
+      - redis
+    mem_limit: 1g
+    restart: "no"

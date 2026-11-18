@@ -938,6 +938,8 @@ Eight phases total 19 to 26 weeks of full-time solo work; roughly double that al
 
 Updated 2026-11-18 by the Phase 4 amendments.
 
+**Status (2026-11-18): built.** Every acceptance criterion holds on the development laptop except the manual Garmin Connect and Strava import, which waits for the product owner. See [docs/reports/phase4/summary.md](reports/phase4/summary.md).
+
 - **Tasks:**
   - the FastAPI app;
   - the schema and its Alembic migrations;

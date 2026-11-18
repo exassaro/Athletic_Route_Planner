@@ -1,0 +1,97 @@
+{
+ "measured_on": "development laptop (not the target server)",
+ "requests": [
+  {
+   "fixture": "S08",
+   "status": 201,
+   "seconds": 1.23,
+   "error": null
+  },
+  {
+   "fixture": "A01",
+   "status": 201,
+   "seconds": 1.41,
+   "error": null
+  },
+  {
+   "fixture": "S13",
+   "status": 201,
+   "seconds": 2.88,
+   "error": null
+  },
+  {
+   "fixture": "X03",
+   "status": 201,
+   "seconds": 3.49,
+   "error": null
+  },
+  {
+   "fixture": "X07",
+   "status": 201,
+   "seconds": 2.66,
+   "error": null
+  },
+  {
+   "fixture": "F02",
+   "status": 201,
+   "seconds": 2.85,
+   "error": null
+  }
+ ],
+ "wall_s": 3.5,
+ "idle": {
+  "containers": {
+   "athlete-api": {
+    "used_mib": 121.1,
+    "limit_mib": 1024.0,
+    "cpu_pct": 0.22
+   },
+   "athlete-postgres": {
+    "used_mib": 118.0,
+    "limit_mib": 512.0,
+    "cpu_pct": 0.0
+   },
+   "athlete-photon": {
+    "used_mib": 523.0,
+    "limit_mib": 3072.0,
+    "cpu_pct": 1.31
+   },
+   "athlete-redis": {
+    "used_mib": 4.3,
+    "limit_mib": 320.0,
+    "cpu_pct": 1.07
+   },
+   "athlete-graphhopper": {
+    "used_mib": 2112.5,
+    "limit_mib": 4096.0,
+    "cpu_pct": 0.25
+   },
+   "athlete-valhalla": {
+    "used_mib": 538.4,
+    "limit_mib": 7860.2,
+    "cpu_pct": 0.17
+   }
+  },
+  "vm": {
+   "total": 7860,
+   "used": 3885,
+   "free": 1608,
+   "shared": 90,
+   "buff/cache": 2367,
+   "available": 3693,
+   "swap_used": 0,
+   "swap_total": 2048
+  }
+ },
+ "peak_mib": {
+  "athlete-api": 124.5,
+  "athlete-postgres": 132.9,
+  "athlete-photon": 522.7,
+  "athlete-redis": 4.6,
+  "athlete-graphhopper": 2112.5,
+  "athlete-valhalla": 541.2
+ },
+ "samples": 3,
+ "peak_vm_used_mib": 3909,
+ "min_vm_available_mib": 3669
+}

@@ -1,0 +1,10 @@
+# Build context for api/Dockerfile (the engine images build from their own folders).
+data/
+.venv/
+.git/
+docs/
+tests/
+web/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
