@@ -10,6 +10,7 @@ import type { Schemas } from "@/api/client";
 import { flagText } from "@/plan/flags";
 import { km, signedKm } from "@/plan/format";
 import { lineStyle, svgDash } from "@/plan/routeStyle";
+import { useTheme } from "@/theme/useTheme";
 import { Badge, Button } from "./ui";
 import { Num } from "./Num";
 import { StatNumber } from "./StatNumber";
@@ -27,7 +28,8 @@ const ROAD_VAR: Record<string, string> = {
 };
 
 export function Swatch({ label, option, index }: { label: string; option: string; index: number }) {
-  const s = lineStyle(label, option, index);
+  const [theme] = useTheme();
+  const s = lineStyle(label, option, index, theme);
   return (
     <svg width="32" height="10" aria-hidden="true" className="swatch">
       <line x1="2" y1="5" x2="30" y2="5" stroke={s.color} strokeWidth="4" strokeLinecap="butt" strokeDasharray={svgDash(s.dash, 4)} />

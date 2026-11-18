@@ -8,7 +8,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import { MapView } from "@/map/MapView";
-import { setPoint, useRouteLayers } from "@/map/useRouteLayers";
+import { useRouteLayers } from "@/map/useRouteLayers";
+import { useTheme } from "@/theme/useTheme";
 import { applyToDraft, blocked, patchFor, type Edit, type Point, type RouteRequest } from "@/plan/edits";
 import { pace as formatPace, parsePace, signedKm } from "@/plan/format";
 import { usePace } from "@/plan/pace";
@@ -59,7 +60,16 @@ export function Planner() {
   const candidates = useMemo(() => v?.candidates ?? [], [v]);
 
   useEffect(() => setSelected(0), [v?.version]); // eslint-disable-line react-hooks/set-state-in-effect
-  useRouteLayers(map, candidates, selected, solving, v ? `${v.plan_id}/${v.version}` : null, request);
+  const [theme] = useTheme();
+  // The start pin faces the way the route leaves: towards the API's first km mark (from the elevation response),
+  // or along the first geometry segment until that has arrived. Coordinates compared, nothing measured.
+  const [firstKm, setFirstKm] = useState<{ routeId: string; lon: number } | null>(null);
+  const cand = candidates[selected];
+  const startLon = cand?.stops?.find((s) => s.role === "start")?.snapped_lon;
+  const facingWest = !!cand && (firstKm?.routeId === cand.route_id && startLon != null
+    ? firstKm.lon < startLon
+    : cand.geometry.length > 1 && cand.geometry[1]![0] < cand.geometry[0]![0]);
+  useRouteLayers(map, candidates, selected, solving, v ? `${v.plan_id}/${v.version}` : null, request, theme, facingWest);
 
   // The diff after every edit, as the API reports it ("+3.0 km, new end: X").
   useEffect(() => {
@@ -86,7 +96,6 @@ export function Planner() {
   }, [plan]);
 
   const setStart = useCallback((point: Point) => {
-    if (map) setPoint(map, "draft-start", [point.lon, point.lat]);
     onEdit({ kind: "start", point });
     map?.easeTo({ center: [point.lon, point.lat], zoom: Math.max(map.getZoom(), 13) });
   }, [map, onEdit]);
@@ -209,7 +218,7 @@ export function Planner() {
 
   return (
     <div className={`planner sheet-${sheet}${v ? "" : " setup-mode"}${toast ? " has-snack" : ""}`}>
-      <MapView onReady={setMap} />
+      <MapView onReady={setMap} theme={theme} />
       <TopBar setupMode={!v} near={near} canAddStop={!!v} onPlace={onPlace} menu={menu} />
       <BottomSheet snap={sheet} onSnap={setSheet} label="Plan your run" halfRatio={v ? 0.5 : 0.64}>
           {/* what a peeked sheet shows first */}
@@ -226,7 +235,8 @@ export function Planner() {
                 target={v.request.target_distance_m} explanation={v.explanation} versionKey={`${v.plan_id}/${v.version}`} />
               <StopsPanel request={v.request} version={v} selected={candidates[selected] ?? null} onEdit={onEdit} near={near} map={map}
                 onMapPick={mapPick} />
-              {candidates[selected] && <RouteDetail map={map} cand={candidates[selected]!} index={selected} />}
+              {candidates[selected] && <RouteDetail map={map} cand={candidates[selected]!} index={selected}
+                onFirstKm={(routeId, [lon]) => setFirstKm({ routeId, lon })} />}
               {candidates[selected] && <SaveShare cand={candidates[selected]!} />}
             </>
           )}

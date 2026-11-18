@@ -1,37 +1,66 @@
 "use client";
-/** The shared route on the self-hosted basemap, read-only. Geometry from the API. */
+/**
+ * The shared route on the self-hosted basemap, read-only (Phase 5b amendment 6): the same markers as the planner,
+ * with the start pin still (no hop on the share page). Geometry and positions from the API.
+ */
 import { useEffect, useState } from "react";
-import type { Map as MapLibreMap } from "maplibre-gl";
+import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import type { Schemas } from "@/api/client";
+import { km } from "@/plan/format";
+import { ROUTE_COLORS } from "@/plan/routeStyle";
+import { endFlag, startPin, stopPin } from "@/map/markers";
 import { MapView } from "@/map/MapView";
+import { useTheme } from "@/theme/useTheme";
 
 export function ShareMap({ route }: { route: Schemas["RouteFeature"] }) {
   const [map, setMap] = useState<MapLibreMap | null>(null);
+  const [theme] = useTheme();
   useEffect(() => {
     if (!map) return;
+    const markers: Marker[] = [];
+    let live = true;
     (async () => {
       const maplibregl = await import("maplibre-gl");
-      const coords = route.geometry.coordinates.map((c) => [c[0], c[1]] as [number, number]);
-      map.addSource("shared", { type: "geojson", data: { type: "Feature", properties: {},
-        geometry: { type: "LineString", coordinates: coords } } });
-      map.addLayer({ id: "shared-casing", type: "line", source: "shared", paint: { "line-color": "#fff", "line-width": 9 },
-        layout: { "line-join": "round", "line-cap": "round" } });
-      map.addLayer({ id: "shared", type: "line", source: "shared", paint: { "line-color": "#0f6b4f", "line-width": 6 },
-        layout: { "line-join": "round", "line-cap": "round" } });
-      const b = new maplibregl.LngLatBounds();
-      coords.forEach((c) => b.extend(c));
-      map.fitBounds(b, { padding: 40, duration: 0 });
+      if (!live) return;
+      const c = ROUTE_COLORS[theme];
+      const coords = route.geometry.coordinates.map((p) => [p[0], p[1]] as [number, number]);
+      if (!map.getSource("shared")) {
+        map.addSource("shared", { type: "geojson", data: { type: "Feature", properties: {},
+          geometry: { type: "LineString", coordinates: coords } } });
+        map.addLayer({ id: "shared-casing", type: "line", source: "shared", paint: { "line-color": c.casing, "line-width": 10 },
+          layout: { "line-join": "round", "line-cap": "round" } });
+        map.addLayer({ id: "shared", type: "line", source: "shared", paint: { "line-color": c.primary, "line-width": 6 },
+          layout: { "line-join": "round", "line-cap": "round" } });
+        const b = new maplibregl.LngLatBounds();
+        coords.forEach((p) => b.extend(p));
+        map.fitBounds(b, { padding: 40, duration: 0 });
+      }
+      map.setPaintProperty("shared-casing", "line-color", c.casing);
+      map.setPaintProperty("shared", "line-color", c.primary);
       const props = route.properties as Schemas["CandidateOut"];
+      // Facing: the first segment's direction (the share response carries no km marks).
+      const west = coords.length > 1 && coords[1]![0] < coords[0]![0];
       let n = 0;
       for (const s of props.stops ?? []) {
-        if (s.role !== "start" && s.role !== "checkpoint") continue;
-        const el = document.createElement("div");
-        el.className = `pin ${s.role === "start" ? "start" : "stop"}`;
-        el.textContent = s.role === "start" ? "S" : String(++n);
-        el.title = s.label ?? "";
-        new maplibregl.Marker({ element: el }).setLngLat([s.snapped_lon, s.snapped_lat]).addTo(map);
+        if (s.role === "start") {
+          const pin = startPin(s.label ?? "the start", west);
+          pin.el.classList.add("still");
+          markers.push(new maplibregl.Marker({ element: pin.el, anchor: "bottom", offset: pin.offset }).setLngLat([s.snapped_lon, s.snapped_lat]).addTo(map));
+        } else if (s.role === "checkpoint") {
+          n += 1;
+          markers.push(new maplibregl.Marker({ element: stopPin(String(n), `Stop ${n}: ${s.label ?? "a stop"}, at ${km(s.at_m)}`, { must: s.must_reach }) })
+            .setLngLat([s.snapped_lon, s.snapped_lat]).addTo(map));
+        }
+      }
+      if (props.end && props.end.kind !== "start") {
+        markers.push(new maplibregl.Marker({ element: endFlag(`End: ${props.end.label ?? "unnamed road"}`), anchor: "bottom-left" })
+          .setLngLat([props.end.lon, props.end.lat]).addTo(map));
       }
     })();
-  }, [map, route]);
-  return <MapView onReady={setMap} />;
+    return () => {
+      live = false;
+      markers.forEach((m) => m.remove());
+    };
+  }, [map, route, theme]);
+  return <MapView onReady={setMap} theme={theme} />;
 }

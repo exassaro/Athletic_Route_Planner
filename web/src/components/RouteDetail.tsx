@@ -9,7 +9,8 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { Schemas } from "@/api/client";
 import { km, metres } from "@/plan/format";
-import { lineStyle } from "@/plan/routeStyle";
+import { lineStyle, ROUTE_COLORS } from "@/plan/routeStyle";
+import { useTheme } from "@/theme/useTheme";
 import { planClient } from "@/plan/usePlan";
 import { Num } from "./Num";
 
@@ -20,7 +21,16 @@ const W = 600;
 const H = 150;
 const PAD = { l: 34, r: 8, t: 10, b: 22 };
 
-export function RouteDetail({ map, cand, index }: { map: MapLibreMap | null; cand: Candidate; index: number }) {
+type Props = {
+  map: MapLibreMap | null;
+  cand: Candidate;
+  index: number;
+  /** The API's first km mark of this route, for the start pin's direction (Phase 5b amendment 6). */
+  onFirstKm?: (routeId: string, lonlat: [number, number]) => void;
+};
+
+export function RouteDetail({ map, cand, index, onFirstKm }: Props) {
+  const [theme] = useTheme();
   const [elev, setElev] = useState<Elevation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cursor, setCursor] = useState<number | null>(null);
@@ -33,13 +43,17 @@ export function RouteDetail({ map, cand, index }: { map: MapLibreMap | null; can
     planClient().api.GET("/v1/routes/{route_id}/elevation", { params: { path: { route_id: cand.route_id } } })
       .then(({ data }) => {
         if (!live) return;
-        if (data) setElev(data as Elevation);
+        if (data) {
+          setElev(data as Elevation);
+          const first = (data as Elevation).km_marks[0];
+          if (first) onFirstKm?.(cand.route_id, [first.lon, first.lat]);
+        }
         else setError("Elevation is not available for this route.");
       });
     return () => {
       live = false;
     };
-  }, [cand.route_id]);
+  }, [cand.route_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // km marks on the map (every 1 km from the API; labels on every 5th)
   useEffect(() => {
@@ -47,18 +61,25 @@ export function RouteDetail({ map, cand, index }: { map: MapLibreMap | null; can
     const data = { type: "FeatureCollection" as const, features: elev.km_marks.map((m) => ({
       type: "Feature" as const, properties: { km: m.km, major: m.km % 5 === 0 },
       geometry: { type: "Point" as const, coordinates: [m.lon, m.lat] } })) };
+    // Small, quiet marks; the 5 km labels sit beside the line, so the stop pins do not hide them.
+    const c = theme === "dark" ? { fill: "#1C1F24", ink: "#F2ECDF" } : { fill: "#FBF8F1", ink: "#1C1B18" };
     const src = map.getSource("km-marks") as GeoJSONSource | undefined;
     if (src) src.setData(data);
     else {
       map.addSource("km-marks", { type: "geojson", data });
       map.addLayer({ id: "km-marks", type: "circle", source: "km-marks",
-        paint: { "circle-radius": ["case", ["get", "major"], 9, 3], "circle-color": "#ffffff",
-          "circle-stroke-color": "#16201c", "circle-stroke-width": 1.5 } });
+        paint: { "circle-radius": ["case", ["get", "major"], 5, 2.5], "circle-color": c.fill,
+          "circle-stroke-color": c.ink, "circle-stroke-width": 1.5 } });
       map.addLayer({ id: "km-labels", type: "symbol", source: "km-marks", filter: ["get", "major"],
-        layout: { "text-field": ["to-string", ["get", "km"]], "text-size": 10, "text-font": ["Noto Sans Medium"],
-          "text-allow-overlap": true } });
+        layout: { "text-field": ["concat", ["to-string", ["get", "km"]], " km"], "text-size": 11, "text-font": ["Noto Sans Medium"],
+          "text-anchor": "left", "text-offset": [0.9, 0], "text-allow-overlap": false },
+        paint: { "text-color": c.ink, "text-halo-color": c.fill, "text-halo-width": 1.5 } });
     }
-  }, [map, elev]);
+    map.setPaintProperty("km-marks", "circle-color", c.fill);
+    map.setPaintProperty("km-marks", "circle-stroke-color", c.ink);
+    map.setPaintProperty("km-labels", "text-color", c.ink);
+    map.setPaintProperty("km-labels", "text-halo-color", c.fill);
+  }, [map, elev, theme]);
 
   // Leaving this route (another route, or none): take its km marks and cursor off the map.
   useEffect(() => () => {
@@ -79,10 +100,12 @@ export function RouteDetail({ map, cand, index }: { map: MapLibreMap | null; can
     else {
       map.addSource("chart-cursor", { type: "geojson", data });
       map.addLayer({ id: "chart-cursor", type: "circle", source: "chart-cursor",
-        paint: { "circle-radius": 8, "circle-color": lineStyle(cand.label, cand.option, index).color,
-          "circle-stroke-color": "#fff", "circle-stroke-width": 3 } });
+        paint: { "circle-radius": 8, "circle-color": lineStyle(cand.label, cand.option, index, theme).color,
+          "circle-stroke-color": ROUTE_COLORS[theme].casing, "circle-stroke-width": 3 } });
     }
-  }, [map, elev, cursor, cand.label, cand.option, index]);
+    map.setPaintProperty("chart-cursor", "circle-color", lineStyle(cand.label, cand.option, index, theme).color);
+    map.setPaintProperty("chart-cursor", "circle-stroke-color", ROUTE_COLORS[theme].casing);
+  }, [map, elev, cursor, cand.label, cand.option, index, theme]);
 
   const chart = useMemo(() => {
     if (!elev || elev.profile.length < 2) return null;

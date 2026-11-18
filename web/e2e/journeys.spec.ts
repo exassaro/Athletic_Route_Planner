@@ -101,7 +101,7 @@ test("G01: a loop that cannot reach Feroke says why, keeps the map, and offers f
   const outcome = page.getByTestId("outcome");
   await expect(outcome).toHaveAttribute("data-conflict", "loop_stop_too_far");
   await expect(page.getByTestId("conflict-message")).toContainText("Feroke");
-  expect(await page.locator(".pin").count()).toBeGreaterThanOrEqual(2);        // never a blank map
+  expect(await page.locator(".pin-start, .pin-stop").count()).toBeGreaterThanOrEqual(2);        // never a blank map
   await expect(page.getByTestId("fix-drop_checkpoint-Feroke")).toBeVisible();
   await checkNumbersEverySnap(page, api);
   // The fix sets the solver's estimate (there and back on foot). Measured 2026-11-18: the loop through Feroke
