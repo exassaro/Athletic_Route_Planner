@@ -20,6 +20,13 @@ Decided 2026-11-18 by the product owner: a mobile-first redesign of `web/` befor
 10. **Gates:** Lighthouse accessibility 95 or more (was 90), touch targets 44 px or more. Performance is reported before and after, measured the same way (through Caddy on the LAN address, Lighthouse 13.0.1 mobile, median of three runs); the start pin must add no measurable main-thread time.
 11. **A8 approved (2026-11-18):** GPX `creator="GATHO"` and a GATHO metadata name. An API change (the API writes the GPX); built in step 10, XSD test kept.
 
+**Status (2026-11-18): built, two items open.**
+- Results: the journeys pass through Caddy; Lighthouse accessibility is 100 on both pages; performance went from 68 to 70 on the planner and from 67 to 69 on the share page.
+- Open: the hopping start pin's main-thread cost is measurable (about 2 % of the main thread at 4× slowdown), so gate 10's pin criterion is not met. The fix waits for a product-owner decision.
+- Open: the hallway test waits for the product owner.
+
+See [docs/reports/phase5b/summary.md](reports/phase5b/summary.md).
+
 ## Phase 5 amendments
 
 Decided 2026-11-18 by the product owner at the start of Phase 5, the web front end and map in `web/`. There is no LLM chat (Phase 6) and no drag-to-edit (Phase 7). The solver does not change; a front-end need that requires an API change is listed and approved first. Where these amendments conflict with an earlier amendment or a later section, they win. Sections 13 and 15 (Phase 5) are updated to match.

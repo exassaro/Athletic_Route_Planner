@@ -27,5 +27,6 @@ export default defineConfig({
   projects: [
     { name: "phone", testMatch: /journeys\.spec\.ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "screens", testMatch: /screens\.spec\.ts/, use: { browserName: "chromium" } },
+    { name: "pincost", testMatch: /pincost\.spec\.ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
   ],
 });
