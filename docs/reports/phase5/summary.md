@@ -18,7 +18,7 @@ Measured on the development laptop on 2026-11-18, against the live stack and the
 | S02 journey (10 km loop from Mananchira) | passes | yes |
 | G01 journey (loop that cannot reach Feroke): message with numbers, map not blank, one-tap fixes | passes | yes |
 | Every number on screen matches the API response | Each number carries its raw API value (`data-value`). The test checks every visible one against the responses the page received, and checks its text is that value formatted. It runs on every screen of the three journeys | yes |
-| Usable on a phone over the LAN | HTTPS through Caddy (`tls internal`) checked from this laptop: journeys pass on `https://10.141.255.68`, and the chain verifies against Caddy's root. **Not yet tried on a real phone**; steps in [phone.md](phone.md) | developer |
+| Usable on a phone over the LAN | HTTPS through Caddy (`tls internal`): journeys pass on `https://10.141.255.68` from this laptop, and the chain verifies against Caddy's root. **Checked by the developer on a Redmi 12 5G (Android) on 2026-11-18:** Caddy's root installed, opened over the home Wi-Fi, "runs well". Steps in [phone.md](phone.md) | yes |
 | Five runners complete the A01 journey without help | Script and form ready: [hallway/script.md](hallway/script.md), [hallway/feedback-form.md](hallway/feedback-form.md) | developer |
 | Lighthouse accessibility ≥ 90 (amendment 10) | **100** | yes |
 
@@ -138,5 +138,5 @@ Screens 14 to 17 are **mocked**: the test intercepts the API's answer, because t
   - **Performance work.** Options: lazy-load MapLibre after first paint, or a smaller style.
 - **Not measured:**
   - **Memory** with the web server, Chromium and the whole stack running together. Everything ran on this laptop during the tests, with no failure, but it was not sampled.
-  - A real phone (yours to do, [phone.md](phone.md)), Garmin and Strava import of the new GPX files, and the hallway test.
+  - Garmin and Strava import of the new GPX files, and the hallway test. (A real phone: done, Redmi 12 5G.)
 - **Not changed:** the KPI harness's relative-path crash (Phase 4 note).

@@ -5,7 +5,7 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5**, the web front end and map in `web/` (blueprint Phase 5 amendments 1 to 15). It is built; status, measurements and what was left out are in `docs/reports/phase5/summary.md` (a real phone and the hallway test wait for the developer). Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first.
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5**, the web front end and map in `web/` (blueprint Phase 5 amendments 1 to 15). It is built; status, measurements and what was left out are in `docs/reports/phase5/summary.md` (checked on a real phone, Redmi 12 5G; the hallway test waits for the developer). Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first.
 
 ## Phase 5 amendments (2026-11-18, full text at the top of docs/blueprint.md; they win over earlier ones)
 

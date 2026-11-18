@@ -6,7 +6,7 @@ Checked on this laptop on 2026-11-18 (LAN address 10.141.255.68):
 - the three Playwright journeys pass through `https://10.141.255.68`;
 - the certificate chain verifies against Caddy's root for both `10.141.255.68` and `localhost`.
 
-**Not yet checked on a real phone.** That is for you, with the steps below.
+**Checked on a real phone on 2026-11-18:** a Redmi 12 5G (Android), by the developer, over the home Wi-Fi, with Caddy's root installed. It ran well. Two things that mattered: the Wi-Fi was set to Public, which blocks the phone until it is set to Private (step 2); and the firewall rule was removed afterwards.
 
 ## 1. Start everything
 
@@ -39,7 +39,7 @@ In an administrator PowerShell, once:
 New-NetFirewallRule -DisplayName "Athlete Router HTTPS (LAN)" -Direction Inbound -Protocol TCP -LocalPort 443 -Profile Private -Action Allow
 ```
 
-The Wi-Fi network must be set to **Private** in Windows. The phone must be on the same Wi-Fi.
+The Wi-Fi network must be set to **Private** in Windows (check with `(Get-NetConnectionProfile -InterfaceAlias WiFi).NetworkCategory`; as administrator, `Set-NetConnectionProfile -InterfaceAlias WiFi -NetworkCategory Private`, only on a network you trust). Remove the rule when you are done: `Remove-NetFirewallRule -DisplayName "Athlete Router HTTPS (LAN)"`. The phone must be on the same Wi-Fi.
 
 ## 3. Trust Caddy's root certificate on the phone
 
