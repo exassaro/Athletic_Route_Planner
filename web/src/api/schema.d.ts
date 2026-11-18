@@ -381,7 +381,7 @@ export interface components {
              * Radius M
              * @default 300
              */
-            radius_m: number;
+            radius_m?: number;
             /** Way Ids */
             way_ids?: number[];
         };
@@ -453,21 +453,21 @@ export interface components {
              * Edge Count
              * @default 0
              */
-            edge_count: number;
+            edge_count?: number;
             end: components["schemas"]["EndPoint"];
             /**
              * Engine
              * @default valhalla
              * @enum {string}
              */
-            engine: "valhalla" | "graphhopper";
+            engine?: "valhalla" | "graphhopper";
             /** Engine Length M */
             engine_length_m: number;
             /**
              * Ferry M
              * @default 0
              */
-            ferry_m: number;
+            ferry_m?: number;
             /** Flags */
             flags?: components["schemas"]["Flag"][];
             /** Foot M */
@@ -493,7 +493,7 @@ export interface components {
              * @default main
              * @enum {string}
              */
-            option: "main" | "end_at_target" | "continue_past_target" | "detour_to_target" | "full_route" | "cut_at_target" | "out_and_back" | "short_loop";
+            option?: "main" | "end_at_target" | "continue_past_target" | "detour_to_target" | "full_route" | "cut_at_target" | "out_and_back" | "short_loop";
             /** Repeat Share */
             repeat_share?: number | null;
             /** Road Class M */
@@ -532,7 +532,7 @@ export interface components {
              * @default place
              * @enum {string}
              */
-            kind: "place" | "junction" | "bridge" | "road";
+            kind?: "place" | "junction" | "bridge" | "road";
             /** Label */
             label: string;
             /** Lat */
@@ -548,12 +548,12 @@ export interface components {
              * Mandatory
              * @default true
              */
-            mandatory: boolean;
+            mandatory?: boolean;
             /**
              * Must Reach
              * @default false
              */
-            must_reach: boolean;
+            must_reach?: boolean;
             /** Place Id */
             place_id?: string | null;
             /**
@@ -561,7 +561,7 @@ export interface components {
              * @default checkpoint
              * @enum {string}
              */
-            role: "checkpoint" | "via" | "must_use";
+            role?: "checkpoint" | "via" | "must_use";
             /** Way Ids */
             way_ids?: number[];
         };
@@ -853,7 +853,7 @@ export interface components {
              * @default LineString
              * @constant
              */
-            type: "LineString";
+            type?: "LineString";
         };
         /**
          * MustUse
@@ -992,7 +992,7 @@ export interface components {
              * @default form
              * @enum {string}
              */
-            source: "form" | "chat" | "drag";
+            source?: "form" | "chat" | "drag";
         };
         /** PlanOut */
         PlanOut: {
@@ -1090,19 +1090,19 @@ export interface components {
              * @default any
              * @enum {string}
              */
-            hills: "any" | "minimise";
+            hills?: "any" | "minimise";
             /**
              * Paths
              * @default avoid
              * @enum {string}
              */
-            paths: "avoid" | "allow";
+            paths?: "avoid" | "allow";
             /**
              * Surface
              * @default any
              * @enum {string}
              */
-            surface: "any" | "paved";
+            surface?: "any" | "paved";
         };
         /** ReverseOut */
         ReverseOut: {
@@ -1135,7 +1135,7 @@ export interface components {
              * @default Feature
              * @constant
              */
-            type: "Feature";
+            type?: "Feature";
         };
         /** RouteRequest */
         RouteRequest: {
@@ -1144,12 +1144,12 @@ export interface components {
              * @default run
              * @constant
              */
-            activity: "run";
+            activity?: "run";
             /**
              * Alternatives
              * @default 2
              */
-            alternatives: number;
+            alternatives?: number;
             /** Avoid */
             avoid?: components["schemas"]["AvoidItem"][];
             /**
@@ -1157,7 +1157,7 @@ export interface components {
              * @default auto
              * @enum {string}
              */
-            checkpoint_order: "auto" | "fixed";
+            checkpoint_order?: "auto" | "fixed";
             /** Checkpoints */
             checkpoints?: components["schemas"]["Checkpoint"][];
             /** Direction */
@@ -1179,7 +1179,7 @@ export interface components {
              * Tolerance M
              * @default 500
              */
-            tolerance_m: number;
+            tolerance_m?: number;
             /** Via */
             via?: components["schemas"]["Via"][];
         };
@@ -1292,7 +1292,7 @@ export interface components {
              * Header
              * @default X-Client-Token
              */
-            header: string;
+            header?: string;
             /** Token */
             token: string;
         };
@@ -1328,7 +1328,7 @@ export interface components {
              * Must Reach
              * @default false
              */
-            must_reach: boolean;
+            must_reach?: boolean;
             /** Offset M */
             offset_m: number;
             /** Pass Walk M */
@@ -1376,7 +1376,7 @@ export interface components {
              * @default place
              * @enum {string}
              */
-            kind: "place" | "road";
+            kind?: "place" | "road";
             /** Label */
             label?: string | null;
             /** Lat */
