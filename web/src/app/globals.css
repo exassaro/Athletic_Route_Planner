@@ -583,3 +583,25 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .pin-end-depth { fill: rgba(0, 0, 0, 0.35); }
 /* At peek the Undo message sits above the sheet and the map credit, so the peek bar and the credit stay visible. */
 .planner.sheet-peek .snackbar-floating { bottom: calc(var(--snap-h) + 32px); }   /* above the OSM credit too */
+
+/* ---------- share page and saved routes (Phase 5b step 10) ---------- */
+.share-panel { padding: var(--space-2) var(--space-2) var(--space-4); background: var(--paper); }
+.share-panel h1 { margin: 0; }
+.share-meta { margin: 4px 0 var(--space-2); }
+.share-stats {
+  display: grid; grid-template-columns: repeat(3, auto); justify-content: space-between; column-gap: var(--space-1);
+  padding: 12px 0; border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline);
+}
+.share-stats > div { display: flex; flex-direction: column; min-width: 0; }
+.share-stats .t-unit { font-size: 13px; }
+.share-timeline { margin: var(--space-2) 0; }
+.share-timeline .tl-num { cursor: default; }
+.share-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); align-items: center; margin: var(--space-2) 0 var(--space-1); }
+.saved-page { max-width: 720px; margin: 0 auto; padding: var(--space-3) var(--space-2) var(--space-4); }
+.saved-list { list-style: none; padding: 0; display: grid; gap: var(--space-1); }
+.saved-card { display: flex; gap: var(--space-2); align-items: flex-start; padding: var(--space-2); border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface); }
+.saved-thumb { flex: none; padding-top: 4px; }
+.saved-text { flex: 1; min-width: 0; }
+.saved-text h2 { margin: 0; }
+.saved-line { margin: 2px 0 var(--space-1); }
+.saved-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); }

@@ -64,7 +64,9 @@ def test_waypoints_start_checkpoints_end_but_no_vias():
     assert names[-1] == cand.end.label
     passes = [w.find("g:desc", NS).text for w in wpts[1:7]]
     assert passes[3] == "Uses Karuvanthuruthy bridge"
-    assert doc.find("g:metadata/g:name", NS).text == "Saturday long run"
+    assert doc.find("g:metadata/g:name", NS).text == "Saturday long run · GATHO"
+    assert doc.find("g:trk/g:name", NS).text == "Saturday long run"
+    assert doc.get("creator") == "GATHO"
     with_via = cand.model_copy(update={"stops": [*cand.stops, cand.stops[1].model_copy(update={"role": "via"})]})
     assert len(etree.fromstring(gpx.build(with_via, heights(cand))).findall("g:wpt", NS)) == len(wpts)
 

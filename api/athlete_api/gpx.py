@@ -18,7 +18,8 @@ from athlete_solver.models import Candidate
 
 NS = "http://www.topografix.com/GPX/1/1"
 XSI = "http://www.w3.org/2001/XMLSchema-instance"
-CREATOR = "Athlete Router"
+# Phase 5b A8 (approved 2026-11-18): the app is GATHO in the file too.
+CREATOR = "GATHO"
 DECLARATION = b'<?xml version="1.0" encoding="UTF-8"?>\n'
 OSM_COPYRIGHT = "https://www.openstreetmap.org/copyright"
 HOW = {"reached": "Reaches", "on_route": "Passes", "via": "Passes near", "boundary": "Passes through",
@@ -68,7 +69,7 @@ def build(cand: Candidate, heights: list[float], title: str | None = None,
     root = ET.Element(f"{{{NS}}}gpx", {"version": "1.1", "creator": CREATOR,
                                        f"{{{XSI}}}schemaLocation": f"{NS} {NS}/gpx.xsd"})
     meta = _el(root, "metadata")
-    _el(meta, "name", name)
+    _el(meta, "name", f"{name} · {CREATOR}")   # the course as the file lists it; the track keeps its plain name
     _el(meta, "desc", f"{cand.foot_m / 1000:.1f} km on foot, measured from the route geometry.")
     link = _el(meta, "link", href=OSM_COPYRIGHT)
     _el(link, "text", "Map data © OpenStreetMap contributors")

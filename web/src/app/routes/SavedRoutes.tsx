@@ -2,10 +2,11 @@
 /** Saved routes of this browser's client (section 13): open the share page, rename, download GPX. No delete yet. */
 import { useCallback, useEffect, useState } from "react";
 import type { Schemas } from "@/api/client";
-import { Num } from "@/components/Num";
+import { Sprite } from "@/components/Sprite";
+import { StatNumber } from "@/components/StatNumber";
+import { Button } from "@/components/ui";
 import { Wordmark } from "@/components/Wordmark";
 import { downloadGpx, shareUrl } from "@/components/SaveShare";
-import { km } from "@/plan/format";
 import { planClient } from "@/plan/usePlan";
 import Link from "next/link";
 
@@ -30,21 +31,26 @@ export function SavedRoutes() {
   return (
     <main className="saved-page">
       <p className="brand-row"><Link href="/" aria-label="GATHO: plan a run"><Wordmark /></Link></p>
-      <h1>Saved routes</h1>
+      <h1 className="t-title">Saved routes</h1>
       <p><Link href="/">Plan a run</Link></p>
       {msg && <p role="status">{msg}</p>}
       {routes === null && <p className="muted">Loading…</p>}
       {routes?.length === 0 && <p className="muted">Nothing saved on this device yet.</p>}
       <ul className="saved-list">
         {routes?.map((r) => (
-          <li key={r.saved_id} className="card">
-            <h2>{r.name ?? "Unnamed run"}</h2>
-            <p><Num value={r.foot_m} format={(m) => km(m)} field="foot_m" /> · ends at {r.end_label ?? "an unnamed road"}</p>
-            <p className="row">
-              <a href={shareUrl(r.share_slug)}>Open</a>
-              <button type="button" onClick={() => rename(r)}>Rename</button>
-              <button type="button" onClick={() => downloadGpx(r.route_id, true).catch((e) => setMsg(String(e.message)))}>GPX</button>
-            </p>
+          <li key={r.saved_id} className="saved-card">
+            {/* the still sneaker as the thumbnail (Phase 5b amendment 6: static pose off the planner) */}
+            <span className="saved-thumb"><Sprite name="sneaker" scale={2} /></span>
+            <div className="saved-text">
+              <h2 className="t-heading">{r.name ?? "Unnamed run"}</h2>
+              <p className="saved-line"><StatNumber kind="km" value={r.foot_m} field="foot_m" size="m" />
+                <span className="t-body-s muted"> · ends at {r.end_label ?? "an unnamed road"}</span></p>
+              <div className="saved-actions">
+                <a className="btn btn-secondary" href={shareUrl(r.share_slug)}>Open</a>
+                <Button icon="edit" onClick={() => rename(r)}>Rename</Button>
+                <Button icon="download" onClick={() => downloadGpx(r.route_id, true).catch((e) => setMsg(String(e.message)))}>GPX</Button>
+              </div>
+            </div>
           </li>
         ))}
       </ul>

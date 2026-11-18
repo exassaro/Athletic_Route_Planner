@@ -61,6 +61,7 @@ test("A01: 25 km towards Kozhikode through six stops, then 20 km, a fix, undo, s
   expect(gpx).toContain('<gpx ');
   expect(gpx).toContain("<trkpt");
   expect(gpx).toContain("<ele>");
+  expect(gpx).toContain('creator="GATHO"');                // Phase 5b A8
 
   // the share page, logged out (a new browser context: no token)
   const ctx = await browser.newContext({ ignoreHTTPSErrors: process.env.E2E_INSECURE === "1" });

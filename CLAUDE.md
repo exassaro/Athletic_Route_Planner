@@ -19,7 +19,7 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 8. Bottom sheet (peek, half, full), five-step setup, chips as editors, route cards, stops timeline, one-headline conflicts, Undo message.
 9. The number check runs at every sheet state; A01, S02, G01 keep their intent.
 10. Lighthouse accessibility ≥ 95; touch targets ≥ 44 px; performance measured before and after through Caddy (`https://<LAN IP>`), median of three runs. The start pin adds no measurable main-thread time.
-11. A8 (GPX `creator="GATHO"`, an API change) approved; built in step 10.
+11. A8 (GPX `creator="GATHO"`, metadata name "<course> · GATHO"; an API change) approved and built (step 10).
 - Phase 5b measurements go through Caddy on the LAN address, because the running `next start` is the same-origin LAN build. `SHOTS_DIR` sets where `e2e/screens.spec.ts` writes.
 
 ## Phase 5 amendments (2026-11-18, full text at the top of docs/blueprint.md; they win over earlier ones)
