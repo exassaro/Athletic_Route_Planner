@@ -44,3 +44,7 @@ web/next-env.d.ts
 web/test-results/
 web/playwright-report/
 web/e2e-results/
+
+# Basemap copied from data/basemap by engine/scripts/fetch_basemap.py
+web/public/basemap/
+web/public/maplibre/

@@ -17,3 +17,7 @@ npm run gen:api                               # openapi.json -> src/api/schema.d
 ```
 
 CI (`.github/workflows/ci.yml`) fails when either file is stale.
+
+Basemap (Phase 5 amendments 3 and 12): `uv run python engine/scripts/fetch_basemap.py` (repo root) puts the Kerala
+PMTiles file (Protomaps build of 2026-11-15, pinned in `engine/basemap_pin.json`), fonts and sprites into
+`public/basemap/` (gitignored). The dev server answers range requests on it (checked: 206 Partial Content).

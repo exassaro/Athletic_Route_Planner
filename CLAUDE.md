@@ -224,6 +224,7 @@ Web (Phase 5, `web/`, Node 22.18 on this laptop; http://localhost:3000):
 ```
 uv run python api/scripts/export_openapi.py [--check]   # API schema -> web/src/api/openapi.json (CI runs --check)
 cd web; npm ci; npm run gen:api                         # openapi.json -> src/api/schema.d.ts (generated, never edit)
+uv run python engine/scripts/fetch_basemap.py            # Kerala PMTiles (Protomaps build 20261115, engine/basemap_pin.json) + fonts/sprites -> web/public/basemap/ (226 MB, about 1 min)
 npm run dev | npm test | npm run typecheck | npm run lint | npm run build
 ```
 
@@ -231,6 +232,8 @@ npm run dev | npm test | npm run typecheck | npm run lint | npm run build
 - `npm install` sometimes skips rolldown's native binary (npm optional-dependency bug): delete `node_modules` and `package-lock.json` and install again.
 - PowerShell 5.1 `Set-Content -Encoding utf8` writes a BOM; never use it on package.json.
 - jsdom is pinned to 29.x and ESLint to 9.x: jsdom 30+ needs Node 22.22, and eslint-plugin-react supports ESLint 9 only.
+- MapLibre 6 loads its worker from `public/maplibre/` (copied by `scripts/copy-maplibre-worker.mjs` before dev and build); without it the map stays blank ("Worker failed to load").
+- `@rolldown/binding-win32-x64-msvc` is an optional dependency on purpose: npm otherwise drops it on every `npm install <pkg>`.
 - CI: `.github/workflows/ci.yml` (schema and types not stale, Python unit tests, web typecheck, lint, tests, build).
 
 Photon (profile `geocode`, http://localhost:2322):

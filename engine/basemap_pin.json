@@ -1,0 +1,23 @@
+{
+  "note": "Phase 5 amendment 12: the basemap is a pmtiles extract of the Protomaps daily build of the pin's day. Fetch with engine/scripts/fetch_basemap.py.",
+  "source_url": "https://build.protomaps.com/20261115.pmtiles",
+  "build": "20261115",
+  "osm_replication_time": "2026-11-15T04:00:00Z",
+  "basemap_version": "4.15.2",
+  "bbox": [72.192418, 8.269256, 77.413636, 12.859547],
+  "bbox_source": "the pinned extract's bounding box (GraphHopper /info), as the Photon filter",
+  "file": "kerala-20261115.pmtiles",
+  "size_bytes": 226595269,
+  "sha256": "c4cfbfd0e56114eddae3402f80d781496f2ff9371ba52a1d48152e32072b29bb",
+  "pmtiles_cli": {
+    "version": "1.31.2",
+    "url": "https://github.com/protomaps/go-pmtiles/releases/download/v1.31.2/go-pmtiles_1.31.2_Windows_x86_64.zip",
+    "sha256": "a658baa4d7e55020aef6ca17bd9ff9faa1582671266b36f58c52db0ac8e785a1"
+  },
+  "assets": {
+    "repo": "https://github.com/protomaps/basemaps-assets.git",
+    "commit": "028c18f713baecad011301ff7a69acc39bcc2ae7",
+    "paths": ["sprites/v4", "fonts/Noto Sans Regular", "fonts/Noto Sans Medium", "fonts/Noto Sans Italic"]
+  },
+  "style_package": "@protomaps/basemaps@5.7.2"
+}
