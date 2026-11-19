@@ -125,8 +125,10 @@ export function Planner() {
     if (!navigator.geolocation) return setLocError("This browser cannot share its location.");
     navigator.geolocation.getCurrentPosition(
       (pos) => setStart({ lon: pos.coords.longitude, lat: pos.coords.latitude, label: "My location", place_id: null }),
-      (err) => setLocError(err.code === err.PERMISSION_DENIED ? "Location permission was refused." :
-        "Location is not available (a phone needs HTTPS for this)."),
+      // Over plain http (other than localhost) browsers report PERMISSION_DENIED, so check the context first.
+      (err) => setLocError(!window.isSecureContext ? "Location needs a secure page: open the planner over https://." :
+        err.code === err.PERMISSION_DENIED ? "Location permission was refused." :
+        "Your location could not be found. On a laptop it is often approximate: search for the place or pick it on the map."),
       { enableHighAccuracy: true, timeout: 15000 });
   };
 

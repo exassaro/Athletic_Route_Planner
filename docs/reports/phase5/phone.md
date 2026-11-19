@@ -60,7 +60,8 @@ On the phone: `https://10.141.255.68/` (your address). "Use my location" should 
 | --- | --- |
 | The page does not load at all | Firewall rule missing, network not Private, or the phone is on another Wi-Fi (guest networks often isolate devices) |
 | "Your connection is not private" | The root certificate is not trusted yet (step 3), or `LAN_HOST` does not match the address you typed |
-| "Location is not available (a phone needs HTTPS for this)" | The page was opened over `http://` |
+| "Location needs a secure page: open the planner over https://." | The page was opened over `http://` (anything but `localhost`) |
+| "Your location could not be found…" | The device gave no position in 15 s (Windows Location services off, no GPS fix). A laptop's position comes from Wi-Fi or IP and can be kilometres off |
 | Map blank, planner works | `engine/scripts/fetch_basemap.py` not run, so there is no `web/public/basemap/` |
 
 A quick shortcut for Android Chrome without the certificate: `chrome://flags/#unsafely-treat-insecure-origin-as-secure`, add `http://10.141.255.68:3000`. That needs the web app built with the API address instead of `same-origin`, and CORS allowing that origin (`ATHLETE_CORS_ORIGINS`). It is a developer flag, so it's not recommended for the hallway test.

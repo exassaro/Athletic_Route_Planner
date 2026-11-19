@@ -75,6 +75,12 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     command: ["postgres", "-c", "shared_buffers=128MB", "-c", "max_connections=40"]
+    # The API waits for this: started too early, it gets "connection refused" and exits.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U athlete -d athlete"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
     mem_limit: 512m
     restart: "no"
 
@@ -117,8 +123,10 @@ services:
     volumes:
       - ./data/manifest.json:/app/data/manifest.json:ro
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     mem_limit: 1g
     restart: "no"
 
