@@ -250,7 +250,7 @@ export function Planner() {
           )}
           {/* Before the first route: the five setup steps. After it, every change goes through the chips. */}
           {!v && (
-            <SetupFlow draft={draft} onEdit={onEdit} startControls={startControls} near={near} solving={solving}
+            <SetupFlow draft={draft} onEdit={onEdit} startControls={startControls} near={near} map={map} solving={solving}
               canPlan={canPlan} onPlan={() => draft.start && plan.create(draft as NewRouteRequest)} />
           )}
       </BottomSheet>
@@ -260,7 +260,7 @@ export function Planner() {
           {editor === "start" && startControls}
           {editor === "distance" && <DistanceStepper request={v.request} onEdit={onEdit} near={near} live />}
           {editor === "type" && <RouteTypePicker request={v.request} onEdit={onEdit} near={near} live />}
-          {editor === "direction" && <DirectionPicker request={v.request} onEdit={onEdit} near={near} live />}
+          {editor === "direction" && <DirectionPicker request={v.request} onEdit={onEdit} near={near} map={map} live />}
           {editor === "paths" && <PathsToggle request={v.request} onEdit={onEdit} near={near} live />}
         </EditorDialog>
       )}

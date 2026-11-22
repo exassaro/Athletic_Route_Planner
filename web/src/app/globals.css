@@ -210,8 +210,16 @@ a { color: var(--accent-text); }
 .segmented label.on { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
 .tabs { display: flex; gap: 6px; margin-bottom: 6px; }
 .tabs button[aria-selected="true"] { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
-.compass { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.compass button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+/* The eight directions round the pixel dial (amendment 18). */
+.direction-rose { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; align-items: stretch; }
+.direction-option { display: grid; align-content: center; justify-items: center; gap: 2px; min-width: 0; min-height: 56px; padding: 2px; text-align: center; }
+.direction-name { font-size: 15px; font-weight: 600; line-height: 18px; }
+.direction-hint { font-size: 12px; line-height: 15px; color: var(--muted); text-wrap: balance; }
+.direction-option[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.direction-option[aria-pressed="true"] .direction-hint { color: inherit; }
+.direction-dial { place-self: center; max-width: 100%; }
+.dial-points { fill: var(--control); }
+.dial-chosen { fill: var(--accent); }
 .toggle { display: flex; gap: 8px; align-items: center; min-height: var(--tap); }
 .toggle input { width: 22px; height: 22px; }
 .toggle.small { min-height: 32px; font-size: 0.9rem; }

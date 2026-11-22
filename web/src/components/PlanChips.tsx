@@ -6,6 +6,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import type { RouteRequest } from "@/plan/edits";
+import { directionText } from "@/plan/direction";
 import { km } from "@/plan/format";
 import type { IconName } from "@/brand/icons";
 import { Chip } from "./ui";
@@ -52,9 +53,7 @@ export function PlanChips({ request, attention = [], onOpen }: Props) {
     label: <Num value={request.target_distance_m} format={(m) => km(m)} field="target_distance_m" /> });
   const shape = SHAPE[request.route_type];
   chips.push({ key: "type", label: shape.label, icon: shape.icon, name: "Change the route shape" });
-  const d = request.direction;
-  chips.push({ key: "direction", name: "Change the direction",
-    label: d ? (d.kind === "towards_place" ? `Towards ${d.place.label ?? "a point"}` : `Heading ${d.degrees}°`) : "Any direction" });
+  chips.push({ key: "direction", name: "Change the direction", label: directionText(request) ?? "Any direction" });
   const n = request.checkpoints?.length ?? 0;
   chips.push({ key: "stops", name: "Go to the stops", icon: n ? undefined : "plus",
     label: n ? `${n} stop${n > 1 ? "s" : ""}${request.checkpoint_order === "fixed" ? " (my order)" : ""}` : "Stops" });

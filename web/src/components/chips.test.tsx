@@ -22,8 +22,13 @@ describe("PlanChips", () => {
     const distance = document.querySelector('[data-chip="distance"] button')!;
     expect(distance.className).toContain("chip-attention");
     expect(distance.querySelector("[data-value]")?.getAttribute("data-value")).toBe(String(A01.target_distance_m));
-    fireEvent.click(screen.getByRole("button", { name: "Towards Kozhikode" }));
+    fireEvent.click(screen.getByRole("button", { name: "Heading north-west, towards Kozhikode" }));
     expect(onOpen).toHaveBeenCalledWith("direction");
+  });
+
+  it("a compass direction reads as a word, not degrees", () => {
+    render(<PlanChips request={{ ...A01, direction: { kind: "bearing", degrees: 135 } }} onOpen={() => {}} />);
+    expect(screen.getByRole("button", { name: "Heading south-east" })).toBeTruthy();
   });
 
   it("an unset direction and no stops still have chips to add them", () => {

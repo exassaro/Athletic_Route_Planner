@@ -45,7 +45,7 @@ export function Kit() {
         <h2 id="k-chips" className="t-heading">Chips</h2>
         <div className="kit-row">
           <Chip>25.0 km</Chip>
-          <Chip>Towards Kozhikode</Chip>
+          <Chip>Heading north-west, towards Kozhikode</Chip>
           <Chip attention>20.0 km</Chip>
           <Chip icon="plus">Add stop</Chip>
         </div>

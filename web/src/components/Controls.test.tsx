@@ -78,11 +78,21 @@ describe("controls", () => {
     const edits = setup((onEdit) => <DirectionPicker request={A01} onEdit={onEdit} near={null} live />);
     fireEvent.click(screen.getByRole("button", { name: "Clear" }));
     fireEvent.click(screen.getByRole("tab", { name: "A direction" }));
-    fireEvent.click(screen.getByRole("button", { name: "NE" }));
+    fireEvent.click(screen.getByRole("button", { name: "North-east, up and right on the map" }));
     expect(edits.map((e) => patchFor(A01, e))).toEqual([
       [{ op: "replace", path: "/direction", value: null }],
       [{ op: "replace", path: "/direction", value: { kind: "bearing", degrees: 45 } }],
     ]);
+  });
+
+  it("direction: eight words with their hints, the sentence, and the dial on the chosen point", () => {
+    setup((onEdit) => <DirectionPicker request={{ ...A01, direction: { kind: "bearing", degrees: 135 } }} onEdit={onEdit} near={null} live />);
+    expect(screen.getByTestId("direction-current").textContent).toContain("Heading south-east");
+    const options = [...document.querySelectorAll(".direction-option")];
+    expect(options.map((o) => o.querySelector(".direction-name")!.textContent)).toEqual(
+      ["North-west", "North", "North-east", "West", "East", "South-west", "South", "South-east"]);
+    expect(screen.getByRole("button", { name: "South-east, down and right on the map" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByTestId("direction-dial").getAttribute("data-point")).toBe("3");
   });
 
   it("paths: the toggle flips preferences.paths", () => {

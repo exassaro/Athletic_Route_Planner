@@ -5,8 +5,12 @@
  * applies to the draft form).
  */
 import { useEffect, useId, useRef, useState } from "react";
+import type { Map as MapLibreMap } from "maplibre-gl";
+import { useBearing } from "@/map/useBearing";
+import { DIRECTIONS, directionText, onMap, pointing } from "@/plan/direction";
 import { blocked, type Edit, type RouteRequest, type RouteType } from "@/plan/edits";
 import type { Place } from "@/plan/places";
+import { DirectionDial } from "./DirectionDial";
 import { PlaceSearch } from "./PlaceSearch";
 
 type Props = { request: RouteRequest; onEdit: (e: Edit) => void; near: [number, number] | null; live: boolean };
@@ -80,10 +84,12 @@ export function RouteTypePicker({ request, onEdit }: Props) {
   );
 }
 
-const COMPASS = [["N", 0], ["NE", 45], ["E", 90], ["SE", 135], ["S", 180], ["SW", 225], ["W", 270], ["NW", 315]] as const;
+/** Reading order of the rose: three rows, the dial in the middle (amendment 18). */
+const ROSE = [7, 0, 1, 6, null, 2, 5, 4, 3] as const;
 
-export function DirectionPicker({ request, onEdit, near }: Props) {
+export function DirectionPicker({ request, onEdit, near, map = null }: Props & { map?: MapLibreMap | null }) {
   const d = request.direction;
+  const turned = useBearing(map);
   const [mode, setMode] = useState<"place" | "bearing">(d?.kind === "bearing" ? "bearing" : "place");
   const needed = request.route_type === "out_and_back";
   const toPoint = (p: Place) => ({ lon: p.lon, lat: p.lat, label: p.label, place_id: p.place_id });
@@ -92,7 +98,7 @@ export function DirectionPicker({ request, onEdit, near }: Props) {
       <span className="field-label">Towards{needed ? "" : " (optional)"}</span>
       {d && (
         <p className="current" data-testid="direction-current">
-          {d.kind === "towards_place" ? `Towards ${d.place.label ?? "a point"}` : `Heading ${d.degrees}°`}
+          <span>{directionText(request)}</span>
           {!needed && <button type="button" className="link" onClick={() => onEdit({ kind: "no_direction" })}>Clear</button>}
         </p>
       )}
@@ -104,11 +110,19 @@ export function DirectionPicker({ request, onEdit, near }: Props) {
         <PlaceSearch label="Towards place" near={near} testId="towards-search"
           onPick={(p) => onEdit({ kind: "towards_place", place: toPoint(p) })} />
       ) : (
-        <div className="compass" role="group" aria-label="Direction">
-          {COMPASS.map(([name, deg]) => (
-            <button key={name} type="button" aria-pressed={d?.kind === "bearing" && d.degrees === deg}
-              onClick={() => onEdit({ kind: "bearing", degrees: deg })}>{name}</button>
-          ))}
+        <div className="direction-rose" role="group" aria-label="Direction">
+          {ROSE.map((i) => {
+            if (i === null) return <DirectionDial key="dial" degrees={pointing(request)} />;
+            const { name, degrees } = DIRECTIONS[i];
+            const hint = onMap(degrees, turned);
+            return (
+              <button key={name} type="button" className="direction-option" aria-label={`${name}, ${hint}`}
+                aria-pressed={d?.kind === "bearing" && d.degrees === degrees} onClick={() => onEdit({ kind: "bearing", degrees })}>
+                <span className="direction-name">{name}</span>
+                <span className="direction-hint">{hint}</span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

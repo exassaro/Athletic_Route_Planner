@@ -6,7 +6,9 @@
  * first route every change goes through the chips.
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { Map as MapLibreMap } from "maplibre-gl";
 import type { NewRouteRequest } from "@/api/client";
+import { directionText } from "@/plan/direction";
 import { blocked, type Edit, type Point, type RouteRequest, type RouteType } from "@/plan/edits";
 import { km } from "@/plan/format";
 import type { IconName } from "@/brand/icons";
@@ -24,6 +26,7 @@ type Props = {
   onEdit: (e: Edit) => void;
   startControls: ReactNode;
   near: [number, number] | null;
+  map?: MapLibreMap | null;
   solving: boolean;
   canPlan: boolean;
   onPlan: () => void;
@@ -37,7 +40,7 @@ const SHAPES: { value: RouteType; label: string; sub: string; icon: IconName }[]
   { value: "loop", label: "Loop", sub: "Come back to the start another way", icon: "loop" },
 ];
 
-export function SetupFlow({ draft, onEdit, startControls, near, solving, canPlan, onPlan }: Props) {
+export function SetupFlow({ draft, onEdit, startControls, near, map, solving, canPlan, onPlan }: Props) {
   const [step, setStep] = useState(1);
   const title = useRef<HTMLHeadingElement>(null);
   const hadStart = useRef(!!draft.start);
@@ -55,7 +58,7 @@ export function SetupFlow({ draft, onEdit, startControls, near, solving, canPlan
   const shape = SHAPES.find((s) => s.value === draft.route_type)!;
   const d = draft.direction;
   const answers = [draft.start?.label ?? (draft.start ? "a point" : null), step > 2 ? km(draft.target_distance_m) : null,
-    step > 3 ? shape.label : null, step > 4 && d ? (d.kind === "towards_place" ? `Towards ${d.place.label ?? "a point"}` : `Heading ${d.degrees}°`) : null]
+    step > 3 ? shape.label : null, step > 4 && d ? directionText(draft) : null]
     .filter(Boolean).join(" · ");
   const needsDirection = draft.route_type === "out_and_back" && !d;
   const next = () => setStep((s) => Math.min(5, s + 1));
@@ -114,7 +117,7 @@ export function SetupFlow({ draft, onEdit, startControls, near, solving, canPlan
           </fieldset>
         )}
 
-        {step === 4 && <DirectionPicker request={draft as RouteRequest} onEdit={onEdit} near={near} live={false} />}
+        {step === 4 && <DirectionPicker request={draft as RouteRequest} onEdit={onEdit} near={near} map={map} live={false} />}
 
         {step === 5 && <StopsStep draft={draft} onEdit={onEdit} near={near} />}
       </div>

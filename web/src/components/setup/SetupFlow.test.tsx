@@ -57,7 +57,7 @@ describe("SetupFlow", () => {
     expect(screen.queryByTestId("setup-skip")).toBeNull();
     expect((screen.getByTestId("setup-next") as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(screen.getByRole("tab", { name: "A direction" }));
-    fireEvent.click(screen.getByRole("button", { name: "N" }));
+    fireEvent.click(screen.getByRole("button", { name: "North, up on the map" }));
     expect((screen.getByTestId("setup-next") as HTMLButtonElement).disabled).toBe(false);
   });
 });
