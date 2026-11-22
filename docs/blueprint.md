@@ -818,8 +818,11 @@ CREATE TABLE saved_routes (
   share_slug  text UNIQUE NOT NULL,          -- random, URL-safe
   rating      int CHECK (rating BETWEEN 1 AND 5),   -- post-run feedback (later phases)
   feedback    text,
-  created_at  timestamptz NOT NULL DEFAULT now()
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now(),   -- Phase 5c: last rename or update
+  deleted_at  timestamptz                    -- Phase 5c: soft delete; null while live
 );
+CREATE INDEX ix_saved_routes_client_id_deleted_at ON saved_routes (client_id, deleted_at);
 ```
 
 Notes:
@@ -852,9 +855,12 @@ Rewritten for Phase 4. Every path is under `/v1`. Requests and responses use the
 | `GET /v1/routes/{id}` | One route as a GeoJSON Feature | LineString with Z; properties are the Candidate's stats, stops and flags |
 | `GET /v1/routes/{id}/elevation` | Profile `[[distance_m, height_m], …]` every 30 m, plus the solver's gain and loss | |
 | `GET /v1/routes/{id}/gpx` | GPX 1.1 course | Track with `ele`; waypoints for start, checkpoints, end |
-| `POST /v1/routes/{id}/save` | Save under a name | Returns `{saved_id, share_slug, share_url}`; saving again renames it and keeps the slug |
-| `GET /v1/me/routes` | This client's saved routes | |
-| `GET /v1/share/{slug}` | Public read-only route | No token needed |
+| `POST /v1/routes/{id}/save` | Save under a name | Returns `{saved_id, share_slug, share_url}`; saving again renames the most recently updated live save and keeps its slug; `as_new` always makes another (Phase 5c A12) |
+| `GET /v1/me/routes` | This client's saved routes | Without deleted ones, newest `updated_at` first; carries `plan_id` and `plan_version` to edit from |
+| `PATCH /v1/me/routes/{saved_id}` | Rename, or update to another route | `{name?, route_id?}`; keeps the slug and created_at (Phase 5c A10) |
+| `DELETE /v1/me/routes/{saved_id}` | Soft delete | 204, again 204; another client's is 404 |
+| `POST /v1/me/routes/{saved_id}/restore` | Undo a delete | 404 once purged (`python -m athlete_api.purge_deleted --days 30`) |
+| `GET /v1/share/{slug}` | Public read-only route | No token needed; with one, `is_owner`; a deleted slug is 404, as an unknown one |
 | `GET /v1/share/{slug}/gpx` | The shared route as GPX | No token needed. Added in Phase 4 so a share page can offer the download |
 | `GET /v1/health` | Valhalla, GraphHopper, Photon, Postgres, Redis; both build ids; OSM pin; solver hash | 200 when the solve path (Valhalla, Postgres, Redis) is up, else 503 |
 

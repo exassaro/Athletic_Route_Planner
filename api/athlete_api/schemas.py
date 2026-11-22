@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 from athlete_solver.models import (AvoidItem, Candidate, Checkpoint, Conflict, Fix, Flag, MustUse, RouteRequest,
                                     Saving, Via)
-from pydantic import BaseModel, ConfigDict, Field, model_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_serializer, model_validator
 from pydantic.json_schema import SkipJsonSchema
 
 Source = Literal["form", "chat", "drag"]
@@ -101,7 +101,8 @@ class DiffStop(BaseModel):
 
 
 class DiffOut(BaseModel):
-    """The diff against the previous version (Phase 4 amendment 6; typed in Phase 5, A3)."""
+    """The diff against the version the edit was based on (`from_version`): the previous one, unless the PATCH
+    named an earlier one (Phase 4 amendment 6; typed in Phase 5, A3; Phase 5c A11)."""
 
     from_version: int
     changed: list[str] = Field(description="JSON pointers that differ between the two requests")
@@ -187,6 +188,29 @@ class ElevationOut(BaseModel):
 
 class SaveIn(BaseModel):
     name: str | None = Field(None, max_length=200)
+    as_new: bool | None = Field(None, description="true: always a new saved route with a new share link. Otherwise "
+                                                  "the most recently updated saved route of this route is renamed "
+                                                  "(Phase 5c A12)")
+
+
+class SavedPatch(BaseModel):
+    """What to change on a saved route; fields left out stay (Phase 5c amendments 2 and 3)."""
+
+    model_config = ConfigDict(extra="forbid")
+    name: str | None = Field(None, max_length=80, description="Trimmed; at most 80 characters; empty becomes null")
+    route_id: uuid.UUID | None = Field(None, description="One of this client's routes: the saved route then shows "
+                                                         "it, under the same share link")
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def trimmed(cls, value: Any) -> Any:
+        return (value.strip() or None) if isinstance(value, str) else value
+
+    @model_validator(mode="after")
+    def route_not_cleared(self):
+        if "route_id" in self.model_fields_set and self.route_id is None:
+            raise ValueError("route_id cannot be null")
+        return self
 
 
 class SavedOut(BaseModel):
@@ -196,11 +220,13 @@ class SavedOut(BaseModel):
     share_slug: str
     share_url: str
     created_at: datetime
+    updated_at: datetime = Field(description="The last rename or update (not a delete or restore)")
 
 
 class SavedRouteOut(SavedOut):
     plan_id: uuid.UUID
     version: int
+    plan_version: int = Field(description="The plan version this route belongs to, to edit from (the same as `version`)")
     label: str
     option: str
     foot_m: float
@@ -212,6 +238,8 @@ class SharedRouteOut(BaseModel):
     shared_at: datetime
     summary: str = Field(description="Template text for this route; numbers from the solver's result only")
     route: RouteFeature
+    updated_at: datetime = Field(description="When the saved route was last renamed or updated (Phase 5c A13)")
+    is_owner: bool = Field(description="True only when the request's X-Client-Token owns this saved route")
     km_marks: list[KmMark] = Field(description="The position of every whole kilometre along the route, as in the "
                                                "elevation response (Phase 5b A9)")
     gpx_url: str

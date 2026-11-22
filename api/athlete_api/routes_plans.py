@@ -47,15 +47,18 @@ async def patch_plan(plan_id: uuid.UUID,
                      ops: list[dict[str, Any]] = Body(..., media_type="application/json-patch+json",
                                                       openapi_examples=examples("patch_distance", "patch_undo")),
                      source: Source = Query("form", description="Where the edit came from"),
+                     from_version: int | None = Query(None, ge=1, description="The version this edit applies to, "
+                                                      "for editing one that is not the latest (Phase 5c A11). "
+                                                      "Default: the latest"),
                      if_match: str | None = Header(None, description='Optional: "v<n>", the version this edit is '
                                                                      "based on; 412 if a newer one exists"),
                      client: Client = Depends(limited("solve")),
                      plans: Planner = Depends(planner)) -> PlanVersionOut:
-    """Applies an RFC 6902 patch to the latest version's RouteRequest, validates it, re-solves and stores the
-    next version, with a diff against the previous one.
+    """Applies an RFC 6902 patch to a version's RouteRequest (the latest, or `from_version`), validates it,
+    re-solves and stores the next version, with a diff against the version patched.
 
-    The request it applies to is the stored one, with every default filled in (see the latest version's
-    `request`). Undo: `[{"op": "replace", "path": "", "value": <an earlier version's request>}]`.
+    The request it applies to is the stored one, with every default filled in (see that version's `request`).
+    If-Match, when sent, always names the latest version. Undo: `[{"op": "replace", "path": "", "value": <an earlier version's request>}]`.
     409 `patch_test_failed` when a `test` operation fails; 409 `plan_solving` while a solve for this plan is
     still running; 422 `invalid_patch` when the patch cannot be applied, `invalid_request` when the result is
     not a valid RouteRequest.
@@ -70,8 +73,10 @@ async def patch_plan(plan_id: uuid.UUID,
     if if_match is not None and if_match.strip().strip('"').lstrip("W/").strip('"') != f"v{latest}":
         raise ApiError(412, "version_mismatch", f"The latest version is v{latest}.",
                        {"latest": latest, "if_match": if_match})
+    if from_version is not None:
+        base = await plans.version_request(plan_id, from_version)
     request = apply_patch(base, ops)
-    return as_json(await plans.solve_into(plan_id, request, source), 200)
+    return as_json(await plans.solve_into(plan_id, request, source, from_version), 200)
 
 
 def as_json(out: PlanVersionOut, status: int) -> Response:

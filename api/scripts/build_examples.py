@@ -96,6 +96,15 @@ def main() -> int:
               note("A01").replace("Geometry shortened", "Profile, points and km marks shortened"), elev)
         saved = api.post(f"/v1/routes/{rid}/save", json={"name": "Coast to Kozhikode"}, headers=h).json()
         write("saved_A01", "Saved, with its share link", note("A01"), saved)
+        rename = {"name": "Coast run"}
+        write("saved_rename", "Rename", "Only the fields sent change.", rename)
+        renamed = api.patch(f"/v1/me/routes/{saved['saved_id']}", json=rename, headers=h)
+        renamed.raise_for_status()
+        write("saved_renamed_A01", "Renamed: the same share link", note("A01"), renamed.json())
+        write("saved_repoint", "Update: show another of your routes under the same share link",
+              "route_id of one of this client's routes; here A01's 20 km version.",
+              {"route_id": patched.json()["candidates"][0]["route_id"]})
+        write("my_routes_A01", "This client's saved routes", note("A01"), api.get("/v1/me/routes", headers=h).json())
         shared = api.get(f"/v1/share/{saved['share_slug']}").json()
         shared["route"]["geometry"]["coordinates"] = shorten(shared["route"]["geometry"]["coordinates"])
         shared["km_marks"] = shorten(shared["km_marks"])

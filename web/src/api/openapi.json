@@ -758,7 +758,7 @@
     "type": "object"
    },
    "DiffOut": {
-    "description": "The diff against the previous version (Phase 4 amendment 6; typed in Phase 5, A3).",
+    "description": "The diff against the version the edit was based on (`from_version`): the previous one, unless the PATCH\nnamed an earlier one (Phase 4 amendment 6; typed in Phase 5, A3; Phase 5c A11).",
     "properties": {
      "candidates": {
       "items": {
@@ -2196,6 +2196,18 @@
    },
    "SaveIn": {
     "properties": {
+     "as_new": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "true: always a new saved route with a new share link. Otherwise the most recently updated saved route of this route is renamed (Phase 5c A12)",
+      "title": "As New"
+     },
      "name": {
       "anyOf": [
        {
@@ -2247,6 +2259,12 @@
      "share_url": {
       "title": "Share Url",
       "type": "string"
+     },
+     "updated_at": {
+      "description": "The last rename or update (not a delete or restore)",
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
      }
     },
     "required": [
@@ -2255,9 +2273,44 @@
      "name",
      "share_slug",
      "share_url",
-     "created_at"
+     "created_at",
+     "updated_at"
     ],
     "title": "SavedOut",
+    "type": "object"
+   },
+   "SavedPatch": {
+    "additionalProperties": false,
+    "description": "What to change on a saved route; fields left out stay (Phase 5c amendments 2 and 3).",
+    "properties": {
+     "name": {
+      "anyOf": [
+       {
+        "maxLength": 80,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "Trimmed; at most 80 characters; empty becomes null",
+      "title": "Name"
+     },
+     "route_id": {
+      "anyOf": [
+       {
+        "format": "uuid",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "One of this client's routes: the saved route then shows it, under the same share link",
+      "title": "Route Id"
+     }
+    },
+    "title": "SavedPatch",
     "type": "object"
    },
    "SavedRouteOut": {
@@ -2306,6 +2359,11 @@
       "title": "Plan Id",
       "type": "string"
      },
+     "plan_version": {
+      "description": "The plan version this route belongs to, to edit from (the same as `version`)",
+      "title": "Plan Version",
+      "type": "integer"
+     },
      "route_id": {
       "format": "uuid",
       "title": "Route Id",
@@ -2324,6 +2382,12 @@
       "title": "Share Url",
       "type": "string"
      },
+     "updated_at": {
+      "description": "The last rename or update (not a delete or restore)",
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+     },
      "version": {
       "title": "Version",
       "type": "integer"
@@ -2336,8 +2400,10 @@
      "share_slug",
      "share_url",
      "created_at",
+     "updated_at",
      "plan_id",
      "version",
+     "plan_version",
      "label",
      "option",
      "foot_m",
@@ -2474,6 +2540,11 @@
       "title": "Gpx Url",
       "type": "string"
      },
+     "is_owner": {
+      "description": "True only when the request's X-Client-Token owns this saved route",
+      "title": "Is Owner",
+      "type": "boolean"
+     },
      "km_marks": {
       "description": "The position of every whole kilometre along the route, as in the elevation response (Phase 5b A9)",
       "items": {
@@ -2505,6 +2576,12 @@
       "description": "Template text for this route; numbers from the solver's result only",
       "title": "Summary",
       "type": "string"
+     },
+     "updated_at": {
+      "description": "When the saved route was last renamed or updated (Phase 5c A13)",
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
      }
     },
     "required": [
@@ -2512,6 +2589,8 @@
      "shared_at",
      "summary",
      "route",
+     "updated_at",
+     "is_owner",
      "km_marks",
      "gpx_url"
     ],
@@ -3161,6 +3240,7 @@
   },
   "/v1/me/routes": {
    "get": {
+    "description": "Deleted ones are left out. The most recently renamed or updated first.",
     "operationId": "my_routes_v1_me_routes_get",
     "parameters": [
      {
@@ -3186,6 +3266,30 @@
      "200": {
       "content": {
        "application/json": {
+        "examples": {
+         "my_routes_A01": {
+          "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-22. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
+          "summary": "This client's saved routes",
+          "value": [
+           {
+            "created_at": "2026-11-22T09:34:04.637070Z",
+            "end_label": "Francis Road",
+            "foot_m": 24999.992411787083,
+            "label": "recommended",
+            "name": "Coast run",
+            "option": "main",
+            "plan_id": "3141d0b3-e2ab-4900-a115-dd0bdeac450e",
+            "plan_version": 1,
+            "route_id": "8c9c769e-7952-429e-9639-2e6d434ffbf4",
+            "saved_id": "e320278d-3423-4f83-9f81-60fb0225fb55",
+            "share_slug": "QXhhdEWMb3O_",
+            "share_url": "http://testserver/v1/share/QXhhdEWMb3O_",
+            "updated_at": "2026-11-22T09:34:04.692291Z",
+            "version": 1
+           }
+          ]
+         }
+        },
         "schema": {
          "items": {
           "$ref": "#/components/schemas/SavedRouteOut"
@@ -3230,7 +3334,330 @@
     },
     "summary": "This client's saved routes",
     "tags": [
-     "routes"
+     "saved routes"
+    ]
+   }
+  },
+  "/v1/me/routes/{saved_id}": {
+   "delete": {
+    "description": "A soft delete: the route leaves the list and its share link answers 404 until it is restored. Deleting again\nis 204 too, until the row is purged (athlete_api.purge_deleted); after that it is 404.",
+    "operationId": "delete_saved_v1_me_routes__saved_id__delete",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "saved_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Saved Id",
+       "type": "string"
+      }
+     },
+     {
+      "description": "Token from POST /v1/session",
+      "in": "header",
+      "name": "x-client-token",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Token from POST /v1/session",
+       "title": "X-Client-Token"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "401": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Unauthorized"
+     },
+     "404": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Not Found"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     },
+     "429": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Too Many Requests"
+     }
+    },
+    "summary": "Delete a saved route (it can be restored)",
+    "tags": [
+     "saved routes"
+    ]
+   },
+   "patch": {
+    "description": "Only the fields sent change. `name` is trimmed, at most 80 characters, empty becomes null. `route_id` must\nbe a route of this client's (else 404); the share slug, the name and created_at stay, and the share link then\nshows the new route. Either change sets updated_at.",
+    "operationId": "patch_saved_v1_me_routes__saved_id__patch",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "saved_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Saved Id",
+       "type": "string"
+      }
+     },
+     {
+      "description": "Token from POST /v1/session",
+      "in": "header",
+      "name": "x-client-token",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Token from POST /v1/session",
+       "title": "X-Client-Token"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "examples": {
+        "saved_rename": {
+         "description": "Only the fields sent change.",
+         "summary": "Rename",
+         "value": {
+          "name": "Coast run"
+         }
+        },
+        "saved_repoint": {
+         "description": "route_id of one of this client's routes; here A01's 20 km version.",
+         "summary": "Update: show another of your routes under the same share link",
+         "value": {
+          "route_id": "3b8af729-7691-4709-93d0-9573a6d25256"
+         }
+        }
+       },
+       "schema": {
+        "$ref": "#/components/schemas/SavedPatch"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "examples": {
+         "saved_renamed_A01": {
+          "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-22. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
+          "summary": "Renamed: the same share link",
+          "value": {
+           "created_at": "2026-11-22T09:34:04.637070Z",
+           "name": "Coast run",
+           "route_id": "8c9c769e-7952-429e-9639-2e6d434ffbf4",
+           "saved_id": "e320278d-3423-4f83-9f81-60fb0225fb55",
+           "share_slug": "QXhhdEWMb3O_",
+           "share_url": "http://testserver/v1/share/QXhhdEWMb3O_",
+           "updated_at": "2026-11-22T09:34:04.692291Z"
+          }
+         }
+        },
+        "schema": {
+         "$ref": "#/components/schemas/SavedOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "401": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Unauthorized"
+     },
+     "404": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Not Found"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Unprocessable Entity"
+     },
+     "429": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Too Many Requests"
+     }
+    },
+    "summary": "Rename a saved route, or point it at another route",
+    "tags": [
+     "saved routes"
+    ]
+   }
+  },
+  "/v1/me/routes/{saved_id}/restore": {
+   "post": {
+    "description": "Back in the list where it was, with its share link working again. 404 once it has been purged.",
+    "operationId": "restore_saved_v1_me_routes__saved_id__restore_post",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "saved_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Saved Id",
+       "type": "string"
+      }
+     },
+     {
+      "description": "Token from POST /v1/session",
+      "in": "header",
+      "name": "x-client-token",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Token from POST /v1/session",
+       "title": "X-Client-Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "examples": {
+         "saved_A01": {
+          "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-22. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
+          "summary": "Saved, with its share link",
+          "value": {
+           "created_at": "2026-11-22T09:34:04.637070Z",
+           "name": "Coast to Kozhikode",
+           "route_id": "8c9c769e-7952-429e-9639-2e6d434ffbf4",
+           "saved_id": "e320278d-3423-4f83-9f81-60fb0225fb55",
+           "share_slug": "QXhhdEWMb3O_",
+           "share_url": "http://testserver/v1/share/QXhhdEWMb3O_",
+           "updated_at": "2026-11-22T09:34:04.637070Z"
+          }
+         }
+        },
+        "schema": {
+         "$ref": "#/components/schemas/SavedOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "401": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Unauthorized"
+     },
+     "404": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Not Found"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     },
+     "429": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Too Many Requests"
+     }
+    },
+    "summary": "Undo a delete",
+    "tags": [
+     "saved routes"
     ]
    }
   },
@@ -12521,7 +12948,7 @@
     ]
    },
    "patch": {
-    "description": "Applies an RFC 6902 patch to the latest version's RouteRequest, validates it, re-solves and stores the\nnext version, with a diff against the previous one.\n\nThe request it applies to is the stored one, with every default filled in (see the latest version's\n`request`). Undo: `[{\"op\": \"replace\", \"path\": \"\", \"value\": <an earlier version's request>}]`.\n409 `patch_test_failed` when a `test` operation fails; 409 `plan_solving` while a solve for this plan is\nstill running; 422 `invalid_patch` when the patch cannot be applied, `invalid_request` when the result is\nnot a valid RouteRequest.",
+    "description": "Applies an RFC 6902 patch to a version's RouteRequest (the latest, or `from_version`), validates it,\nre-solves and stores the next version, with a diff against the version patched.\n\nThe request it applies to is the stored one, with every default filled in (see that version's `request`).\nIf-Match, when sent, always names the latest version. Undo: `[{\"op\": \"replace\", \"path\": \"\", \"value\": <an earlier version's request>}]`.\n409 `patch_test_failed` when a `test` operation fails; 409 `plan_solving` while a solve for this plan is\nstill running; 422 `invalid_patch` when the patch cannot be applied, `invalid_request` when the result is\nnot a valid RouteRequest.",
     "operationId": "patch_plan_v1_plans__plan_id__patch",
     "parameters": [
      {
@@ -12549,6 +12976,25 @@
        ],
        "title": "Source",
        "type": "string"
+      }
+     },
+     {
+      "description": "The version this edit applies to, for editing one that is not the latest (Phase 5c A11). Default: the latest",
+      "in": "query",
+      "name": "from_version",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "minimum": 1,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "The version this edit applies to, for editing one that is not the latest (Phase 5c A11). Default: the latest",
+       "title": "From Version"
       }
      },
      {
@@ -20088,7 +20534,7 @@
   },
   "/v1/routes/{route_id}/save": {
    "post": {
-    "description": "Saving the same route again updates its name and keeps its share slug (200).",
+    "description": "Saving the same route again updates the name of its most recently updated saved route and keeps that slug\n(200). `as_new`: always another saved route with its own slug (201). A deleted one is never revived.",
     "operationId": "save_route_v1_routes__route_id__save_post",
     "parameters": [
      {
@@ -20153,15 +20599,16 @@
        "application/json": {
         "examples": {
          "saved_A01": {
-          "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-18. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
+          "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-22. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
           "summary": "Saved, with its share link",
           "value": {
-           "created_at": "2026-11-18T04:19:36.371594Z",
+           "created_at": "2026-11-22T09:34:04.637070Z",
            "name": "Coast to Kozhikode",
-           "route_id": "915b504d-af8f-4156-adad-88c39a4664b7",
-           "saved_id": "23e89059-706f-445f-835a-f329099af272",
-           "share_slug": "Q23T8V2Ts8sC",
-           "share_url": "http://testserver/v1/share/Q23T8V2Ts8sC"
+           "route_id": "8c9c769e-7952-429e-9639-2e6d434ffbf4",
+           "saved_id": "e320278d-3423-4f83-9f81-60fb0225fb55",
+           "share_slug": "QXhhdEWMb3O_",
+           "share_url": "http://testserver/v1/share/QXhhdEWMb3O_",
+           "updated_at": "2026-11-22T09:34:04.637070Z"
           }
          }
         },
@@ -20253,6 +20700,7 @@
   },
   "/v1/share/{slug}": {
    "get": {
+    "description": "Public. With the owner's token `is_owner` is true; with none, or any other, false (never 401). A deleted\nlink answers 404 exactly as an unknown one.",
     "operationId": "get_shared_v1_share__slug__get",
     "parameters": [
      {
@@ -20262,6 +20710,24 @@
       "schema": {
        "title": "Slug",
        "type": "string"
+      }
+     },
+     {
+      "description": "Optional: the token from POST /v1/session",
+      "in": "header",
+      "name": "x-client-token",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Optional: the token from POST /v1/session",
+       "title": "X-Client-Token"
       }
      }
     ],
@@ -20274,7 +20740,8 @@
           "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-22. Geometry and km marks shortened to its first 3 and last 2 points for this page; the API returns every point.",
           "summary": "A shared route (public)",
           "value": {
-           "gpx_url": "http://testserver/v1/share/F25XDtK7eaYB/gpx",
+           "gpx_url": "http://testserver/v1/share/QXhhdEWMb3O_/gpx",
+           "is_owner": false,
            "km_marks": [
             {
              "at_m": 1000.0,
@@ -20307,7 +20774,7 @@
              "lon": 75.781343
             }
            ],
-           "name": "Coast to Kozhikode",
+           "name": "Coast run",
            "route": {
             "geometry": {
              "coordinates": [
@@ -20339,7 +20806,7 @@
              ],
              "type": "LineString"
             },
-            "id": "05b8acad-28ff-42b4-ab3f-f6bd5e0545d8",
+            "id": "8c9c769e-7952-429e-9639-2e6d434ffbf4",
             "properties": {
              "bridges_m": [
               [
@@ -20368,7 +20835,7 @@
               ]
              ],
              "climb_approximate": true,
-             "deviation_m": -0.0075882124292547815,
+             "deviation_m": -0.007588212916743942,
              "duration_s": 18046.729,
              "edge_count": 228,
              "end": {
@@ -20387,10 +20854,10 @@
                "message": "no junction within the snap window; the run ends at the exact distance"
               }
              ],
-             "foot_m": 24999.99241178757,
+             "foot_m": 24999.992411787083,
              "gain_m": 106.5,
              "label": "recommended",
-             "length_m": 24999.99241178757,
+             "length_m": 24999.992411787083,
              "loss_m": 140.1,
              "option": "main",
              "repeat_share": 0.0,
@@ -20400,15 +20867,15 @@
               "secondary": 17647.3,
               "unclassified": 1079.5
              },
-             "route_id": "05b8acad-28ff-42b4-ab3f-f6bd5e0545d8",
+             "route_id": "8c9c769e-7952-429e-9639-2e6d434ffbf4",
              "score": 0.0,
-             "sphere_length_m": 25064.99157923431,
+             "sphere_length_m": 25064.99157924046,
              "stops": [
               {
                "at_m": 0.0,
                "label": "Athanikkal",
                "must_reach": false,
-               "offset_m": 15.413560911165208,
+               "offset_m": 15.413560911165037,
                "requested": {
                 "label": "Athanikkal",
                 "lat": 11.1209333,
@@ -20544,8 +21011,9 @@
             },
             "type": "Feature"
            },
-           "shared_at": "2026-11-22T07:14:06.670812Z",
-           "summary": "The recommended route is 25.0 km, ending at Francis Road."
+           "shared_at": "2026-11-22T09:34:04.637070Z",
+           "summary": "The recommended route is 25.0 km, ending at Francis Road.",
+           "updated_at": "2026-11-22T09:34:04.692291Z"
           }
          }
         },

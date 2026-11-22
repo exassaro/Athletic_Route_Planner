@@ -1,7 +1,8 @@
-"""Routes: GeoJSON, elevation, GPX, save; saved routes; public share (blueprint section 12).
+"""Routes: GeoJSON, elevation, GPX, save; public share (blueprint section 12). Managing saved routes is
+routes_saved.
 
 A route is readable by the client that owns its plan; anyone else gets 404. Share slugs are public and
-read-only, rate-limited per IP.
+read-only, rate-limited per IP. A soft-deleted slug answers exactly as an unknown one (Phase 5c amendment 1).
 """
 
 import re
@@ -10,19 +11,22 @@ import uuid
 
 from athlete_engine import geodesy
 from fastapi import APIRouter, Depends, Query, Request, Response
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from . import explain, gpx, ratelimit
 from .db import Client, Plan, PlanVersion, Route, SavedRoute
-from .deps import Services, client_ip, limited, services
+from .deps import Services, client_id_if_known, client_ip, limited, services
 from .elevation import PROFILE_STEP_M, climb_approximate, smoothed
 from .errors import ApiError, responses
 from .examples import content
-from .schemas import ElevationOut, KmMark, LineStringZ, RouteFeature, SavedOut, SavedRouteOut, SaveIn, SharedRouteOut
+from .routes_saved import newest_saved, saved_out
+from .schemas import ElevationOut, KmMark, LineStringZ, RouteFeature, SavedOut, SaveIn, SharedRouteOut
 from .store import candidate_of, geometry_of
 
 router = APIRouter(prefix="/v1", tags=["routes"])
 GPX_TYPE = "application/gpx+xml"
+# A deleted link must stop working at once and work again after Undo (a 404 is cacheable too).
+NO_STORE = {"Cache-Control": "no-store"}
 ELE = Query(True, description="Include each track point's DEM height as <ele>. false: leave it out, so the "
                                "importing app uses its own elevation data")
 
@@ -116,50 +120,34 @@ async def get_gpx(route_id: uuid.UUID, ele: bool = ELE, client: Client = Depends
     it as a course (Garmin Connect) or a route (Strava)."""
     route, _ = await _owned(svc, route_id, client.id)
     async with svc.sessions() as db:
-        name = (await db.execute(select(SavedRoute.name).where(SavedRoute.route_id == route.id,
-                                                               SavedRoute.client_id == client.id))).scalar()
-    return gpx_response(route, name, ele)
-
-
-def _saved_out(saved: SavedRoute, request: Request) -> dict:
-    return dict(saved_id=saved.id, route_id=saved.route_id, name=saved.name, share_slug=saved.share_slug,
-                share_url=str(request.url_for("get_shared", slug=saved.share_slug)), created_at=saved.created_at)
+        saved = (await db.execute(newest_saved(client.id, route.id))).scalar_one_or_none()
+    return gpx_response(route, saved.name if saved else None, ele)
 
 
 @router.post("/routes/{route_id}/save", response_model=SavedOut, status_code=201,
              responses={201: content("saved_A01"), 200: {"model": SavedOut, "description": "Already saved: name updated"},
                         **responses(401, 404, 422, 429)}, summary="Save a route and get its share link")
 async def save_route(route_id: uuid.UUID, request: Request, response: Response, body: SaveIn | None = None,
-                     client: Client = Depends(limited("read")), svc: Services = Depends(services)) -> SavedOut:
-    """Saving the same route again updates its name and keeps its share slug (200)."""
+                     client: Client = Depends(limited("write")), svc: Services = Depends(services)) -> SavedOut:
+    """Saving the same route again updates the name of its most recently updated saved route and keeps that slug
+    (200). `as_new`: always another saved route with its own slug (201). A deleted one is never revived."""
     route, _ = await _owned(svc, route_id, client.id)
     body = body or SaveIn()
     async with svc.sessions() as db:
-        saved = (await db.execute(select(SavedRoute).where(SavedRoute.route_id == route.id,
-                                                           SavedRoute.client_id == client.id))).scalar_one_or_none()
+        saved = None
+        if not body.as_new:
+            saved = (await db.execute(newest_saved(client.id, route.id).with_for_update())).scalar_one_or_none()
         if saved is None:
             saved = SavedRoute(id=uuid.uuid4(), client_id=client.id, route_id=route.id, name=body.name,
                                share_slug=secrets.token_urlsafe(9))
             db.add(saved)
         else:
             saved.name = body.name
+            saved.updated_at = func.now()
             response.status_code = 200
         await db.commit()
         await db.refresh(saved)
-    return SavedOut(**_saved_out(saved, request))
-
-
-@router.get("/me/routes", response_model=list[SavedRouteOut], responses=responses(401, 429),
-            summary="This client's saved routes")
-async def my_routes(request: Request, client: Client = Depends(limited("read")),
-                    svc: Services = Depends(services)) -> list[SavedRouteOut]:
-    async with svc.sessions() as db:
-        rows = (await db.execute(
-            select(SavedRoute, Route, PlanVersion).join(Route, SavedRoute.route_id == Route.id)
-            .join(PlanVersion, Route.plan_version_id == PlanVersion.id)
-            .where(SavedRoute.client_id == client.id).order_by(SavedRoute.created_at.desc()))).all()
-    return [SavedRouteOut(**_saved_out(s, request), plan_id=v.plan_id, version=v.version_no, label=r.label,
-                          option=r.option, foot_m=r.foot_m, end_label=r.end_label) for s, r, v in rows]
+    return SavedOut(**saved_out(saved, request))
 
 
 async def _shared(svc: Services, slug: str, ip: str) -> tuple[SavedRoute, Route, PlanVersion]:
@@ -168,21 +156,26 @@ async def _shared(svc: Services, slug: str, ip: str) -> tuple[SavedRoute, Route,
         row = (await db.execute(
             select(SavedRoute, Route, PlanVersion).join(Route, SavedRoute.route_id == Route.id)
             .join(PlanVersion, Route.plan_version_id == PlanVersion.id)
-            .where(SavedRoute.share_slug == slug))).first()
+            .where(SavedRoute.share_slug == slug, SavedRoute.deleted_at.is_(None)))).first()
     if row is None:
-        raise ApiError(404, "not_found", "No shared route with this link.")
+        raise ApiError(404, "not_found", "No shared route with this link.", headers=NO_STORE)
     return row[0], row[1], row[2]
 
 
 @router.get("/share/{slug}", response_model=SharedRouteOut,
             responses={200: content("share_A01"), **responses(404, 429)}, tags=["share"],
             summary="A shared route (public, no token)")
-async def get_shared(slug: str, request: Request, ip: str = Depends(client_ip),
+async def get_shared(slug: str, request: Request, response: Response, ip: str = Depends(client_ip),
+                     viewer: uuid.UUID | None = Depends(client_id_if_known),
                      svc: Services = Depends(services)) -> SharedRouteOut:
+    """Public. With the owner's token `is_owner` is true; with none, or any other, false (never 401). A deleted
+    link answers 404 exactly as an unknown one."""
+    response.headers.update(NO_STORE)
     saved, route, version = await _shared(svc, slug, ip)
     feat = feature(route, version)
     feat.properties.pop("plan_id", None)        # the plan stays private
-    return SharedRouteOut(name=saved.name, shared_at=saved.created_at, summary=summary(route), route=feat,
+    return SharedRouteOut(name=saved.name, shared_at=saved.created_at, updated_at=saved.updated_at,
+                          is_owner=viewer is not None and viewer == saved.client_id, summary=summary(route), route=feat,
                           km_marks=km_marks(geometry_of(route)[0]),
                           gpx_url=str(request.url_for("get_shared_gpx", slug=slug)))
 
@@ -193,4 +186,6 @@ async def get_shared(slug: str, request: Request, ip: str = Depends(client_ip),
 async def get_shared_gpx(slug: str, ele: bool = ELE, ip: str = Depends(client_ip),
                          svc: Services = Depends(services)) -> Response:
     saved, route, _ = await _shared(svc, slug, ip)
-    return gpx_response(route, saved.name, ele)
+    resp = gpx_response(route, saved.name, ele)
+    resp.headers.update(NO_STORE)
+    return resp

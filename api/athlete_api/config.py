@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     rate_solve_per_client_min: int = 20
     rate_solve_per_ip_min: int = 40
     rate_read_per_client_min: int = 300
+    rate_write_per_client_min: int = 60   # Phase 5c amendment 10; none per IP (behind the proxy all share one)
     rate_session_per_ip_hour: int = 10
     trust_forwarded_for: bool = False   # take the client IP from X-Forwarded-For (behind a proxy only)
 

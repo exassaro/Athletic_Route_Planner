@@ -1,0 +1,7 @@
+{
+ "summary": "Update: show another of your routes under the same share link",
+ "description": "route_id of one of this client's routes; here A01's 20 km version.",
+ "value": {
+  "route_id": "3b8af729-7691-4709-93d0-9573a6d25256"
+ }
+}

@@ -14,7 +14,7 @@ from .errors import ApiError
 
 @dataclass(frozen=True)
 class Limit:
-    bucket: str      # "solve", "read", "session"
+    bucket: str      # "solve", "read", "write", "session"
     scope: str       # "client" or "ip"
     limit: int
     window_s: int

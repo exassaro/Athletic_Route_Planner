@@ -5,7 +5,7 @@ import pytest
 from athlete_api import examples
 from athlete_api.main import create_app
 from athlete_api.schemas import (ElevationOut, PlaceSearchOut, PlanCreate, PlanOut,
-                                 PlanVersionOut, RouteFeature, SavedOut, SharedRouteOut)
+                                 PlanVersionOut, RouteFeature, SavedOut, SavedPatch, SavedRouteOut, SharedRouteOut)
 
 MODELS = {
     "request_A01": PlanCreate, "request_S11": PlanCreate, "request_S02": PlanCreate, "request_G01": PlanCreate,
@@ -21,6 +21,14 @@ def test_example_fits_its_model(name):
     assert ex["value"] is not None, f"{name} not generated: run api/scripts/build_examples.py"
     MODELS[name].model_validate(ex["value"])
     assert "Real" in ex.get("description", "") or name.startswith("request_")
+
+
+def test_saved_route_examples_fit():
+    SavedOut.model_validate(examples.load("saved_renamed_A01")["value"])
+    for name in ("saved_rename", "saved_repoint"):
+        SavedPatch.model_validate(examples.load(name)["value"])
+    rows = examples.load("my_routes_A01")["value"]
+    assert rows and all(SavedRouteOut.model_validate(r) for r in rows)
 
 
 def test_plan_read_example_fits():
@@ -44,3 +52,7 @@ def test_openapi_shows_them():
     assert "plan_A01" in post["responses"]["201"]["content"]["application/json"]["examples"]
     patch = spec["paths"]["/v1/plans/{plan_id}"]["patch"]["requestBody"]["content"]["application/json-patch+json"]
     assert set(patch["examples"]) == {"patch_distance", "patch_undo"}
+    saved = spec["paths"]["/v1/me/routes/{saved_id}"]
+    assert set(saved) == {"patch", "delete"}
+    body = saved["patch"]["requestBody"]["content"]["application/json"]
+    assert set(body["examples"]) == {"saved_rename", "saved_repoint"} and "SavedPatch" in body["schema"]["$ref"]

@@ -71,10 +71,60 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** This client's saved routes */
+        /**
+         * This client's saved routes
+         * @description Deleted ones are left out. The most recently renamed or updated first.
+         */
         get: operations["my_routes_v1_me_routes_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/routes/{saved_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a saved route (it can be restored)
+         * @description A soft delete: the route leaves the list and its share link answers 404 until it is restored. Deleting again
+         *     is 204 too, until the row is purged (athlete_api.purge_deleted); after that it is 404.
+         */
+        delete: operations["delete_saved_v1_me_routes__saved_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Rename a saved route, or point it at another route
+         * @description Only the fields sent change. `name` is trimmed, at most 80 characters, empty becomes null. `route_id` must
+         *     be a route of this client's (else 404); the share slug, the name and created_at stay, and the share link then
+         *     shows the new route. Either change sets updated_at.
+         */
+        patch: operations["patch_saved_v1_me_routes__saved_id__patch"];
+        trace?: never;
+    };
+    "/v1/me/routes/{saved_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo a delete
+         * @description Back in the list where it was, with its share link working again. 404 once it has been purged.
+         */
+        post: operations["restore_saved_v1_me_routes__saved_id__restore_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -164,11 +214,11 @@ export interface paths {
         head?: never;
         /**
          * Edit the request with a JSON Patch and re-solve
-         * @description Applies an RFC 6902 patch to the latest version's RouteRequest, validates it, re-solves and stores the
-         *     next version, with a diff against the previous one.
+         * @description Applies an RFC 6902 patch to a version's RouteRequest (the latest, or `from_version`), validates it,
+         *     re-solves and stores the next version, with a diff against the version patched.
          *
-         *     The request it applies to is the stored one, with every default filled in (see the latest version's
-         *     `request`). Undo: `[{"op": "replace", "path": "", "value": <an earlier version's request>}]`.
+         *     The request it applies to is the stored one, with every default filled in (see that version's `request`).
+         *     If-Match, when sent, always names the latest version. Undo: `[{"op": "replace", "path": "", "value": <an earlier version's request>}]`.
          *     409 `patch_test_failed` when a `test` operation fails; 409 `plan_solving` while a solve for this plan is
          *     still running; 422 `invalid_patch` when the patch cannot be applied, `invalid_request` when the result is
          *     not a valid RouteRequest.
@@ -259,7 +309,8 @@ export interface paths {
         put?: never;
         /**
          * Save a route and get its share link
-         * @description Saving the same route again updates its name and keeps its share slug (200).
+         * @description Saving the same route again updates the name of its most recently updated saved route and keeps that slug
+         *     (200). `as_new`: always another saved route with its own slug (201). A deleted one is never revived.
          */
         post: operations["save_route_v1_routes__route_id__save_post"];
         delete?: never;
@@ -296,7 +347,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** A shared route (public, no token) */
+        /**
+         * A shared route (public, no token)
+         * @description Public. With the owner's token `is_owner` is true; with none, or any other, false (never 401). A deleted
+         *     link answers 404 exactly as an unknown one.
+         */
         get: operations["get_shared_v1_share__slug__get"];
         put?: never;
         post?: never;
@@ -619,7 +674,8 @@ export interface components {
         };
         /**
          * DiffOut
-         * @description The diff against the previous version (Phase 4 amendment 6; typed in Phase 5, A3).
+         * @description The diff against the version the edit was based on (`from_version`): the previous one, unless the PATCH
+         *     named an earlier one (Phase 4 amendment 6; typed in Phase 5, A3; Phase 5c A11).
          */
         DiffOut: {
             /** Candidates */
@@ -1185,6 +1241,11 @@ export interface components {
         };
         /** SaveIn */
         SaveIn: {
+            /**
+             * As New
+             * @description true: always a new saved route with a new share link. Otherwise the most recently updated saved route of this route is renamed (Phase 5c A12)
+             */
+            as_new?: boolean | null;
             /** Name */
             name?: string | null;
         };
@@ -1211,6 +1272,28 @@ export interface components {
             share_slug: string;
             /** Share Url */
             share_url: string;
+            /**
+             * Updated At
+             * Format: date-time
+             * @description The last rename or update (not a delete or restore)
+             */
+            updated_at: string;
+        };
+        /**
+         * SavedPatch
+         * @description What to change on a saved route; fields left out stay (Phase 5c amendments 2 and 3).
+         */
+        SavedPatch: {
+            /**
+             * Name
+             * @description Trimmed; at most 80 characters; empty becomes null
+             */
+            name?: string | null;
+            /**
+             * Route Id
+             * @description One of this client's routes: the saved route then shows it, under the same share link
+             */
+            route_id?: string | null;
         };
         /** SavedRouteOut */
         SavedRouteOut: {
@@ -1235,6 +1318,11 @@ export interface components {
              */
             plan_id: string;
             /**
+             * Plan Version
+             * @description The plan version this route belongs to, to edit from (the same as `version`)
+             */
+            plan_version: number;
+            /**
              * Route Id
              * Format: uuid
              */
@@ -1248,6 +1336,12 @@ export interface components {
             share_slug: string;
             /** Share Url */
             share_url: string;
+            /**
+             * Updated At
+             * Format: date-time
+             * @description The last rename or update (not a delete or restore)
+             */
+            updated_at: string;
             /** Version */
             version: number;
         };
@@ -1301,6 +1395,11 @@ export interface components {
             /** Gpx Url */
             gpx_url: string;
             /**
+             * Is Owner
+             * @description True only when the request's X-Client-Token owns this saved route
+             */
+            is_owner: boolean;
+            /**
              * Km Marks
              * @description The position of every whole kilometre along the route, as in the elevation response (Phase 5b A9)
              */
@@ -1318,6 +1417,12 @@ export interface components {
              * @description Template text for this route; numbers from the solver's result only
              */
             summary: string;
+            /**
+             * Updated At
+             * Format: date-time
+             * @description When the saved route was last renamed or updated (Phase 5c A13)
+             */
+            updated_at: string;
         };
         /** StopOnRoute */
         StopOnRoute: {
@@ -1634,6 +1739,191 @@ export interface operations {
             };
         };
     };
+    delete_saved_v1_me_routes__saved_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Token from POST /v1/session */
+                "x-client-token"?: string | null;
+            };
+            path: {
+                saved_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    patch_saved_v1_me_routes__saved_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Token from POST /v1/session */
+                "x-client-token"?: string | null;
+            };
+            path: {
+                saved_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    restore_saved_v1_me_routes__saved_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Token from POST /v1/session */
+                "x-client-token"?: string | null;
+            };
+            path: {
+                saved_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     reverse_v1_places_reverse_get: {
         parameters: {
             query: {
@@ -1918,6 +2208,8 @@ export interface operations {
             query?: {
                 /** @description Where the edit came from */
                 source?: "form" | "chat" | "drag";
+                /** @description The version this edit applies to, for editing one that is not the latest (Phase 5c A11). Default: the latest */
+                from_version?: number | null;
             };
             header?: {
                 /** @description Optional: "v<n>", the version this edit is based on; 412 if a newer one exists */
@@ -2393,7 +2685,10 @@ export interface operations {
     get_shared_v1_share__slug__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional: the token from POST /v1/session */
+                "x-client-token"?: string | null;
+            };
             path: {
                 slug: string;
             };

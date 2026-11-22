@@ -1,12 +1,13 @@
 """Shared state and request dependencies: services, the calling client, its IP, rate limits."""
 
 import hashlib
+import uuid
 from dataclasses import dataclass
 
 import httpx
 from fastapi import Depends, Header, Request
 from redis.asyncio import Redis
-from sqlalchemy import update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from sqlalchemy.sql import func
 
@@ -43,6 +44,17 @@ def client_ip(request: Request, svc: Services = Depends(services)) -> str:
     return request.client.host if request.client else "unknown"
 
 
+async def client_id_if_known(x_client_token: str | None = Header(None, description="Optional: the token from "
+                                                              "POST /v1/session"),
+                             svc: Services = Depends(services)) -> uuid.UUID | None:
+    """The caller's client id when the token is known, else None: for public endpoints, so never 401."""
+    if not x_client_token:
+        return None
+    async with svc.sessions() as db:
+        return (await db.execute(select(Client.id).where(Client.token_hash == token_hash(x_client_token)))
+                ).scalar_one_or_none()
+
+
 async def current_client(x_client_token: str | None = Header(None, description="Token from POST /v1/session"),
                          svc: Services = Depends(services)) -> Client:
     if not x_client_token:
@@ -57,8 +69,14 @@ async def current_client(x_client_token: str | None = Header(None, description="
     return client
 
 
+BUCKETS = ("solve", "read", "write")
+
+
 def limited(bucket: str):
-    """Dependency: count the request against the per-client and per-IP limits of `bucket` ("solve" or "read")."""
+    """Dependency: count the request against the limits of `bucket`: "solve" (per client and per IP), "read" or
+    "write" (per client)."""
+    if bucket not in BUCKETS:
+        raise ValueError(f"unknown rate limit bucket {bucket!r}")
 
     async def check(client: Client = Depends(current_client), ip: str = Depends(client_ip),
                     svc: Services = Depends(services)) -> Client:
@@ -67,7 +85,8 @@ def limited(bucket: str):
             rules = [(ratelimit.Limit("solve", "client", s.rate_solve_per_client_min, 60), str(client.id)),
                      (ratelimit.Limit("solve", "ip", s.rate_solve_per_ip_min, 60), ip)]
         else:
-            rules = [(ratelimit.Limit("read", "client", s.rate_read_per_client_min, 60), str(client.id))]
+            per_client = s.rate_write_per_client_min if bucket == "write" else s.rate_read_per_client_min
+            rules = [(ratelimit.Limit(bucket, "client", per_client, 60), str(client.id))]
         for rule, ident in rules:
             await ratelimit.hit(svc.redis, rule, ident)
         return client

@@ -70,9 +70,10 @@ class Planner:
             await db.commit()
         return plan.id
 
-    async def solve_into(self, plan_id: uuid.UUID, request: RouteRequest, source: str) -> PlanVersionOut:
+    async def solve_into(self, plan_id: uuid.UUID, request: RouteRequest, source: str,
+                         based_on: int | None = None) -> PlanVersionOut:
         """Solve `request` and store it as the plan's next version, with its explanation and its diff against
-        the version before it; return that version."""
+        the version it was based on (default: the one before it); return that version."""
         settings = self.svc.settings
         t_request = time.perf_counter()
         builds = await self.current_builds()
@@ -89,7 +90,7 @@ class Planner:
                                "Try again shortly.", {"slots": self.runner.slots, "retry_after_s": retry},
                                headers={"Retry-After": str(retry)}) from None
         t_budget = time.perf_counter()
-        store = asyncio.create_task(self._finish(plan_id, request, source, key, builds, solved, task))
+        store = asyncio.create_task(self._finish(plan_id, request, source, key, builds, solved, task, based_on))
         self._tasks.add(store)
         self.pending[plan_id] += 1
         store.add_done_callback(lambda t: self._stored(plan_id, t))
@@ -113,14 +114,14 @@ class Planner:
         if not task.cancelled() and task.exception() is not None:
             log.warning("solve for plan %s failed: %r", plan_id, task.exception())
 
-    async def _finish(self, plan_id, request, source, key, builds, solved, task) -> PlanVersionOut:
+    async def _finish(self, plan_id, request, source, key, builds, solved, task, based_on) -> PlanVersionOut:
         try:
             if solved is None:
                 result, elev, _ = await task
                 solved = cache.Solved(result=result, elevation=elev, builds=builds)
                 if builds.graphhopper is not None and self.svc.settings.cache_enabled:
                     await cache.put(self.svc.redis, key, solved, self.svc.settings.cache_ttl_s)
-            return await self._store(plan_id, request, source, key, solved)
+            return await self._store(plan_id, request, source, key, solved, based_on)
         except ApiError as err:
             await self._remember_error(plan_id, err)
             raise
@@ -133,7 +134,7 @@ class Planner:
         body = {"error": err.error, "message": err.message, "detail": err.detail}
         await self.svc.redis.set(f"plan:{plan_id}:error", json.dumps(body, default=str), ex=ERROR_TTL_S)
 
-    async def _store(self, plan_id, request, source, key, solved: cache.Solved) -> PlanVersionOut:
+    async def _store(self, plan_id, request, source, key, solved: cache.Solved, based_on: int | None) -> PlanVersionOut:
         """Store the version and its routes; return the version as the API shows it, built from the objects just
         stored (the reads build the same from the rows; the tests check both agree)."""
         result = solved.result
@@ -144,7 +145,7 @@ class Planner:
             last = (await db.execute(select(func.coalesce(func.max(PlanVersion.version_no), 0))
                                      .where(PlanVersion.plan_id == plan_id))).scalar_one()
             if last:
-                previous = await self._previous(db, plan_id, last)
+                previous = await self._previous(db, plan_id, based_on or last)
             version = PlanVersion(
                 id=uuid.uuid4(), plan_id=plan_id, version_no=last + 1, request=request.model_dump(mode="json"),
                 source=source, outcome=result.outcome, conflict=dumped["conflict"], facts=dumped["facts"],
@@ -223,6 +224,15 @@ class Planner:
                                     .where(PlanVersion.plan_id == plan_id)
                                     .order_by(PlanVersion.version_no.desc()).limit(1))).first()
         return (row.version_no, row.request) if row else (0, {})
+
+    async def version_request(self, plan_id: uuid.UUID, version_no: int) -> dict:
+        """One version's stored request, without reading routes."""
+        async with self.svc.sessions() as db:
+            request = (await db.execute(select(PlanVersion.request).where(
+                PlanVersion.plan_id == plan_id, PlanVersion.version_no == version_no))).scalar_one_or_none()
+        if request is None:
+            raise ApiError(404, "not_found", f"Plan {plan_id} has no version {version_no}.")
+        return request
 
     async def owned_plan(self, plan_id: uuid.UUID, client_id: uuid.UUID) -> Plan:
         async with self.svc.sessions() as db:

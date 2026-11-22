@@ -11,7 +11,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from redis.asyncio import Redis
 
-from . import errors, routes_features, routes_health, routes_places, routes_plans, routes_routes, routes_session
+from . import (errors, routes_features, routes_health, routes_places, routes_plans, routes_routes, routes_saved,
+               routes_session)
 from .config import Settings, get_settings
 from .db import make_engine, make_sessionmaker
 from .deps import Services
@@ -55,7 +56,7 @@ def create_app(settings: Settings | None = None, solver: SolverPort | None = Non
     if settings.cors_origin_list:   # Phase 5 A1
         app.add_middleware(
             CORSMiddleware, allow_origins=settings.cors_origin_list, allow_credentials=False,
-            allow_methods=["GET", "POST", "PATCH"],
+            allow_methods=["GET", "POST", "PATCH", "DELETE"],
             allow_headers=["Content-Type", "X-Client-Token", "If-Match"],
             # Retry-After for 429 backoff, Content-Disposition for the GPX file name.
             expose_headers=["Retry-After", "Content-Disposition", "Location"],
@@ -65,6 +66,7 @@ def create_app(settings: Settings | None = None, solver: SolverPort | None = Non
     app.include_router(routes_features.router)
     app.include_router(routes_plans.router)
     app.include_router(routes_routes.router)
+    app.include_router(routes_saved.router)
     app.include_router(routes_health.router)
     return app
 
