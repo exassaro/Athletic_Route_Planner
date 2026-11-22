@@ -35,6 +35,20 @@ function client(replies: Record<string, Reply[]>) {
 }
 
 describe("PlanClient", () => {
+  it("an edit of an opened older version names it, without If-Match", async () => {
+    const queries: string[] = [];
+    const fetch = (async (input: RequestInfo | URL) => {
+      const r = input as Request;
+      if (new URL(r.url).pathname === "/v1/session") return Response.json({ token: "t" }, { status: 201 });
+      queries.push(`${new URL(r.url).search} ${r.headers.get("if-match")}`);
+      return Response.json(version(8));
+    }) as typeof globalThis.fetch;
+    const c = new PlanClient({ baseUrl: "http://api.test", fetch });
+    await c.patch("p1", [], 5, true);
+    await c.patch("p1", [], 8);
+    expect(queries).toEqual(["?from_version=5 null", ' "v8"']);
+  });
+
   it("gets a token once and sends it", async () => {
     const { c, api } = client({ "POST /v1/plans": [{ status: 201, body: version(1) }] });
     await c.create({ route_type: "loop", start: { lon: 75.8, lat: 11.2 }, target_distance_m: 10000 });

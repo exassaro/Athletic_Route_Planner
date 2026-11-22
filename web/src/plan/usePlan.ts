@@ -7,9 +7,12 @@
  *   tapping + five times sends one distance) and sent when the solve ends.
  * - Undo and redo walk the versions the API stored, by replacing the request with an earlier one (a new version
  *   each time, Phase 4 amendment 19). The diff shown is always the API's.
+ * - A saved route can be opened for editing (Phase 5c amendment 2): its own version becomes the one on screen,
+ *   `editing` remembers it, and the first edit is based on that version, which may not be the plan's latest.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "@/api/client";
+import { openSaved, type Saved } from "@/saved/api";
 import { patchFor, type Edit } from "./edits";
 import { ApiFailure, browserStorage, PlanClient, type NewRouteRequest, type PatchOp, type PlanVersion, type RouteRequest,
   type Status } from "./planClient";
@@ -18,6 +21,10 @@ export type Busy = { kind: "idle" } | Status | { kind: "error"; error: ApiFailur
 
 /** key: edits with the same key replace each other while queued; null: never replaced (list edits, fixes). */
 type Pending = { key: string | null; ops: (request: RouteRequest) => PatchOp[] };
+
+/** The saved route being edited: what is saved now, and that route as it was loaded or last updated. */
+export type Editing = { saved: Saved; request: RouteRequest; route: PlanVersion["candidates"][number] };
+export type Opening = "loading" | "gone" | "failed" | null;
 
 let shared: PlanClient | null = null;
 const listeners = new Set<(s: Status) => void>();
@@ -37,7 +44,11 @@ function editKey(e: Edit): string | null {
   return SINGLE_VALUE[e.kind] ?? null;
 }
 
-export function usePlan() {
+export function usePlan(editSavedId: string | null = null) {
+  const [editing, setEditing] = useState<Editing | null>(null);
+  const [opening, setOpening] = useState<Opening>(editSavedId ? "loading" : null);
+  const [attempt, setAttempt] = useState(0);
+  const opened = useRef(false);          // the version on screen was opened, and may not be the plan's latest
   const [version, setVersion] = useState<PlanVersion | null>(null);
   const [busy, setBusy] = useState<Busy>({ kind: "idle" });
   const [history, setHistory] = useState<{ versions: number[]; at: number }>({ versions: [], at: -1 });
@@ -53,6 +64,7 @@ export function usePlan() {
 
   const adopt = useCallback((v: PlanVersion, move: "new" | "undo" | "redo") => {
     current.current = v;
+    opened.current = false;
     setVersion(v);
     setHistory((h) => {
       if (move === "new") {
@@ -77,7 +89,7 @@ export function usePlan() {
         const base = current.current;
         const ops = next.ops(base.request);
         try {
-          const v = await client.patch(base.plan_id, ops, base.version);
+          const v = await client.patch(base.plan_id, ops, base.version, opened.current);
           adopt(v, "new");
           setBusy({ kind: "idle" });
         } catch (e) {
@@ -109,6 +121,26 @@ export function usePlan() {
     }
   }, [adopt, client]);
 
+  useEffect(() => {
+    if (!editSavedId) return;
+    let live = true;
+    openSaved(client, editSavedId).then(({ saved, version: v }) => {
+      if (!live) return;
+      queue.current = [];
+      current.current = v;
+      opened.current = true;
+      setVersion(v);
+      setHistory({ versions: [v.version], at: 0 });
+      setEditing({ saved, request: v.request, route: v.candidates.find((c) => c.route_id === saved.route_id)! });
+      setOpening(null);
+      setBusy({ kind: "idle" });
+    }, (e: ApiFailure) => {
+      // 401: the token is unknown, so nothing saved here is its own
+      if (live) setOpening([401, 404, 422].includes(e.status) ? "gone" : "failed");
+    });
+    return () => { live = false; };
+  }, [attempt, client, editSavedId]);
+
   /** A control's edit: its patch is built from the request current when it is sent. */
   const edit = useCallback((e: Edit) => enqueue(editKey(e), (r) => patchFor(r, e)), [enqueue]);
 
@@ -125,7 +157,7 @@ export function usePlan() {
       const { data } = await client.api.GET("/v1/plans/{plan_id}/versions/{n}", { params: { path: { plan_id: v.plan_id, n: target } } });
       if (!data) throw new ApiFailure(404, "not_found", "That version is gone.");
       const earlier = (data as PlanVersion).request;
-      const next = await client.patch(v.plan_id, patchFor(v.request, { kind: "restore", request: earlier }), v.version);
+      const next = await client.patch(v.plan_id, patchFor(v.request, { kind: "restore", request: earlier }), v.version, opened.current);
       adopt(next, dir);
       setBusy({ kind: "idle" });
     } catch (e) {
@@ -138,6 +170,8 @@ export function usePlan() {
 
   return {
     client, version, busy, create, edit, applyPatch,
+    editing, setEditing, opening, editingSavedId: editing?.saved.saved_id ?? null,
+    retryOpening: () => { setOpening("loading"); setAttempt((n) => n + 1); },
     undo: () => step("undo"), redo: () => step("redo"),
     canUndo: history.at > 0, canRedo: history.at >= 0 && history.at < history.versions.length - 1,
     clearError: () => setBusy({ kind: "idle" }),

@@ -581,6 +581,13 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
   .sheet, .sheet.peek, .sheet.half, .sheet.full { padding-top: 64px; }
   .planner .maplibregl-ctrl-top-right { margin-top: 52px; }
 }
+/* Opening a saved route in the planner (Phase 5c amendment 2) */
+.opening { display: flex; align-items: center; gap: var(--space-1); font-weight: 600; color: var(--accent-text); }
+.opening-note {
+  display: grid; gap: var(--space-1); margin-bottom: var(--space-2); padding: 12px;
+  border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface); color: var(--ink);
+}
+.opening-note p { margin: 0; }
 /* "Open in..." (amendment 20) */
 .open-in { display: grid; gap: var(--space-2); }
 .open-in-group { display: grid; gap: var(--space-1); }

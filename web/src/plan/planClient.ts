@@ -9,6 +9,8 @@
  *   `test` operations stop a stale removal.
  * - 504 solve_timeout: the solve carries on; poll the plan until the new version appears.
  * - 401: the token is unknown (database reset); get a new one and try once more.
+ * An edit of a version that is not the latest (a saved route opened for editing) names it with from_version and
+ * sends no If-Match: it is meant to apply to that version whatever the latest is (Phase 5c A11).
  * Anything else is an ApiFailure with the API's own error code and message.
  */
 import createClient from "openapi-fetch";
@@ -168,10 +170,14 @@ export class PlanClient {
     return this.solveCall(null, () => this.api.POST("/v1/plans", { body: { request: request as RouteRequest, source: "form" } }), null);
   }
 
-  patch(planId: string, ops: PatchOp[], fromVersion: number): Promise<PlanVersion> {
+  patch(planId: string, ops: PatchOp[], fromVersion: number, opened = false): Promise<PlanVersion> {
     return this.solveCall(planId, (v) => this.api.PATCH("/v1/plans/{plan_id}", {
-      params: { path: { plan_id: planId }, header: v === null ? undefined : { "if-match": `"v${v}"` } },
+      params: {
+        path: { plan_id: planId },
+        query: opened ? { from_version: fromVersion } : undefined,
+        header: opened || v === null ? undefined : { "if-match": `"v${v}"` },
+      },
       body: ops,
-    }), fromVersion);
+    }), opened ? null : fromVersion);
   }
 }

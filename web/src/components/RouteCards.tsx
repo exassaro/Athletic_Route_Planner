@@ -33,9 +33,14 @@ export function RouteCards({ candidates, selected, onSelect, pace, target, expla
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [why, setWhy] = useState(false);
 
-  // A new version starts at its first card.
+  // A new version starts at the card it selects (the first, or the saved route's while one is edited).
   useEffect(() => {
-    row.current?.scrollTo({ left: 0 });
+    const el = row.current;
+    const card = el?.children[selected] as HTMLElement | undefined;
+    if (!el?.scrollTo) return;
+    el.scrollTo({ left: card && selected > 0 ? card.offsetLeft - el.offsetLeft - (el.clientWidth - card.offsetWidth) / 2 : 0 });
+    // only when the version changes: selecting a card scrolls by itself
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [versionKey]);
 
   const onScroll = () => {

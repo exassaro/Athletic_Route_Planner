@@ -11,11 +11,12 @@ import { MapView } from "@/map/MapView";
 import { useRouteLayers } from "@/map/useRouteLayers";
 import { useTheme } from "@/theme/useTheme";
 import { pointing } from "@/plan/direction";
+import { preferredCandidate } from "@/saved/preferred";
 import { applyToDraft, blocked, patchFor, type Edit, type Point, type RouteRequest } from "@/plan/edits";
 import { pace as formatPace, parsePace, signedKm } from "@/plan/format";
 import { usePace } from "@/plan/pace";
 import type { Place } from "@/plan/places";
-import { planClient, usePlan, type Busy } from "@/plan/usePlan";
+import { planClient, usePlan, type Busy, type Opening } from "@/plan/usePlan";
 import type { NewRouteRequest } from "@/api/client";
 import { PeekBar } from "./PeekBar";
 import { RouteCards } from "./RouteCards";
@@ -45,12 +46,12 @@ function placePoint(p: Place): Point {
   return { lon: p.lon, lat: p.lat, label: p.label, place_id: p.place_id };
 }
 
-export function Planner() {
-  const plan = usePlan();
+export function Planner({ editSavedId = null }: { editSavedId?: string | null }) {
+  const plan = usePlan(editSavedId);
   const [pace, setPace] = usePace();
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [draft, setDraft] = useState<Draft>(NEW_DRAFT);
-  const [selected, setSelected] = useState(0);
+  const [picked, setPicked] = useState<{ key: string; index: number } | null>(null);
   const [sheet, setSheet] = useState<Snap>("half");
   const [picking, setPicking] = useState<null | "start">(null);
   const [locError, setLocError] = useState<string | null>(null);
@@ -60,7 +61,13 @@ export function Planner() {
   const solving = plan.busy.kind === "solving" || plan.busy.kind === "busy" || plan.busy.kind === "waiting";
   const candidates = useMemo(() => v?.candidates ?? [], [v]);
 
-  useEffect(() => setSelected(0), [v?.version]); // eslint-disable-line react-hooks/set-state-in-effect
+  // A new version starts at its first card; while a saved route is edited, at the saved route's own alternative.
+  const versionKey = v ? `${v.plan_id}/${v.version}` : "";
+  const selected = useMemo(() => {
+    if (picked?.key === versionKey) return picked.index;
+    return preferredCandidate(candidates, plan.editing?.route ?? null);
+  }, [candidates, picked, plan.editing, versionKey]);
+  const setSelected = (index: number) => setPicked({ key: versionKey, index });
   const [theme] = useTheme();
   // The start pin faces the way the route leaves: towards the API's first km mark (from the elevation response),
   // or along the first geometry segment until that has arrived. Coordinates compared, nothing measured.
@@ -240,6 +247,7 @@ export function Planner() {
         )}>
           {/* what a peeked sheet shows first */}
           <StatusLine busy={plan.busy} onDismiss={plan.clearError} />
+          {plan.opening && <OpeningNote state={plan.opening} onRetry={plan.retryOpening} />}
           {v && candidates[selected] && <PeekBar cand={candidates[selected]!} pace={pace} />}
           <HealthBanner trigger={plan.busy.kind === "error" ? plan.busy.error.code : null} />
           {v && <PlanChips request={v.request} attention={attention} onOpen={openChip} />}
@@ -258,7 +266,7 @@ export function Planner() {
             </>
           )}
           {/* Before the first route: the five setup steps. After it, every change goes through the chips. */}
-          {!v && (
+          {!v && plan.opening !== "loading" && (
             <SetupFlow draft={draft} onEdit={onEdit} startControls={startControls} near={near} map={map} onDirectionStep={setDirectionStep} solving={solving}
               canPlan={canPlan} onPlan={() => draft.start && plan.create(draft as NewRouteRequest)} />
           )}
@@ -295,6 +303,25 @@ function StatusLine({ busy, onDismiss }: { busy: Busy; onDismiss: () => void }) 
           <button type="button" onClick={onDismiss}>OK</button>
         </div>
       )}
+    </div>
+  );
+}
+
+function OpeningNote({ state, onRetry }: { state: NonNullable<Opening>; onRetry: () => void }) {
+  if (state === "loading") {
+    return <p className="opening" role="status" data-testid="opening"><SneakerCycle />Opening your saved route…</p>;
+  }
+  return (
+    <div className="opening-note" role="status" data-testid="opening-note" data-state={state}>
+      {state === "gone" ? (
+        <p className="t-body-s">That saved route can&apos;t be opened here. It may have been deleted, or saved on another device. You can plan a new run below.</p>
+      ) : (
+        <p className="t-body-s">That saved route didn&apos;t load. Check your connection.</p>
+      )}
+      <div className="row">
+        {state === "failed" && <Button icon="redo" onClick={onRetry}>Try again</Button>}
+        <Link className="btn btn-secondary" href="/routes">Saved routes</Link>
+      </div>
     </div>
   );
 }
