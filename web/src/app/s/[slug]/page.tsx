@@ -32,7 +32,7 @@ const getShared = cache(async (slug: string): Promise<Shared | null> => {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const shared = await getShared((await params).slug);
-  if (!shared) return { title: "Route not found" };
+  if (!shared) return { title: "This link doesn't work any more" };
   const p = shared.route.properties as { foot_m: number };
   const name = shared.name ?? `${km(p.foot_m)} run`;   // the layout's template adds " · GATHO"
   return {

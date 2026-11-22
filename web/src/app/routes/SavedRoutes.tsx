@@ -96,6 +96,7 @@ export function SavedRoutes() {
       <p className="brand-row"><Link href="/" aria-label="GATHO: plan a run"><Wordmark height={28} /></Link></p>
       <h1 className="t-title" ref={title} tabIndex={-1}>Saved routes</h1>
       <p><Link href="/">Plan a run</Link></p>
+      <p className="t-meta muted" data-testid="device-note">Saved routes live on this device until you sign in</p>
       {loadFailed ? (
         <div role="alert" className="opening-note">
           <p className="t-body-s">Saved routes didn&apos;t load. Check your connection.</p>

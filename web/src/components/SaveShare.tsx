@@ -10,6 +10,7 @@ import type { Schemas } from "@/api/client";
 import { saveFile } from "@/export/gpxFile";
 import { ownRouteGpx, ownRoutePoints } from "@/export/ownRoute";
 import { planClient } from "@/plan/usePlan";
+import { saveRoute } from "@/saved/api";
 import { NAME_MAX } from "@/saved/name";
 import { shareUrl } from "@/saved/share";
 import { OpenIn } from "./OpenIn";
@@ -30,11 +31,12 @@ export function SaveShare({ cand, control }: { cand: Candidate; control?: ReactN
   }, [cand.route_id]);
 
   const save = async () => {
-    const { data, error } = await planClient().api.POST("/v1/routes/{route_id}/save", {
-      params: { path: { route_id: cand.route_id } }, body: { name: name.trim() || null } });
-    if (!data) return setMsg((error as { message?: string } | undefined)?.message ?? "Could not save.");
-    setSaved(data);
-    setMsg(saved ? "Renamed." : "Saved.");
+    try {
+      setSaved(await saveRoute(planClient(), cand.route_id, name.trim() || null));
+      setMsg(saved ? "Renamed." : "Saved.");
+    } catch {
+      setMsg("Could not save. Try again.");
+    }
   };
   const copy = async () => {
     if (!saved) return;
