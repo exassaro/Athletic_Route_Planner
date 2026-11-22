@@ -50,12 +50,15 @@ export type Track = {
   arrived: boolean;
   /** Good fixes unmatched since the last match. From ASTRAY_FIXES it left the route (as against not being seen). */
   astray: number;
+  /** Progress once jumped over a part after leaving the route: the summary says so. */
+  skipped: boolean;
   catchUp: { untilM: number; good: number } | null;
   held: Held | null;
 };
 
 export function startTrack(at: number): Track {
-  return { doneM: 0, matchedAt: at, speed: EXPECTED_MPS, status: "route", arrived: false, astray: 0, catchUp: null, held: null };
+  return { doneM: 0, matchedAt: at, speed: EXPECTED_MPS, status: "route", arrived: false, astray: 0, skipped: false,
+    catchUp: null, held: null };
 }
 
 const mean = (xs: readonly number[]) => xs.reduce((sum, x) => sum + x, 0) / xs.length;
@@ -95,7 +98,9 @@ function matched(line: Line, s: Track, fix: Fix, m: number): Track {
     const good = catchUp.good + 1;
     catchUp = good >= CATCH_UP_FIXES ? null : { ...catchUp, good };
   }
-  return { doneM, matchedAt: fix.at, speed, status: "route", arrived, astray: 0, catchUp, held: null };
+  // after a lock the runner covered the ground; after leaving the route, they skipped it
+  const skipped = s.skipped || (s.astray >= ASTRAY_FIXES && m - s.doneM > WINDOW_M);
+  return { doneM, matchedAt: fix.at, speed, status: "route", arrived, astray: 0, skipped, catchUp, held: null };
 }
 
 function decide(line: Line, s: Track, held: Held, fix: Fix): Track {

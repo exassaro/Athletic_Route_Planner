@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { elapsedMs } from "./clock";
-import { cuesOn, justLeft, signal, type Run } from "./run";
+import { cuesOn, justLeft, mayHaveFinished, signal, type Run } from "./run";
 import { lineOf, made, Phone } from "./testing";
 
 function running(phone: Phone, from: number, seconds: number, first = 1): Run {
@@ -123,6 +123,82 @@ describe("pause, resume and stop", () => {
     expect(phone.on(30, 90)).toBe(stopped);
     expect(phone.send({ type: "resume", at: 40_000 })).toBe(stopped);
     expect(cuesOn(stopped)).toBe(false);
+  });
+});
+
+describe("did you finish?", () => {
+  const line = lineOf("S02");
+
+  it("asks at a loop's end after a lock long enough to cover it, and a yes records 100 %", () => {
+    const phone = new Phone(line, 8000);
+    phone.hide(1);
+    phone.show(700);
+    phone.on(700, line.totalM);
+    phone.run = { ...phone.run, track: { ...phone.run.track, doneM: 8000, arrived: false, matchedAt: 1000 } };
+    expect(mayHaveFinished(line, phone.run, 701_000)).toBe(true);
+    const stopped = phone.send({ type: "stop", at: 701_000, finished: true });
+    expect(stopped.track.doneM).toBe(line.totalM);
+    expect(stopped.track.arrived).toBe(true);
+  });
+
+  it("asks when held between the start and the finish, and a no keeps the progress", () => {
+    const phone = new Phone(line);
+    phone.hide(0.001);
+    phone.show(2010);
+    for (let t = 2010; t < 2030; t++) phone.on(t, 0);
+    expect(phone.run.track.status).toBe("held");
+    expect(mayHaveFinished(line, phone.run, 2_030_000)).toBe(true);
+    expect(phone.send({ type: "stop", at: 2_030_000 }).track.doneM).toBe(0);
+  });
+
+  it("asks when not found again yet", () => {
+    const phone = new Phone(line);
+    phone.hide(0.001);
+    phone.show(2010);
+    expect(mayHaveFinished(line, phone.run, 2_012_000)).toBe(true);
+  });
+
+  it("doesn't ask while standing at the start unlocked, however long", () => {
+    const phone = new Phone(line);
+    for (let t = 1; t <= 2100; t += 3) phone.on(t, 0);
+    expect(mayHaveFinished(line, phone.run, 2_101_000)).toBe(false);
+  });
+
+  it("doesn't ask when the window cannot reach the end", () => {
+    const phone = new Phone(line);
+    phone.hide(0.001);
+    phone.show(600);
+    expect(mayHaveFinished(line, phone.run, 601_000)).toBe(false);
+  });
+
+  it("doesn't ask away from the end", () => {
+    const phone = new Phone(line);
+    phone.hide(0.001);
+    phone.show(2010);
+    phone.on(2010, 5000, { side: 300 });
+    expect(mayHaveFinished(line, phone.run, 2_011_000)).toBe(false);
+  });
+});
+
+describe("a skipped part", () => {
+  it("is marked after a shortcut", () => {
+    // the third side is long: the runner is still moving along it when the window has grown that far
+    const line = made([0, 800], [300, 0], [0, -3000]);
+    const phone = new Phone(line, 300);
+    let t = 0;
+    for (let x = 0; x < 300; x += 3) phone.at(++t, [x, 300]);
+    for (let k = 0; k <= 600; k++) phone.on(++t, 1600 + 3 * k);
+    expect(phone.run.track.doneM).toBeGreaterThan(1600);
+    expect(phone.run.track.skipped).toBe(true);
+  });
+
+  it("is not marked by ground covered while locked", () => {
+    const phone = new Phone(made([0, 5000]), 500);
+    phone.hide(1);
+    phone.show(300);
+    phone.on(300, 1500);
+    expect(phone.run.track.doneM).toBeCloseTo(1500, 0);
+    expect(phone.run.track.skipped).toBe(false);
   });
 });
 

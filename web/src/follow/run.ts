@@ -6,7 +6,7 @@
 import { pauseClock, resumeClock, startClock, stopClock, type Clock } from "./clock";
 import { bearingXY, nearestOnRoute, type Line, type LonLat } from "./line";
 import { offRoute, ON_ROUTE, type OffRoute } from "./offRoute";
-import { GOOD_ACCURACY_M, startTrack, track, type Track } from "./tracker";
+import { GAP_SPEED_MPS, GOOD_ACCURACY_M, NEAR_S, ON_LINE_M, startTrack, track, WINDOW_M, type Track } from "./tracker";
 
 export const FRESH_MS = 10_000;     // an older fix is discarded
 export const GAP_NOTICE_MS = 30_000;
@@ -21,7 +21,8 @@ export type RunEvent =
   | { type: "pause"; at: number }
   | { type: "resume"; at: number }
   | { type: "dismissGap" }
-  | { type: "stop"; at: number };
+  /** `finished`: yes to "Did you finish the route?". */
+  | { type: "stop"; at: number; finished?: boolean };
 
 export type Run = {
   phase: Phase;
@@ -86,7 +87,8 @@ export function reduceRun(line: Line, s: Run, e: RunEvent): Run {
     case "dismissGap":
       return { ...s, away: null };
     case "stop":
-      return { ...s, phase: "stopped", clock: stopClock(s.clock, e.at), finding: false, hidden: null, off: ON_ROUTE };
+      return { ...s, phase: "stopped", clock: stopClock(s.clock, e.at), finding: false, hidden: null, off: ON_ROUTE,
+        track: e.finished ? { ...s.track, doneM: line.totalM, arrived: true, status: "route", held: null } : s.track };
   }
 }
 
@@ -99,6 +101,21 @@ export function signal(s: Run): "finding" | "weak" | "off" | "waiting" | null {
   if (s.track.status === "held") return "finding";
   // on the line elsewhere, or off it and not yet for long enough: no cue, no alarm
   return s.track.status === "route" ? null : "waiting";
+}
+
+/**
+ * Whether Stop asks "Did you finish the route?": not matched for a gap whose window reaches the end, and at the
+ * end or not found yet. A loop's finish cannot be told from standing at its start.
+ */
+export function mayHaveFinished(line: Line, s: Run, now: number): boolean {
+  if (s.phase === "stopped" || s.track.arrived) return false;
+  const seconds = (now - s.track.matchedAt) / 1000;
+  if (seconds <= NEAR_S) return false;
+  if (s.track.doneM + GAP_SPEED_MPS * seconds + WINDOW_M < line.totalM - ON_LINE_M) return false;
+  if (s.finding || !s.here) return true;
+  const [x, y] = line.toXY(s.here.point);
+  const [endX, endY] = line.flat[line.flat.length - 1]!;
+  return Math.hypot(x - endX, y - endY) <= ON_LINE_M + s.here.accuracy;
 }
 
 /** A cue is shown and spoken only while progress follows the route. */

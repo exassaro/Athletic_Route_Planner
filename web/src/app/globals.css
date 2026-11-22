@@ -293,6 +293,7 @@ a { color: var(--accent-text); }
 .route-card-flags { list-style: none; display: flex; flex-wrap: wrap; gap: 0 var(--space-1); margin: 0; padding: 0; }
 .route-card-why { margin-left: auto; padding: 0 4px; }
 .route-card-detail { margin: 4px 0 0; }
+.route-card .follow-link { width: 100%; margin-top: var(--space-1); }
 .why { margin: var(--space-1) 0 0; padding: 12px var(--space-2); border-radius: var(--radius); background: var(--soft); }
 .swatch { flex: none; }
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin: 8px 0; }
@@ -727,7 +728,8 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .saved-name { flex: 1; min-width: 0; margin: 0; padding-top: 12px; overflow-wrap: anywhere; }
 .saved-line { margin: 2px 0 0; }
 .saved-when { margin: 2px 0 var(--space-1); }
-.saved-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-1); }
+.saved-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-1); }
+.saved-actions .btn { padding: 0 4px; }
 .saved-empty { display: grid; justify-items: center; gap: var(--space-2); padding: var(--space-4) 0; }
 .saved-empty p { margin: 0; }
 .card-menu { position: relative; flex: none; }
@@ -766,3 +768,36 @@ dialog.rename-dialog { width: calc(100% - 32px); max-width: 420px; margin: 16dvh
 .map-notice p { margin: 0; }
 @media (min-width: 900px) { .planner .map-notice { left: 456px; } }
 [data-theme="dark"] .map-box { background: #1B1E22; }
+
+/* ---------- Follow (Phase 5d amendments 4 to 15) ---------- */
+/* The sheet is as tall as what it holds: it has one position, peek, and FollowScreen sets --snap-h from it. */
+.follow .sheet { height: auto; max-height: calc(100dvh - 80px); transform: none; transition: none; }
+.follow .sheet-body { flex: 1 1 auto; height: auto; padding-top: var(--space-2); }
+.follow .sheet-body > :first-child { margin-top: 0; }
+.follow .follow-back { pointer-events: auto; background: var(--surface); }
+.follow .topbar-brand { text-decoration: none; }
+.follow h1:focus { outline: none; }
+.follow-copy { display: grid; gap: var(--space-1); }
+.follow-copy p, .follow-copy h1 { margin: 0; }
+.follow-lock { padding: var(--space-1) 12px; border-radius: var(--radius); background: var(--soft); }
+.follow-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-1); margin-top: 12px; }
+.follow-actions > :only-child { grid-column: 1 / -1; }
+.follow-actions.follow-question-actions { grid-template-columns: 1fr; }
+.follow-cue { min-height: 48px; margin: 0 0 var(--space-1); display: flex; align-items: center; }
+.follow-cue p { margin: 0; overflow-wrap: anywhere; }
+.follow-hud { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1) var(--space-2); margin: 0; }
+.follow-stat { display: flex; flex-direction: column-reverse; min-width: 0; }
+.follow-stat dd { margin: 0; white-space: nowrap; }
+.follow-off {
+  display: flex; gap: var(--space-1); align-items: flex-start; padding: var(--space-1) 12px;
+  border: 1px solid var(--warn-line); border-radius: var(--radius); background: var(--warn-soft); color: var(--ink);
+}
+.follow-off .icon { color: var(--warn); }
+.follow-off p { margin: 0; }
+.follow-note { margin: var(--space-1) 0 0; }
+.follow .pin-start { cursor: default; }
+.follow .follow-centre { position: absolute; z-index: 2; right: 16px; top: 128px; background: var(--surface); }
+@media (min-width: 900px) {
+  .follow .sheet { top: 0; height: 100%; max-height: none; }
+  .follow .follow-centre { top: 64px; }
+}

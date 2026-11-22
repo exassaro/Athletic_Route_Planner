@@ -13,6 +13,7 @@ export const ICONS = {
   warning: "warning-diamond", alert: "square-alert", info: "info-box",
   download: "download", share: "share", link: "link", copy: "copy", externalLink: "external-link", bookmark: "bookmark",
   undo: "undo", redo: "redo", edit: "pencil", trash: "trash", drag: "drag-and-drop",
+  play: "play", pause: "pause", stop: "stop",
   gps: "gps", mapPin: "map-pin", map: "map", fit: "scale", flag: "flag",
   clock: "clock", climb: "trending-up", sliders: "sliders", sun: "sun", moon: "moon",
   pointToPoint: "arrow-right", outAndBack: "arrows-horizontal", loop: "reload",

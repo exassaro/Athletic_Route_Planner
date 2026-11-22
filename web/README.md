@@ -44,3 +44,12 @@ waiting rules, formatting), `src/components/` (planner screens), `src/map/` (Map
 `cues`, `clock`, and `run`, which puts them together as a reducer. `npm run sim:follow` runs these modules under
 simulated GPS (about 10 minutes, Node 22.18 or later for type stripping) and writes
 `docs/reports/phase5d/follow_sim_data.json`; the findings are in `docs/reports/phase5d/follow.md`.
+
+## Follow mode screen (Phase 5d step 6)
+
+`/follow?saved=|route=|share=` (`src/components/follow/`). It needs https or localhost for a location.
+
+**No request may depend on a position.** The map (`FollowMap`, not `MapView`) is served from the route's corridor
+in memory (`src/map/corridor.ts`) and its style has no glyphs URL (`src/map/followStyle.ts`). Do not add a lazy
+import, an image or a fetch to anything that shows during a run: `npx playwright test --project=follow` replays A01
+and fails on any request at all.

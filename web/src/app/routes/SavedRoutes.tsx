@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CardMenu } from "@/components/CardMenu";
 import { DeletedMessage } from "@/components/DeletedMessage";
+import { FollowButton } from "@/components/FollowButton";
 import { Mascot } from "@/components/Mascot";
 import { OpenInDialog } from "@/components/OpenIn";
 import { RenameDialog } from "@/components/RenameDialog";
@@ -132,6 +133,7 @@ export function SavedRoutes() {
             <div className="saved-actions">
               <a className="btn btn-secondary" href={shareUrl(r.share_slug)} data-testid="saved-open">Open</a>
               <Link className="btn btn-secondary" href={`/?edit=${r.saved_id}`} prefetch={false} data-testid="saved-edit">Edit</Link>
+              <FollowButton query={{ saved: r.saved_id }} icon={false} />
             </div>
           </li>
         ))}

@@ -29,6 +29,8 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
 **Decisions: Follow mode**
 
 4. **`/follow?saved=<saved_id>`, `?route=<route_id>` or `?share=<slug>`**, from a "Follow" button on the saved route card, the route card and the share page. A visitor never gets a session. It is foreground only and needs HTTPS. Nothing about a run is saved, on the server or in the browser; what survives a refresh is decided in Phase 5e.
+   - From the route card it opens a new tab, and Back or Done closes it (*default* until Phase 5e): the planner holds the plan in memory only, so the same tab would lose it.
+   - The saved route's card has three buttons (Open, Edit, Follow).
 5. **What the UI may work out, in Follow only:**
    - the runner's position along the route, by snapping to the line and interpolating between the API's metres per vertex. Every route distance still comes from the API's measurement;
    - the straight-line distance back to the line, always labelled straight-line;
@@ -41,6 +43,8 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
    - The name is the road after the turn (*default*). It is left out when it is the road the runner is already on, and a name that is only a class of road ("MDR") is never used.
    - Valhalla down: still 200, with cues from the geometry alone and no names (`cue_source` says which). A stretch Valhalla cannot match keeps its bends as unnamed cues.
 7. **Location never leaves the device.** Permission is asked only when Follow is tapped, with one line saying why. No request may depend on a position: no API call carries one, and the map loads the tiles of the route's corridor at the start, then none for the moving camera. A browser test checks this.
+   - The corridor is zoom 9 to 12 over the route's box and 13 to 15 within 1 km of the route, served from memory. Outside it the map is blank (*default*).
+   - The Follow map's style names no fonts URL, so MapLibre draws labels with the device's fonts: with the URL it fetches a font file as new labels come into view, which says where the camera is.
 8. **Progress is the snapped distance along the route**, never a sum of GPS steps, within a forward-only window.
    - Where passes tie while tracking, the one nearest the expected progress wins.
    - After a gap of T seconds the window is 5 m/s × T + 100 m, back to normal after three good fixes.
@@ -60,7 +64,7 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
 11. **Start screen:** "Locking your phone pauses GATHO's tracking. Keep the screen on, or use the GPX in Organic Maps or on a watch for long runs." A missing or refused wake lock shows one line. A refused location permission shows a calm message.
 12. **Screen and HUD:** the map shows the route with the part done dimmed, and a live dot with its accuracy ring. At peek: km done, km left, elapsed and pace in the pixel numerals with `data-value`, and the next cue. Pause, resume and stop. Stop shows a summary (distance done, time, gaps) and "Done".
     - The distances and pace are labelled "along the route", because a shortcut counts as done. When progress jumped over a part, the summary says "includes a skipped part" (decided 2026-11-22).
-    - When the runner may have finished while locked (the window reaches the end, and they are at it or not yet found), Stop asks "Did you finish the route?", and a yes records 100 % (decided 2026-11-22: a loop's finish cannot be told from standing at its start).
+    - When the runner may have finished while locked (the window reaches the end, and they are at it or not yet found), Stop asks "Did you finish the route?", and a yes records 100 % (decided 2026-11-22: a loop's finish cannot be told from standing at its start). Any other Stop asks "Stop this run?" once, because nothing is saved (*default*).
 13. **Voice cues:** English, off by default, offered only with an on-device voice (`localService`), because a remote voice sends the text away.
 14. **Motion and battery:** the sneaker pin stays still (the live dot is the runner) and reduced motion is respected. "Battery saver" is an optional near-black HUD with no map animation; the screen stays on.
 15. **Gates:** no Lighthouse regression, with `/follow` reported; the Follow code and the contents of "Open in..." are not in the first load of `/`; both themes; 44 px targets. The report gives the overlap before and after, the browser limits, and what was not tested on real devices, with the Redmi lock test (lock for 60 s mid-run, wake, time the first fix).

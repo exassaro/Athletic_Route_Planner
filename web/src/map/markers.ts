@@ -42,6 +42,15 @@ export function startPin(label: string, facingWest: boolean): { el: HTMLElement;
   return { el, offset: updateStartPin(el, label, facingWest) };
 }
 
+/** The same sneaker standing still: no hop, nothing to tap (Follow, Phase 5d amendment 14: the dot is the runner). */
+export function stillStartPin(label: string, facingWest: boolean): { el: HTMLElement; offset: [number, number] } {
+  const el = document.createElement("div");
+  el.className = "pin-start still";
+  el.setAttribute("role", "img");
+  el.innerHTML = `<span class="pin-start-shade"></span><span class="pin-start-flip">${spriteSvg("sneaker", SNEAKER_SCALE)}</span>`;
+  return { el, offset: updateStartPin(el, label, facingWest) };
+}
+
 /** Renames and turns a pin that is already on the map, without disturbing its hop. Returns the marker's offset. */
 export function updateStartPin(el: HTMLElement, label: string, facingWest: boolean): [number, number] {
   const s = SPRITES.sneaker;
