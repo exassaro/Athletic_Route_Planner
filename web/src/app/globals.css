@@ -607,4 +607,12 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .saved-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); }
 /* The map's box before MapLibre has started (after first paint): the basemap's land colour, so nothing flashes. */
 .map-box { background: #ECE9E3; }
+/* Tiles failed (amendment 12): said in the part of the map above the sheet, clear of the top bar and the controls. */
+.map-notice {
+  position: absolute; z-index: 2; top: 72px; left: 16px; right: 64px; max-width: 320px; margin: 0 auto;
+  display: grid; justify-items: start; gap: var(--space-1); padding: 12px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--control); border-radius: var(--radius);
+}
+.map-notice p { margin: 0; }
+@media (min-width: 900px) { .planner .map-notice { left: 456px; } }
 [data-theme="dark"] .map-box { background: #1B1E22; }

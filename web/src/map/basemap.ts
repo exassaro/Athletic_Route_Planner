@@ -10,6 +10,9 @@ import { layers, namedFlavor, type Flavor } from "@protomaps/basemaps";
 import type { StyleSpecification } from "maplibre-gl";
 import type { Theme } from "@/theme/theme";
 
+export const BASEMAP_SOURCE = "protomaps";
+
+/** Given to the attribution control, not to the source: a source that fails to load would take the credit with it. */
 export const ATTRIBUTION =
   '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>' +
   ' · <a href="https://protomaps.com" target="_blank" rel="noreferrer">Protomaps</a>';
@@ -27,19 +30,22 @@ export function flavor(theme: Theme): Flavor {
   return { ...namedFlavor(theme), ...QUIET[theme] };
 }
 
+export function basemapUrl(origin: string): string {
+  return `${origin}/basemap/kerala.pmtiles`;
+}
+
 export function basemapStyle(origin: string, theme: Theme = "light"): StyleSpecification {
   return {
     version: 8,
     glyphs: `${origin}/basemap/fonts/{fontstack}/{range}.pbf`,
     sprite: `${origin}/basemap/sprites/${theme}`,
     sources: {
-      protomaps: {
+      [BASEMAP_SOURCE]: {
         type: "vector",
-        url: `pmtiles://${origin}/basemap/kerala.pmtiles`,
-        attribution: ATTRIBUTION,
+        url: `pmtiles://${basemapUrl(origin)}`,
       },
     },
-    layers: layers("protomaps", flavor(theme), { lang: "en" }),
+    layers: layers(BASEMAP_SOURCE, flavor(theme), { lang: "en" }),
   } as StyleSpecification;
 }
 

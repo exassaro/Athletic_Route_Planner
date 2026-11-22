@@ -5,6 +5,7 @@
  *
  *   ATHLETE_RATE_SESSION_PER_IP_HOUR=1000 docker compose --profile api up -d api
  *   npx playwright test                 (journeys, phone viewport)
+ *   npx playwright test --project=basemap   (saved route on an iPhone 16 viewport: cold, warm, failing tiles)
  *   npx playwright test --project=screens   (screenshots for docs/reports/phase5/screenshots/)
  *   E2E_BASE=https://10.141.255.68 E2E_API=https://10.141.255.68 E2E_INSECURE=1 npx playwright test --project=phone
  *     (through Caddy on the LAN address, web built with NEXT_PUBLIC_API_BASE=same-origin)
@@ -27,6 +28,7 @@ export default defineConfig({
   projects: [
     { name: "phone", testMatch: /journeys\.spec\.ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "screens", testMatch: /screens\.spec\.ts/, use: { browserName: "chromium" } },
+    { name: "basemap", testMatch: /basemap\.spec\.ts/, use: { ...devices["iPhone 16"], browserName: "chromium" } },
     { name: "pincost", testMatch: /pincost\.spec\.ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
   ],
 });
