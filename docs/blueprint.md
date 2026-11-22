@@ -8,21 +8,67 @@ Decided 2026-11-18 by the product owner: a mobile-first redesign of `web/` befor
 
 **Decisions**
 
-1. **Name: GATHO** (Malayalam ഗതി, "gathi": movement and direction). Used in the top-bar wordmark, page titles, the PWA manifest (name and short_name "GATHO"), the share page, OpenGraph tags and the about screen. Python packages, the repo and API paths keep their names.
+1. **Name: GATHO** (Malayalam ഗതി, "gathi": movement and direction). Used in the top-bar wordmark (drawn, never typed: amendment 26), page titles, the PWA manifest (name and short_name "GATHO"), the share page, OpenGraph tags and the about screen. Python packages, the repo and API paths keep their names.
 2. **Look: playful retro, minimal.** At most three retro elements visible on any screen, counted from: the wordmark, pixel numerals, map markers, the hard shadow. The pixel icon set is the icon style and is not counted (*default*). On route screens the top bar is search and menu; the wordmark sits in the top bar on the setup steps, the share page and saved routes, and in the menu and about (*default*).
-3. **Type.** Pixel font (**Silkscreen**, OFL, self-hosted subset; it replaced Pixelify Sans on 2026-11-18 because Pixelify's "5" reads as an "S") only for the wordmark and the big stat numbers (distance, time, climb) at 24 px or more, with tabular figures; never for body text, labels, place names, anything under 20 px, or Malayalam. Body text is the system font at 15 to 16 px (*default*; the mockups use Inter).
+3. **Type.** Pixel font (**Silkscreen**, OFL, self-hosted subset; it replaced Pixelify Sans on 2026-11-18 because Pixelify's "5" reads as an "S") only for the big stat numbers (distance, time, climb) at 24 px or more, with tabular figures; never for the wordmark (amendment 26, 2026-11-22), body text, labels, place names, anything under 20 px, or Malayalam. Body text is the system font at 15 to 16 px (*default*; the mockups use Inter).
 4. **Colour tokens** as in the mockups' brand board, with **accent #0F6E56** (light; dark #3DBFA3) for the route and primary actions, one warning colour (amber), a second route dashed in ink, never colour alone. Body text 4.5:1 or more; controls and the route line 3:1 or more, checked in both themes.
 5. **Themes: light and dark, with a toggle in the menu; the default is light** (changed from dark by the product owner, 2026-11-18). The choice is kept on the device. The dark basemap is the Protomaps dark flavour of the same pinned build (its sprites fetched by `fetch_basemap.py`; the tiles do not change).
-6. **Markers.** The start pin is the supplied pixel **sneaker** (31 × 17), mirrored when the route starts westward (bearing from the start to the API's first km mark; the first geometry segment until that arrives), anchored at the middle of the sole, about 48 px wide, tap target 44 px or more, aria-label "Start: <place>". Its hop (1.1 s, toe up about 6°, squash on landing, shrinking shadow) is CSS on an inner element only; none under prefers-reduced-motion; paused while the map moves and while a solve runs; static on the share page and in thumbnails. Stops are pixel discs, overlapping stops grouped on screen, pass-near place points as pixel diamonds, the end a pixel flag. The **runner** (28 × 25, supplied) is the empty-state figure, and its **4-frame run cycle** (approved 2026-11-18) is the loading animation. Sprites become static SVG components at build time (rects, crispEdges, depth layer of non-outline pixels offset 0.3 px, black at 20 % for the sneaker and 22 % for the runner). The side mark on the sneaker is a forward arrow, never a swoosh or stripes.
-7. **App icons** (512, 192, 32 px) show the sneaker.
+6. **Markers** (changed 2026-11-22, amendments 13, 16, 17 and 22). The start pin is the supplied pixel **sneaker** (31 × 17), mirrored when the route starts westward (bearing from the start to the API's first km mark; the first geometry segment until that arrives), anchored at the middle of the sole, about 48 px wide, tap target 44 px or more, aria-label "Start: <place>". Its hop (1.1 s, toe up about 6°, squash on landing, shrinking shadow) is CSS on an inner element only, and runs only as amendment 13 says; none under prefers-reduced-motion; paused while the map moves and while a solve runs; static in thumbnails. Stops are pixel discs, overlapping stops grouped on screen, pass-near place points as pixel diamonds, the end a pixel flag. The sneaker is also the mascot and the loading animation (amendments 16 and 17); the runner sprite is withdrawn. Sprites become static SVG components at build time (rects, crispEdges, depth layer of non-outline pixels offset 0.3 px, black at 20 %). The side mark on the sneaker is a forward arrow, never a swoosh or stripes.
+7. **App icons** show the GATHO O, not the sneaker (changed 2026-11-22, amendment 27). The sneaker is the map pin and mascot only.
 8. **Layout.** Bottom sheet with peek, half and full; first-time setup as five steps (start, distance, shape, towards, stops); chips open small editors and the permanent form goes; route cards with pixel numbers, road-class bar with a text legend, badges, "Why this route?"; stops as a timeline with distance marks; over_budget and conflicts as one headline with the API's numbers and fix buttons, no repeated text; Undo as a message at the bottom, history and redo in the menu.
 9. **Every number on screen is still the API's.** The number check runs at every sheet state (peek, half, full) so hidden numbers are still checked. The A01, S02 and G01 journeys keep their intent; only selectors change.
-10. **Gates:** Lighthouse accessibility 95 or more (was 90), touch targets 44 px or more. Performance is reported before and after, measured the same way (through Caddy on the LAN address, Lighthouse 13.0.1 mobile, median of three runs); the start pin must add no measurable main-thread time.
+10. **Gates:** Lighthouse accessibility 95 or more (was 90), touch targets 44 px or more. Performance is reported before and after, measured the same way (through Caddy on the LAN address, Lighthouse 13.0.1 mobile, median of three runs); the start pin has no main-thread cost at rest: resting, it measures the same as with the pin removed (reworded 2026-11-22, amendment 13).
 11. **A8 approved (2026-11-18):** GPX `creator="GATHO"` and a GATHO metadata name. An API change (the API writes the GPX); built in step 10, XSD test kept.
 
-**Status (2026-11-18): built, two items open.**
+**Phase 5b-fix (approved 2026-11-22)**
+
+A round of fixes and small features on top of the built Phase 5b, with the final logo. These are the exceptions to "no new features" above. The solver does not change; the only API change is A9 (amendment 22).
+
+*Bugs*
+
+12. **Basemap fetches bypass the browser cache.** Chrome on Windows can return zero-filled bodies for cached Range responses after overlapping requests were aborted ("Wrong magic number for PMTiles archive"). pmtiles avoids the cache only when the user agent contains "Windows", which device emulation removes. So:
+    - the `.pmtiles` is always fetched with `cache: "no-store"` and served with `Cache-Control: no-store` (`no-cache` does not prevent the bug);
+    - a failed load is retried once, then the map shows a message with "Reload map";
+    - the OSM credit stays visible when tiles fail.
+13. **The pin hops three times (about 3.3 s), then rests.** It does so when a route arrives, when the start changes and when a saved or shared route opens, and hops once per tap or key press. Zooming and theme changes do not replay it. Nothing loops while idle.
+14. **Map labels and markers.**
+    - Km labels show from zoom 12 and are hidden where they would overlap a stop, the pin or another label; they draw above the route lines.
+    - The end flag's pole stands on the end point and the flag points away from the route; place labels give way to it.
+15. **Sheet.** The Undo message sits just above the sheet (at full, in its own row under the handle) and never covers content. The peek stats show only at peek. The chip row fades at its clipped edge and snaps.
+
+*Features*
+
+16. **The mascot is the sneaker** at 3 px a pixel (93 px wide), with a soft ground shadow and the three hops of amendment 13. The runner and its run cycle are deleted.
+17. **Loading is a four-frame sneaker cycle**, derived from the approved sprite by whole-pixel column shifts, with no pixel redrawn. For column x from the heel (0 to 30), y pointing down:
+    - frame 1: flat;
+    - frame 2, toe up and lifted: dy = -1 - floor(x / 11);
+    - frame 3: flat, dx = 3;
+    - frame 4, heel up: dy = -floor((30 - x) / 11), dx = 1.
+
+    Two or three dust puffs follow it, with three pixel dots to the right and "GATHO is planning...".
+18. **Directions are shown in words** ("North-east"), each with where it lies on the map as currently rotated, and an eight-point dial. The request's values are unchanged. **Exception to Phase 5 amendment 4, for a label only:** when the direction is a place, the UI may work out the bearing from the start to that place to say "Heading south-east, towards Beypore". That bearing is never sent, stored or used for anything else.
+19. **Compass.** A pixel compass (44 px or more) under the menu button replaces MapLibre's: its needle points to true north and a tap faces the map north. In the direction picker it also marks the chosen direction.
+20. **"Open in..."** on the result, the share page and each saved route:
+    - **Google Maps (walking):** at most 3 waypoints on a phone and 8 otherwise (Google allows 3 in mobile browsers and 9 elsewhere), chosen evenly from the API's km marks, with a note that Google may change the path between them. Nothing is measured in the UI.
+    - **Share the GPX:** Web Share with a file where the browser allows it. Chromium, desktop and Android, refuses `.gpx` even when `canShare` says yes, so a refusal downloads the file and says so.
+    - **Download GPX**, as before.
+    - **Garmin:** no button; a link to Garmin's help (its import steps could not be verified).
+    - **Strava:** no upload link, because Strava rejects files without timestamps as activities and our courses have none. A link to Strava's "create a route from a GPX" help, marked manual.
+21. **The share page, which is also the saved-route view, uses the planner's sheet**, opening at peek with the stats in the peek bar and a "Map" button; the desktop panel collapses. Its stops are grouped as in the planner.
+22. **A9 approved: `km_marks` in the share response.** Additive: every km mark, the same as the elevation endpoint's. The pin faces as in the planner and "Open in..." has its points.
+
+*Brand*
+
+23. **One build script, `web/scripts/make-brand.mjs`**, draws the wordmark, icons and OpenGraph image from the supplied grids.
+24. **Logo colours are tokens:** light letters #1E1E1C and O #1D9E75; dark letters #F7F5EE and O #3DBFA3; the dot #E8673A in both.
+25. **Logo contrast.** In the light theme the wordmark is always backed by the surface token (#FBF8F1: O 3.19:1, dot 3.08:1; on paper both fall under 3:1). The dot on the icon's green tile (1.04:1) is decorative and exempt from amendment 4.
+26. **The wordmark is never set in a font.** It is 5 × 7 pixel letters with a one-cell margin, at least 14 px tall; smaller, the icon is shown instead.
+27. **App icons:** a 9 × 9 green tile with cut corners, the paper O and the orange centre. The maskable icon is a full square on an 11 × 11 grid, so the O stays in the 80 % safe circle (on 9 × 9 its corners reach 42.3 % of the side from the centre, over the 40 % limit).
+28. **OpenGraph image** 1200 × 630 on #FBF8F1 (amendment 25), without a shadow, the tagline "Plan the run you actually want." in the Geist font bundled with Next, so the build is reproducible. Absolute links come from a site-URL build setting.
+
+**Status (2026-11-22): built 2026-11-18; Phase 5b-fix in progress.**
 - Results: the journeys pass through Caddy; Lighthouse accessibility is 100 on both pages; performance went from 68 to 70 on the planner and from 67 to 69 on the share page.
-- Open: the hopping start pin's main-thread cost is measurable (about 2 % of the main thread at 4× slowdown), so gate 10's pin criterion is not met. The fix waits for a product-owner decision.
+- The hopping start pin cost about 2 % of the main thread at 4× slowdown. Decided 2026-11-22 (amendment 13); to be built and measured again in Phase 5b-fix.
 - Open: the hallway test waits for the product owner.
 
 See [docs/reports/phase5b/summary.md](reports/phase5b/summary.md).
