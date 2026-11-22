@@ -5,7 +5,21 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5b**, the GATHO mobile-first redesign of `web/` (blueprint Phase 5b amendments 1 to 28). Built: steps 0 to 13 (`docs/reports/phase5b/summary.md`; before: `before/README.md`) and the approved fix round of 2026-11-22, amendments 12 to 28 (`docs/reports/phase5b/fix-summary.md`). No other new features. Open: the hallway test (`hallway/script.md`). `npx playwright test --project=pincost` measures the pin. Phase 5 (the web front end) is built: `docs/reports/phase5/summary.md`. Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first (A8, the GPX creator name, is approved).
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5c**, managing saved routes (blueprint Phase 5c amendments 1 to 12). Built: `docs/reports/phase5c/summary.md`. Phase 5b (the GATHO redesign and its fix round) is built: `docs/reports/phase5b/summary.md`, `fix-summary.md`. Open: the hallway test (`docs/reports/phase5b/hallway/script.md`), and the shared per-IP limits behind Caddy (a separate change). Phase 5 (the web front end) is built: `docs/reports/phase5/summary.md`. Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first (A8, the GPX creator name, is approved).
+
+## Phase 5c amendments (2026-11-22, full text at the top of docs/blueprint.md; they win over earlier ones)
+
+1. **Soft delete with Undo.** A deleted slug answers exactly as an unknown one (404, same body, same page, `no-store`). Routes and plan versions are never deleted. Purge by hand: `uv run python -m athlete_api.purge_deleted --days 30`.
+2. **Edit = `/?edit=<saved_id>`**: the saved route's own plan version, shown as a fresh result. Then "Update <name>" (same slug, with Undo) or "Save as new". "No changes yet" compares request and geometry, never route ids (undo makes new ones).
+3. **Rename** = in-app dialog + PATCH: trimmed, ≤ 80 characters, empty = null. Never `window.prompt`.
+4. **Owner only:** another client's `saved_id` is 404, never 403.
+5. **Migration 0005.** `updated_at` moves on rename and update, not delete or restore. **The downgrade deletes soft-deleted rows first** (never republish a deleted link).
+6. **A10:** `PATCH`, `DELETE`, `POST .../restore` on `/v1/me/routes/{saved_id}`; the list hides deleted ones, newest update first.
+7. **A11 `from_version`** on `PATCH /v1/plans/{id}`. Always send it when editing an opened version: without it the patch applies to the latest, a different request.
+8. **A12 `as_new`** on save. Several saved routes may point at one route: never assume one row per (client, route).
+9. **A13 `is_owner`:** the share page is server-rendered without a token; the browser asks again with the token it has and must never create a session for a visitor.
+10. **"write" limit:** 60 a minute per client, none per IP. `limited()` refuses unknown bucket names.
+11. Delete = the one warning colour, trash icon, divider, last. 12. Delete's Undo: 10 s, paused under pointer or focus, survives the move to `/routes`.
 
 ## Phase 5b amendments (2026-11-18, fix round 2026-11-22; full text at the top of docs/blueprint.md; they win over earlier ones)
 
@@ -47,7 +61,7 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 8. Place picker groups duplicates by name and county, in the UI.
 9. Production is one origin behind Caddy (also HTTPS on the LAN); CORS is for development.
 10. Lighthouse: accessibility ≥ 90 is a gate; performance is reported.
-11. Left out: deleting saved routes, "Remix this route".
+11. Left out: deleting saved routes (built in Phase 5c), "Remix this route".
 12. Basemap = `pmtiles extract` of the Protomaps build of 2026-11-15 (the pin's day), not Planetiler.
 13. Solver `climb` bridges bridge edges (straight line between their ends) before smoothing; `Candidate.bridges_m` carries the spans. Approved solver change (P3); routes unchanged.
 14. Elevation endpoint returns the solver-smoothed profile (P1). 15. `climb_approximate` when the route's median DEM height < 20 m (P2).
@@ -231,6 +245,7 @@ API (Phase 4, http://localhost:8000, docs at /docs; needs Postgres and Redis, an
 ```
 docker compose up -d postgres redis
 uv run alembic -c api/alembic.ini upgrade head     # migrations (psycopg); `check` compares them with athlete_api.db
+uv run python -m athlete_api.purge_deleted --days 30   # removes saved routes soft-deleted more than 30 days ago; in Docker: docker compose exec api python -m athlete_api.purge_deleted
 uv run uvicorn athlete_api.main:app --port 8000
 uv run pytest tests/unit/api                       # API unit tests, no services
 uv run pytest tests/api                            # the app on a throwaway athlete_test database + Redis db 15, no engines
@@ -280,6 +295,10 @@ uv run --no-project --with fonttools --with brotli python web/scripts/subset_pix
 - `@rolldown/binding-win32-x64-msvc` and `@rolldown/binding-linux-x64-gnu` are optional dependencies on purpose: npm otherwise drops the Windows one on every `npm install <pkg>`, and a lockfile made on Windows has no Linux binding, so `npm ci` in CI fails ("Cannot find native binding").
 - End to end (live stack, `next start` on :3000, API with `ATHLETE_RATE_SESSION_PER_IP_HOUR=1000`): `npx playwright test` (journeys A01, S02, G01, phone viewport) and `npx playwright test --project=screens` (screenshots -> docs/reports/phase5/screenshots/). Every on-screen number carries `data-value` (its raw API value); `e2e/helpers.ts` checks them all against the responses.
 - Fix-round projects: `basemap` (iPhone 16 viewport, cold, warm and the cache trigger; that last test skips over Caddy's untrusted certificate, so run it on http), `layout`, `pin`, `direction`, `openin` (Google intercepted), `share`, `brand`. `SHOTS_ONLY=01,08` with `--project=screens` writes only those screens. Look at the screenshots: they caught three defects the tests did not.
+- Phase 5c projects: `editing`, `saved`, `owner`, `errors`; SR01 is in `phone` (`sr01.spec.ts`); `screens5c` writes docs/reports/phase5c/screenshots.
+- **The dev stack is the developer's: run `docker ps -a` before any compose command, and never a bare `docker compose down` as cleanup.** The API container migrates the dev database on start, so rebuilding it applies new migrations: back up first and ask. To test a migration or an API change, use a copy: a database from `pg_dump | pg_restore`, the API from the host on :8100 (`ATHLETE_DATABASE_URL`, `ATHLETE_REDIS_URL` on a spare db), the web built with `NEXT_DIST_DIR=.next-check` and `NEXT_API_PROXY=http://localhost:8100`, started with `API_INTERNAL_BASE` pointing at :8100, and a throwaway Caddy on :8443.
+- `notFound()` pages are a client-rendered shell where the head theme script does not run: `ThemeSync` in the layout applies the theme.
+- Generated files compared byte for byte by tests are pinned `eol=lf` in `.gitattributes`. Test a fresh clone with `core.autocrlf=true`, as this laptop has.
 - The default limit (10 new sessions per IP per hour) runs out after two or three journey runs: place search then shows no results and every journey times out at the start. Raise it on the API alone: `$env:ATHLETE_RATE_SESSION_PER_IP_HOUR="1000"; docker compose --profile api up -d --no-deps api`, and wait for `/v1/health` before testing. Without `--no-deps`, compose can recreate Postgres too, and the API exits ("connection refused") if it starts first (happened 2026-11-18; `docker start athlete-api` recovered it, data intact). Since 2026-11-19 the API waits for Postgres's `pg_isready` healthcheck. Put it back to 10 the same way afterwards.
 - Phone over the LAN: build with `$env:NEXT_PUBLIC_API_BASE="same-origin"`, then `LAN_HOST=<ip> docker compose --profile api --profile web up -d proxy` (Caddy, `tls internal`, `default_sni` for bare IPs). Steps, firewall and certificate install: docs/reports/phase5/phone.md. In PowerShell an empty `$env:X=''` deletes the variable, hence "same-origin".
 - Lighthouse: `npx lighthouse@13.0.1 http://localhost:3000/` with `CHROME_PATH` set to Playwright's Chromium.

@@ -23,7 +23,7 @@ Decided 2026-11-22 by the product owner: manage saved routes (rename, edit, dele
 
 **Found while planning, for a separate change:** behind Caddy every client shares the proxy's IP, so the per-IP limits (10 new sessions an hour among them) are shared by all users. Trusting forwarded addresses also needs port 8000 closed to the LAN.
 
-**Status (2026-11-22): in progress.**
+**Status (2026-11-22): built** ([docs/reports/phase5c/summary.md](reports/phase5c/summary.md)). The development database gets 0005 when the API is redeployed, after a backup.
 
 ## Phase 5b amendments
 
