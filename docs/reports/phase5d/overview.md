@@ -1,6 +1,6 @@
 # Phase 5d step 1: smart waypoints against even spacing
 
-**The gate of amendment 2 tripped: the greedy rule does not always deviate less than even spacing at the same N. Waiting for the product owner.** It fails only at N = 1 and 2. The web app asks only for 3 (mobile browsers) and 9 (elsewhere), and there it wins on every track measured.
+**The gate of amendment 2 tripped: the greedy rule does not always deviate less than even spacing at the same N. Decided 2026-11-22: the three recommendations at the end are accepted.** It fails only at N = 1 and 2. The web app asks only for 3 (mobile browsers) and 9 (elsewhere), and there it wins on every track measured.
 
 Measured 2026-11-22 on the development laptop, Valhalla 3.9.2 in Docker called from the host, by `uv run python api/scripts/measure_overview.py` (every value: [overview_data.json](overview_data.json); two runs gave identical rows). Valhalla stands in for Google. **Nothing here was measured on Google Maps.**
 

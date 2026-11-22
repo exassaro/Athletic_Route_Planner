@@ -17,12 +17,12 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
 1. **Google Maps is an overview; the GPX is the exact route.** The link stays `travelmode=walking` (driving is road-only and obeys one-ways). It has at most 3 waypoints on a mobile browser (a coarse pointer and a narrow viewport, or the user agent; one tested function) and 9 elsewhere, [Google's limits](https://developers.google.com/maps/documentation/urls/get-started).
 2. **A14, overview points:** `GET /v1/routes/{route_id}/overview-points?max=N` and `GET /v1/share/{slug}/overview-points?max=N`, 1 ≤ N ≤ 9.
    - Start and end are fixed. The route point that deviates most from the Valhalla pedestrian route between its current neighbours is added (maximum distance, sampled every 25 m) until N are used or every deviation is under 30 m.
-   - It returns the points in route order, `max_deviation_m` and `overlap_pct` (the share of our length within 30 m of that Valhalla path). Valhalla stands in for Google.
+   - It returns the points in route order, `max_deviation_m` and `overlap_pct`: the share of our length within 30 m of that Valhalla path, **leg by leg** (decided 2026-11-22: against the whole path an out-and-back scored 100 % while 1.9 km short). Valhalla stands in for Google.
    - It uses the solver's Valhalla client, is cached by route, N and Valhalla build, and counts against the "read" limit. Valhalla down: 503 in the usual error shape, and the web app uses evenly spaced km marks.
-   - It is built only after it is measured against even spacing on A01 and S02. If it does not deviate less at the same N, the product owner decides first.
+   - The rule stays greedy. It must deviate less than even spacing at N = 3 and N = 9, the limits the app uses, on A01 and S02 (tested; decided 2026-11-22 after [the measurement](reports/phase5d/overview.md): at N = 1 and 2 it can tie or lose).
 3. **"Open in...", in this order:**
    - **"Get GPX (exact route)"**, the primary button. It shares the file where the browser can. Otherwise (Chrome on Android refuses `.gpx`) it downloads it and says how to open it. Under it: "Open it in Organic Maps or OsmAnd (free, offline maps) to see the exact line."
-   - **"Google Maps (overview)"**, with "Google may re-route between points. Expect small differences in the path and distance. Our route: <km>. Estimated overlap: <n>% (tested with our router, not Google)." Without overview points the last sentence is left out. The estimate is never called Google's path.
+   - **"Google Maps (overview)"**, with "Google may re-route between points, so the path and distance can differ. Our route: <km>. Estimated overlap: <n>% (tested with our router, not Google)." Without overview points the last sentence is left out. The estimate is never called Google's path.
    - **"How to see the exact line in Google Maps"**, collapsed: the steps from [My Maps help](https://support.google.com/mymaps/answer/3024836), saying "needs a computer", because My Maps is not available on Android or iOS.
    - Garmin and Strava stay as manual notes.
 
@@ -42,6 +42,7 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
 8. **Progress is the snapped distance along the route**, never a sum of GPS steps, within a forward-only window.
    - Where passes tie while tracking, the one nearest the expected progress wins.
    - After a gap of T seconds the window is 5 m/s × T + 100 m, back to normal after three good fixes.
+   - While off route the window grows by the same formula, T being the seconds since the last on-route fix, so a runner who rejoins further ahead is found (decided 2026-11-22; to be simulated in step 5).
    - If more than one pass fits after a gap, progress is held until the direction of the following fixes decides. Expected pace never decides after a gap: on S02 it jumps to the finish after a 33 minute lock at the start.
 9. **Off route:** an amber banner, with a short vibration where supported, after more than 40 m from the line for 10 s **and** two consecutive fresh fixes with accuracy under 30 m. With worse accuracy it says "GPS is weak" and does not guess.
 10. **Screen lock.**
@@ -61,8 +62,6 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
 - After a 15 minute lock on the out-and-back, the first fix alone picked the wrong pass in 3.5 to 4.2 % of wakes; the direction of the fixes in 0.5 % with 6 fixes and 0 % with 16, for a runner moving at 1.5 to 4 m/s.
 - A bare 35° bend rule gives 55 cues on A01, 10 of them under 50 m apart: hence decision 6's junctions and merging.
 - Holding progress for a runner who has not moved is not yet simulated.
-
-**Open, to settle before the snap is built (step 5):** how a runner who left the route rejoins it further ahead than the normal window reaches.
 
 **Status (2026-11-22): in progress.**
 
