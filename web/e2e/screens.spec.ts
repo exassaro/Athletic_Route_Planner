@@ -4,11 +4,14 @@
  * intercept the API's answer, because the live stack does not produce them on demand.
  *
  *   SHOTS_DIR=../docs/reports/phase5b/after/screenshots npx playwright test --project=screens
+ *   SHOTS_ONLY=01,02,08 (with it) writes only those screens; the steps still all run.
  */
 import { expect, test, type Page } from "@playwright/test";
 import { addA01Stops, addStop, PLACES, pickPlace, setDistance, setupRun, waitVersion } from "./helpers";
 
 const OUT = process.env.SHOTS_DIR ?? "../docs/reports/phase5b/after/screenshots";
+const ONLY = process.env.SHOTS_ONLY?.split(",");
+const wanted = (name: string) => !ONLY || ONLY.includes(name.slice(0, 2));
 const SIZES = [{ name: "phone", width: 390, height: 844, mobile: true }, { name: "desktop", width: 1440, height: 900, mobile: false }];
 
 async function setTheme(page: Page, theme: "light" | "dark") {
@@ -22,6 +25,7 @@ async function setTheme(page: Page, theme: "light" | "dark") {
 /** One screen: light, and on the phone dark as well (switched in place; the basemap swaps too). */
 async function shot(page: Page, vp: { name: string; mobile: boolean }, name: string, focus?: string) {
   if (focus) await page.locator(focus).first().scrollIntoViewIfNeeded();
+  if (!wanted(name)) return;
   await page.waitForTimeout(800);
   if (!vp.mobile) return void await page.screenshot({ path: `${OUT}/${vp.name}-${name}.png` });
   await page.screenshot({ path: `${OUT}/${vp.name}-${name}-light.png` });
@@ -116,7 +120,7 @@ for (const vp of SIZES) {
       await expect(page.getByTestId("share-link")).toBeVisible();
       await shot(page, vp, "17-saved-share-link", "[data-testid=share-link]");
       const link = (await page.getByTestId("share-link").getAttribute("href"))!;
-      const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.mobile ? 2 : 1,
+      const ctx = await browser.newContext({ ignoreHTTPSErrors: process.env.E2E_INSECURE === "1", viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.mobile ? 2 : 1,
         isMobile: vp.mobile, hasTouch: vp.mobile });
       const share = await ctx.newPage();
       await share.goto(link);
@@ -157,7 +161,7 @@ for (const vp of SIZES) {
       await expect(page.getByTestId("status")).toHaveAttribute("data-state", "solving");
       await page.locator(".sheet-body").evaluate((e) => e.scrollTo(0, 0));
       await page.waitForTimeout(300);
-      await page.screenshot({ path: `${OUT}/${vp.name}-22-loading-mocked${vp.mobile ? "-light" : ""}.png` });
+      if (wanted("22")) await page.screenshot({ path: `${OUT}/${vp.name}-22-loading-mocked${vp.mobile ? "-light" : ""}.png` });
       await expect(page.getByTestId("status")).toHaveAttribute("data-state", "busy", { timeout: 20000 });
       await shot(page, vp, "23-busy-429-mocked");
       await page.unroute(planUrl);
