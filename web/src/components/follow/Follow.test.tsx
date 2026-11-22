@@ -15,8 +15,20 @@ const T0 = 1_795_000_000_000;
 let onFix: PositionCallback;
 let onError: PositionErrorCallback;
 let watchPosition: ReturnType<typeof vi.fn>;
+let getCurrentPosition: ReturnType<typeof vi.fn>;
+let wakeRequest: ReturnType<typeof vi.fn>;
+let wakeRelease: ReturnType<typeof vi.fn>;
 let clearWatch: ReturnType<typeof vi.fn>;
 let clock = T0;
+let visibility: DocumentVisibilityState = "visible";
+
+async function setVisible(state: DocumentVisibilityState, seconds: number) {
+  clock = T0 + seconds * 1000;
+  visibility = state;
+  await act(async () => {
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+}
 
 beforeEach(() => {
   clock = T0;
@@ -27,7 +39,13 @@ beforeEach(() => {
     return 7;
   });
   clearWatch = vi.fn();
-  Object.defineProperty(navigator, "geolocation", { configurable: true, value: { watchPosition, clearWatch } });
+  getCurrentPosition = vi.fn();
+  Object.defineProperty(navigator, "geolocation", { configurable: true, value: { watchPosition, clearWatch, getCurrentPosition } });
+  wakeRelease = vi.fn(async () => {});
+  wakeRequest = vi.fn(async () => Object.assign(new EventTarget(), { release: wakeRelease }));
+  Object.defineProperty(navigator, "wakeLock", { configurable: true, value: { request: wakeRequest } });
+  visibility = "visible";
+  Object.defineProperty(document, "visibilityState", { configurable: true, get: () => visibility });
   Object.defineProperty(window, "isSecureContext", { configurable: true, value: true });
 });
 afterEach(() => {
@@ -168,6 +186,123 @@ describe("a run", () => {
     act(() => onError({ code: 1, message: "denied" } as GeolocationPositionError));
     expect(screen.getByTestId("follow-lost")).toBeTruthy();
     expect(screen.getByTestId("follow-stop")).toBeTruthy();
+  });
+});
+
+describe("the screen lock and resume", () => {
+  it("hidden, visible, a stale fix, then a fresh one 4 s later", async () => {
+    const { line } = show();
+    tap("follow-start");
+    for (let t = 0; t <= 20; t++) fix(line, t, 3 * t);
+    await setVisible("hidden", 21);
+    await setVisible("visible", 151);
+    expect(screen.getByTestId("follow-cue").textContent).toBe("Finding you…");
+    expect(screen.getByTestId("follow-away").textContent)
+      .toBe("You were away for 2 min 10 s. Cues are off while the screen is locked.");
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+    expect(getCurrentPosition.mock.calls[0]![2]).toEqual({ enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+
+    const [lon, lat] = pointAt(line, 63);
+    act(() => onFix({ timestamp: T0 + 22_000, coords: { longitude: lon, latitude: lat, accuracy: 6 } } as GeolocationPosition));
+    expect(screen.getByTestId("follow-cue").textContent, "a stale fix is discarded").toBe("Finding you…");
+
+    fix(line, 155, 430);
+    expect(screen.queryByTestId("follow-off")).toBeNull();
+    expect(Math.abs(value("follow.done_m") - 430)).toBeLessThan(10);
+    expect(value("follow.elapsed_s")).toBe(155);
+    expect(screen.getByTestId("follow-away")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(screen.queryByTestId("follow-away")).toBeNull();
+  });
+
+  it("the summary counts the gap", async () => {
+    const { line } = show();
+    tap("follow-start");
+    for (let t = 0; t <= 20; t++) fix(line, t, 3 * t);
+    await setVisible("hidden", 21);
+    await setVisible("visible", 81);
+    fix(line, 82, 200);
+    tap("follow-stop");
+    tap("follow-stop-confirm");
+    expect(screen.getByTestId("follow-gaps").textContent).toContain("once, for 1 min in all");
+  });
+
+  it("30 s or less says nothing", async () => {
+    const { line } = show();
+    tap("follow-start");
+    fix(line, 0, 0);
+    await setVisible("hidden", 5);
+    await setVisible("visible", 35);
+    expect(screen.queryByTestId("follow-away")).toBeNull();
+  });
+
+  it("the wake lock: from the tap, again on showing, released at stop", async () => {
+    const { line } = show();
+    expect(wakeRequest).not.toHaveBeenCalled();
+    await act(async () => { fireEvent.click(screen.getByTestId("follow-start")); });
+    expect(wakeRequest).toHaveBeenCalledWith("screen");
+    fix(line, 0, 0);
+    await setVisible("hidden", 10);
+    expect(wakeRequest).toHaveBeenCalledTimes(1);
+    await setVisible("visible", 20);
+    expect(wakeRequest).toHaveBeenCalledTimes(2);
+    expect(screen.queryByTestId("follow-wake")).toBeNull();
+    fix(line, 21, 60);
+    tap("follow-stop");
+    await act(async () => { fireEvent.click(screen.getByTestId("follow-stop-confirm")); });
+    expect(wakeRelease).toHaveBeenCalled();
+  });
+
+  it("a refused wake lock is one line, and the run goes on", async () => {
+    wakeRequest.mockRejectedValue(new DOMException("no", "NotAllowedError"));
+    const { line } = show();
+    await act(async () => { fireEvent.click(screen.getByTestId("follow-start")); });
+    fix(line, 0, 0);
+    expect(screen.getByTestId("follow-wake").textContent).toContain("won't keep the screen on");
+    expect(view()).toBe("running");
+  });
+
+  it("no wake lock at all is one line", async () => {
+    Object.defineProperty(navigator, "wakeLock", { configurable: true, value: undefined });
+    const { line } = show();
+    await act(async () => { fireEvent.click(screen.getByTestId("follow-start")); });
+    fix(line, 0, 0);
+    expect(screen.getByTestId("follow-wake").textContent).toContain("can't keep the screen on");
+  });
+
+  it("battery saver is off until chosen, then near black", () => {
+    const { line } = show();
+    expect(screen.getByTestId("follow-screen").classList.contains("saver")).toBe(false);
+    tap("follow-start");
+    fix(line, 0, 0);
+    tap("follow-saver");
+    expect(screen.getByTestId("follow-screen").classList.contains("saver")).toBe(true);
+    expect(screen.getByTestId("follow-saver").getAttribute("aria-pressed")).toBe("true");
+  });
+});
+
+describe("the Back gesture during a run", () => {
+  const back = () => act(() => { window.dispatchEvent(new PopStateEvent("popstate", { state: null })); });
+
+  it("asks instead of losing the run, and Keep going guards again", () => {
+    const pushed = vi.spyOn(window.history, "pushState");
+    const { line } = show();
+    tap("follow-start");
+    expect(pushed).toHaveBeenCalledTimes(1);
+    fix(line, 0, 0);
+    back();
+    expect(screen.getByTestId("follow-question").textContent).toContain("Stop this run?");
+    tap("follow-keep-going");
+    expect(view()).toBe("running");
+    expect(pushed).toHaveBeenCalledTimes(2);
+  });
+
+  it("before the first position it cancels", () => {
+    show();
+    tap("follow-start");
+    back();
+    expect(view()).toBe("start");
+    expect(clearWatch).toHaveBeenCalledWith(7);
   });
 });
 

@@ -8,7 +8,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Num } from "@/components/Num";
-import { Button } from "@/components/ui";
+import { Button, IconButton } from "@/components/ui";
 import { Wordmark } from "@/components/Wordmark";
 import { gapText } from "@/follow/clock";
 import { turnsOf } from "@/follow/cues";
@@ -17,9 +17,11 @@ import { mayHaveFinished } from "@/follow/run";
 import { km } from "@/plan/format";
 import { useTheme } from "@/theme/useTheme";
 import { FollowMap } from "./FollowMap";
-import { CueLine, OffRouteBanner, Stats } from "./Hud";
+import { AwayLine, CueLine, OffRouteBanner, Stats } from "./Hud";
 import type { Followed } from "./load";
+import { useBackGuard } from "./useBackGuard";
 import { useFollowRun, type Access } from "./useFollowRun";
+import { useWakeLock, WAKE_NOTICE } from "./useWakeLock";
 
 type Props = { followed: Followed; onLeave: () => void };
 type Question = "stop" | "finished" | null;
@@ -55,8 +57,9 @@ function NoAccess({ access }: { access: Access }) {
 export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
   const line = useMemo(() => createLine(route.points, route.along_m), [route]);
   const turns = useMemo(() => turnsOf(route.cues), [route]);
-  const { run, access, noPosition, now, start, cancel, pause, resume, stop } = useFollowRun(line);
+  const { run, access, noPosition, now, start, cancel, pause, resume, stop, dismissGap } = useFollowRun(line);
   const [question, setQuestion] = useState<Question>(null);
+  const [saver, setSaver] = useState(false);
   const [theme] = useTheme();
   const root = useRef<HTMLElement>(null);
   const sheet = useRef<HTMLElement>(null);
@@ -64,6 +67,12 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
   const stopped = run?.phase === "stopped";
   const live = !!run && !stopped;
   const blocked = access === "denied" || access === "insecure" || access === "unsupported";
+  const screenLock = useWakeLock(live || access === "asking");
+  const askStop = () => setQuestion(run && mayHaveFinished(line, run, Date.now()) ? "finished" : "stop");
+  const guard = useBackGuard(() => {
+    if (live) askStop();
+    else if (access === "asking") cancel();
+  });
   const view = stopped ? "finished" : live ? (question ? "question" : run.phase)
     : blocked ? access : access === "idle" ? "start" : "asking";
 
@@ -86,17 +95,34 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
     target.focus({ preventScroll: true });
   }, [view]);
 
-  const askStop = () => setQuestion(run && mayHaveFinished(line, run, Date.now()) ? "finished" : "stop");
   const answer = (finished: boolean) => {
     setQuestion(null);
     stop(finished);
+    guard.disarm();
+  };
+  const follow = () => {
+    start();
+    if (window.isSecureContext && navigator.geolocation) guard.arm();
+  };
+  const keepGoing = () => {
+    setQuestion(null);
+    guard.arm();
+  };
+  const giveUp = () => {
+    cancel();
+    guard.disarm();
   };
 
   const away = stopped ? run.gaps.reduce((sum, gap) => sum + gap.ms, 0) : 0;
 
   return (
-    <main ref={root} className="planner follow" data-testid="follow-screen" data-view={view}>
-      <FollowMap line={line} doneM={run?.track.doneM ?? 0} here={run?.here ?? null} following={live} theme={theme} />
+    <main ref={root} className={`planner follow${saver ? " saver" : ""}`} data-testid="follow-screen" data-view={view}
+      data-screen-lock={screenLock} data-theme={saver ? "dark" : undefined}>
+      <FollowMap line={line} doneM={run?.track.doneM ?? 0} here={run?.here ?? null} following={live} theme={theme} saver={saver} />
+      {live && (
+        <IconButton icon="battery" label="Battery saver" aria-pressed={saver} className="icon-btn follow-saver"
+          onClick={() => setSaver(!saver)} data-testid="follow-saver" />
+      )}
       {!run && (
         <header className="topbar">
           <span className="topbar-brand"><Wordmark height={21} /></span>
@@ -106,8 +132,11 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
         </header>
       )}
       <section ref={sheet} className="sheet" aria-label="Follow" data-snap="peek">
-        {live && run.off.shown && run.back && (
-          <div className="sheet-banner"><OffRouteBanner back={run.back} /></div>
+        {live && ((run.off.shown && run.back) || run.away !== null) && (
+          <div className="sheet-banner follow-banners">
+            {run.away !== null && <AwayLine ms={run.away} onDismiss={dismissGap} />}
+            {run.off.shown && run.back && <OffRouteBanner back={run.back} />}
+          </div>
         )}
         <div className="sheet-body">
           {(view === "start" || view === "asking") && (
@@ -130,7 +159,11 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
                       Road names aren&apos;t available right now, so turn cues have no names.
                     </p>
                   )}
-                  <Button variant="primary" size="lg" block icon="play" onClick={start} data-testid="follow-start">Follow</Button>
+                  <label className="toggle follow-saver-choice">
+                    <input type="checkbox" checked={saver} onChange={(e) => setSaver(e.target.checked)} data-testid="follow-saver-choice" />
+                    <span>Battery saver: a near-black screen, no map animation</span>
+                  </label>
+                  <Button variant="primary" size="lg" block icon="play" onClick={follow} data-testid="follow-start">Follow</Button>
                 </>
               ) : (
                 <>
@@ -139,7 +172,7 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
                       ? "No position yet. It comes sooner outside, under open sky."
                       : "Waiting for your location. Allow it if your browser asks."}
                   </p>
-                  <Button block onClick={cancel}>Cancel</Button>
+                  <Button block onClick={giveUp}>Cancel</Button>
                 </>
               )}
             </div>
@@ -149,7 +182,7 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
             <div className="follow-copy" data-testid="follow-blocked">
               <NoAccess access={access} />
               <div className="follow-actions">
-                {access === "denied" && <Button icon="redo" onClick={start}>Try again</Button>}
+                {access === "denied" && <Button icon="redo" onClick={follow}>Try again</Button>}
                 <Button icon="chevronLeft" onClick={onLeave}>Back</Button>
               </div>
             </div>
@@ -161,6 +194,9 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
               {access === "denied"
                 ? <p className="t-body-s follow-lock" role="status" data-testid="follow-lost">Location was turned off, so progress has stopped.</p>
                 : <CueLine run={run} turns={turns} noPosition={noPosition} />}
+              {(screenLock === "refused" || screenLock === "unsupported") && (
+                <p className="t-meta muted follow-wake" role="status" data-testid="follow-wake">{WAKE_NOTICE[screenLock]}</p>
+              )}
               <Stats line={line} run={run} now={now} />
               <div className="follow-actions">
                 {access === "denied"
@@ -190,7 +226,7 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
                 ) : (
                   <Button icon="stop" onClick={() => answer(false)} data-testid="follow-stop-confirm">Stop</Button>
                 )}
-                <Button icon="play" onClick={() => setQuestion(null)} data-testid="follow-keep-going">Keep going</Button>
+                <Button icon="play" onClick={keepGoing} data-testid="follow-keep-going">Keep going</Button>
               </div>
             </div>
           )}

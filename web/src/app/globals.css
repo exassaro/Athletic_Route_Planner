@@ -100,6 +100,7 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); }
+html { overscroll-behavior-y: contain; }   /* no pull-to-refresh by accident (Phase 5e item 4) */
 body { overscroll-behavior: none; }
 h1, h2, h3 { margin: 0 0 6px; line-height: 1.2; }
 h2 { font-size: 1.05rem; }
@@ -801,3 +802,23 @@ dialog.rename-dialog { width: calc(100% - 32px); max-width: 420px; margin: 16dvh
   .follow .sheet { top: 0; height: 100%; max-height: none; }
   .follow .follow-centre { top: 64px; }
 }
+/* Battery saver (Phase 5d amendment 14): the dark tokens, with the paper and surfaces near black for OLED. */
+.follow.saver {
+  --paper: #000000;
+  --surface: #0A0B0D;
+  --soft: #121417;
+  color: var(--ink);
+}
+.follow.saver * { transition: none; }
+.follow .follow-saver { position: absolute; z-index: 2; left: 16px; top: 16px; }
+.follow .follow-saver[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+@media (min-width: 900px) { .follow .follow-saver { left: 456px; } }
+.follow-saver-choice { font-size: 15px; line-height: 20px; }
+.follow-banners { display: grid; gap: var(--space-1); }
+.follow-away {
+  display: flex; align-items: center; gap: var(--space-1); padding: 4px 4px 4px 12px;
+  border: 1px solid var(--control); border-radius: var(--radius); background: var(--surface); color: var(--ink);
+}
+.follow-away p { flex: 1; margin: 0; }
+.follow-away .icon-btn { flex: none; }
+.follow-wake { margin: 0 0 var(--space-1); }

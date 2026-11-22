@@ -28,7 +28,15 @@ const SAME_PLACE_M = 5;
 const PIN_BOX = { w: 52, h: 44, anchor: "bottom" } as const;
 const FLAG_BOX = { w: 30, h: 38 } as const;
 
-type Props = { line: Line; doneM: number; here: Run["here"]; following: boolean; theme: Theme };
+type Props = {
+  line: Line;
+  doneM: number;
+  here: Run["here"];
+  following: boolean;
+  theme: Theme;
+  /** Battery saver (amendment 14): the dark map, and nothing on it animates. */
+  saver: boolean;
+};
 type Corridor = { state: "loading" | "ready" | "failed"; tiles: number };
 
 /** The middle of the part of the map the sheet and the top bar leave free, as an offset from the screen's. */
@@ -39,7 +47,8 @@ function freeMiddle(): [number, number] {
   return [0, (64 + sheet.top) / 2 - window.innerHeight / 2];
 }
 
-export function FollowMap({ line, doneM, here, following, theme }: Props) {
+export function FollowMap({ line, doneM, here, following, theme, saver }: Props) {
+  const look: Theme = saver ? "dark" : theme;
   const box = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [broken, setBroken] = useState(false);
@@ -49,7 +58,7 @@ export function FollowMap({ line, doneM, here, following, theme }: Props) {
   const [free, setFree] = useState(false);         // the runner moved the map: it stops following the dot
   const tiles = useRef<Map<string, Uint8Array>>(new Map());
   const load = useRef(0);
-  const shownTheme = useRef(theme);
+  const shown = useRef({ look, sprite: theme });
   const taken = useRef<Obstacle[]>([]);
   const zoomed = useRef(false);
 
@@ -101,7 +110,7 @@ export function FollowMap({ line, doneM, here, following, theme }: Props) {
       try {
         made = new maplibregl.Map({
           container: box.current,
-          style: followStyle(window.location.origin, shownTheme.current, load.current),
+          style: followStyle(window.location.origin, shown.current.look, load.current, shown.current.sprite),
           bounds,
           fitBoundsOptions: { padding: 48 },
           minZoom: MIN_ZOOM,
@@ -118,7 +127,7 @@ export function FollowMap({ line, doneM, here, following, theme }: Props) {
       made.on("load", () => {
         if (cancelled) return;
         addFollowLayers(made);
-        paintFollowLayers(made, shownTheme.current);
+        paintFollowLayers(made, shown.current.look);
         const first = line.points[0]!;
         const last = line.points[line.points.length - 1]!;
         const pin = stillStartPin("the start", line.points[1]![0] < first[0]);
@@ -152,13 +161,13 @@ export function FollowMap({ line, doneM, here, following, theme }: Props) {
   }, [map, corridor]);
 
   useEffect(() => {
-    if (shownTheme.current === theme) return;
-    shownTheme.current = theme;
+    if (shown.current.look === look && shown.current.sprite === theme) return;
+    shown.current = { look, sprite: theme };
     if (!map) return;
-    map.setStyle(followStyle(window.location.origin, theme, load.current), { transformStyle: keepDrawn });
-    paintFollowLayers(map, theme);
+    map.setStyle(followStyle(window.location.origin, look, load.current, theme), { transformStyle: keepDrawn });
+    paintFollowLayers(map, look);
     setObstacles(map, taken.current);      // their images belong to the style
-  }, [map, theme]);
+  }, [map, theme, look]);
 
   useEffect(() => {
     if (map) setProgress(map, line, doneM);
@@ -196,11 +205,11 @@ export function FollowMap({ line, doneM, here, following, theme }: Props) {
   // The camera follows the dot
   useEffect(() => {
     if (!map || !following || free || !here) return;
-    const still = !zoomed.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const still = saver || !zoomed.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     map.easeTo({ center: [here.point[0], here.point[1]], offset: freeMiddle(), duration: still ? 0 : 400,
       ...(zoomed.current ? {} : { zoom: RUN_ZOOM }) });
     zoomed.current = true;
-  }, [map, following, free, here]);
+  }, [map, following, free, here, saver]);
 
   const centre = () => {
     zoomed.current = false;

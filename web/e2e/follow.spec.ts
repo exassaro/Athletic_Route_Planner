@@ -1,7 +1,7 @@
 /**
  * Follow mode (blueprint Phase 5d amendments 4 to 15) on the live stack. The position is mocked: A01's committed GPX
  * replayed at running speed, with the page's clock moved along with it. The refusal is the browser's own.
- * The screen lock is step 7's.
+ * The screen lock is simulated: visibilitychange is dispatched.
  */
 import { readFileSync } from "node:fs";
 import { expect, test, type BrowserContext, type Page, type Request } from "@playwright/test";
@@ -11,8 +11,14 @@ import { actAs, API, savedA01, type Made } from "./savedApi";
 const GPX = readFileSync(new URL("../../docs/reports/phase4/gpx/A01_recommended.gpx", import.meta.url), "utf8");
 const TRACK = [...GPX.matchAll(/<trkpt lat="([^"]+)" lon="([^"]+)"/g)].map((m) => [Number(m[2]), Number(m[1])] as [number, number]);
 
-type Fix = { lon: number; lat: number; after: number; accuracy?: number };
-type Mock = { __replay: (fixes: Fix[]) => Promise<void>; __watching: () => number };
+type Fix = { lon: number; lat: number; after: number; accuracy?: number; /** seconds old when it arrives */ age?: number };
+type Mock = {
+  __replay: (fixes: Fix[]) => Promise<void>;
+  __watching: () => number;
+  __visibility: (state: DocumentVisibilityState, after: number) => Promise<void>;
+  __freshAsked: PositionOptions[];
+  __wake: { asked: number; released: number };
+};
 
 /** A geolocation that says only what the test feeds it, each fix `after` seconds of the page's clock later. */
 async function mockPosition(context: BrowserContext) {
@@ -22,23 +28,43 @@ async function mockPosition(context: BrowserContext) {
     Date.now = () => realNow() + ahead;
     let next = 0;
     const watchers = new Map<number, PositionCallback>();
+    const freshAsked: PositionOptions[] = [];
     const fake = {
       watchPosition(ok: PositionCallback) {
         watchers.set(++next, ok);
         return next;
       },
       clearWatch(id: number) { watchers.delete(id); },
-      getCurrentPosition() {},
+      getCurrentPosition(_ok: PositionCallback, _failed: PositionErrorCallback, options: PositionOptions) {
+        freshAsked.push(options);
+      },
     };
+    const wake = { asked: 0, released: 0 };
+    Object.defineProperty(navigator, "wakeLock", { configurable: true, value: {
+      async request() {
+        wake.asked++;
+        return Object.assign(new EventTarget(), { async release() { wake.released++; } });
+      },
+    } });
+    let visibility: DocumentVisibilityState = "visible";
+    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => visibility });
     Object.defineProperty(navigator, "geolocation", { configurable: true, value: fake });
     Object.assign(window, {
       __watching: () => watchers.size,
-      async __replay(fixes: { lon: number; lat: number; after: number; accuracy?: number }[]) {
+      __freshAsked: freshAsked,
+      __wake: wake,
+      async __visibility(state: DocumentVisibilityState, after: number) {
+        ahead += after * 1000;
+        visibility = state;
+        document.dispatchEvent(new Event("visibilitychange"));
+        await new Promise((r) => setTimeout(r, 100));
+      },
+      async __replay(fixes: { lon: number; lat: number; after: number; accuracy?: number; age?: number }[]) {
         for (let i = 0; i < fixes.length; i++) {
           const f = fixes[i]!;
           ahead += f.after * 1000;
           for (const ok of [...watchers.values()]) {
-            ok({ timestamp: Date.now(), coords: { longitude: f.lon, latitude: f.lat, accuracy: f.accuracy ?? 6 } } as GeolocationPosition);
+            ok({ timestamp: Date.now() - (f.age ?? 0) * 1000, coords: { longitude: f.lon, latitude: f.lat, accuracy: f.accuracy ?? 6 } } as GeolocationPosition);
           }
           if (i % 25 === 24) await new Promise((r) => setTimeout(r, 0));
         }
@@ -267,6 +293,79 @@ test("start, running, a 60 m detour with its banner, and back", async ({ page, c
   await page.screenshot({ path: test.info().outputPath("running-small.png") });
   const sheet = (await page.locator(".follow .sheet").boundingBox())!;
   expect(sheet.y, "the map keeps a good part of a small screen").toBeGreaterThan(640 * 0.38);
+});
+
+test("screen lock: hidden, visible, a stale fix, then a fresh one 4 s later, and all of it asks for nothing", async ({ page, context }) => {
+  await mockPosition(context);
+  await actAs(page, made.token);
+  const { points, along_m: along } = await openFollow(page, `saved=${made.saved.saved_id}`);
+  const asked: string[] = [];
+  const onRequest = (r: Request) => { if (!/^(blob|data):/.test(r.url())) asked.push(r.url()); };
+  context.on("request", onRequest);
+  await page.getByTestId("follow-start").click();
+  await replay(page, running(points, along, 0, 900));
+  const before = await number(page, "follow.done_m");
+  const wake = () => page.evaluate(() => ({ ...(window as unknown as Mock).__wake }));
+  expect((await wake()).asked).toBe(1);
+
+  const visibility = (state: DocumentVisibilityState, after: number) =>
+    page.evaluate(([s, a]) => (window as unknown as Mock).__visibility(s, a), [state, after] as const);
+  await visibility("hidden", 1);
+  await visibility("visible", 130);
+  await expect(page.getByTestId("follow-cue")).toHaveText("Finding you…");
+  await expect(page.getByTestId("follow-away")).toContainText("You were away for 2 min 10 s. Cues are off while the screen is locked.");
+  expect((await wake()).asked, "asked for again").toBe(2);
+  expect(await page.evaluate(() => (window as unknown as Mock).__freshAsked.at(-1)))
+    .toEqual({ enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+
+  const then = running(points, along, 900, 900)[0]!;
+  await replay(page, [{ ...then, after: 0, age: 120 }]);
+  await expect(page.getByTestId("follow-cue"), "the stale fix is discarded").toHaveText("Finding you…");
+  expect(await number(page, "follow.done_m")).toBe(before);
+
+  const now = running(points, along, 1300, 1300)[0]!;
+  await replay(page, [{ ...now, after: 4 }]);
+  await expect(page.getByTestId("follow-off")).toHaveCount(0);
+  expect(Math.abs((await number(page, "follow.done_m")) - 1300), "progress jumps to the runner").toBeLessThan(25);
+  await expect(page.getByTestId("follow-away")).toBeVisible();
+  await page.waitForTimeout(700);
+  await checkLayout(page);
+  await page.screenshot({ path: test.info().outputPath("away.png") });
+
+  await page.getByTestId("follow-saver").click();
+  await page.waitForTimeout(900);
+  await expect(page.getByTestId("follow-screen")).toHaveClass(/saver/);
+  expect(await page.locator(".follow .sheet").evaluate((e) => getComputedStyle(e).backgroundColor)).toBe("rgb(0, 0, 0)");
+  await replay(page, running(points, along, 1310, 1400));
+  expect(await page.evaluate(() => (window as unknown as { athleteMap: import("maplibre-gl").Map }).athleteMap.isMoving()),
+    "no map animation").toBe(false);
+  await checkLayout(page);
+  await page.screenshot({ path: test.info().outputPath("saver.png") });
+
+  await page.getByTestId("follow-stop").click();
+  await page.getByTestId("follow-stop-confirm").click();
+  await expect(page.getByTestId("follow-gaps")).toContainText("once, for 2 min 10 s in all");
+  expect((await wake()).released).toBeGreaterThan(0);
+  context.off("request", onRequest);
+  expect(asked, "the lock, the saver and the stop ask the server for nothing").toEqual([]);
+});
+
+test("the Back gesture during a run asks instead of losing it", async ({ page, context }) => {
+  await mockPosition(context);
+  await actAs(page, made.token);
+  const { points, along_m: along } = await openFollow(page, `saved=${made.saved.saved_id}`);
+  await page.getByTestId("follow-start").click();
+  await replay(page, running(points, along, 0, 600));
+  const done = await number(page, "follow.done_m");
+  await page.goBack();
+  await expect(page.getByTestId("follow-question")).toContainText("Stop this run?");
+  await page.getByTestId("follow-keep-going").click();
+  expect(await number(page, "follow.done_m"), "the same run").toBe(done);
+  await page.goBack();
+  await expect(page.getByTestId("follow-question")).toBeVisible();
+  await page.getByTestId("follow-keep-going").click();
+  await replay(page, running(points, along, 615, 700));
+  expect(await number(page, "follow.done_m")).toBeGreaterThan(650);
 });
 
 test("Did you finish: yes records 100 %", async ({ page, context }) => {

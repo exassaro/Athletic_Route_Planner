@@ -18,11 +18,15 @@ export function corridorTileUrl(load: number): string {
   return `${CORRIDOR_PROTOCOL}://tiles/{z}/{x}/{y}?${load}`;
 }
 
-export function followStyle(origin: string, theme: Theme, load: number): StyleSpecification {
+/**
+ * `sprite`: whose sprite is named, when it is not the theme's. Battery saver darkens the layers during a run, and
+ * a new sprite address would be a request in the middle of one (and fail without a signal).
+ */
+export function followStyle(origin: string, theme: Theme, load: number, sprite: Theme = theme): StyleSpecification {
   const style = basemapStyle(origin, theme);
   return {
     version: style.version,
-    sprite: style.sprite,          // one file for each theme, fetched with the style
+    sprite: basemapStyle(origin, sprite).sprite,          // one file for each theme, fetched with the style
     sources: { [BASEMAP_SOURCE]: { type: "vector", tiles: [corridorTileUrl(load)], minzoom: MIN_ZOOM, maxzoom: MAX_ZOOM } },
     layers: style.layers,
   };

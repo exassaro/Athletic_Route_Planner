@@ -85,6 +85,14 @@ describe("the Follow style", () => {
   }
 });
 
+describe("battery saver's style", () => {
+  it("darkens the layers and keeps the sprite, so nothing is fetched during the run", () => {
+    const saver = followStyle("https://gatho.test", "dark", 1, "light");
+    expect(saver.sprite).toBe("https://gatho.test/basemap/sprites/light");
+    expect(saver.layers).toEqual(followStyle("https://gatho.test", "dark", 1).layers);
+  });
+});
+
 describe("what is drawn", () => {
   const line = lineOf("S02");
   const parts = (features: { properties: { part: string } }[]) => features.map((f) => f.properties.part);

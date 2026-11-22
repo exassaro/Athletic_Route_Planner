@@ -5,8 +5,8 @@
  */
 import type { ReactNode } from "react";
 import { Num } from "@/components/Num";
-import { Icon } from "@/components/ui";
-import { elapsedMs, elapsedText, paceSPerKm } from "@/follow/clock";
+import { Icon, IconButton } from "@/components/ui";
+import { elapsedMs, elapsedText, gapText, paceSPerKm } from "@/follow/clock";
 import { cueAction, cueDistance, NOW_M, nextCue, type Turn } from "@/follow/cues";
 import type { Line } from "@/follow/line";
 import { cuesOn, signal, type Run } from "@/follow/run";
@@ -74,6 +74,18 @@ export function CueLine({ run, turns, noPosition }: { run: Run; turns: readonly 
   return (
     <div className="follow-cue">
       <p className="t-heading" data-testid="follow-cue" data-state={state}>{text}</p>
+    </div>
+  );
+}
+
+/** Back from a lock or another app, calmly (amendment 10). It stays until dismissed: it must be readable. */
+export function AwayLine({ ms, onDismiss }: { ms: number; onDismiss: () => void }) {
+  return (
+    <div className="follow-away" role="status" data-testid="follow-away">
+      <p className="t-body-s">
+        You were away for <Num value={ms} format={gapText} field="follow.away_ms" />. Cues are off while the screen is locked.
+      </p>
+      <IconButton icon="close" label="Dismiss" onClick={onDismiss} />
     </div>
   );
 }
