@@ -27,6 +27,8 @@ type Props = {
   startControls: ReactNode;
   near: [number, number] | null;
   map?: MapLibreMap | null;
+  /** True while the direction step is showing (the compass then marks the direction). */
+  onDirectionStep?: (showing: boolean) => void;
   solving: boolean;
   canPlan: boolean;
   onPlan: () => void;
@@ -40,7 +42,7 @@ const SHAPES: { value: RouteType; label: string; sub: string; icon: IconName }[]
   { value: "loop", label: "Loop", sub: "Come back to the start another way", icon: "loop" },
 ];
 
-export function SetupFlow({ draft, onEdit, startControls, near, map, solving, canPlan, onPlan }: Props) {
+export function SetupFlow({ draft, onEdit, startControls, near, map, onDirectionStep, solving, canPlan, onPlan }: Props) {
   const [step, setStep] = useState(1);
   const title = useRef<HTMLHeadingElement>(null);
   const hadStart = useRef(!!draft.start);
@@ -50,6 +52,10 @@ export function SetupFlow({ draft, onEdit, startControls, near, map, solving, ca
     if (draft.start && !hadStart.current && step === 1) setStep(2);
     hadStart.current = !!draft.start;
   }, [draft.start, step]);
+  useEffect(() => {
+    onDirectionStep?.(step === 4);
+    return () => onDirectionStep?.(false);
+  }, [step, onDirectionStep]);
   // Each new question gets the focus, so a screen reader hears it.
   useEffect(() => {
     if (step > 1) title.current?.focus();

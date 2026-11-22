@@ -550,11 +550,25 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
   background: var(--paper); border: 1px solid var(--hairline); max-width: max-content;
 }
 .topbar-brand + .icon-btn { margin-left: auto; }
-.planner .maplibregl-ctrl-top-right { margin-top: 64px; }
+/* The compass (amendment 19): top right, under the menu button, the zoom buttons below it. */
+.map-compass {
+  position: absolute; z-index: 2; top: 8px; right: 8px; width: 48px; height: 48px; min-height: 48px; padding: 0;
+  display: grid; place-items: center; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--control); border-radius: var(--radius); touch-action: manipulation;
+}
+.map-compass svg { display: block; }
+.compass-north { fill: var(--ink); }
+.compass-south { fill: var(--control); }
+.compass-hub { fill: var(--surface); }
+.compass-mark { fill: var(--accent); }
+.planner .map-compass { top: 72px; right: 16px; }
+.map-box .maplibregl-ctrl-top-right { margin-top: 52px; }
+.planner .maplibregl-ctrl-top-right { margin-top: 116px; margin-right: 6px; }
 @media (min-width: 900px) {
+  .planner .map-compass { top: 8px; }
   .topbar { right: auto; width: 440px; background: var(--paper); border-right: 1px solid var(--hairline); }
   .sheet, .sheet.peek, .sheet.half, .sheet.full { padding-top: 64px; }
-  .planner .maplibregl-ctrl-top-right { margin-top: 0; }
+  .planner .maplibregl-ctrl-top-right { margin-top: 52px; }
 }
 .menu-body { display: grid; gap: var(--space-2); }
 .menu-section { display: grid; gap: var(--space-1); }
@@ -656,7 +670,7 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .map-box { background: #ECE9E3; }
 /* Tiles failed (amendment 12): said in the part of the map above the sheet, clear of the top bar and the controls. */
 .map-notice {
-  position: absolute; z-index: 2; top: 72px; left: 16px; right: 64px; max-width: 320px; margin: 0 auto;
+  position: absolute; z-index: 2; top: 72px; left: 16px; right: 76px; max-width: 320px; margin: 0 auto;
   display: grid; justify-items: start; gap: var(--space-1); padding: 12px;
   background: var(--surface); color: var(--ink); border: 1px solid var(--control); border-radius: var(--radius);
 }

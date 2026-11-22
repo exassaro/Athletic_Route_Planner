@@ -16,8 +16,25 @@ test("a direction is picked in words, and the hint follows the map as it turns",
     expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
     expect(await option.evaluate((el) => el.scrollWidth <= el.clientWidth + 1), "fits its button").toBe(true);
   }
+  const compass = page.getByTestId("compass");
+  const box = (await compass.boundingBox())!;
+  const menu = (await page.getByTestId("menu-open").boundingBox())!;
+  expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
+  expect(box.y, "under the menu button").toBeGreaterThanOrEqual(menu.y + menu.height);
+  await expect(page.getByTestId("compass-direction")).toHaveCount(1);
+  await expect(page.locator(".maplibregl-ctrl-compass")).toHaveCount(0);
+  const zoomIn = page.locator(".maplibregl-ctrl-zoom-in");
+  await zoomIn.waitFor();
+  expect((await zoomIn.boundingBox())!.y, "zoom buttons below the compass").toBeGreaterThanOrEqual(box.y + box.height);
   await page.screenshot({ path: test.info().outputPath("direction-picker.png") });
   await page.waitForFunction(() => (window as unknown as { athleteMap?: import("maplibre-gl").Map }).athleteMap?.loaded());
   await page.evaluate(() => (window as unknown as { athleteMap: import("maplibre-gl").Map }).athleteMap.jumpTo({ bearing: 90 }));
   await expect(page.getByRole("button", { name: "East, up on the map", exact: true })).toBeVisible();
+  await expect(compass).toHaveAttribute("data-bearing", "90");
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+  await page.screenshot({ path: test.info().outputPath("compass-turned-dark.png") });
+  await compass.click();
+  await expect(compass).toHaveAttribute("data-bearing", /^-?0$/);
+  await page.getByTestId("setup-next").click();
+  await expect(page.getByTestId("compass-direction"), "only while picking").toHaveCount(0);
 });

@@ -10,6 +10,7 @@ import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import { MapView } from "@/map/MapView";
 import { useRouteLayers } from "@/map/useRouteLayers";
 import { useTheme } from "@/theme/useTheme";
+import { pointing } from "@/plan/direction";
 import { applyToDraft, blocked, patchFor, type Edit, type Point, type RouteRequest } from "@/plan/edits";
 import { pace as formatPace, parsePace, signedKm } from "@/plan/format";
 import { usePace } from "@/plan/pace";
@@ -142,6 +143,8 @@ export function Planner() {
 
   // Chips: each opens its editor; the stop-like ones go to the stops list.
   const [editor, setEditor] = useState<ChipKey | null>(null);
+  const [directionStep, setDirectionStep] = useState(false);
+  const pickingDirection = v ? editor === "direction" : directionStep;
   const goToStops = () => {
     setSheet("full");
     setTimeout(() => {
@@ -220,7 +223,7 @@ export function Planner() {
 
   return (
     <div className={`planner sheet-${sheet}${v ? "" : " setup-mode"}`}>
-      <MapView onReady={setMap} theme={theme} />
+      <MapView onReady={setMap} theme={theme} pointing={pickingDirection ? pointing(request) : null} />
       <TopBar setupMode={!v} near={near} canAddStop={!!v} onPlace={onPlace} menu={menu} />
       <BottomSheet snap={sheet} onSnap={setSheet} label="Plan your run" halfRatio={v ? 0.5 : 0.64}
         banner={toast && (
@@ -250,7 +253,7 @@ export function Planner() {
           )}
           {/* Before the first route: the five setup steps. After it, every change goes through the chips. */}
           {!v && (
-            <SetupFlow draft={draft} onEdit={onEdit} startControls={startControls} near={near} map={map} solving={solving}
+            <SetupFlow draft={draft} onEdit={onEdit} startControls={startControls} near={near} map={map} onDirectionStep={setDirectionStep} solving={solving}
               canPlan={canPlan} onPlan={() => draft.start && plan.create(draft as NewRouteRequest)} />
           )}
       </BottomSheet>

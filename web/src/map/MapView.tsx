@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap, VectorTileSource } from "maplibre-gl";
 import { Button } from "@/components/ui";
 import type { Theme } from "@/theme/theme";
+import { Compass } from "./Compass";
 import { ATTRIBUTION, BASEMAP_SOURCE, basemapStyle, basemapUrl, keepDrawn, KOZHIKODE } from "./basemap";
 
 type Props = {
@@ -14,6 +15,8 @@ type Props = {
   center?: [number, number];
   zoom?: number;
   theme?: Theme;
+  /** The direction being picked, for the compass to mark (amendment 19). */
+  pointing?: number | null;
 };
 
 /**
@@ -21,7 +24,7 @@ type Props = {
  * basemap (light or dark flavour) and keeps what was drawn on it. When the tiles fail after one retry it says so,
  * with "Reload map", instead of staying blank (Phase 5b amendment 12).
  */
-export function MapView({ onReady, className, interactive = true, center = KOZHIKODE, zoom = 12, theme = "light" }: Props) {
+export function MapView({ onReady, className, interactive = true, center = KOZHIKODE, zoom = 12, theme = "light", pointing = null }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const shown = useRef<Theme>(theme);
@@ -67,7 +70,7 @@ export function MapView({ onReady, className, interactive = true, center = KOZHI
       });
       // OSM attribution always visible (Phase 5 amendment 3): never collapsed.
       m.addControl(new maplibregl.AttributionControl({ compact: false, customAttribution: ATTRIBUTION }), "bottom-right");
-      if (interactive) m.addControl(new maplibregl.NavigationControl({ showCompass: true }), "top-right");
+      if (interactive) m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");   // the compass is ours
       const ready = m;
       const watch = watchBasemap(m, () => {
         protocol.add(basemapArchive(url)); // a new archive: the failed one keeps its failed header
@@ -102,6 +105,7 @@ export function MapView({ onReady, className, interactive = true, center = KOZHI
   return (
     <>
       <div ref={box} className={`map-box${className ? ` ${className}` : ""}`} style={{ position: "absolute", inset: 0 }} data-testid="map" />
+      {interactive && <Compass map={map} pointing={pointing} />}
       {failed && (
         <div className="map-notice" role="status" data-testid="map-failed">
           <p className="t-body-s">The map background didn&apos;t load.</p>
