@@ -8,6 +8,7 @@ The Phase 4 backend: FastAPI over the solver (blueprint Phase 4 amendments, sect
     hash), `errors`;
   - `solving` (solve slots, worker thread, shared in-flight solves), `elevation` (Valhalla /height for Z and the
     profile), `cache` (Redis, 24 h), `planning` (build ids -> cache -> solve -> store a version; 429/504),
+    `overview` (A14's algorithm, pure), `overviewing` (its worker threads, cache and errors),
     `diff` (version diff), `explain` (template explanations, numbers only from the SolveResult);
   - `routes_*` (endpoints; `routes_saved` manages saved routes, Phase 5c), `purge_deleted` (CLI: removes saved routes soft-deleted more than N days ago), `main` (app factory; `create_app(solver=...)` takes a fake solver in tests).
 - `alembic/` migrations (the schema's authority): `uv run alembic -c api/alembic.ini upgrade head`.
@@ -26,3 +27,7 @@ Phase 5 changes (blueprint Phase 5 amendment 7):
 - **OSM features (A6, `osm_features.py`, `routes_features.py`):** `GET /v1/features/item` turns a picked place (Photon id and point) or way into a ready request item (checkpoint, via, must-use, avoid) with the fixtures' rules: a pass-near checkpoint carries its own OSM boundary, a bridge its way, a road its connected ways of that name. `GET /v1/features/nearby` lists highway ways near a tapped point (bridges have no Photon entry: "Karuvanthuruthy bridge" is not in OSM by name). Data: `osm_ways` (every highway way) and `osm_boundaries` (admin_level 8 to 10), loaded from the pinned extract by `uv run python api/scripts/load_osm_features.py [--dsn ...]` (about 3 minutes; 497,563 ways and 13,509 boundaries on 2026-11-18). `/v1/health` reports it as `osm_features`. Built from Photon's ids and points, A01's six checkpoints equal the fixture request exactly (tested).
 - **Climb (Phase 5 amendments 13 to 15):** the solver bridges bridge edges before smoothing (`Candidate.bridges_m`, stored in `routes.bridges_m`, migration 0004). The elevation response adds `smoothed` (the solver's own series) and `climb_approximate` (median DEM height < 20 m), which every candidate also carries.
 - `scripts/compare_routes.py`: fresh solves against stored routes, to show a solver change leaves the routes alone.
+
+Phase 5d changes (blueprint Phase 5d amendments):
+- **Overview points (A14):** `GET /v1/routes/{id}/overview-points?max=N` and `GET /v1/share/{slug}/overview-points?max=N`: at most N (1 to 9) waypoints for a Google Maps walking link, with the worst deviation and the overlap, both leg by leg against Valhalla's path. A miss makes at most 2N + 1 engine calls, two computations at a time, cached 24 h by route, N and Valhalla build. Any 503 means: use evenly spaced km marks and show no estimate.
+- `scripts/measure_overview.py`: smart against even spacing (`docs/reports/phase5d/overview_data.json`), and the recorded Valhalla paths for the unit tests (`tests/fixtures/overview/legs.json`, never edited by hand).

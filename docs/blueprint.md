@@ -925,6 +925,8 @@ Rewritten for Phase 4. Every path is under `/v1`. Requests and responses use the
 | `POST /v1/me/routes/{saved_id}/restore` | Undo a delete | 404 once purged (`python -m athlete_api.purge_deleted --days 30`) |
 | `GET /v1/share/{slug}` | Public read-only route | No token needed; with one, `is_owner`; a deleted slug is 404, as an unknown one |
 | `GET /v1/share/{slug}/gpx` | The shared route as GPX | No token needed. Added in Phase 4 so a share page can offer the download |
+| `GET /v1/routes/{id}/overview-points?max=N` | Waypoints (N from 1 to 9) for a Google Maps overview link (Phase 5d A14) | `points`, `max_deviation_m`, `overlap_pct` (leg by leg, Valhalla standing in for Google); cached by route, N and Valhalla build |
+| `GET /v1/share/{slug}/overview-points?max=N` | The same for a shared route | No token needed; counts against the share link's per-IP read limit; `no-store` |
 | `GET /v1/health` | Valhalla, GraphHopper, Photon, Postgres, Redis; both build ids; OSM pin; solver hash | 200 when the solve path (Valhalla, Postgres, Redis) is up, else 503 |
 
 ### Response for create, patch and version reads
@@ -988,6 +990,7 @@ Every error has the body `{"error": code, "message": text, "detail": …}`.
 | 429 | `rate_limited` | Per-client or per-IP limit; `Retry-After` |
 | 429 | `solver_busy` | No solve slot within 10 s; `Retry-After` |
 | 503 | `engine_unavailable` / `geocoder_unavailable` | Valhalla or Photon down. A GraphHopper outage is not an error: the solver returns "shortest" with the flag `alternative_unavailable` |
+| 503 | `overview_unavailable` / `overview_timeout` | Overview points only: no walking path between some of the points, or over 10 s (the work carries on and is cached) |
 | 504 | `solve_timeout` | Over the 15 s budget. `detail` has `plan_id`, `status: "solving"`, `elapsed_ms` and the URL to poll |
 
 ### Operational rules

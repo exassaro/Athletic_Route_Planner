@@ -1531,6 +1531,60 @@
     "title": "NearbyWay",
     "type": "object"
    },
+   "OverviewPoint": {
+    "properties": {
+     "at_m": {
+      "description": "Distance along the route, measured from the geometry",
+      "title": "At M",
+      "type": "number"
+     },
+     "lat": {
+      "title": "Lat",
+      "type": "number"
+     },
+     "lon": {
+      "title": "Lon",
+      "type": "number"
+     }
+    },
+    "required": [
+     "lon",
+     "lat",
+     "at_m"
+    ],
+    "title": "OverviewPoint",
+    "type": "object"
+   },
+   "OverviewPointsOut": {
+    "description": "Waypoints for a Google Maps overview link (Phase 5d A14). Valhalla stands in for Google.",
+    "properties": {
+     "max_deviation_m": {
+      "description": "The worst straight-line distance between our line and Valhalla's walking path through the points, leg by leg. Never a route distance",
+      "title": "Max Deviation M",
+      "type": "number"
+     },
+     "overlap_pct": {
+      "description": "The share of our length within 30 m of that path, leg by leg, rounded down. An estimate: tested with our router, not with Google",
+      "title": "Overlap Pct",
+      "type": "number"
+     },
+     "points": {
+      "description": "The waypoints in route order, at most `max`. The route's start and end are fixed and not among them",
+      "items": {
+       "$ref": "#/components/schemas/OverviewPoint"
+      },
+      "title": "Points",
+      "type": "array"
+     }
+    },
+    "required": [
+     "points",
+     "max_deviation_m",
+     "overlap_pct"
+    ],
+    "title": "OverviewPointsOut",
+    "type": "object"
+   },
    "PatchOp": {
     "description": "One RFC 6902 operation. Fields left unset are not sent (a `remove` has no `value`).",
     "properties": {
@@ -20532,6 +20586,121 @@
     ]
    }
   },
+  "/v1/routes/{route_id}/overview-points": {
+   "get": {
+    "description": "The points that keep a walking link closest to this route, and how close that is with Valhalla standing in\nfor Google (Phase 5d A14). An overview: the exact route is the GPX. 503 when Valhalla can't answer: use evenly\nspaced km marks and show no estimate.",
+    "operationId": "get_overview_points_v1_routes__route_id__overview_points_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "route_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Route Id",
+       "type": "string"
+      }
+     },
+     {
+      "description": "At most this many waypoints: Google takes 3 in a mobile browser and 9 elsewhere",
+      "in": "query",
+      "name": "max",
+      "required": true,
+      "schema": {
+       "description": "At most this many waypoints: Google takes 3 in a mobile browser and 9 elsewhere",
+       "maximum": 9,
+       "minimum": 1,
+       "title": "Max",
+       "type": "integer"
+      }
+     },
+     {
+      "description": "Token from POST /v1/session",
+      "in": "header",
+      "name": "x-client-token",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Token from POST /v1/session",
+       "title": "X-Client-Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/OverviewPointsOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "401": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Unauthorized"
+     },
+     "404": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Not Found"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Unprocessable Entity"
+     },
+     "429": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Too Many Requests"
+     },
+     "503": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Service Unavailable"
+     }
+    },
+    "summary": "Waypoints for a Google Maps overview link",
+    "tags": [
+     "routes"
+    ]
+   }
+  },
   "/v1/routes/{route_id}/save": {
    "post": {
     "description": "Saving the same route again updates the name of its most recently updated saved route and keeps that slug\n(200). `as_new`: always another saved route with its own slug (201). A deleted one is never revived.",
@@ -21127,6 +21296,93 @@
      }
     },
     "summary": "A shared route as GPX (public, no token)",
+    "tags": [
+     "routes",
+     "share"
+    ]
+   }
+  },
+  "/v1/share/{slug}/overview-points": {
+   "get": {
+    "description": "As the owner's, without a token. A deleted link answers 404 exactly as an unknown one, cached or not.",
+    "operationId": "get_shared_overview_points_v1_share__slug__overview_points_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "slug",
+      "required": true,
+      "schema": {
+       "title": "Slug",
+       "type": "string"
+      }
+     },
+     {
+      "description": "At most this many waypoints: Google takes 3 in a mobile browser and 9 elsewhere",
+      "in": "query",
+      "name": "max",
+      "required": true,
+      "schema": {
+       "description": "At most this many waypoints: Google takes 3 in a mobile browser and 9 elsewhere",
+       "maximum": 9,
+       "minimum": 1,
+       "title": "Max",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/OverviewPointsOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "404": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Not Found"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Unprocessable Entity"
+     },
+     "429": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Too Many Requests"
+     },
+     "503": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Service Unavailable"
+     }
+    },
+    "summary": "Waypoints for a shared route's Google Maps overview link (public, no token)",
     "tags": [
      "routes",
      "share"

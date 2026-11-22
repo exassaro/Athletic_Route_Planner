@@ -298,6 +298,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/routes/{route_id}/overview-points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Waypoints for a Google Maps overview link
+         * @description The points that keep a walking link closest to this route, and how close that is with Valhalla standing in
+         *     for Google (Phase 5d A14). An overview: the exact route is the GPX. 503 when Valhalla can't answer: use evenly
+         *     spaced km marks and show no estimate.
+         */
+        get: operations["get_overview_points_v1_routes__route_id__overview_points_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/routes/{route_id}/save": {
         parameters: {
             query?: never;
@@ -370,6 +392,26 @@ export interface paths {
         };
         /** A shared route as GPX (public, no token) */
         get: operations["get_shared_gpx_v1_share__slug__gpx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/share/{slug}/overview-points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Waypoints for a shared route's Google Maps overview link (public, no token)
+         * @description As the owner's, without a token. A deleted link answers 404 exactly as an unknown one, cached or not.
+         */
+        get: operations["get_shared_overview_points_v1_share__slug__overview_points_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -965,6 +1007,39 @@ export interface components {
              * @description "osm:way/N": pass it to /v1/features/item as a bridge or road
              */
             place_id: string;
+        };
+        /** OverviewPoint */
+        OverviewPoint: {
+            /**
+             * At M
+             * @description Distance along the route, measured from the geometry
+             */
+            at_m: number;
+            /** Lat */
+            lat: number;
+            /** Lon */
+            lon: number;
+        };
+        /**
+         * OverviewPointsOut
+         * @description Waypoints for a Google Maps overview link (Phase 5d A14). Valhalla stands in for Google.
+         */
+        OverviewPointsOut: {
+            /**
+             * Max Deviation M
+             * @description The worst straight-line distance between our line and Valhalla's walking path through the points, leg by leg. Never a route distance
+             */
+            max_deviation_m: number;
+            /**
+             * Overlap Pct
+             * @description The share of our length within 30 m of that path, leg by leg, rounded down. An estimate: tested with our router, not with Google
+             */
+            overlap_pct: number;
+            /**
+             * Points
+             * @description The waypoints in route order, at most `max`. The route's start and end are fixed and not among them
+             */
+            points: components["schemas"]["OverviewPoint"][];
         };
         /**
          * PatchOp
@@ -2579,6 +2654,79 @@ export interface operations {
             };
         };
     };
+    get_overview_points_v1_routes__route_id__overview_points_get: {
+        parameters: {
+            query: {
+                /** @description At most this many waypoints: Google takes 3 in a mobile browser and 9 elsewhere */
+                max: number;
+            };
+            header?: {
+                /** @description Token from POST /v1/session */
+                "x-client-token"?: string | null;
+            };
+            path: {
+                route_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewPointsOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     save_route_v1_routes__route_id__save_post: {
         parameters: {
             query?: never;
@@ -2777,6 +2925,67 @@ export interface operations {
             };
             /** @description Too Many Requests */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    get_shared_overview_points_v1_share__slug__overview_points_get: {
+        parameters: {
+            query: {
+                /** @description At most this many waypoints: Google takes 3 in a mobile browser and 9 elsewhere */
+                max: number;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewPointsOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

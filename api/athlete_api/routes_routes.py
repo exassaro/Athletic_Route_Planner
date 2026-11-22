@@ -19,8 +19,10 @@ from .deps import Services, client_id_if_known, client_ip, limited, services
 from .elevation import PROFILE_STEP_M, climb_approximate, smoothed
 from .errors import ApiError, responses
 from .examples import content
+from .overviewing import OverviewService
 from .routes_saved import newest_saved, saved_out
-from .schemas import ElevationOut, KmMark, LineStringZ, RouteFeature, SavedOut, SaveIn, SharedRouteOut
+from .schemas import (ElevationOut, KmMark, LineStringZ, OverviewPointsOut, RouteFeature, SavedOut, SaveIn,
+                      SharedRouteOut)
 from .store import candidate_of, geometry_of
 
 router = APIRouter(prefix="/v1", tags=["routes"])
@@ -29,6 +31,12 @@ GPX_TYPE = "application/gpx+xml"
 NO_STORE = {"Cache-Control": "no-store"}
 ELE = Query(True, description="Include each track point's DEM height as <ele>. false: leave it out, so the "
                                "importing app uses its own elevation data")
+MAX_POINTS = Query(..., alias="max", ge=1, le=9,
+                   description="At most this many waypoints: Google takes 3 in a mobile browser and 9 elsewhere")
+
+
+def overviews(request: Request) -> OverviewService:
+    return request.app.state.overview
 
 
 async def _owned(svc: Services, route_id: uuid.UUID, client_id: uuid.UUID) -> tuple[Route, PlanVersion]:
@@ -111,6 +119,18 @@ def elevation_out(route: Route) -> ElevationOut:
                         gain_m=route.gain_m, loss_m=route.loss_m)
 
 
+@router.get("/routes/{route_id}/overview-points", response_model=OverviewPointsOut,
+            responses=responses(401, 404, 422, 429, 503), summary="Waypoints for a Google Maps overview link")
+async def get_overview_points(route_id: uuid.UUID, limit: int = MAX_POINTS, client: Client = Depends(limited("read")),
+                              svc: Services = Depends(services),
+                              over: OverviewService = Depends(overviews)) -> OverviewPointsOut:
+    """The points that keep a walking link closest to this route, and how close that is with Valhalla standing in
+    for Google (Phase 5d A14). An overview: the exact route is the GPX. 503 when Valhalla can't answer: use evenly
+    spaced km marks and show no estimate."""
+    route, _ = await _owned(svc, route_id, client.id)
+    return await over.get(route.id, geometry_of(route)[0], limit)
+
+
 @router.get("/routes/{route_id}/gpx", response_class=Response, responses={
     200: {"content": {GPX_TYPE: {}}, "description": "GPX 1.1 course"}, **responses(401, 404, 429)},
     summary="GPX 1.1 course")
@@ -189,3 +209,15 @@ async def get_shared_gpx(slug: str, ele: bool = ELE, ip: str = Depends(client_ip
     resp = gpx_response(route, saved.name, ele)
     resp.headers.update(NO_STORE)
     return resp
+
+
+@router.get("/share/{slug}/overview-points", response_model=OverviewPointsOut,
+            responses=responses(404, 422, 429, 503), tags=["share"],
+            summary="Waypoints for a shared route's Google Maps overview link (public, no token)")
+async def get_shared_overview_points(slug: str, response: Response, limit: int = MAX_POINTS,
+                                     ip: str = Depends(client_ip), svc: Services = Depends(services),
+                                     over: OverviewService = Depends(overviews)) -> OverviewPointsOut:
+    """As the owner's, without a token. A deleted link answers 404 exactly as an unknown one, cached or not."""
+    response.headers.update(NO_STORE)
+    _, route, _ = await _shared(svc, slug, ip)
+    return await over.get(route.id, geometry_of(route)[0], limit)
