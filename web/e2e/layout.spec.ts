@@ -69,6 +69,15 @@ test("the end flag's pole is on the end point and the place name steps clear", a
   expect(names, "moved aside, not hidden").toContain("Kozhikode");
 });
 
+test("the peek stats show only at peek", async ({ page }) => {
+  await planA01Base(page);
+  for (const state of ["peek", "half", "full"] as const) {
+    await snapTo(page, state);
+    if (state === "peek") await expect(page.getByTestId("summary")).toBeVisible();
+    else await expect(page.getByTestId("summary")).toBeHidden();
+  }
+});
+
 test("the Undo message moves with the sheet and covers no content", async ({ page }) => {
   await planA01Base(page);
   await addStop(page, PLACES.kottakkadavu);

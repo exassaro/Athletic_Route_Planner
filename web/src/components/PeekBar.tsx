@@ -1,6 +1,7 @@
 /**
  * The peek bar (blueprint Phase 5b amendment 8): what a peeked sheet shows of the selected route. Distance, time at
- * the runner's pace and climb, each the API's number (time = the API's foot length times the pace).
+ * the runner's pace and climb, each the API's number (time = the API's foot length times the pace). Shown only at
+ * peek (amendment 15): above it the selected route's card has the same numbers.
  */
 import type { Schemas } from "@/api/client";
 import { pace as formatPace } from "@/plan/format";

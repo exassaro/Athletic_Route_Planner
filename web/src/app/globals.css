@@ -242,6 +242,9 @@ a { color: var(--accent-text); }
 .stat-number { white-space: nowrap; }
 .climb { display: inline-flex; align-items: baseline; white-space: nowrap; }
 .peek-bar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-1); padding: 0 0 var(--space-1); }
+/* Only at peek (amendment 15): above it, and in the desktop panel, the selected card shows the same numbers. */
+.sheet:not(.peek) .peek-bar { display: none; }
+@media (min-width: 900px) { .sheet .peek-bar { display: none; } }
 .peek-stat { display: flex; flex-direction: column; min-width: 0; }
 .route-cards { margin: var(--space-1) 0 var(--space-2); }
 .route-row {
