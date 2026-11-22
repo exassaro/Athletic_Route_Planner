@@ -41,7 +41,7 @@ export function SavedRoutes() {
       <ul className="saved-list">
         {routes?.map((r) => (
           <li key={r.saved_id} className="saved-card">
-            {/* the still sneaker as the thumbnail (Phase 5b amendment 6: static pose off the planner) */}
+            {/* the thumbnail stays still (amendment 6); the route it opens hops three times (amendment 13) */}
             <span className="saved-thumb"><Sprite name="sneaker" scale={2} /></span>
             <div className="saved-text">
               <h2 className="t-heading">{r.name ?? "Unnamed run"}</h2>

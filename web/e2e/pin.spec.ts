@@ -79,6 +79,23 @@ test("the mascot hops, rests, and the loading cycle runs only while planning", a
   await expect(page.locator(".sneaker-cycle")).toHaveCount(0);
 });
 
+test("a saved route: three hops on open, one per tap", async ({ page }) => {
+  await countHops(page);
+  await planA01Base(page);
+  await page.getByTestId("route-name").fill("Hop test");
+  await page.getByTestId("save").click();
+  const share = (await page.getByTestId("share-link").getAttribute("href"))!;
+  await page.goto(share);               // a new document: the count starts again
+  await page.locator(".pin-start.hop").waitFor();
+  await rested(page);
+  expect(await hops(page), "on open").toBe(3);
+  await reset(page);
+  await page.locator(".pin-start").dispatchEvent("click");
+  await page.locator(".pin-start.hop").waitFor();
+  await rested(page);
+  expect(await hops(page), "one tap").toBe(1);
+});
+
 test("no hop with reduced motion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await countHops(page);
