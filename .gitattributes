@@ -1,2 +1,7 @@
 web/src/api/openapi.json text eol=lf
 web/src/api/schema.d.ts text eol=lf
+# Generated files and their source, compared byte for byte by unit tests: LF on every checkout.
+web/src/brand/icons.ts text eol=lf
+web/src/brand/logo.ts text eol=lf
+web/src/brand/sprites.ts text eol=lf
+docs/reports/phase5b/sprites.md text eol=lf
