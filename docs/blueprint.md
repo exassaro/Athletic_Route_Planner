@@ -2,6 +2,29 @@
 
 Nov 16, 2026 · @Azzm
 
+## Phase 5c amendments
+
+Decided 2026-11-22 by the product owner: manage saved routes (rename, edit, delete) before Phase 6. The solver does not change. Every API change is additive; migration 0005 is the one schema change. Where these amendments conflict with an earlier amendment or a later section, they win. They replace Phase 5 amendment 11's "no deleting a saved route" and Phase 5 amendment 7's closed list of API changes (A10 to A13 are added).
+
+**Decisions**
+
+1. **Delete is a soft delete with Undo.** The route leaves "Saved routes" and its share link answers 404 with the same body and the same page as an unknown slug. Undo restores both. Deleting again answers 204 while the row exists. `python -m athlete_api.purge_deleted --days 30` removes rows deleted more than 30 days ago; there is no scheduler. Routes and plan versions are never deleted by these endpoints.
+2. **Edit reopens the saved route in the planner** (`/?edit=<saved_id>`) at its own plan version. Saving then offers "Update <name>" (the same saved route and slug, now pointing at the selected route; with Undo) or "Save as new". The UI says that anyone with the share link will see the updated route. Update is off while nothing has changed, judged on the request and the geometry, because returning to an earlier request makes a new route id.
+3. **Rename is an in-app dialog and a PATCH**: trimmed, at most 80 characters, empty means no name. The Phase 4 save call still renames and keeps its limit of 200.
+4. **Owner only, anonymous clients as before.** Another client's `saved_id` answers 404, never 403. Saved routes live on the device that holds the token.
+5. **Migration 0005** adds `saved_routes.deleted_at` and `updated_at` (backfilled from `created_at`) and an index on (client_id, deleted_at). `updated_at` moves on rename and on update, not on delete or restore, so Undo puts a card back where it was. **The downgrade deletes soft-deleted rows first**: dropping the column alone would republish deleted links.
+6. **A10, the saved-route endpoints:** `PATCH` and `DELETE /v1/me/routes/{saved_id}`, `POST /v1/me/routes/{saved_id}/restore`; `GET /v1/me/routes` leaves out deleted routes, orders by `updated_at`, newest first, and gains `updated_at` and `plan_version`. CORS allows DELETE.
+7. **A11, `from_version` on `PATCH /v1/plans/{id}`** (optional): the patch applies to that version's request and the diff is against it. Without it, editing a saved version that is not the latest would silently apply the edit to another request. The new version is still the next number.
+8. **A12, `as_new` on `POST /v1/routes/{id}/save`** (optional): always a new saved route with a new slug. Without it the save renames the most recently updated live saved route of that route, or makes one. A save never revives a deleted row or its slug. Several saved routes may point at one route.
+9. **A13, `updated_at` and `is_owner` in the share response.** `is_owner` is true only for the owner's token; no token or an unknown one gives false, never 401. The response is `no-store`. The share page is rendered on the server without a token, so the browser asks again with the token it already has; it never creates a session for a visitor.
+10. **The "write" rate limit:** 60 a minute per client (configurable), none per IP, because behind the proxy every client has the proxy's address.
+11. **Delete in menus** uses the one warning colour (Phase 5b amendment 4) with a trash icon and a divider, last in the list.
+12. **Undo after a delete** shows for 10 seconds, paused while the message has the pointer or the focus, and survives the move to the saved-routes page.
+
+**Found while planning, for a separate change:** behind Caddy every client shares the proxy's IP, so the per-IP limits (10 new sessions an hour among them) are shared by all users. Trusting forwarded addresses also needs port 8000 closed to the LAN.
+
+**Status (2026-11-22): in progress.**
+
 ## Phase 5b amendments
 
 Decided 2026-11-18 by the product owner: a mobile-first redesign of `web/` before Phase 6, under the name **GATHO**. There are no new features. The API and the solver do not change unless a change is listed and approved first. Where these amendments conflict with an earlier amendment or a later section, they win. Items marked *default* came from the Phase 5b plan and stand until the product owner changes them. Mockups: the GATHO 5b canvas (claude.ai artifact, private); sprites: [docs/reports/phase5b/sprites.md](reports/phase5b/sprites.md); baseline: [docs/reports/phase5b/before/README.md](reports/phase5b/before/README.md).
@@ -99,7 +122,7 @@ Decided 2026-11-18 by the product owner at the start of Phase 5, the web front e
 8. **Place picker:** duplicates of the same place (same name and county: village, boundary, station) are grouped in the UI, with each member's kind listed. No distance is involved; the user still picks.
 9. **One origin in production:** a Caddy service serves the web app, `/v1` and the tiles together (and HTTPS on the LAN with `tls internal`, which geolocation on a phone needs). CORS is then needed only for development.
 10. **Lighthouse:** accessibility ≥ 90 is a gate; performance is reported as measured.
-11. **Left out:** deleting a saved route (no endpoint) and "Remix this route" (the plan id stays private).
+11. **Left out:** deleting a saved route (no endpoint; replaced by Phase 5c amendment 1) and "Remix this route" (the plan id stays private).
 
 **Decided after the elevation report** (2026-11-18, [docs/reports/phase5/elevation.md](reports/phase5/elevation.md))
 
