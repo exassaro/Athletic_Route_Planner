@@ -122,7 +122,10 @@ class Route(Base):
 
 class SavedRoute(Base):
     __tablename__ = "saved_routes"
-    __table_args__ = (CheckConstraint("rating BETWEEN 1 AND 5", name="rating"),)
+    __table_args__ = (
+        CheckConstraint("rating BETWEEN 1 AND 5", name="rating"),
+        Index("ix_saved_routes_client_id_deleted_at", "client_id", "deleted_at"),
+    )
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clients.id"), index=True)
     route_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("routes.id"))
@@ -131,6 +134,8 @@ class SavedRoute(Base):
     rating: Mapped[int | None] = mapped_column(Integer)                # post-run feedback (later phases)
     feedback: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(TZ, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(TZ, server_default=func.now())   # rename or update, not delete/restore
+    deleted_at: Mapped[datetime | None] = mapped_column(TZ)            # soft delete (Phase 5c amendment 1)
 
 
 class OsmWay(Base):
