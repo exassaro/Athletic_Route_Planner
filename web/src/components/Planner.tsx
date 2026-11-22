@@ -129,8 +129,9 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
       setSheet("half");
       map.getCanvas().style.cursor = "";
       const { lng, lat } = e.lngLat;
-      const { data } = await planClient().api.GET("/v1/places/reverse", { params: { query: { lon: lng, lat } } });
-      const near = data?.place?.label;
+      // The name is a nicety: the tapped point is the start, with or without an answer.
+      const answered = await planClient().api.GET("/v1/places/reverse", { params: { query: { lon: lng, lat } } }).catch(() => null);
+      const near = answered?.data?.place?.label;
       setStart({ lon: lng, lat, label: near ? `Near ${near}` : "Point on the map", place_id: null });
     };
     map.once("click", onClick);
@@ -282,7 +283,7 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
         )}>
           {/* what a peeked sheet shows first */}
           <StatusLine busy={plan.busy} onDismiss={plan.clearError} />
-          {plan.opening && <OpeningNote state={plan.opening} onRetry={plan.retryOpening} />}
+          {plan.opening && <OpeningNote reason={plan.openError} state={plan.opening} onRetry={plan.retryOpening} />}
           {v && candidates[selected] && <PeekBar cand={candidates[selected]!} pace={pace} />}
           <HealthBanner trigger={plan.busy.kind === "error" ? plan.busy.error.code : null} />
           {v && <PlanChips request={v.request} attention={attention} onOpen={openChip} />}
@@ -345,7 +346,7 @@ function StatusLine({ busy, onDismiss }: { busy: Busy; onDismiss: () => void }) 
   );
 }
 
-function OpeningNote({ state, onRetry }: { state: NonNullable<Opening>; onRetry: () => void }) {
+function OpeningNote({ state, reason, onRetry }: { state: NonNullable<Opening>; reason: string; onRetry: () => void }) {
   if (state === "loading") {
     return <p className="opening" role="status" data-testid="opening"><SneakerCycle />Opening your saved route…</p>;
   }
@@ -354,7 +355,7 @@ function OpeningNote({ state, onRetry }: { state: NonNullable<Opening>; onRetry:
       {state === "gone" ? (
         <p className="t-body-s">That saved route can&apos;t be opened here. It may have been deleted, or saved on another device. You can plan a new run below.</p>
       ) : (
-        <p className="t-body-s">That saved route didn&apos;t load. Check your connection.</p>
+        <p className="t-body-s">That saved route didn&apos;t load. {reason}</p>
       )}
       <div className="row">
         {state === "failed" && <Button icon="redo" onClick={onRetry}>Try again</Button>}

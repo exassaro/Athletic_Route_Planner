@@ -13,6 +13,7 @@ import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import type { Schemas } from "@/api/client";
 import { blocked, type Edit, type ListName, type RouteRequest } from "@/plan/edits";
 import type { Place } from "@/plan/places";
+import { call, type ApiFailure } from "@/plan/planClient";
 import { planClient } from "@/plan/usePlan";
 import { PlaceSearch } from "./PlaceSearch";
 import { StopsTimeline } from "./StopsTimeline";
@@ -28,12 +29,11 @@ const LIST: Record<Role, ListName> = { checkpoint: "checkpoints", via: "via", mu
 
 export async function featureItem(role: Role, kind: Kind, placeId: string, place?: { lon: number; lat: number; label: string },
   mustReach = false, label?: string) {
-  const { data, error } = await planClient().api.GET("/v1/features/item", {
+  // the generated type is named: openapi-fetch widens [lon, lat] tuples
+  return call<Schemas["FeatureItemOut"]>(() => planClient().api.GET("/v1/features/item", {
     params: { query: { role, kind, place_id: placeId, lon: place?.lon, lat: place?.lat, label: label ?? place?.label,
       must_reach: mustReach } },
-  });
-  if (!data) throw new Error((error as { message?: string } | undefined)?.message ?? "Could not read that place.");
-  return data as Schemas["FeatureItemOut"];   // openapi-fetch widens [lon, lat] tuples; this is the generated type
+  }));
 }
 
 type Props = { request: RouteRequest; version: Version; selected: Candidate | null; onEdit: (e: Edit) => void;
@@ -77,10 +77,17 @@ export function StopsPanel({ request, selected, onEdit, near, map, onMapPick }: 
       map.getCanvas().style.cursor = "";
       const role = tapFor;
       setTapFor(null);
-      const { data } = await planClient().api.GET("/v1/features/nearby", {
-        params: { query: { lon: e.lngLat.lng, lat: e.lngLat.lat, radius_m: 40 } } });
-      setWays({ role, list: data?.ways ?? [] });
-      onMapPick?.(false);
+      setError(null);
+      try {
+        const { ways: here } = await call<Schemas["NearbyOut"]>(() => planClient().api.GET("/v1/features/nearby", {
+          params: { query: { lon: e.lngLat.lng, lat: e.lngLat.lat, radius_m: 40 } } }));
+        setWays({ role, list: here });
+      } catch (x) {
+        setWays(null);            // not an empty list: that would say there is no road there
+        setError((x as ApiFailure).message);
+      } finally {
+        onMapPick?.(false);
+      }
     };
     map.once("click", onClick);
     return () => {

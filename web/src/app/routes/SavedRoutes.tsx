@@ -15,7 +15,7 @@ import { StatNumber } from "@/components/StatNumber";
 import { Button, Snackbar } from "@/components/ui";
 import { Wordmark } from "@/components/Wordmark";
 import { ownRouteGpx, ownRoutePoints } from "@/export/ownRoute";
-import type { ApiFailure } from "@/plan/planClient";
+import { apiSaid, type ApiFailure } from "@/plan/planClient";
 import { planClient } from "@/plan/usePlan";
 import { deleteSaved, listSaved, patchSaved, restoreSaved, type SavedRow } from "@/saved/api";
 import { forgetDeleted, newDeleted, takeDeleted, type Deleted } from "@/saved/deleted";
@@ -28,7 +28,7 @@ const byUpdate = (a: SavedRow, b: SavedRow) => Date.parse(b.updated_at) - Date.p
 
 export function SavedRoutes() {
   const [routes, setRoutes] = useState<SavedRow[] | null>(null);
-  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleted, setDeleted] = useState<Deleted | null>(null);
   const [renaming, setRenaming] = useState<SavedRow | null>(null);
@@ -39,11 +39,11 @@ export function SavedRoutes() {
 
   const load = useCallback(() => listSaved(planClient()).then((rows) => {
     setRoutes(rows);
-    setLoadFailed(false);
+    setLoadError(null);
   }, (e: ApiFailure) => {
     // an unknown token has nothing saved; anything else is a failure, not an empty list
-    if (e.status === 401) setRoutes([]);
-    else setLoadFailed(true);
+    if (apiSaid(e, 401)) setRoutes([]);
+    else setLoadError(e.message);
   }), []);
   useEffect(() => {
     void load();
@@ -97,13 +97,13 @@ export function SavedRoutes() {
       <h1 className="t-title" ref={title} tabIndex={-1}>Saved routes</h1>
       <p><Link href="/">Plan a run</Link></p>
       <p className="t-meta muted" data-testid="device-note">Saved routes live on this device until you sign in</p>
-      {loadFailed ? (
+      {loadError ? (
         <div role="alert" className="opening-note">
-          <p className="t-body-s">Saved routes didn&apos;t load. Check your connection.</p>
+          <p className="t-body-s">Saved routes didn&apos;t load. {loadError}</p>
           <div className="row"><Button icon="redo" onClick={load}>Try again</Button></div>
         </div>
       ) : routes === null && <p className="muted">Loading…</p>}
-      {routes?.length === 0 && !loadFailed && (
+      {routes?.length === 0 && !loadError && (
         <div className="saved-empty" data-testid="saved-empty">
           <Mascot />
           <p className="t-heading">Nothing saved yet</p>

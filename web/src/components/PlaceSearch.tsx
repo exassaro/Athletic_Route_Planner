@@ -8,6 +8,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import { MapView } from "@/map/MapView";
 import { groupPlaces, kindName, type Place } from "@/plan/places";
+import type { Schemas } from "@/api/client";
+import { apiSaid, call, type ApiFailure } from "@/plan/planClient";
 import { planClient } from "@/plan/usePlan";
 
 type Props = {
@@ -29,25 +31,26 @@ export function PlaceSearch({ label, placeholder, near, onPick, testId }: Props)
 
   useEffect(() => {
     const text = q.trim();
+    const mine = ++seq.current;       // also when the box is cleared: an answer still on its way is stale
     if (text.length < 2) {
       setResults(null); // eslint-disable-line react-hooks/set-state-in-effect
+      setError(null);
       return;
     }
-    const mine = ++seq.current;
     const t = setTimeout(async () => {
-      const { data, error: err, response } = await planClient().api.GET("/v1/places/search", {
-        params: { query: { q: text, lon: near?.[0], lat: near?.[1], limit: 10 } },
-      });
-      if (mine !== seq.current) return;
-      if (!data) {
-        setError(response.status === 503 ? "Place search is down right now." :
-          ((err as { message?: string } | undefined)?.message ?? "Search failed."));
+      try {
+        const found = await call<Schemas["PlaceSearchOut"]>(() => planClient().api.GET("/v1/places/search", {
+          params: { query: { q: text, lon: near?.[0], lat: near?.[1], limit: 10 } },
+        }));
+        if (mine !== seq.current) return;
+        setError(null);
+        setResults(found.candidates);
+        setAmbiguous(found.ambiguous);
+      } catch (e) {
+        if (mine !== seq.current) return;
+        setError(apiSaid(e, 503) ? "Place search is down right now." : (e as ApiFailure).message);
         setResults(null);
-        return;
       }
-      setError(null);
-      setResults(data.candidates);
-      setAmbiguous(data.ambiguous);
     }, 350);
     return () => clearTimeout(t);
   }, [q, near]);

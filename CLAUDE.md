@@ -204,7 +204,7 @@ docker compose up -d valhalla graphhopper   # Valhalla: first run builds tiles +
 docker compose logs -f valhalla
 uv run python engine/scripts/configure_valhalla.py   # apply engine/valhalla/overrides.json
 docker compose restart valhalla          # needed after changing overrides
-docker compose down
+docker compose stop valhalla             # stop by name; never a bare `docker compose down` (see the dev stack rule below)
 uv run python engine/scripts/build_fixtures.py       # place nodes -> tests/fixtures/places.json
 uv run python engine/experiments/00_engine_check.py  # version + elevation sanity check
 ```
@@ -260,6 +260,8 @@ uv run python api/scripts/measure_latency.py         # through the container, ev
 uv run python api/scripts/measure_stack_memory.py    # memory of every container during six concurrent solves through the API
 ```
 
+Tests never use development data: `tests/devguard.py` stops any app a test starts on a database or Redis db outside its lists. Pass `live_database` and `live_redis` (or the `tests/api` settings), never plain `Settings()`; a new test database is added to the list.
+
 The app uses asyncpg: psycopg's async mode cannot run on the Windows Proactor event loop. `ATHLETE_CACHE_ENABLED=false` turns the solve cache off (tests and diagnosis only). Settings come from `ATHLETE_*` variables (`athlete_api/config.py`); the engine URLs reuse `VALHALLA_URL` and `GRAPHHOPPER_URL`, like the solver.
 
 Web (Phase 5, `web/`, Node 22.18 on this laptop; http://localhost:3000):
@@ -287,20 +289,21 @@ uv run --no-project --with fonttools --with brotli python web/scripts/subset_pix
 - Base components (`src/components/ui`): `Button` (primary has the 2 px hard shadow and drops into it when pressed), `IconButton` (label required), `Chip`, `Badge` (a button with a 44 px tap area when it opens a detail), `Snackbar` (no timeout).
 - `/kit` shows every component in both themes; it answers 404 unless the server runs with `GATHO_UI_KIT=1`.
 
+- **Every API call goes through `call` or `answer` (`src/plan/planClient.ts`)** or catches for itself: openapi-fetch rejects when the session or the network fails, and gives a non-JSON body as a string. A failure shows its real reason, never an invented status. Only `apiSaid(e, 404)` means deleted or gone: a plain 404 also comes from the wrong address. Test: `--project=unreachable` (answers /v1 itself, writes nothing).
 - **Run web tooling from PowerShell (or a `D:\` path), not Git Bash's `/d/...`.** A lower-case drive letter makes Vitest load itself twice ("failed to find the current suite").
 - `npm install` sometimes skips rolldown's native binary (npm optional-dependency bug): delete `node_modules` and `package-lock.json` and install again.
 - PowerShell 5.1 `Set-Content -Encoding utf8` writes a BOM; never use it on package.json.
 - jsdom is pinned to 29.x and ESLint to 9.x: jsdom 30+ needs Node 22.22, and eslint-plugin-react supports ESLint 9 only.
 - MapLibre 6 loads its worker from `public/maplibre/` (copied by `scripts/copy-maplibre-worker.mjs` before dev and build); without it the map stays blank ("Worker failed to load").
 - `@rolldown/binding-win32-x64-msvc` and `@rolldown/binding-linux-x64-gnu` are optional dependencies on purpose: npm otherwise drops the Windows one on every `npm install <pkg>`, and a lockfile made on Windows has no Linux binding, so `npm ci` in CI fails ("Cannot find native binding").
-- End to end (live stack, `next start` on :3000, API with `ATHLETE_RATE_SESSION_PER_IP_HOUR=1000`): `npx playwright test` (journeys A01, S02, G01, phone viewport) and `npx playwright test --project=screens` (screenshots -> docs/reports/phase5/screenshots/). Every on-screen number carries `data-value` (its raw API value); `e2e/helpers.ts` checks them all against the responses.
+- End to end (live stack, `next start` on :3000, API with `ATHLETE_RATE_SESSION_PER_IP_HOUR=1000`): `npx playwright test --project=phone` (journeys A01, S02, G01, SR01, phone viewport; without `--project` every project runs) and `npx playwright test --project=screens` (screenshots; set `SHOTS_DIR`, or the committed ones are overwritten). Every on-screen number carries `data-value` (its raw API value); `e2e/helpers.ts` checks them all against the responses.
 - Fix-round projects: `basemap` (iPhone 16 viewport, cold, warm and the cache trigger; that last test skips over Caddy's untrusted certificate, so run it on http), `layout`, `pin`, `direction`, `openin` (Google intercepted), `share`, `brand`. `SHOTS_ONLY=01,08` with `--project=screens` writes only those screens. Look at the screenshots: they caught three defects the tests did not.
 - Phase 5c projects: `editing`, `saved`, `owner`, `errors`; SR01 is in `phone` (`sr01.spec.ts`); `screens5c` writes docs/reports/phase5c/screenshots.
 - **The dev stack is the developer's: run `docker ps -a` before any compose command, and never a bare `docker compose down` as cleanup.** The API container migrates the dev database on start, so rebuilding it applies new migrations: back up first and ask. To test a migration or an API change, use a copy: a database from `pg_dump | pg_restore`, the API from the host on :8100 (`ATHLETE_DATABASE_URL`, `ATHLETE_REDIS_URL` on a spare db), the web built with `NEXT_DIST_DIR=.next-check` and `NEXT_API_PROXY=http://localhost:8100`, started with `API_INTERNAL_BASE` pointing at :8100, and a throwaway Caddy on :8443.
 - `notFound()` pages are a client-rendered shell where the head theme script does not run: `ThemeSync` in the layout applies the theme.
 - Generated files compared byte for byte by tests are pinned `eol=lf` in `.gitattributes`. Test a fresh clone with `core.autocrlf=true`, as this laptop has.
-- The default limit (10 new sessions per IP per hour) runs out after two or three journey runs: place search then shows no results and every journey times out at the start. Raise it on the API alone: `$env:ATHLETE_RATE_SESSION_PER_IP_HOUR="1000"; docker compose --profile api up -d --no-deps api`, and wait for `/v1/health` before testing. Without `--no-deps`, compose can recreate Postgres too, and the API exits ("connection refused") if it starts first (happened 2026-11-18; `docker start athlete-api` recovered it, data intact). Since 2026-11-19 the API waits for Postgres's `pg_isready` healthcheck. Put it back to 10 the same way afterwards.
-- Phone over the LAN: build with `$env:NEXT_PUBLIC_API_BASE="same-origin"`, then `LAN_HOST=<ip> docker compose --profile api --profile web up -d proxy` (Caddy, `tls internal`, `default_sni` for bare IPs). Steps, firewall and certificate install: docs/reports/phase5/phone.md. In PowerShell an empty `$env:X=''` deletes the variable, hence "same-origin".
+- The default limit (10 new sessions per IP per hour) runs out after two or three journey runs: place search then shows "Too many session requests…" and every journey times out at the start. Raise it on the API alone: `$env:ATHLETE_RATE_SESSION_PER_IP_HOUR="1000"; docker compose --profile api up -d --no-deps api`, and wait for `/v1/health` before testing. Without `--no-deps`, compose can recreate Postgres too, and the API exits ("connection refused") if it starts first (happened 2026-11-18; `docker start athlete-api` recovered it, data intact). Since 2026-11-19 the API waits for Postgres's `pg_isready` healthcheck. Put it back to 10 the same way afterwards.
+- Phone over the LAN: build with `$env:NEXT_PUBLIC_API_BASE="same-origin"`, then `$env:LAN_HOST="<ip>"; docker compose --profile api --profile web up -d --no-deps proxy`, and open `https://<ip>` or `https://localhost`, never `:3000` (that build has no API there) (Caddy, `tls internal`, `default_sni` for bare IPs). Steps, firewall and certificate install: docs/reports/phase5/phone.md. In PowerShell an empty `$env:X=''` deletes the variable, hence "same-origin".
 - Lighthouse: `npx lighthouse@13.0.1 http://localhost:3000/` with `CHROME_PATH` set to Playwright's Chromium.
 - G01's `set_distance` fix (22.2 km) is a solver estimate: the loop then needs 26.2 km (over_budget). Not changed; reported.
 - CI: `.github/workflows/ci.yml` (schema and types not stale, Python unit tests, web typecheck, lint, tests, build).

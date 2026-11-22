@@ -12,6 +12,7 @@ import { km, metres } from "@/plan/format";
 import { lineStyle, ROUTE_COLORS } from "@/plan/routeStyle";
 import { layerAbove } from "@/map/overlays";
 import { useTheme } from "@/theme/useTheme";
+import { call, type ApiFailure } from "@/plan/planClient";
 import { planClient } from "@/plan/usePlan";
 import { Num } from "./Num";
 
@@ -43,15 +44,15 @@ export function RouteDetail({ map, cand, index, onFirstKm }: Props) {
   useEffect(() => {
     let live = true;
     setElev(null); // eslint-disable-line react-hooks/set-state-in-effect
-    planClient().api.GET("/v1/routes/{route_id}/elevation", { params: { path: { route_id: cand.route_id } } })
-      .then(({ data }) => {
+    setError(null);
+    call<Elevation>(() => planClient().api.GET("/v1/routes/{route_id}/elevation", { params: { path: { route_id: cand.route_id } } }))
+      .then((data) => {
         if (!live) return;
-        if (data) {
-          setElev(data as Elevation);
-          const first = (data as Elevation).km_marks[0];
-          if (first) onFirstKm?.(cand.route_id, [first.lon, first.lat]);
-        }
-        else setError("Elevation is not available for this route.");
+        setElev(data);
+        const first = data.km_marks[0];
+        if (first) onFirstKm?.(cand.route_id, [first.lon, first.lat]);
+      }, (e: ApiFailure) => {
+        if (live) setError(`Elevation is not available for this route. ${e.message}`);
       });
     return () => {
       live = false;

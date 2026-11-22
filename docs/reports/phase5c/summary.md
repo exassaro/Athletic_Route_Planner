@@ -4,7 +4,7 @@ Saved routes can be renamed, edited in the planner and deleted with Undo. Decisi
 
 Measured on 2026-11-22 on the development laptop (Windows 11, i5 10th gen, 16 GB), not on a target server.
 
-**Before deploying: back up, then migrate.** The API container runs `alembic upgrade head` when it starts, so rebuilding it applies 0005. The development database has not been migrated yet (see "Deploying").
+**Deployed on 2026-11-22** to the development stack, whose database is now at 0005 (see "Deployment"). The API container runs `alembic upgrade head` when it starts: on any other database, back up before rebuilding it.
 
 ## What changed
 
@@ -79,7 +79,7 @@ Phone, 390 x 844, light and dark, in [screenshots/](screenshots/):
 
 ## Tests
 
-Run on an isolated stack: a copy of the development database, its own API (8100), web build (3100) and Caddy (`https://172.24.255.68:8443`). Only the engines, Photon and the Postgres and Redis servers were shared.
+Run on an isolated stack: a copy of the development database, its own API (8100), web build (3100) and Caddy (`https://172.24.255.68:8443`). The engines, Photon and the Postgres and Redis servers were shared. One exception, found afterwards: the live place-search test used the development database and Redis db 0, adding an empty client row and a rate-limit key on each run. It now uses the test ones, and the test setup refuses to start an app on development data.
 
 - **Through Caddy:** 41 browser tests pass: SR01, A01, S02, G01, the Phase 5c projects (`editing`, `saved`, `owner`, `errors`) and the Phase 5b regression. The cache-trigger test cannot run over an untrusted certificate, so it ran over http against the same build: pass.
 - **Every shown number carries data-value:** SR01 scans each screen and proves the scan catches a planted number. The edit message's "−2.7 km" did not carry it and now does.
@@ -99,10 +99,9 @@ Found and fixed on the way:
 
 - **A real phone, Safari or Firefox:** Chromium with phone viewports only. The on-screen keyboard over the rename dialog was not seen.
 - **Screen readers:** roles, labels and focus are tested, not how they are read out.
-- **The containerised API with this code:** the tests ran the API from the host. The image was not rebuilt, because starting it would have migrated the development database. The purge command was not run inside the container.
+- **The test suites against the containerised API:** they ran the API from the host. The container was rehearsed by hand before deploying (see "Deployment").
 - **Delete under `npm run dev`:** the CORS preflight is tested at the API, not in a browser on the dev server.
 - **Two tabs editing one plan**, and an update racing a delete.
-- **CI on Linux** for this branch: not pushed.
 - **The solver KPI harness** was not re-run (no solver change).
 
 ## Known limits
@@ -116,9 +115,23 @@ Found and fixed on the way:
 - **`/` is rendered per request** to read `?edit=`; it was static.
 - **A dead link shows for a moment without a theme** while React starts.
 
-## Deploying
+## Deployment
+
+Done on 2026-11-22 at 16:29 IST, on the development laptop:
+
+- **Backup:** taken first (175 MB, in the gitignored `data/backups/`), restored and compared identical table by table.
+- **Rehearsal:** the new container on a copy of the database: save, rename, delete, restore, and the purge command inside the container.
+- **Afterwards:** the API was healthy within 8.5 s, and the 113 share links and their GPX files were checked.
+- **CI on Linux** passed on `main` (run 45015186705) and on the tag `phase-5c` (run 45015186631).
+
+To deploy to another database:
 
 1. Back up: `docker exec athlete-postgres pg_dump -U athlete -Fc athlete > <file>` (from Git Bash or cmd; PowerShell 5.1's `>` corrupts binary output).
 2. `docker compose --profile api up -d --no-deps --build api`: migrates to 0005 on start.
 3. Rebuild and restart the web app. It needs this API: against an older one the list has no `updated_at`, and rename and delete fail.
-4. To go back: `uv run alembic -c api/alembic.ini downgrade 0004`. **This permanently deletes soft-deleted saved routes**, on purpose.
+4. To go back, in this order, because an older image cannot start on a database at 0005:
+   1. Back up again.
+   2. `uv run alembic -c api/alembic.ini downgrade 0004`. **This permanently deletes soft-deleted saved routes**, on purpose.
+   3. `docker tag athlete-api:pre-5c athlete-api:0.4.0` (the previous image, kept under that tag on this laptop only; elsewhere build it from the tag `phase-5b`).
+   4. `docker compose --profile api up -d --no-deps --no-build api`
+   5. Build the web app from `phase-5b` and restart it.

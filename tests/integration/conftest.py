@@ -21,6 +21,12 @@ def live_database() -> str:
     return fresh_database(LIVE_DB)
 
 
+@pytest.fixture(scope="session")
+def live_redis() -> str:
+    redis.Redis.from_url(LIVE_REDIS).flushdb()
+    return LIVE_REDIS
+
+
 @pytest.fixture
 def live_app(live_database):
     """live_app(**settings) -> TestClient with a session token, on the live engines and a flushed cache."""

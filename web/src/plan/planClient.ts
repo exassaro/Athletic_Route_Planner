@@ -11,9 +11,11 @@
  * - 401: the token is unknown (database reset); get a new one and try once more.
  * An edit of a version that is not the latest (a saved route opened for editing) names it with from_version and
  * sends no If-Match: it is meant to apply to that version whatever the latest is (Phase 5c A11).
- * Anything else is an ApiFailure with the API's own error code and message.
+ * Anything else is an ApiFailure: with the API's own error code and message, or, when it was not the API that
+ * answered (another address, a proxy, no network), saying that instead. `call` is the one way to send a request.
  */
 import createClient from "openapi-fetch";
+import { API_BASE } from "@/api/client";
 import type { components, paths } from "@/api/schema";
 
 type S = components["schemas"];
@@ -40,6 +42,55 @@ export class ApiFailure extends Error {
   constructor(public status: number, public code: string, message: string, public detail?: unknown) {
     super(message);
   }
+}
+
+type Sent = { data?: unknown; error?: unknown; response: Response };
+
+const NOT_HERE = "api_not_here";
+const NO_API_ANSWER = "no_api_answer";
+const NETWORK = "network";
+
+/**
+ * The failure behind an error answer. The API always sends {error, message}; without that something else answered.
+ * A 404 or 405 then means the API isn't at this address: typically the same-origin build opened on the web
+ * server's own port instead of through the proxy, which is https with no port.
+ */
+export function apiFailure(status: number, body: unknown, base: string = API_BASE,
+  page: Pick<Location, "protocol" | "port" | "hostname"> | undefined = globalThis.location): ApiFailure {
+  const b = body as Partial<ErrorBody> | null | undefined;
+  if (typeof b?.error === "string" && typeof b.message === "string") return new ApiFailure(status, b.error, b.message, b.detail);
+  if (status === 404 || status === 405) {
+    const elsewhere = base === "" && page && (page.protocol !== "https:" || page.port !== "");
+    return new ApiFailure(status, NOT_HERE,
+      `GATHO's API isn't at this address.${elsewhere ? ` Open https://${page.hostname} instead.` : ""}`);
+  }
+  return new ApiFailure(status, NO_API_ANSWER, `GATHO's API didn't answer properly (${status}).`);
+}
+
+/** What a rejected request means: a failure already explained (the session's), or no answer at all (status 0). */
+export function asFailure(e: unknown): ApiFailure {
+  return e instanceof ApiFailure ? e : new ApiFailure(0, NETWORK, "No answer from GATHO. Check your connection.");
+}
+
+/** Whether the API itself gave one of these statuses. Only then does a 404 mean that something is gone. */
+export function apiSaid(e: unknown, ...statuses: number[]): boolean {
+  return e instanceof ApiFailure && statuses.includes(e.status) && ![NOT_HERE, NO_API_ANSWER, NETWORK].includes(e.code);
+}
+
+/** Sends, for a caller that needs the response itself. Rejects only with an ApiFailure. */
+export async function answer<R>(send: () => Promise<R>): Promise<R> {
+  try {
+    return await send();
+  } catch (e) {
+    throw asFailure(e);
+  }
+}
+
+/** Sends and returns the body. A 204 has none: success is the response's status, never whether there is data. */
+export async function call<T>(send: () => Promise<Sent>): Promise<T> {
+  const { data, error, response } = await answer(send);
+  if (response.ok) return data as T;
+  throw apiFailure(response.status, error);
 }
 
 type Storage = Pick<globalThis.Storage, "getItem" | "setItem" | "removeItem">;
@@ -94,29 +145,23 @@ export class PlanClient {
     const saved = this.storage.getItem(TOKEN_KEY);
     if (saved) return Promise.resolve(saved);
     this.tokenPromise ??= (async () => {
-      const { data, error } = await this.api.POST("/v1/session");
-      if (!data) throw this.failure(429, error);
-      this.storage.setItem(TOKEN_KEY, data.token);
-      return data.token;
+      const { token } = await call<S["SessionOut"]>(() => this.api.POST("/v1/session"));
+      this.storage.setItem(TOKEN_KEY, token);
+      return token;
     })().finally(() => (this.tokenPromise = null));
     return this.tokenPromise;
   }
 
-  private failure(status: number, body: unknown): ApiFailure {
-    const b = (body ?? {}) as Partial<ErrorBody>;
-    return new ApiFailure(status, b.error ?? `http_${status}`, b.message ?? `The API answered ${status}.`, b.detail);
-  }
-
   /** Runs a create or patch with the waiting rules. `send(version)` gets the version to build on (If-Match). */
   private async solveCall(planId: string | null, send: (ifVersion: number | null) =>
-    Promise<{ data?: unknown; error?: unknown; response: Response }>, ifVersion: number | null): Promise<PlanVersion> {
+    Promise<Sent>, ifVersion: number | null): Promise<PlanVersion> {
     let version = ifVersion;
     let renewed = false;
     for (let attempt = 1; ; attempt++) {
       this.onStatus({ kind: "solving" });
-      const { data, error, response } = await send(version);
+      const { data, error, response } = await answer(() => send(version));
       if (data) return data as PlanVersion;
-      const f = this.failure(response.status, error);
+      const f = apiFailure(response.status, error);
       if (response.status === 429 && attempt < MAX_TRIES && (f.code === "solver_busy" || f.code === "rate_limited")) {
         const after = Number(response.headers.get("Retry-After")) || 2 ** attempt;
         const wait = Math.min(after, MAX_WAIT_S);
@@ -151,9 +196,7 @@ export class PlanClient {
   async waitForPlan(planId: string, after: number | null = null): Promise<PlanOut> {
     const until = Date.now() + POLL_FOR_MS;
     for (;;) {
-      const { data: raw, error, response } = await this.api.GET("/v1/plans/{plan_id}", { params: { path: { plan_id: planId } } });
-      if (!raw) throw this.failure(response.status, error);
-      const data = raw as PlanOut;
+      const data = await call<PlanOut>(() => this.api.GET("/v1/plans/{plan_id}", { params: { path: { plan_id: planId } } }));
       if (data.status === "failed") {
         const e = (data.error ?? {}) as Partial<ErrorBody>;
         throw new ApiFailure(500, e.error ?? "solve_failed", e.message ?? "The solve failed.", e.detail);

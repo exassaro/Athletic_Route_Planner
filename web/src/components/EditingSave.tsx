@@ -5,7 +5,7 @@
  */
 import { useId, useState } from "react";
 import type { Schemas } from "@/api/client";
-import { ApiFailure, type RouteRequest } from "@/plan/planClient";
+import { apiSaid, type RouteRequest } from "@/plan/planClient";
 import { planClient, type Editing } from "@/plan/usePlan";
 import { patchSaved, saveRoute } from "@/saved/api";
 import { changed } from "@/saved/changed";
@@ -37,7 +37,7 @@ export function EditingSave({ editing, request, cand, solving, onUpdated, onSave
     try {
       await work();
     } catch (e) {
-      setError(e instanceof ApiFailure && e.status === 404
+      setError(apiSaid(e, 404)
         ? "This saved route was deleted. Use Save as new to keep this one." : failed);
     } finally {
       setSending(false);

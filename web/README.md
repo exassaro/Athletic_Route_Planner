@@ -9,6 +9,17 @@ npm test                     # component tests (Vitest)
 npm run typecheck && npm run lint
 ```
 
+Which address to open depends on how it was built:
+
+| Mode | How | Open |
+| --- | --- | --- |
+| Development | `npm run dev`, with `NEXT_PUBLIC_API_BASE` unset | `http://localhost:3000` |
+| PC and phone | `npm run build` with `NEXT_PUBLIC_API_BASE=same-origin`, then `npx next start --port 3000`, behind Caddy | `https://localhost`, or `https://<LAN IP>` |
+
+A same-origin build does not work on `:3000`: the web server has no `/v1`, and the app says "GATHO's API isn't at this
+address". The variable left over in a shell breaks `npm run dev` the same way (PowerShell:
+`Remove-Item Env:NEXT_PUBLIC_API_BASE`).
+
 API types: `src/api/schema.d.ts` is generated, never edited.
 
 ```

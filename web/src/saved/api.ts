@@ -1,29 +1,12 @@
 /**
- * This client's saved routes (blueprint Phase 5c A10 and A12). Every call carries the client token and throws an
- * ApiFailure on an error answer or no answer at all (status 0: offline), so a caller has one thing to catch.
- * A 204 has no body: success is the response's status, never whether there is data.
+ * This client's saved routes (blueprint Phase 5c A10 and A12). Every call carries the client token and goes
+ * through `call`, so a caller has one thing to catch: an ApiFailure.
  */
 import type { Schemas } from "@/api/client";
-import { ApiFailure, type PlanClient, type PlanVersion } from "@/plan/planClient";
+import { ApiFailure, call, type PlanClient, type PlanVersion } from "@/plan/planClient";
 
 export type SavedRow = Schemas["SavedRouteOut"];
 export type Saved = Schemas["SavedOut"];
-
-type Result = { data?: unknown; error?: unknown; response: Response };
-
-async function call<T>(send: () => Promise<Result>): Promise<T> {
-  let result: Result;
-  try {
-    result = await send();
-  } catch (e) {
-    if (e instanceof ApiFailure) throw e;
-    throw new ApiFailure(0, "network", "No answer from GATHO. Check your connection.");
-  }
-  const { data, error, response } = result;
-  if (response.ok) return data as T;
-  const body = (error ?? {}) as Partial<Schemas["ErrorBody"]>;
-  throw new ApiFailure(response.status, body.error ?? `http_${response.status}`, body.message ?? `The API answered ${response.status}.`);
-}
 
 export function listSaved(client: PlanClient) {
   return call<SavedRow[]>(() => client.api.GET("/v1/me/routes"));

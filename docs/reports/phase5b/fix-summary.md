@@ -116,7 +116,7 @@ Accessibility passes its gate (95). **Performance is one point lower on both pag
 - **Garmin Connect and Strava imports.** No Garmin app and no Strava subscription. Whether Strava's route import needs a subscription could not be confirmed.
 - **Garmin's steps.** Its help site refused automated reading (403), so the app only links to it. A search summary of that page says "Training & Planning > Courses > Import", not "Training > Courses > Import"; check it in a browser.
 - **Installed icons** on iOS and Android, and how chat apps render the OpenGraph card.
-- **CI on Linux:** the branch has not been pushed. The solver KPI harness and the solver's own integration tests were not re-run (no solver change).
+- **The solver KPI harness** and the solver's own integration tests were not re-run (no solver change). CI on Linux did run, after the merge on 2026-11-22: it passed (run 45006703834).
 - **The hallway test:** still open from Phase 5b.
 
 ## Left open

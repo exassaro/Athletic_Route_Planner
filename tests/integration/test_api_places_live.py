@@ -11,8 +11,8 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.fixture(scope="module")
-def api():
-    settings = Settings()
+def api(live_database, live_redis):
+    settings = Settings(database_url=live_database, redis_url=live_redis)
     try:
         httpx.get(f"{settings.photon_url}/status", timeout=3).raise_for_status()
     except httpx.HTTPError:
