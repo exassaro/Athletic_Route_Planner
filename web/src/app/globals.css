@@ -554,11 +554,14 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .pin-start { position: relative; width: 52px; height: 44px; cursor: pointer; }
 .pin-start-flip { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: flex-end; }
 .pin-start-flip.west { transform: scaleX(-1); }
-.pin-start-hop { display: block; transform-origin: 25% 100%; animation: shoe-hop 1.1s ease-in-out infinite; }
+/* At rest nothing animates (amendment 13); .hop is there only while it hops. */
+.pin-start-hop { display: block; transform-origin: 25% 100%; }
+.pin-start.hop .pin-start-hop { animation: shoe-hop 1.1s ease-in-out var(--hops, 3); }
+.pin-start.hop .pin-start-shade { animation: shoe-shade 1.1s ease-in-out var(--hops, 3); }
 .pin-start-hop svg { display: block; }
 .pin-start-shade {
   position: absolute; left: 10px; bottom: -3px; width: 32px; height: 4px; background: rgba(28, 27, 24, 0.32);
-  transform-origin: 50% 50%; animation: shoe-shade 1.1s ease-in-out infinite;
+  transform-origin: 50% 50%;
 }
 [data-theme="dark"] .pin-start-shade { background: rgba(0, 0, 0, 0.55); }
 @keyframes shoe-hop {
@@ -573,10 +576,9 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
   42% { transform: scaleX(0.55); opacity: 0.5; }
   74% { transform: scaleX(1.12); opacity: 1; }
 }
-.map-moving .pin-start-hop, .map-moving .pin-start-shade,
-.map-solving .pin-start-hop, .map-solving .pin-start-shade { animation-play-state: paused; }
-.pin-start.still .pin-start-hop, .pin-start.still .pin-start-shade { animation: none; }
-@media (prefers-reduced-motion: reduce) { .pin-start-hop, .pin-start-shade { animation: none; } }
+.map-moving .pin-start.hop .pin-start-hop, .map-moving .pin-start.hop .pin-start-shade,
+.map-solving .pin-start.hop .pin-start-hop, .map-solving .pin-start.hop .pin-start-shade { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .pin-start.hop .pin-start-hop, .pin-start.hop .pin-start-shade { animation: none; } }
 
 .pin-stop {
   display: grid; place-items: center; min-width: 28px; height: 28px; padding: 0 6px; box-sizing: border-box;

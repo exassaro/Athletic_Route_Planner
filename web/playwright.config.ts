@@ -30,6 +30,7 @@ export default defineConfig({
     { name: "screens", testMatch: /screens\.spec\.ts/, use: { browserName: "chromium" } },
     { name: "basemap", testMatch: /basemap\.spec\.ts/, use: { ...devices["iPhone 16"], browserName: "chromium" } },
     { name: "layout", testMatch: /layout[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
+    { name: "pin", testMatch: /pin[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "pincost", testMatch: /pincost\.spec\.ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
   ],
 });

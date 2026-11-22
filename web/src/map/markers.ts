@@ -1,6 +1,6 @@
 /**
  * The map's markers (blueprint Phase 5b amendment 6), built as DOM for MapLibre markers: the sneaker start pin (it
- * hops; mirrored when the route starts westward), the stop discs (outlined = pass near, filled = must reach),
+ * hops three times, then rests: amendment 13; mirrored when the route starts westward), the stop discs (outlined = pass near, filled = must reach),
  * grouped when they overlap on screen, the pass-near place points (small diamonds) and the pixel end flag. The
  * animation is CSS on an inner element only: MapLibre moves the marker's root with a transform.
  */
@@ -23,17 +23,45 @@ const PIN_W = 52;
  * centre). The sole runs over sprite columns 2 to 27: its middle is 14.5 px from the left edge.
  */
 export function startPin(label: string, facingWest: boolean): { el: HTMLElement; offset: [number, number] } {
+  const el = document.createElement("div");
+  el.className = "pin-start";
+  el.setAttribute("role", "button");
+  el.tabIndex = 0;
+  el.innerHTML = `<span class="pin-start-shade"></span><span class="pin-start-flip">` +
+    `<span class="pin-start-hop">${spriteSvg("sneaker", SNEAKER_SCALE)}</span></span>`;
+  el.addEventListener("click", () => hop(el, 1));
+  el.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    hop(el, 1);
+  });
+  // At rest the class goes, so nothing is animating and the pin costs nothing.
+  el.addEventListener("animationend", (e) => {
+    if ((e.target as Element).classList.contains("pin-start-hop")) el.classList.remove("hop");
+  });
+  return { el, offset: updateStartPin(el, label, facingWest) };
+}
+
+/** Renames and turns a pin that is already on the map, without disturbing its hop. Returns the marker's offset. */
+export function updateStartPin(el: HTMLElement, label: string, facingWest: boolean): [number, number] {
   const s = SPRITES.sneaker;
   const left = (PIN_W - s.w * SNEAKER_SCALE) / 2;
   const soleMid = left + (facingWest ? s.w - 14.5 : 14.5) * SNEAKER_SCALE;
-  const el = document.createElement("div");
-  el.className = "pin-start";
-  el.setAttribute("role", "img");
   el.setAttribute("aria-label", `Start: ${label}`);
   el.title = `Start: ${label}`;
-  el.innerHTML = `<span class="pin-start-shade"></span><span class="pin-start-flip${facingWest ? " west" : ""}">` +
-    `<span class="pin-start-hop">${spriteSvg("sneaker", SNEAKER_SCALE)}</span></span>`;
-  return { el, offset: [PIN_W / 2 - soleMid, 0] };
+  el.querySelector(".pin-start-flip")!.classList.toggle("west", facingWest);
+  return [PIN_W / 2 - soleMid, 0];
+}
+
+/** Hops on arrival (amendment 13): when a route arrives or the start changes. */
+export const ARRIVAL_HOPS = 3;
+
+/** Hops `times` times from the beginning, then rests (CSS; none with reduced motion). */
+export function hop(el: HTMLElement, times: number) {
+  el.classList.remove("hop");
+  void el.offsetWidth;                     // so a hop already running starts again
+  el.style.setProperty("--hops", String(times));
+  el.classList.add("hop");
 }
 
 /** A stop's disc: its number (or "1·2" for a group), outlined for pass near, filled for must reach. */

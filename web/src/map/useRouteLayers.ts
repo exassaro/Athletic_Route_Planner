@@ -5,7 +5,8 @@
  * the selected route: the hopping sneaker at the start (mirrored when the route starts westward), the stop discs
  * where the route meets each stop (grouped when they overlap on screen), the place's own point for a pass-near stop
  * the route passes at a distance (a diamond, joined by a dotted line), and the end flag. Geometry and positions are
- * the API's; nothing is measured here. The hop pauses while the map moves and while a solve runs.
+ * the API's; nothing is measured here. The start pin outlives every redraw, so only a new route or a new start
+ * makes it hop (amendment 13), and the hop pauses while the map moves and while a solve runs.
  */
 import { useEffect, useRef } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, Marker } from "maplibre-gl";
@@ -13,7 +14,7 @@ import type { Schemas } from "@/api/client";
 import { km } from "@/plan/format";
 import { lineStyle, ROUTE_COLORS } from "@/plan/routeStyle";
 import type { Theme } from "@/theme/theme";
-import { endFlag, flagPointsLeft, groupByScreen, placePoint, startPin, stopPin } from "./markers";
+import { ARRIVAL_HOPS, endFlag, flagPointsLeft, groupByScreen, hop, placePoint, startPin, stopPin, updateStartPin } from "./markers";
 import { layerAbove, setObstacles, type Obstacle } from "./overlays";
 
 type Candidate = Schemas["CandidateOut"];
@@ -49,6 +50,8 @@ function setLinks(map: MapLibreMap, lines: Line[], color: string) {
 export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[], selected: number, dimmed: boolean,
   fitKey: string | null, request: Requested | null = null, theme: Theme = "light", facingWest = false) {
   const markers = useRef<Marker[]>([]);
+  const pin = useRef<Marker | null>(null);
+  const hopped = useRef<{ route: string | null; start: string | null }>({ route: null, start: null });
   const drawn = useRef(0);
 
   // The route lines
@@ -102,8 +105,6 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
       if (!c) {
         // No route (setup, or a conflict): the start and the stops as asked, never a blank map.
         if (request?.start) {
-          const pin = startPin(request.start.label ?? "the start", false);
-          add(pin.el, [request.start.lon, request.start.lat], { anchor: "bottom", offset: pin.offset });
           boxes.push({ at: [request.start.lon, request.start.lat], ...PIN_BOX });
         }
         (request?.checkpoints ?? []).forEach((cp, k) => {
@@ -117,8 +118,6 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
       const stops = c.stops ?? [];
       const start = stops.find((s) => s.role === "start");
       if (start) {
-        const pin = startPin(start.label ?? "the start", facingWest);
-        add(pin.el, [start.snapped_lon, start.snapped_lat], { anchor: "bottom", offset: pin.offset });
         boxes.push({ at: [start.snapped_lon, start.snapped_lat], ...PIN_BOX });
       }
       const cps = stops.filter((s) => s.role === "checkpoint");
@@ -163,7 +162,46 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
       map.off("zoomend", onZoom);
       map.off("rotateend", onZoom);
     };
-  }, [map, candidates, selected, request, theme, facingWest]);
+  }, [map, candidates, selected, request, theme]);
+
+  // The start pin: one marker for the life of the map, moved and turned in place.
+  const route = candidates[selected];
+  const snapped = route?.stops?.find((s) => s.role === "start");
+  const pinLon = route ? snapped?.snapped_lon : request?.start?.lon;
+  const pinLat = route ? snapped?.snapped_lat : request?.start?.lat;
+  const pinLabel = (route ? snapped?.label : request?.start?.label) ?? "the start";
+  const pinWest = !!route && facingWest;
+  const routeKey = route ? fitKey : null;
+  // the start as asked: the snapped one differs a little from candidate to candidate
+  const startKey = request?.start ? `${request.start.lon},${request.start.lat}` : null;
+  useEffect(() => {
+    if (!map) return;
+    let live = true;
+    (async () => {
+      const maplibregl = await import("maplibre-gl");
+      if (!live) return;
+      if (pinLon == null || pinLat == null) {
+        pin.current?.remove();
+        pin.current = null;
+        return;
+      }
+      if (pin.current) {
+        const offset = updateStartPin(pin.current.getElement(), pinLabel, pinWest);
+        pin.current.setLngLat([pinLon, pinLat]).setOffset(offset);
+      } else {
+        const { el, offset } = startPin(pinLabel, pinWest);
+        pin.current = new maplibregl.Marker({ element: el, anchor: "bottom", offset }).setLngLat([pinLon, pinLat]).addTo(map);
+      }
+      const arrived = routeKey !== null && routeKey !== hopped.current.route;
+      if (arrived || startKey !== hopped.current.start) hop(pin.current.getElement(), ARRIVAL_HOPS);
+      hopped.current = { route: routeKey ?? hopped.current.route, start: startKey };
+    })();
+    return () => { live = false; };
+  }, [map, pinLon, pinLat, pinLabel, pinWest, routeKey, startKey]);
+  useEffect(() => () => {
+    pin.current?.remove();
+    pin.current = null;
+  }, [map]);
 
   // The start pin's hop pauses while the map moves and while a solve runs (CSS reads these classes).
   useEffect(() => {

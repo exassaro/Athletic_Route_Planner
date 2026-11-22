@@ -1,7 +1,7 @@
 "use client";
 /**
  * The shared route on the self-hosted basemap, read-only (Phase 5b amendment 6): the same markers as the planner,
- * with the start pin still (no hop on the share page). Geometry and positions from the API.
+ * with the start pin resting (it hops when tapped, amendment 13). Geometry and positions from the API.
  */
 import { useEffect, useState } from "react";
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
@@ -44,7 +44,6 @@ export function ShareMap({ route }: { route: Schemas["RouteFeature"] }) {
       for (const s of props.stops ?? []) {
         if (s.role === "start") {
           const pin = startPin(s.label ?? "the start", west);
-          pin.el.classList.add("still");
           markers.push(new maplibregl.Marker({ element: pin.el, anchor: "bottom", offset: pin.offset }).setLngLat([s.snapped_lon, s.snapped_lat]).addTo(map));
         } else if (s.role === "checkpoint") {
           n += 1;

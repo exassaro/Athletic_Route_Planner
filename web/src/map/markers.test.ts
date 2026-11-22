@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { lineStyle, ROUTE_COLORS } from "@/plan/routeStyle";
 import { basemapStyle, flavor, keepDrawn } from "./basemap";
-import { endFlag, flagPointsLeft, groupByScreen, placePoint, startPin, stopPin } from "./markers";
+import { endFlag, flagPointsLeft, groupByScreen, hop, placePoint, startPin, stopPin, updateStartPin } from "./markers";
 
 describe("markers", () => {
   it("the start pin: the sneaker, labelled, a 52 × 44 tap target, the sole's middle on the point either way", () => {
@@ -15,6 +15,30 @@ describe("markers", () => {
     // 52 px root, 46.5 px sprite centred; the sole's middle is 14.5 sprite px from the toe end's opposite edge
     expect(east.offset[0]).toBeCloseTo(1.5);
     expect(west.offset[0]).toBeCloseTo(-1.5);
+  });
+
+  it("the pin rests until told to hop, hops once on a tap or a key, and rests again", () => {
+    const { el } = startPin("Athanikkal", false);
+    expect(el.classList.contains("hop")).toBe(false);
+    hop(el, 3);
+    expect([el.classList.contains("hop"), el.style.getPropertyValue("--hops")]).toEqual([true, "3"]);
+    el.querySelector(".pin-start-hop")!.dispatchEvent(new Event("animationend", { bubbles: true }));
+    expect(el.classList.contains("hop")).toBe(false);
+    el.click();
+    expect([el.classList.contains("hop"), el.style.getPropertyValue("--hops")]).toEqual([true, "1"]);
+    el.classList.remove("hop");
+    el.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+    expect(el.classList.contains("hop")).toBe(true);
+    expect([el.getAttribute("role"), el.tabIndex]).toEqual(["button", 0]);
+  });
+
+  it("turning the pin keeps the element and its hop", () => {
+    const { el } = startPin("Athanikkal", false);
+    hop(el, 3);
+    expect(updateStartPin(el, "Beypore", true)[0]).toBeCloseTo(-1.5);
+    expect(el.getAttribute("aria-label")).toBe("Start: Beypore");
+    expect(el.querySelector(".pin-start-flip.west")).toBeTruthy();
+    expect(el.classList.contains("hop")).toBe(true);
   });
 
   it("stops: numbered discs, filled for must reach, dashed as asked; a diamond for the place; the flag", () => {
