@@ -59,6 +59,26 @@ test("three hops, then rest; one per tap; zoom and theme do not replay it", asyn
   expect(await hops(page), "one tap").toBe(1);
 });
 
+test("the mascot hops, rests, and the loading cycle runs only while planning", async ({ page }) => {
+  await page.goto("/");
+  const mascot = page.getByTestId("mascot");
+  await expect(mascot.locator("svg")).toHaveAttribute("width", "93");
+  await expect(page.locator(".mascot.hop")).toHaveCount(0, { timeout: 15_000 });
+  await page.screenshot({ path: test.info().outputPath("after-setup.png") });
+
+  await page.route("**/v1/plans", async (route) => {
+    await new Promise((r) => setTimeout(r, 5000));
+    await route.continue();
+  });
+  const planned = planA01Base(page);
+  await expect(page.getByTestId("status")).toContainText("GATHO is planning...", { timeout: 60_000 });
+  await page.locator(".sheet-body").evaluate((el) => el.scrollTo(0, 0));
+  await expect(page.locator(".sneaker-cycle")).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath("after-loading.png") });
+  await planned;
+  await expect(page.locator(".sneaker-cycle")).toHaveCount(0);
+});
+
 test("no hop with reduced motion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await countHops(page);

@@ -7,7 +7,7 @@
 import { SPRITES } from "@/brand/sprites";
 
 /** The sprite as SVG markup (the approved pixels; whole-pixel rects, the depth layer underneath). */
-export function spriteSvg(name: "sneaker" | "runner", scale: number): string {
+export function spriteSvg(name: "sneaker", scale: number): string {
   const s = SPRITES[name];
   const paths = [`<path d="${s.depth}" fill="#000" fill-opacity="${s.depthOpacity}"/>`,
     ...s.layers.map((l) => `<path d="${l.d}" fill="${l.fill}"/>`)].join("");

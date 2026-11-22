@@ -12,7 +12,7 @@ import { km } from "@/plan/format";
 import type { IconName } from "@/brand/icons";
 import { DirectionPicker, DistanceStepper } from "../Controls";
 import { PlaceSearch } from "../PlaceSearch";
-import { Sprite } from "../Sprite";
+import { Mascot } from "../Mascot";
 import { featureItem } from "../StopsPanel";
 import { Button, Chip, Icon, IconButton } from "../ui";
 
@@ -76,7 +76,7 @@ export function SetupFlow({ draft, onEdit, startControls, near, solving, canPlan
         <h2 ref={title} tabIndex={-1} className="t-title setup-title">
           {STEPS[step - 1]}{step >= 4 && <span className="t-body-s muted"> {needsDirection ? "(needed for out and back)" : "(optional)"}</span>}
         </h2>
-        {step === 1 && <Sprite name="runner" scale={2} className="setup-runner" />}
+        {step === 1 && <Mascot />}
       </div>
 
       <div className="setup-body">

@@ -2,7 +2,7 @@
  * The GATHO pixel sprites (blueprint Phase 5b amendment 6), drawn from the generated path data: crisp rectangles,
  * the depth layer underneath. Whole-number scales keep the pixels square.
  */
-import { SPRITES, type SpriteData } from "@/brand/sprites";
+import { CYCLE_FRAME_MS, SPRITES, type SpriteData } from "@/brand/sprites";
 
 function Paths({ s, dx = 0 }: { s: SpriteData; dx?: number }) {
   return (
@@ -13,7 +13,7 @@ function Paths({ s, dx = 0 }: { s: SpriteData; dx?: number }) {
   );
 }
 
-type Props = { name: "sneaker" | "runner"; scale?: number; mirror?: boolean; label?: string; className?: string };
+type Props = { name: "sneaker"; scale?: number; mirror?: boolean; label?: string; className?: string };
 
 /** One sprite. With a label it is an image with that name; without, decoration. */
 export function Sprite({ name, scale = 2, mirror, label, className }: Props) {
@@ -27,17 +27,29 @@ export function Sprite({ name, scale = 2, mirror, label, className }: Props) {
 }
 
 /**
- * The runner running in place (the loading state): the four approved frames side by side in one strip, moved by
- * a CSS steps(4) animation (transform only, so no layout or paint work per frame). Still with reduced motion.
+ * The loading state (amendment 17): four frames of the sneaker with its dust and three dots, side by side in one
+ * strip moved by a CSS steps(4) animation (transform only, so no layout or paint work per frame). It exists only
+ * while a solve runs. Still with reduced motion.
  */
-export function RunCycle({ scale = 2, className }: { scale?: number; className?: string }) {
-  const frames = SPRITES.runCycle;
+export function SneakerCycle({ scale = 2 }: { scale?: number }) {
+  const frames = SPRITES.cycle;
   const { w, h } = frames[0]!;
+  const strip = w * scale * frames.length;
   return (
-    <span className={`run-cycle ${className ?? ""}`} style={{ width: w * scale, height: h * scale }} aria-hidden="true">
-      <svg className="run-cycle-strip" width={w * scale * frames.length} height={h * scale} viewBox={`0 0 ${w * frames.length} ${h}`}
-        shapeRendering="crispEdges" style={{ ["--run-shift" as string]: `-${w * scale * frames.length}px` }}>
-        {frames.map((f, i) => <Paths key={i} s={f} dx={i * w} />)}
+    <span className="sneaker-cycle" style={{ width: w * scale, height: h * scale }} aria-hidden="true">
+      <svg className="sneaker-cycle-strip" width={strip} height={h * scale} viewBox={`0 0 ${w * frames.length} ${h}`}
+        shapeRendering="crispEdges"
+        style={{ ["--cycle-shift" as string]: `-${strip}px`, ["--cycle-ms" as string]: `${CYCLE_FRAME_MS * frames.length}ms` }}>
+        {frames.map((f, i) => (
+          <g key={i}>
+            <Paths s={f} dx={i * w} />
+            <g transform={`translate(${i * w} 0)`}>
+              <path className="cycle-dust" d={f.dust} />
+              <path className="cycle-dots" d={f.dots} />
+              <path className="cycle-dots-faint" d={f.dotsFaint} />
+            </g>
+          </g>
+        ))}
       </svg>
     </span>
   );

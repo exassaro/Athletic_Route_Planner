@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 // @ts-expect-error: a plain .mjs build script, no types
-import { render } from "../../scripts/gen-sprites.mjs";
+import { CYCLE_CANVAS, render, shifted } from "../../scripts/gen-sprites.mjs";
 import { SPRITES } from "./sprites";
 
 const web = join(__dirname, "..", "..");
@@ -32,15 +32,31 @@ function pixels(d: string): Set<string> {
 describe("sprites", () => {
   it("match the approved strings in sprites.md", () => {
     expect(sprites.sneaker.rows).toEqual(blocks[0]);
-    expect(sprites.runner.rows).toEqual(blocks[1]);
-    expect(sprites.runCycle.frames).toEqual(Object.values(blocks[2]));
+    expect(sprites.cycle).toEqual(blocks[1]);
+    expect(Object.keys(sprites)).toEqual(["sneaker", "cycle"]);
   });
 
   it("are clean grids in their palettes", () => {
     grid(sprites.sneaker.rows, sprites.sneaker.palette, 31, 17);
-    grid(sprites.runner.rows, sprites.runner.palette, 28, 25);
-    expect(sprites.runCycle.frames).toHaveLength(4);
-    for (const f of sprites.runCycle.frames) grid(f, sprites.runner.palette, 28, 25);
+  });
+
+  it("the loading frames move whole columns of the approved sneaker and redraw nothing", () => {
+    const { rows, palette } = sprites.sneaker;
+    const column = (r: string[], x: number) => r.map((row) => row[x]).join("").replace(/^\.+|\.+$/g, "");
+    const tops = (r: string[], x: number) => r.findIndex((row) => row[x] !== ".");
+    const expected = [(_: number) => 0, (x: number) => -1 - Math.floor(x / 11), (_: number) => 0, (x: number) => -Math.floor((30 - x) / 11)];
+    const dx = [0, 0, 3, 1];
+    expect(sprites.cycle.frames).toHaveLength(4);
+    sprites.cycle.frames.forEach((f: object, i: number) => {
+      const frame: string[] = shifted(rows, sprites.cycle.step, f);
+      grid(frame, palette, CYCLE_CANVAS.w, CYCLE_CANVAS.h);
+      for (let x = 0; x < 31; x++) {
+        if (tops(rows, x) < 0) continue;                 // the sprite's blank last column
+        const at = CYCLE_CANVAS.shoeX + x + dx[i]!;
+        expect(column(frame, at), `frame ${i + 1}, column ${x}`).toBe(column(rows, x));
+        expect(tops(frame, at), `frame ${i + 1}, column ${x}`).toBe(CYCLE_CANVAS.shoeY + tops(rows, x) + expected[i]!(x));
+      }
+    });
   });
 
   it("keep the sneaker's mark an arrow pointing forward", () => {

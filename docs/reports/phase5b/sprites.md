@@ -26,44 +26,14 @@ Supplied by the product owner on 2026-11-18. Mirror it when the route starts wes
 
 The side mark is a forward arrow (the "direction" idea). It stays an arrow: never a curved swoosh or parallel stripes.
 
-## Runner (28 × 25), faces east: empty state
+## Loading cycle: the sneaker (4 frames, approved 2026-11-22)
 
-Supplied by the product owner on 2026-11-18. Depth layer: every non-outline pixel offset by 0.3 px, black at 22 %.
-
-```json
-[".................OOOOO......","................OHHHHhO.....","...............OHHHHHHhO....","...............OBBBBBBBBO...","...............OHHSSSESO....","...............OHSSSSSSLO...","................OsSSSSSO....","...............OOOsSSOOO....","..............OYTTTTTsssOO..","...........OOOYTTTTTTOssssO.","..........OSSYWWWWWWWOOsSO..","...........OsSTTTTTTtO.OO...","............OtTTTTTtO.......","...........OPPPPPPPO........","..........OPpPPPPPPPO.......",".........OPPPOOOPPPPPOO.....","........OSSsO...OOOPSSSO....",".......OSSsO.......OsSSO....","......OSSsO........OsSSO....",".....OWWwO.........OWWwO....","....OWWwO..........OWWwOO...","...ORRRrO.........ORRRRRrO..","..ORRrRRO.........ORRRRRRRO.",".OZZZZZO..........OZZZZZZZO.","..OOOOO............OOOOOOO.."]
-```
-
-| Letter | Part | Starting value |
-| --- | --- | --- |
-| O | outline | #1E1E1C |
-| H | hair | #2B2118 |
-| h | hair highlight | #6B5038 |
-| B | headband | #D85A30 |
-| S | skin | #E8B488 |
-| s | skin shadow | #C68B5E |
-| L | skin light | #F6D3AE |
-| E | eye | #1E1E1C |
-| T | top | #1D9E75 |
-| t | top shadow | #0F6E56 |
-| Y | top highlight | #5DCAA5 |
-| W | white | #F7F5EE |
-| w | white shadow | #C9C6BC |
-| P | shorts | #33332F |
-| p | shorts highlight | #5A5A55 |
-| R | shoe | #D85A30 |
-| r | shoe shadow | #993C1D |
-| Z | sole | #F7F5EE |
-
-## Run cycle: loading state (4 frames, approved 2026-11-18)
-
-Drawn from the runner: head and torso unchanged; arms and legs redrawn in the same palette; the far arm and leg in the shadow shades (`s`, `w`, `r`). Played in place with `steps(4)`, 130 ms a frame (0.52 s a cycle), transform only; still under prefers-reduced-motion.
+Blueprint Phase 5b amendment 17. No pixel is redrawn: each frame is the sneaker above with whole columns moved. For column x from the heel (0 to 30), a raised toe moves up by floor(x / step), a raised heel by floor((30 - x) / step); `lift` moves every column up, `dx` forward. 160 ms a frame, `steps(4)`, transform only; still under prefers-reduced-motion. Two or three dust puffs behind it and three dots to its right are drawn by `web/scripts/gen-sprites.mjs` in the theme's colours.
 
 ```json
-{
-  "run1_stride_near_leg_ahead": [".................OOOOO......", "................OHHHHhO.....", "...............OHHHHHHhO....", "...............OBBBBBBBBO...", "...............OHHSSSESO....", "...............OHSSSSSSLO...", "................OsSSSSSO....", "...............OOOsSSOOO....", "..............OYTTTTTsssOO..", "...........OOOYTTTTTTOssssO.", "..........OSSYWWWWWWWOOsSO..", "...........OsSTTTTTTtO.OO...", "............OtTTTTTtO.......", "...........OPPPPPPPO........", "..........OPpPPPPPPPO.......", ".........OPPPOOOOPPPPO......", "........OsssO....OSSsO......", ".......OsssO......OSSsO.....", "......OwwwO........OSSsO....", ".....OwwwO..........OWWwO...", "...OrrrrO............OWWwO..", "..OrrrrrO...........ORRRRRrO", ".OwwwwwO...........ORRRRRRRO", "..OOOOO............OZZZZZZZO", "....................OOOOOOO."],
-  "run2_pass_near_leg_carries": [".................OOOOO......", "................OHHHHhO.....", "...............OHHHHHHhO....", "...............OBBBBBBBBO...", "...............OHHSSSESO....", "...............OHSSSSSSLO...", "................OsSSSSSO....", "...............OOOsSSOOO....", "..............OYTTTTTsO.....", "............OOYTTTTTTOssO...", "...........OSYWWWWWWWOsO....", "...........OSSTTTTTTtOO.....", "............OtTTTTTtO.......", "...........OPPPPPPPO........", "..........OPpPPPPPPPO.......", "..........OPPPPPPPPPO.......", ".........OsssOOSSsO.........", "..OrrO..OsssO.OSSsO.........", ".OrrrwwsssO...OSSsO.........", ".OwrrOOOOO....OWWwO.........", "..OOO.........OWWwO.........", ".............ORRRRRrO.......", ".............ORRRRRRRO......", ".............OZZZZZZZO......", "..............OOOOOOO......."],
-  "run3_stride_far_leg_ahead": [".................OOOOO......", "................OHHHHhO.....", "...............OHHHHHHhO....", "...............OBBBBBBBBO...", "...............OHHSSSESO....", "...............OHSSSSSSLO...", "................OsSSSSSO....", "...............OOOsSSOOO....", "..............OYTTTTTSSSOO..", "...........OOOYTTTTTTOSSSSO.", "..........OssYWWWWWWWOOSsO..", "...........OssTTTTTTtO.OO...", "............OtTTTTTtO.......", "...........OPPPPPPPO........", "..........OPpPPPPPPPO.......", ".........OPPPOOOOPPPPO......", "........OSSsO....OsssO......", ".......OSSsO......OsssO.....", "......OWWwO........OsssO....", ".....OWWwO..........OwwwO...", "...ORRRrO............OwwwO..", "..ORRrRRO...........OrrrrrrO", ".OZZZZZO...........OrrrrrrrO", "..OOOOO............OwwwwwwwO", "....................OOOOOOO."],
-  "run4_pass_far_leg_carries": [".................OOOOO......", "................OHHHHhO.....", "...............OHHHHHHhO....", "...............OBBBBBBBBO...", "...............OHHSSSESO....", "...............OHSSSSSSLO...", "................OsSSSSSO....", "...............OOOsSSOOO....", "..............OYTTTTTsO.....", "............OOYTTTTTTOssO...", "...........OSYWWWWWWWOsO....", "...........OSSTTTTTTtOO.....", "............OtTTTTTtO.......", "...........OPPPPPPPO........", "..........OPpPPPPPPPO.......", "..........OPPPPPPPPPO.......", ".........OSSsOOsssO.........", "..ORRO..OSSsO.OsssO.........", ".ORRRWWSSsO...OsssO.........", ".OZRROOOOO....OwwwO.........", "..OOO.........OwwwO.........", ".............OrrrrrrO.......", ".............OrrrrrrrO......", ".............OwwwwwwwO......", "..............OOOOOOO......."]
-}
+{"frameMs": 160, "step": 11, "frames": [{"name": "flat", "raise": null, "lift": 0, "dx": 0}, {"name": "toe up, lifted", "raise": "toe", "lift": 1, "dx": 0}, {"name": "flat, forward", "raise": null, "lift": 0, "dx": 3}, {"name": "heel up", "raise": "heel", "lift": 0, "dx": 1}]}
 ```
+
+## Mascot
+
+The same sneaker at 3 px a pixel (93 px wide) with a soft ground shadow (amendment 16). The runner and its run cycle (2026-11-18) were withdrawn by the product owner on 2026-11-22 and deleted.

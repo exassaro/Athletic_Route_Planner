@@ -157,7 +157,7 @@ for (const vp of SIZES) {
       await expect(page.getByTestId("status")).toHaveAttribute("data-state", "solving");
       await page.locator(".sheet-body").evaluate((e) => e.scrollTo(0, 0));
       await page.waitForTimeout(300);
-      await page.screenshot({ path: `${OUT}/${vp.name}-22-loading-run-cycle-mocked${vp.mobile ? "-light" : ""}.png` });
+      await page.screenshot({ path: `${OUT}/${vp.name}-22-loading-mocked${vp.mobile ? "-light" : ""}.png` });
       await expect(page.getByTestId("status")).toHaveAttribute("data-state", "busy", { timeout: 20000 });
       await shot(page, vp, "23-busy-429-mocked");
       await page.unroute(planUrl);

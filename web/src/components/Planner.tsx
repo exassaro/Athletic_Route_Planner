@@ -33,7 +33,7 @@ import { Button, Snackbar } from "./ui";
 import { TopBar, type PlaceAction } from "./TopBar";
 import { featureItem } from "./StopsPanel";
 import { SetupFlow } from "./setup/SetupFlow";
-import { RunCycle } from "./Sprite";
+import { SneakerCycle } from "./Sprite";
 
 /** The form before the first solve: the API fills every field left out with its default. */
 type Draft = Omit<NewRouteRequest, "start"> & { start: Point | null };
@@ -270,7 +270,7 @@ export function Planner() {
 
 function StatusLine({ busy, onDismiss }: { busy: Busy; onDismiss: () => void }) {
   let text: string | null = null;
-  if (busy.kind === "solving") text = "Finding your route…";
+  if (busy.kind === "solving") text = "GATHO is planning...";
   if (busy.kind === "busy") text = busy.reason === "solver_busy"
     ? `Many runs are being planned right now. Trying again in ${busy.retryInS} s (attempt ${busy.attempt}).`
     : `Too many requests for a moment. Trying again in ${busy.retryInS} s.`;
@@ -279,7 +279,7 @@ function StatusLine({ busy, onDismiss }: { busy: Busy; onDismiss: () => void }) 
     : "Finishing the previous change first…";
   return (
     <div aria-live="polite" className="status" data-testid="status" data-state={busy.kind}>
-      {text && <p className="progress"><RunCycle scale={1} />{text}</p>}
+      {text && <p className="progress"><SneakerCycle />{text}</p>}
       {busy.kind === "error" && (
         <div role="alert" className="error-box" data-error={busy.error.code}>
           <p>{busy.error.message}</p>
