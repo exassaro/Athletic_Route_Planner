@@ -2,6 +2,70 @@
 
 Nov 16, 2026 · @Azzm
 
+## Phase 5d amendments
+
+Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before Phase 6. The solver does not change. Every API change is additive. Where these amendments conflict with an earlier amendment or a later section, they win. Items marked *default* fill in a detail of the approved plan and stand until the product owner changes them. They replace:
+
+- Phase 5 amendment 4's "never computes a position along a route", for Follow only (decision 5);
+- Phase 5b amendment 18's "only UI bearing", with one more (decision 5);
+- Phase 5b amendment 13's hops, on the Follow screen only (decision 14);
+- Phase 5b amendment 20's Google Maps and GPX items (decisions 1 to 3);
+- section 6's "live turn-by-turn navigation is deliberately out of the MVP", for a foreground-only web Follow mode. Background tracking, offline maps and watch sync still wait for a native app (sections 14 and 19).
+
+**Decisions: route fidelity**
+
+1. **Google Maps is an overview; the GPX is the exact route.** The link stays `travelmode=walking` (driving is road-only and obeys one-ways). It has at most 3 waypoints on a mobile browser (a coarse pointer and a narrow viewport, or the user agent; one tested function) and 9 elsewhere, [Google's limits](https://developers.google.com/maps/documentation/urls/get-started).
+2. **A14, overview points:** `GET /v1/routes/{route_id}/overview-points?max=N` and `GET /v1/share/{slug}/overview-points?max=N`, 1 ≤ N ≤ 9.
+   - Start and end are fixed. The route point that deviates most from the Valhalla pedestrian route between its current neighbours is added (maximum distance, sampled every 25 m) until N are used or every deviation is under 30 m.
+   - It returns the points in route order, `max_deviation_m` and `overlap_pct` (the share of our length within 30 m of that Valhalla path). Valhalla stands in for Google.
+   - It uses the solver's Valhalla client, is cached by route, N and Valhalla build, and counts against the "read" limit. Valhalla down: 503 in the usual error shape, and the web app uses evenly spaced km marks.
+   - It is built only after it is measured against even spacing on A01 and S02. If it does not deviate less at the same N, the product owner decides first.
+3. **"Open in...", in this order:**
+   - **"Get GPX (exact route)"**, the primary button. It shares the file where the browser can. Otherwise (Chrome on Android refuses `.gpx`) it downloads it and says how to open it. Under it: "Open it in Organic Maps or OsmAnd (free, offline maps) to see the exact line."
+   - **"Google Maps (overview)"**, with "Google may re-route between points. Expect small differences in the path and distance. Our route: <km>. Estimated overlap: <n>% (tested with our router, not Google)." Without overview points the last sentence is left out. The estimate is never called Google's path.
+   - **"How to see the exact line in Google Maps"**, collapsed: the steps from [My Maps help](https://support.google.com/mymaps/answer/3024836), saying "needs a computer", because My Maps is not available on Android or iOS.
+   - Garmin and Strava stay as manual notes.
+
+**Decisions: Follow mode**
+
+4. **`/follow?saved=<saved_id>`, `?route=<route_id>` or `?share=<slug>`**, from a "Follow" button on the saved route card, the route card and the share page. A visitor never gets a session. It is foreground only and needs HTTPS. Nothing about a run is saved, on the server or in the browser; what survives a refresh is decided in Phase 5e.
+5. **What the UI may work out, in Follow only:**
+   - the runner's position along the route, by snapping to the line and interpolating between the API's metres per vertex. Every route distance still comes from the API's measurement;
+   - the straight-line distance back to the line, always labelled straight-line;
+   - the bearing back to the line, shown in words.
+
+   None of the three is sent, stored or logged.
+6. **A15, follow data:** `GET /v1/routes/{route_id}/follow` and `GET /v1/share/{slug}/follow`, fetched once, before the run. They return the metres along the route at each vertex, and the cues.
+   - A cue is a bearing change over 35° within 20 m, at a junction, with the road's name where Valhalla has one: "In 300 m: turn left onto <road>", otherwise "In 300 m: turn left". Cues under 50 m apart are merged (*default*).
+   - Valhalla down: still 200, with cues from the geometry alone and no names.
+7. **Location never leaves the device.** Permission is asked only when Follow is tapped, with one line saying why. No request may depend on a position: no API call carries one, and the map loads the tiles of the route's corridor at the start, then none for the moving camera. A browser test checks this.
+8. **Progress is the snapped distance along the route**, never a sum of GPS steps, within a forward-only window.
+   - Where passes tie while tracking, the one nearest the expected progress wins.
+   - After a gap of T seconds the window is 5 m/s × T + 100 m, back to normal after three good fixes.
+   - If more than one pass fits after a gap, progress is held until the direction of the following fixes decides. Expected pace never decides after a gap: on S02 it jumps to the finish after a 33 minute lock at the start.
+9. **Off route:** an amber banner, with a short vibration where supported, after more than 40 m from the line for 10 s **and** two consecutive fresh fixes with accuracy under 30 m. With worse accuracy it says "GPS is weak" and does not guess.
+10. **Screen lock.**
+    - On hidden: the time and last snapped position are kept in memory and the off-route timer stops.
+    - On visible: "Finding you...", the wake lock is asked for again, and `getCurrentPosition` runs with maximumAge 0 and a 15 s timeout. A fix over 10 s old is discarded.
+    - After more than 30 s away: "You were away for 2 min 10 s. Cues are off while the screen is locked." (with the real gap). The summary counts the gaps.
+    - Elapsed time comes from timestamps, never from a timer.
+11. **Start screen:** "Locking your phone pauses GATHO's tracking. Keep the screen on, or use the GPX in Organic Maps or on a watch for long runs." A missing or refused wake lock shows one line. A refused location permission shows a calm message.
+12. **Screen and HUD:** the map shows the route with the part done dimmed, and a live dot with its accuracy ring. At peek: km done, km left, elapsed and pace in the pixel numerals with `data-value`, and the next cue. Pause, resume and stop. Stop shows a summary (distance done, time, gaps) and "Done".
+13. **Voice cues:** English, off by default, offered only with an on-device voice (`localService`), because a remote voice sends the text away.
+14. **Motion and battery:** the sneaker pin stays still (the live dot is the runner) and reduced motion is respected. "Battery saver" is an optional near-black HUD with no map animation; the screen stays on.
+15. **Gates:** no Lighthouse regression, with `/follow` reported; the Follow code and the contents of "Open in..." are not in the first load of `/`; both themes; 44 px targets. The report gives the overlap before and after, the browser limits, and what was not tested on real devices, with the Redmi lock test (lock for 60 s mid-run, wake, time the first fix).
+
+**Found while planning** (2026-11-22, this laptop, throwaway simulations with GPS noise of 5 m sigma on the committed A01 and S02 tracks; the out-and-back is A01's first half and back):
+
+- While tracking with the closest point alone, 10 of 20 out-and-back runs were at some point over 100 m wrong in progress; with decision 8's tie-break, none.
+- After a 15 minute lock on the out-and-back, the first fix alone picked the wrong pass in 3.5 to 4.2 % of wakes; the direction of the fixes in 0.5 % with 6 fixes and 0 % with 16, for a runner moving at 1.5 to 4 m/s.
+- A bare 35° bend rule gives 55 cues on A01, 10 of them under 50 m apart: hence decision 6's junctions and merging.
+- Holding progress for a runner who has not moved is not yet simulated.
+
+**Open, to settle before the snap is built (step 5):** how a runner who left the route rejoins it further ahead than the normal window reaches.
+
+**Status (2026-11-22): in progress.**
+
 ## Phase 5c amendments
 
 Decided 2026-11-22 by the product owner: manage saved routes (rename, edit, delete) before Phase 6. The solver does not change. Every API change is additive; migration 0005 is the one schema change. Where these amendments conflict with an earlier amendment or a later section, they win. They replace Phase 5 amendment 11's "no deleting a saved route" and Phase 5 amendment 7's closed list of API changes (A10 to A13 are added).
@@ -69,9 +133,9 @@ A round of fixes and small features on top of the built Phase 5b, with the final
     - frame 4, heel up: dy = -floor((30 - x) / 11), dx = 1.
 
     Two or three dust puffs follow it, with three pixel dots to the right and "GATHO is planning...".
-18. **Directions are shown in words** ("North-east"), each with where it lies on the map as currently rotated, and an eight-point dial. The request's values are unchanged. **Exception to Phase 5 amendment 4, for a label only:** when the direction is a place, the UI may work out the bearing from the start to that place to say "Heading south-east, towards Beypore". That bearing is never sent, stored or used for anything else.
+18. **Directions are shown in words** ("North-east"), each with where it lies on the map as currently rotated, and an eight-point dial. The request's values are unchanged. **Exception to Phase 5 amendment 4, for a label only:** when the direction is a place, the UI may work out the bearing from the start to that place to say "Heading south-east, towards Beypore". That bearing is never sent, stored or used for anything else. (Follow mode adds one more: Phase 5d amendment 5.)
 19. **Compass.** A pixel compass (44 px or more) under the menu button replaces MapLibre's: its needle points to true north and a tap faces the map north. In the direction picker it also marks the chosen direction.
-20. **"Open in..."** on the result, the share page and each saved route:
+20. **"Open in..."** on the result, the share page and each saved route (the Google Maps and GPX items are replaced by Phase 5d amendments 1 to 3):
     - **Google Maps (walking):** at most 3 waypoints on a phone and 8 otherwise (Google allows 3 in mobile browsers and 9 elsewhere), chosen evenly from the API's km marks, with a note that Google may change the path between them. Nothing is measured in the UI.
     - **Share the GPX:** Web Share with a file where the browser allows it. Chromium, desktop and Android, refuses `.gpx` even when `canShare` says yes, so a refusal downloads the file and says so.
     - **Download GPX**, as before.
@@ -105,7 +169,7 @@ Decided 2026-11-18 by the product owner at the start of Phase 5, the web front e
 1. **Stack:** Next.js (App Router), TypeScript and MapLibre GL JS. The share page is server-rendered; the planner is client-side.
 2. **API types are generated from the OpenAPI schema** (openapi-typescript, with openapi-fetch as the client). There are no hand-written copies of `RouteRequest` or `SolveResult`. A CI check (GitHub Actions) fails if the generated types are stale.
 3. **Basemap: self-hosted vector tiles for Kerala**, a PMTiles file served as a static file: no API key, no per-load fee. OSM attribution is always visible. The tiles are built with Planetiler (Protomaps basemap profile) from the pinned extract (`engine/osm_pin.json`), so the map shows the roads the router used; fonts and sprites are self-hosted too. Fallback: `pmtiles extract` from the Protomaps build nearest the pin, with its date recorded.
-4. **One source of truth: the current `RouteRequest`.** Every control edits it, and every edit is sent as a JSON Patch to `PATCH /v1/plans/{id}`. The UI never computes a route, a distance, a position along a route or an endpoint. Everything shown comes from the API response.
+4. **One source of truth: the current `RouteRequest`.** Every control edits it, and every edit is sent as a JSON Patch to `PATCH /v1/plans/{id}`. The UI never computes a route, a distance, a position along a route (Follow mode excepted: Phase 5d amendment 5) or an endpoint. Everything shown comes from the API response.
 5. **Running time = foot length × the user's pace** (stored in the browser, default 6:00 /km, editable). This is arithmetic on a measured distance, not an estimate, and is labelled "at your pace". The engine's walking duration is not shown.
 6. **Mobile first:** a full-screen map with a bottom sheet; a side panel on desktop.
 
@@ -508,7 +572,7 @@ Your FastAPI, PostgreSQL/PostGIS and Redis preference is sound; the only additio
 | Mobile | PWA first; React Native with MapLibre Native later | One codebase now; GPX export covers watches | Flutter is equally viable but shares no code with the web app |
 | LLM | A small, fast model with structured output, behind a provider-agnostic interface | Parsing is a simple extraction task | Rule-based parser as offline fallback |
 
-**Web, PWA or native?** Start with a responsive web app installable as a PWA. Planning happens before the run, on a large map, and GPX export hands navigation to Garmin, Coros or Strava. Background GPS in an iOS PWA is unreliable, so live turn-by-turn navigation is deliberately out of the MVP and is the trigger for a native app.
+**Web, PWA or native?** Start with a responsive web app installable as a PWA. Planning happens before the run, on a large map, and GPX export hands navigation to Garmin, Coros or Strava. Background GPS in an iOS PWA is unreliable, so live turn-by-turn navigation is deliberately out of the MVP and is the trigger for a native app. (Phase 5d adds a foreground-only Follow mode on the web; background navigation still waits for the native app.)
 
 ## 7. Proposed system architecture
 
@@ -1031,7 +1095,7 @@ The MVP is running only, one region, web only, and proves a single claim: constr
 |  | User accounts beyond a magic link |
 |  | Post-run rating of a route |
 | **Future** | Cycling, trail running and hiking profiles |
-|  | Native app with live navigation and offline maps |
+|  | Native app with background live navigation and offline maps (foreground Follow on the web: Phase 5d) |
 |  | Direct sync to Garmin, Coros and Strava |
 |  | Popularity signal from user feedback and imported GPX |
 |  | Training-plan integration and club features |
@@ -1288,7 +1352,7 @@ Earn the right to monetise by proving that runners finish the routes and rate th
 - **More sports:** cycling (road, gravel), trail running and hiking profiles with surface and difficulty preferences.
 - **Own quality signal:** post-run ratings and imported GPX tracks become a popularity layer for regions where heatmaps are thin.
 - **Optional stops:** "pass a water point every 8 km" solved as an orienteering problem.
-- **Native app:** live navigation with audio cues, offline maps, watch sync.
+- **Native app:** live navigation in the background with audio cues, offline maps, watch sync (foreground Follow on the web: Phase 5d).
 - **Integrations:** push routes to Garmin, Coros and Strava; pull training plans to pre-fill the distance.
 - **Time-aware routing:** shade, lighting after dark, heat and rain warnings.
 - **Own graph search:** a purpose-built loop algorithm in the style of the jogging-routes research once the engine-as-oracle approach limits quality.
