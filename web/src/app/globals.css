@@ -310,13 +310,6 @@ a { color: var(--accent-text); }
 .adjust { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 10px; }
 
 /* ---------- share page, saved routes ---------- */
-.share-page { position: fixed; inset: 0; display: grid; grid-template-rows: 45vh 1fr; }
-.share-map { position: relative; }
-.share-panel { overflow-y: auto; padding: 16px; }
-@media (min-width: 900px) {
-  .share-page { grid-template-rows: none; grid-template-columns: 420px 1fr; }
-  .share-panel { order: -1; }
-}
 a.button { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 14px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--soft); text-decoration: none; color: var(--fg); }
 a.button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
 .saved-page { max-width: 720px; margin: 0 auto; padding: 16px; }
@@ -651,15 +644,21 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .pin-end-depth { fill: rgba(0, 0, 0, 0.35); }
 
 /* ---------- share page and saved routes (Phase 5b step 10) ---------- */
-.share-panel { padding: var(--space-2) var(--space-2) var(--space-4); background: var(--paper); }
-.share-panel h1 { margin: 0; }
-.share-meta { margin: 4px 0 var(--space-2); }
-.share-stats {
-  display: grid; grid-template-columns: repeat(3, auto); justify-content: space-between; column-gap: var(--space-1);
-  padding: 12px 0; border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline);
+/* The planner's map and sheet (amendment 21). The stats stay in the peek bar at every height: no card repeats them. */
+.share-view .sheet:not(.peek) .peek-bar, .share-view .sheet .peek-bar { display: grid; }
+.share-view a.topbar-brand { text-decoration: none; color: inherit; }
+.share-view .topbar .btn { margin-left: auto; background: var(--surface); }
+.share-view.sheet-peek .to-map, .share-view .panel-toggle { display: none; }
+.share-details { padding-bottom: var(--space-4); }
+.share-details h1 { margin: var(--space-1) 0 0; }
+@media (min-width: 900px) {
+  .share-view .to-map { display: none; }
+  .share-view .panel-toggle { display: inline-flex; }
+  .share-view.panel-collapsed .sheet { display: none; }
+  .share-view.panel-collapsed .topbar { width: auto; background: none; border: 0; }
+  .share-view.panel-collapsed .topbar .btn { margin-left: 0; }
 }
-.share-stats > div { display: flex; flex-direction: column; min-width: 0; }
-.share-stats .t-unit { font-size: 13px; }
+.share-meta { margin: 4px 0 var(--space-2); }
 .share-timeline { margin: var(--space-2) 0; }
 .share-timeline .tl-num { cursor: default; }
 .share-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); align-items: center; margin: var(--space-2) 0 var(--space-1); }

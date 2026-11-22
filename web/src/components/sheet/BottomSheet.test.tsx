@@ -24,6 +24,23 @@ describe("the banner", () => {
   });
 });
 
+describe("a tap in a peeked sheet", () => {
+  it("is not lost: the sheet opens after the click, not when the finger lands", () => {
+    const order: string[] = [];
+    render(
+      <BottomSheet snap="peek" onSnap={() => order.push("opened")} label="Run">
+        <button type="button" onClick={() => order.push("clicked")}>Open in</button>
+      </BottomSheet>,
+    );
+    const button = screen.getByRole("button", { name: "Open in" });
+    fireEvent.pointerDown(button);
+    fireEvent.focusIn(button);
+    expect(order).toEqual([]);
+    fireEvent.click(button);
+    expect(order).toEqual(["clicked", "opened"]);
+  });
+});
+
 describe("snapAfterDrag", () => {
   it("settles on the nearest position when let go slowly", () => {
     expect(snapAfterDrag("half", 150, 0, H)).toBe("peek");

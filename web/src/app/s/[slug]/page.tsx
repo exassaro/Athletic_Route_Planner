@@ -1,8 +1,9 @@
 /**
- * The share page (section 13; Phase 5 amendment 1: server-rendered; Phase 5b: the GATHO look). Read-only: the
- * route on the map with a still start pin, its numbers, the stops with their distance marks, and the GPX. Public,
- * no token; the plan id stays private (the API leaves it out). Its buttons are secondary (the retro budget: the
- * wordmark, the numerals and the markers are this page's three).
+ * The share page, which is also the saved-route view (section 13; Phase 5 amendment 1: server-rendered; Phase 5b
+ * amendment 21: the planner's sheet, SharedView). Read-only: the route on the map, its numbers in the peek bar,
+ * the stops with their distance marks, and the ways to take it elsewhere. Public, no token; the plan id stays
+ * private (the API leaves it out). Its buttons are secondary (the retro budget: the wordmark, the numerals and
+ * the markers are this page's three).
  */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -12,14 +13,11 @@ import type { Schemas } from "@/api/client";
 import { API_BASE } from "@/api/client";
 import { serverApi } from "@/api/server";
 import { Num } from "@/components/Num";
-import { ShareMap } from "@/components/ShareMap";
+import { SharedView } from "@/components/SharedView";
 import { ShareOpenIn } from "@/components/ShareOpenIn";
 import { Sprite } from "@/components/Sprite";
-import { StatNumber } from "@/components/StatNumber";
 import { Icon } from "@/components/ui";
-import { Wordmark } from "@/components/Wordmark";
 import { km, metres } from "@/plan/format";
-import { ShareTime } from "./ShareTime";
 
 type Shared = Schemas["SharedRouteOut"];
 type Props = { params: Promise<{ slug: string }> };
@@ -55,25 +53,12 @@ export default async function SharePage({ params }: Props) {
   const line = shared.route.geometry.coordinates;
   const lonLat = (point: readonly number[]) => [point[0]!, point[1]!] as const;
   return (
-    <main className="share-page">
-      <div className="share-map"><ShareMap route={shared.route} kmMarks={shared.km_marks} /></div>
-      <section className="share-panel" aria-label="Shared route">
-        <p className="brand-row"><Link href="/" aria-label="GATHO: plan your own run"><Wordmark /></Link></p>
+    <SharedView slug={slug} route={shared.route} kmMarks={shared.km_marks}>
+      <div className="share-details">
         <h1 className="t-title">{shared.name ?? "A shared run"}</h1>
         <p className="t-body-s muted share-meta" data-testid="share-summary">
           {start?.label ?? "Start"} to {p.end.label ?? "an unnamed road"} · shared {new Date(shared.shared_at).toISOString().slice(0, 10)}
         </p>
-        <div className="share-stats">
-          <div><StatNumber kind="km" value={p.foot_m} field="foot_m" /><span className="t-meta muted">distance</span></div>
-          <div><ShareTime footM={p.foot_m} /><span className="t-meta muted">at your pace</span></div>
-          <div>
-            {p.gain_m == null ? <span className="t-body-s">not known</span> : (
-              <span className="climb"><span className="t-stat-l" aria-hidden="true">+</span><span className="sr-only">plus </span>
-                <StatNumber kind="m" value={p.gain_m} field="gain_m" /></span>
-            )}
-            <span className="t-meta muted">climb{p.climb_approximate ? ", approx." : ""}</span>
-          </div>
-        </div>
         <ol className="timeline share-timeline" aria-label="Start, stops and end">
           {start && (
             <li className="tl-row">
@@ -111,7 +96,7 @@ export default async function SharePage({ params }: Props) {
           <a className="btn btn-quiet" href={`${API_BASE}/v1/share/${slug}/gpx?ele=false`}>GPX without elevation</a>
         </div>
         <p><Link className="btn btn-secondary btn-block" href="/">Plan your own run</Link></p>
-      </section>
-    </main>
+      </div>
+    </SharedView>
   );
 }

@@ -4,7 +4,8 @@
  * desktop (900 px and wider). The three positions are CSS (the planner root's sheet-* class sets --snap-h); a drag
  * only moves the sheet with a transform, so it stays smooth, and on release it settles on a position chosen by
  * snapAfterDrag. The handle is a button: tap or Enter cycles, the arrow keys go up and down. Focus moving into a
- * peeked sheet opens it to half, so nothing focused is hidden.
+ * peeked sheet opens it to half, so nothing focused is hidden; when a tap moved the focus, only once the tap is
+ * done, or the button would slide from under the finger and the tap would be lost.
  *
  * The banner (the Undo message, amendment 15) belongs to the sheet so it moves with it: just above its top edge on
  * a phone, in its own row under the handle at full, over the map beside the panel on a desktop.
@@ -45,6 +46,8 @@ export function BottomSheet({ snap, onSnap, label, children, halfRatio = 0.5, ba
     if (snap === "peek" && body.current) body.current.scrollTop = 0;
   }, [snap]);
   const suppressClick = useRef(false);
+  // a press in the sheet (focus follows it within the second), and whether it should open the sheet when it ends
+  const press = useRef({ at: -Infinity, opens: false });
   const [dragging, setDragging] = useState(false);
 
   const heights = (): Record<Snap, number> => {
@@ -108,9 +111,17 @@ export function BottomSheet({ snap, onSnap, label, children, halfRatio = 0.5, ba
 
   return (
     <section ref={sheet} className={`sheet ${snap}${dragging ? " dragging" : ""}`} aria-label={label} data-snap={snap}
+      onPointerDownCapture={() => { press.current = { at: performance.now(), opens: false }; }}
+      onClick={() => {
+        const { opens } = press.current;
+        press.current = { at: -Infinity, opens: false };
+        if (opens && snap === "peek") onSnap("half");
+      }}
       onFocusCapture={(e) => {
         const el = e.target as HTMLElement;
-        if (snap === "peek" && el !== e.currentTarget && !el.closest(".sheet-handle, .sheet-banner")) onSnap("half");
+        if (snap !== "peek" || el === e.currentTarget || el.closest(".sheet-handle, .sheet-banner")) return;
+        if (performance.now() - press.current.at < 1000) press.current.opens = true;
+        else onSnap("half");
       }}>
       <button type="button" className="sheet-handle" aria-label={snap === "full" ? "Show the map" : "Show more"}
         aria-describedby="sheet-handle-hint" onClick={onClick} onKeyDown={onKeyDown}

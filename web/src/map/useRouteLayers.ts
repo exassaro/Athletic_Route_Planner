@@ -237,14 +237,15 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
         for (const cp of request?.checkpoints ?? []) b.extend([cp.lon, cp.lat]);
       }
       if (b.isEmpty()) return;
-      // keep the route out from under the sheet (phone) or the panel (desktop): measure it; 88 px clears the top bar
+      // keep the route out from under the sheet (phone) or the panel (desktop): measure it; 108 px clears the top bar
+      // with the flag above the end point, 44 px the flag flying left, 64 px the compass
       const wide = window.matchMedia("(min-width: 900px)").matches;
       const sheet = document.querySelector(".sheet")?.getBoundingClientRect();
       const message = document.querySelector(".sheet:not(.full) .sheet-banner")?.getBoundingClientRect();
       const top = sheet ? Math.min(sheet.top, message?.top ?? sheet.top) : window.innerHeight;
       const under = sheet ? (wide ? sheet.right : Math.max(0, window.innerHeight - top)) : 0;
       map.fitBounds(b, { padding: wide ? { top: 40, bottom: 40, left: under + 40, right: 60 }
-        : { top: 88, bottom: under + 30, left: 30, right: 50 }, duration: 600, maxZoom: 15 });
+        : { top: 108, bottom: under + 30, left: 44, right: 64 }, duration: 600, maxZoom: 15 });
     })();
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
