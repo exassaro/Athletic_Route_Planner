@@ -1,0 +1,1115 @@
+{
+ "measured_on": "the development laptop, Valhalla in Docker called from the host",
+ "step_m": 25.0,
+ "near_m": 30.0,
+ "tracks": {
+  "A01 recommended": {
+   "length_m": 25000.0,
+   "smart_calls": 15,
+   "smart_s": 0.93,
+   "rows": [
+    {
+     "n": 1,
+     "even": {
+      "used": 1,
+      "at_m": [
+       13000.0
+      ],
+      "max_deviation_m": 2863.1,
+      "overlap_pct": 23.3,
+      "overlap_by_leg_pct": 23.3,
+      "path_length_m": 20681.6
+     },
+     "smart": {
+      "used": 1,
+      "at_m": [
+       6475.0
+      ],
+      "max_deviation_m": 1901.6,
+      "overlap_pct": 57.5,
+      "overlap_by_leg_pct": 57.5,
+      "path_length_m": 22058.1
+     }
+    },
+    {
+     "n": 2,
+     "even": {
+      "used": 2,
+      "at_m": [
+       8000.0,
+       17000.0
+      ],
+      "max_deviation_m": 655.0,
+      "overlap_pct": 73.8,
+      "overlap_by_leg_pct": 73.8,
+      "path_length_m": 23765.7
+     },
+     "smart": {
+      "used": 2,
+      "at_m": [
+       6475.0,
+       15650.0
+      ],
+      "max_deviation_m": 479.0,
+      "overlap_pct": 82.6,
+      "overlap_by_leg_pct": 82.6,
+      "path_length_m": 24012.8
+     }
+    },
+    {
+     "n": 3,
+     "even": {
+      "used": 3,
+      "at_m": [
+       6000.0,
+       13000.0,
+       19000.0
+      ],
+      "max_deviation_m": 2017.1,
+      "overlap_pct": 64.5,
+      "overlap_by_leg_pct": 64.5,
+      "path_length_m": 24022.4
+     },
+     "smart": {
+      "used": 3,
+      "at_m": [
+       6475.0,
+       15650.0,
+       21200.0
+      ],
+      "max_deviation_m": 1078.0,
+      "overlap_pct": 78.9,
+      "overlap_by_leg_pct": 78.9,
+      "path_length_m": 24336.3
+     }
+    },
+    {
+     "n": 4,
+     "even": {
+      "used": 4,
+      "at_m": [
+       5000.0,
+       10000.0,
+       15000.0,
+       20000.0
+      ],
+      "max_deviation_m": 1078.0,
+      "overlap_pct": 79.2,
+      "overlap_by_leg_pct": 79.2,
+      "path_length_m": 24273.5
+     },
+     "smart": {
+      "used": 4,
+      "at_m": [
+       6475.0,
+       15650.0,
+       21200.0,
+       23025.0
+      ],
+      "max_deviation_m": 379.5,
+      "overlap_pct": 92.6,
+      "overlap_by_leg_pct": 92.6,
+      "path_length_m": 24833.5
+     }
+    },
+    {
+     "n": 5,
+     "even": {
+      "used": 5,
+      "at_m": [
+       4000.0,
+       8000.0,
+       13000.0,
+       17000.0,
+       21000.0
+      ],
+      "max_deviation_m": 1078.0,
+      "overlap_pct": 70.1,
+      "overlap_by_leg_pct": 70.1,
+      "path_length_m": 24089.2
+     },
+     "smart": {
+      "used": 5,
+      "at_m": [
+       6475.0,
+       15650.0,
+       20150.0,
+       21200.0,
+       23025.0
+      ],
+      "max_deviation_m": 192.5,
+      "overlap_pct": 95.6,
+      "overlap_by_leg_pct": 95.6,
+      "path_length_m": 24823.7
+     }
+    },
+    {
+     "n": 6,
+     "even": {
+      "used": 6,
+      "at_m": [
+       4000.0,
+       7000.0,
+       11000.0,
+       14000.0,
+       18000.0,
+       21000.0
+      ],
+      "max_deviation_m": 1078.0,
+      "overlap_pct": 70.1,
+      "overlap_by_leg_pct": 70.1,
+      "path_length_m": 24089.2
+     },
+     "smart": {
+      "used": 6,
+      "at_m": [
+       6475.0,
+       12625.0,
+       15650.0,
+       20150.0,
+       21200.0,
+       23025.0
+      ],
+      "max_deviation_m": 87.9,
+      "overlap_pct": 98.9,
+      "overlap_by_leg_pct": 98.9,
+      "path_length_m": 25008.5
+     }
+    },
+    {
+     "n": 7,
+     "even": {
+      "used": 7,
+      "at_m": [
+       3000.0,
+       6000.0,
+       9000.0,
+       13000.0,
+       16000.0,
+       19000.0,
+       22000.0
+      ],
+      "max_deviation_m": 479.0,
+      "overlap_pct": 85.0,
+      "overlap_by_leg_pct": 85.0,
+      "path_length_m": 24755.3
+     },
+     "smart": {
+      "used": 7,
+      "at_m": [
+       6475.0,
+       12625.0,
+       15650.0,
+       20150.0,
+       21200.0,
+       23025.0,
+       24600.0
+      ],
+      "max_deviation_m": 17.5,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25008.0
+     }
+    },
+    {
+     "n": 8,
+     "even": {
+      "used": 8,
+      "at_m": [
+       3000.0,
+       6000.0,
+       8000.0,
+       11000.0,
+       14000.0,
+       17000.0,
+       19000.0,
+       22000.0
+      ],
+      "max_deviation_m": 655.4,
+      "overlap_pct": 76.2,
+      "overlap_by_leg_pct": 76.2,
+      "path_length_m": 24508.2
+     },
+     "smart": {
+      "used": 7,
+      "at_m": [
+       6475.0,
+       12625.0,
+       15650.0,
+       20150.0,
+       21200.0,
+       23025.0,
+       24600.0
+      ],
+      "max_deviation_m": 17.5,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25008.0
+     }
+    },
+    {
+     "n": 9,
+     "even": {
+      "used": 9,
+      "at_m": [
+       3000.0,
+       5000.0,
+       8000.0,
+       10000.0,
+       13000.0,
+       15000.0,
+       18000.0,
+       20000.0,
+       23000.0
+      ],
+      "max_deviation_m": 479.0,
+      "overlap_pct": 86.3,
+      "overlap_by_leg_pct": 86.3,
+      "path_length_m": 24729.1
+     },
+     "smart": {
+      "used": 7,
+      "at_m": [
+       6475.0,
+       12625.0,
+       15650.0,
+       20150.0,
+       21200.0,
+       23025.0,
+       24600.0
+      ],
+      "max_deviation_m": 17.5,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25008.0
+     }
+    }
+   ]
+  },
+  "S02 loop": {
+   "length_m": 9982.4,
+   "smart_calls": 16,
+   "smart_s": 0.86,
+   "rows": [
+    {
+     "n": 1,
+     "even": {
+      "used": 1,
+      "at_m": [
+       5000.0
+      ],
+      "max_deviation_m": 1337.3,
+      "overlap_pct": 3.3,
+      "overlap_by_leg_pct": 3.3,
+      "path_length_m": 6713.4
+     },
+     "smart": {
+      "used": 1,
+      "at_m": [
+       4875.0
+      ],
+      "max_deviation_m": 1337.3,
+      "overlap_pct": 4.6,
+      "overlap_by_leg_pct": 4.6,
+      "path_length_m": 6963.5
+     }
+    },
+    {
+     "n": 2,
+     "even": {
+      "used": 2,
+      "at_m": [
+       3000.0,
+       7000.0
+      ],
+      "max_deviation_m": 1061.2,
+      "overlap_pct": 21.1,
+      "overlap_by_leg_pct": 21.1,
+      "path_length_m": 6988.1
+     },
+     "smart": {
+      "used": 2,
+      "at_m": [
+       4875.0,
+       7700.0
+      ],
+      "max_deviation_m": 1110.9,
+      "overlap_pct": 15.9,
+      "overlap_by_leg_pct": 13.8,
+      "path_length_m": 8500.6
+     }
+    },
+    {
+     "n": 3,
+     "even": {
+      "used": 3,
+      "at_m": [
+       3000.0,
+       5000.0,
+       8000.0
+      ],
+      "max_deviation_m": 523.6,
+      "overlap_pct": 25.4,
+      "overlap_by_leg_pct": 23.4,
+      "path_length_m": 8428.2
+     },
+     "smart": {
+      "used": 3,
+      "at_m": [
+       2200.0,
+       4875.0,
+       7700.0
+      ],
+      "max_deviation_m": 433.0,
+      "overlap_pct": 45.4,
+      "overlap_by_leg_pct": 43.4,
+      "path_length_m": 9684.5
+     }
+    },
+    {
+     "n": 4,
+     "even": {
+      "used": 4,
+      "at_m": [
+       2000.0,
+       4000.0,
+       6000.0,
+       8000.0
+      ],
+      "max_deviation_m": 462.5,
+      "overlap_pct": 33.1,
+      "overlap_by_leg_pct": 31.1,
+      "path_length_m": 8355.0
+     },
+     "smart": {
+      "used": 4,
+      "at_m": [
+       2200.0,
+       4875.0,
+       7700.0,
+       8850.0
+      ],
+      "max_deviation_m": 384.8,
+      "overlap_pct": 53.9,
+      "overlap_by_leg_pct": 51.9,
+      "path_length_m": 9639.5
+     }
+    },
+    {
+     "n": 5,
+     "even": {
+      "used": 5,
+      "at_m": [
+       2000.0,
+       3000.0,
+       5000.0,
+       7000.0,
+       8000.0
+      ],
+      "max_deviation_m": 432.8,
+      "overlap_pct": 38.1,
+      "overlap_by_leg_pct": 37.9,
+      "path_length_m": 8984.6
+     },
+     "smart": {
+      "used": 5,
+      "at_m": [
+       2200.0,
+       4875.0,
+       5575.0,
+       7700.0,
+       8850.0
+      ],
+      "max_deviation_m": 351.7,
+      "overlap_pct": 74.2,
+      "overlap_by_leg_pct": 74.2,
+      "path_length_m": 9878.3
+     }
+    },
+    {
+     "n": 6,
+     "even": {
+      "used": 6,
+      "at_m": [
+       1000.0,
+       3000.0,
+       4000.0,
+       6000.0,
+       7000.0,
+       9000.0
+      ],
+      "max_deviation_m": 523.6,
+      "overlap_pct": 55.7,
+      "overlap_by_leg_pct": 55.7,
+      "path_length_m": 7815.6
+     },
+     "smart": {
+      "used": 6,
+      "at_m": [
+       1125.0,
+       2200.0,
+       4875.0,
+       5575.0,
+       7700.0,
+       8850.0
+      ],
+      "max_deviation_m": 151.4,
+      "overlap_pct": 92.0,
+      "overlap_by_leg_pct": 92.0,
+      "path_length_m": 10069.8
+     }
+    },
+    {
+     "n": 7,
+     "even": {
+      "used": 7,
+      "at_m": [
+       1000.0,
+       3000.0,
+       4000.0,
+       5000.0,
+       6000.0,
+       8000.0,
+       9000.0
+      ],
+      "max_deviation_m": 523.6,
+      "overlap_pct": 58.4,
+      "overlap_by_leg_pct": 56.4,
+      "path_length_m": 9238.4
+     },
+     "smart": {
+      "used": 7,
+      "at_m": [
+       1125.0,
+       2200.0,
+       4875.0,
+       5575.0,
+       7700.0,
+       8175.0,
+       8850.0
+      ],
+      "max_deviation_m": 116.5,
+      "overlap_pct": 96.7,
+      "overlap_by_leg_pct": 96.7,
+      "path_length_m": 10011.4
+     }
+    },
+    {
+     "n": 8,
+     "even": {
+      "used": 8,
+      "at_m": [
+       1000.0,
+       2000.0,
+       3000.0,
+       4000.0,
+       6000.0,
+       7000.0,
+       8000.0,
+       9000.0
+      ],
+      "max_deviation_m": 462.5,
+      "overlap_pct": 69.9,
+      "overlap_by_leg_pct": 69.7,
+      "path_length_m": 8544.5
+     },
+     "smart": {
+      "used": 8,
+      "at_m": [
+       1125.0,
+       2200.0,
+       4875.0,
+       5575.0,
+       5950.0,
+       7700.0,
+       8175.0,
+       8850.0
+      ],
+      "max_deviation_m": 3.6,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 9982.7
+     }
+    },
+    {
+     "n": 9,
+     "even": {
+      "used": 9,
+      "at_m": [
+       1000.0,
+       2000.0,
+       3000.0,
+       4000.0,
+       5000.0,
+       6000.0,
+       7000.0,
+       8000.0,
+       9000.0
+      ],
+      "max_deviation_m": 359.6,
+      "overlap_pct": 71.4,
+      "overlap_by_leg_pct": 71.2,
+      "path_length_m": 9358.9
+     },
+     "smart": {
+      "used": 8,
+      "at_m": [
+       1125.0,
+       2200.0,
+       4875.0,
+       5575.0,
+       5950.0,
+       7700.0,
+       8175.0,
+       8850.0
+      ],
+      "max_deviation_m": 3.6,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 9982.7
+     }
+    }
+   ]
+  },
+  "A01 shortest": {
+   "length_m": 25052.7,
+   "smart_calls": 9,
+   "smart_s": 0.58,
+   "rows": [
+    {
+     "n": 1,
+     "even": {
+      "used": 1,
+      "at_m": [
+       13000.0
+      ],
+      "max_deviation_m": 2860.1,
+      "overlap_pct": 30.6,
+      "overlap_by_leg_pct": 30.6,
+      "path_length_m": 21832.2
+     },
+     "smart": {
+      "used": 1,
+      "at_m": [
+       6475.0
+      ],
+      "max_deviation_m": 1899.8,
+      "overlap_pct": 63.8,
+      "overlap_by_leg_pct": 63.8,
+      "path_length_m": 22850.1
+     }
+    },
+    {
+     "n": 2,
+     "even": {
+      "used": 2,
+      "at_m": [
+       9000.0,
+       17000.0
+      ],
+      "max_deviation_m": 655.0,
+      "overlap_pct": 81.9,
+      "overlap_by_leg_pct": 81.9,
+      "path_length_m": 24557.7
+     },
+     "smart": {
+      "used": 2,
+      "at_m": [
+       6475.0,
+       15475.0
+      ],
+      "max_deviation_m": 648.9,
+      "overlap_pct": 90.7,
+      "overlap_by_leg_pct": 90.7,
+      "path_length_m": 24804.8
+     }
+    },
+    {
+     "n": 3,
+     "even": {
+      "used": 3,
+      "at_m": [
+       7000.0,
+       13000.0,
+       20000.0
+      ],
+      "max_deviation_m": 2014.2,
+      "overlap_pct": 65.6,
+      "overlap_by_leg_pct": 65.6,
+      "path_length_m": 23726.3
+     },
+     "smart": {
+      "used": 3,
+      "at_m": [
+       6475.0,
+       15475.0,
+       23625.0
+      ],
+      "max_deviation_m": 252.7,
+      "overlap_pct": 97.6,
+      "overlap_by_leg_pct": 97.6,
+      "path_length_m": 24976.4
+     }
+    },
+    {
+     "n": 4,
+     "even": {
+      "used": 4,
+      "at_m": [
+       5000.0,
+       10000.0,
+       16000.0,
+       21000.0
+      ],
+      "max_deviation_m": 648.9,
+      "overlap_pct": 84.5,
+      "overlap_by_leg_pct": 84.5,
+      "path_length_m": 24684.2
+     },
+     "smart": {
+      "used": 4,
+      "at_m": [
+       6475.0,
+       15475.0,
+       23625.0,
+       24300.0
+      ],
+      "max_deviation_m": 13.9,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25018.1
+     }
+    },
+    {
+     "n": 5,
+     "even": {
+      "used": 5,
+      "at_m": [
+       4000.0,
+       9000.0,
+       13000.0,
+       17000.0,
+       22000.0
+      ],
+      "max_deviation_m": 655.0,
+      "overlap_pct": 81.9,
+      "overlap_by_leg_pct": 81.9,
+      "path_length_m": 24557.7
+     },
+     "smart": {
+      "used": 4,
+      "at_m": [
+       6475.0,
+       15475.0,
+       23625.0,
+       24300.0
+      ],
+      "max_deviation_m": 13.9,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25018.1
+     }
+    },
+    {
+     "n": 6,
+     "even": {
+      "used": 6,
+      "at_m": [
+       4000.0,
+       7000.0,
+       11000.0,
+       15000.0,
+       19000.0,
+       22000.0
+      ],
+      "max_deviation_m": 648.9,
+      "overlap_pct": 90.7,
+      "overlap_by_leg_pct": 90.7,
+      "path_length_m": 24804.8
+     },
+     "smart": {
+      "used": 4,
+      "at_m": [
+       6475.0,
+       15475.0,
+       23625.0,
+       24300.0
+      ],
+      "max_deviation_m": 13.9,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25018.1
+     }
+    },
+    {
+     "n": 7,
+     "even": {
+      "used": 7,
+      "at_m": [
+       3000.0,
+       7000.0,
+       10000.0,
+       13000.0,
+       16000.0,
+       20000.0,
+       23000.0
+      ],
+      "max_deviation_m": 609.0,
+      "overlap_pct": 91.4,
+      "overlap_by_leg_pct": 91.4,
+      "path_length_m": 24855.8
+     },
+     "smart": {
+      "used": 4,
+      "at_m": [
+       6475.0,
+       15475.0,
+       23625.0,
+       24300.0
+      ],
+      "max_deviation_m": 13.9,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25018.1
+     }
+    },
+    {
+     "n": 8,
+     "even": {
+      "used": 8,
+      "at_m": [
+       3000.0,
+       6000.0,
+       9000.0,
+       12000.0,
+       14000.0,
+       17000.0,
+       20000.0,
+       23000.0
+      ],
+      "max_deviation_m": 655.0,
+      "overlap_pct": 88.8,
+      "overlap_by_leg_pct": 88.8,
+      "path_length_m": 24729.3
+     },
+     "smart": {
+      "used": 4,
+      "at_m": [
+       6475.0,
+       15475.0,
+       23625.0,
+       24300.0
+      ],
+      "max_deviation_m": 13.9,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25018.1
+     }
+    },
+    {
+     "n": 9,
+     "even": {
+      "used": 9,
+      "at_m": [
+       3000.0,
+       5000.0,
+       8000.0,
+       10000.0,
+       13000.0,
+       16000.0,
+       18000.0,
+       21000.0,
+       23000.0
+      ],
+      "max_deviation_m": 609.0,
+      "overlap_pct": 91.4,
+      "overlap_by_leg_pct": 91.4,
+      "path_length_m": 24855.8
+     },
+     "smart": {
+      "used": 4,
+      "at_m": [
+       6475.0,
+       15475.0,
+       23625.0,
+       24300.0
+      ],
+      "max_deviation_m": 13.9,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25018.1
+     }
+    }
+   ]
+  },
+  "A01 half, out and back": {
+   "length_m": 25000.0,
+   "smart_calls": 6,
+   "smart_s": 0.38,
+   "rows": [
+    {
+     "n": 1,
+     "even": {
+      "used": 1,
+      "at_m": [
+       13000.0
+      ],
+      "max_deviation_m": 2863.1,
+      "overlap_pct": 26.3,
+      "overlap_by_leg_pct": 26.3,
+      "path_length_m": 20223.2
+     },
+     "smart": {
+      "used": 1,
+      "at_m": [
+       12500.0
+      ],
+      "max_deviation_m": 2863.1,
+      "overlap_pct": 30.0,
+      "overlap_by_leg_pct": 30.0,
+      "path_length_m": 21222.9
+     }
+    },
+    {
+     "n": 2,
+     "even": {
+      "used": 2,
+      "at_m": [
+       8000.0,
+       17000.0
+      ],
+      "max_deviation_m": 2672.9,
+      "overlap_pct": 64.3,
+      "overlap_by_leg_pct": 64.3,
+      "path_length_m": 16011.0
+     },
+     "smart": {
+      "used": 2,
+      "at_m": [
+       6475.0,
+       12500.0
+      ],
+      "max_deviation_m": 2863.1,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 65.0,
+      "path_length_m": 23117.1
+     }
+    },
+    {
+     "n": 3,
+     "even": {
+      "used": 3,
+      "at_m": [
+       6000.0,
+       13000.0,
+       19000.0
+      ],
+      "max_deviation_m": 334.0,
+      "overlap_pct": 96.3,
+      "overlap_by_leg_pct": 96.3,
+      "path_length_m": 24011.5
+     },
+     "smart": {
+      "used": 3,
+      "at_m": [
+       6475.0,
+       12500.0,
+       18525.0
+      ],
+      "max_deviation_m": 8.8,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25011.2
+     }
+    },
+    {
+     "n": 4,
+     "even": {
+      "used": 4,
+      "at_m": [
+       5000.0,
+       10000.0,
+       15000.0,
+       20000.0
+      ],
+      "max_deviation_m": 1057.2,
+      "overlap_pct": 80.3,
+      "overlap_by_leg_pct": 80.3,
+      "path_length_m": 20011.2
+     },
+     "smart": {
+      "used": 3,
+      "at_m": [
+       6475.0,
+       12500.0,
+       18525.0
+      ],
+      "max_deviation_m": 8.8,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25011.2
+     }
+    },
+    {
+     "n": 5,
+     "even": {
+      "used": 5,
+      "at_m": [
+       4000.0,
+       8000.0,
+       13000.0,
+       17000.0,
+       21000.0
+      ],
+      "max_deviation_m": 334.0,
+      "overlap_pct": 96.3,
+      "overlap_by_leg_pct": 96.3,
+      "path_length_m": 24011.5
+     },
+     "smart": {
+      "used": 3,
+      "at_m": [
+       6475.0,
+       12500.0,
+       18525.0
+      ],
+      "max_deviation_m": 8.8,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25011.2
+     }
+    },
+    {
+     "n": 6,
+     "even": {
+      "used": 6,
+      "at_m": [
+       4000.0,
+       7000.0,
+       11000.0,
+       14000.0,
+       18000.0,
+       21000.0
+      ],
+      "max_deviation_m": 1006.6,
+      "overlap_pct": 88.3,
+      "overlap_by_leg_pct": 88.3,
+      "path_length_m": 22011.1
+     },
+     "smart": {
+      "used": 3,
+      "at_m": [
+       6475.0,
+       12500.0,
+       18525.0
+      ],
+      "max_deviation_m": 8.8,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25011.2
+     }
+    },
+    {
+     "n": 7,
+     "even": {
+      "used": 7,
+      "at_m": [
+       3000.0,
+       6000.0,
+       9000.0,
+       13000.0,
+       16000.0,
+       19000.0,
+       22000.0
+      ],
+      "max_deviation_m": 334.0,
+      "overlap_pct": 96.3,
+      "overlap_by_leg_pct": 96.3,
+      "path_length_m": 24011.5
+     },
+     "smart": {
+      "used": 3,
+      "at_m": [
+       6475.0,
+       12500.0,
+       18525.0
+      ],
+      "max_deviation_m": 8.8,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25011.2
+     }
+    },
+    {
+     "n": 8,
+     "even": {
+      "used": 8,
+      "at_m": [
+       3000.0,
+       6000.0,
+       8000.0,
+       11000.0,
+       14000.0,
+       17000.0,
+       19000.0,
+       22000.0
+      ],
+      "max_deviation_m": 1006.6,
+      "overlap_pct": 88.3,
+      "overlap_by_leg_pct": 88.3,
+      "path_length_m": 22011.1
+     },
+     "smart": {
+      "used": 3,
+      "at_m": [
+       6475.0,
+       12500.0,
+       18525.0
+      ],
+      "max_deviation_m": 8.8,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25011.2
+     }
+    },
+    {
+     "n": 9,
+     "even": {
+      "used": 9,
+      "at_m": [
+       3000.0,
+       5000.0,
+       8000.0,
+       10000.0,
+       13000.0,
+       15000.0,
+       18000.0,
+       20000.0,
+       23000.0
+      ],
+      "max_deviation_m": 334.0,
+      "overlap_pct": 96.3,
+      "overlap_by_leg_pct": 96.3,
+      "path_length_m": 24011.5
+     },
+     "smart": {
+      "used": 3,
+      "at_m": [
+       6475.0,
+       12500.0,
+       18525.0
+      ],
+      "max_deviation_m": 8.8,
+      "overlap_pct": 100.0,
+      "overlap_by_leg_pct": 100.0,
+      "path_length_m": 25011.2
+     }
+    }
+   ]
+  }
+ },
+ "valhalla": {
+  "version": "3.9.2-2dc688aa7",
+  "tileset_last_modified": 1794830855
+ }
+}
