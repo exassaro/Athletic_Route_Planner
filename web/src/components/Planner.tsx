@@ -98,7 +98,13 @@ export function Planner() {
 
   const setStart = useCallback((point: Point) => {
     onEdit({ kind: "start", point });
-    map?.easeTo({ center: [point.lon, point.lat], zoom: Math.max(map.getZoom(), 13) });
+    if (!map) return;
+    // into the part of the map the sheet (or the desktop panel) leaves free, or its hops are never seen
+    const covered = document.querySelector(".sheet")?.getBoundingClientRect();
+    const wide = window.matchMedia("(min-width: 900px)").matches;
+    const offset: [number, number] = !covered ? [0, 0]
+      : wide ? [covered.right / 2, 0] : [0, (64 + covered.top - window.innerHeight) / 2 + 22];   // 22: half the pin
+    map.easeTo({ center: [point.lon, point.lat], zoom: Math.max(map.getZoom(), 13), offset });
   }, [map, onEdit]);
 
   // Tap on the map to set the start: the point is the runner's own; the name comes from the place lookup.

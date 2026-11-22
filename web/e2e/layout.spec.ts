@@ -3,7 +3,7 @@
  * on screen; nothing here measures a route.
  */
 import { expect, test, type Page } from "@playwright/test";
-import { addStop, planA01Base, PLACES, waitVersion } from "./helpers";
+import { addA01Stops, addStop, pickPlace, planA01Base, PLACES, waitVersion } from "./helpers";
 
 type Box = { x: number; y: number; width: number; height: number };
 const overlaps = (a: Box, b: Box) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
@@ -67,6 +67,47 @@ test("the end flag's pole is on the end point and the place name steps clear", a
   const names = await page.evaluate(() => (window as unknown as { athleteMap: import("maplibre-gl").Map }).athleteMap
     .queryRenderedFeatures({ layers: ["places_locality"] }).map((f) => f.properties["name:en"] ?? f.properties.name));
   expect(names, "moved aside, not hidden").toContain("Kozhikode");
+});
+
+test("A01 with its six stops: Kozhikode's name steps clear of the flag, it is not hidden", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });   // the screens' phone
+  await planA01Base(page);
+  await addA01Stops(page);
+  await page.waitForTimeout(2500); // the fit and the labels' fade
+  await page.screenshot({ path: test.info().outputPath("kozhikode-six-stops.png") });
+  const found = await page.evaluate((city) => {
+    const map = (window as unknown as { athleteMap: import("maplibre-gl").Map }).athleteMap;
+    const box = (s: string) => [...document.querySelectorAll(s)].map((e) => e.getBoundingClientRect()).map((r) => [r.x, r.y, r.width, r.height].map(Math.round));
+    return { zoom: map.getZoom(), city: map.project(city), flag: box(".pin-end"), stops: box(".pin-stop"),
+      names: map.queryRenderedFeatures({ layers: ["places_locality"] }).map((f) => f.properties["name:en"] ?? f.properties.name) };
+  }, [75.7754716, 11.2450558] as [number, number]);
+  console.log("KOZHIKODE " + JSON.stringify(found));
+  expect(found.names).toContain("Kozhikode");
+});
+
+test("the start just set is in the part of the map the sheet leaves free", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForFunction(() => !!(window as unknown as { athleteMap?: import("maplibre-gl").Map }).athleteMap?.loaded());
+  await pickPlace(page, "start-search", PLACES.athanikkal);
+  await page.locator(".pin-start").waitFor();
+  await page.waitForTimeout(1500); // the ease
+  const pin = (await page.locator(".pin-start").boundingBox())!;
+  const sheet = (await page.locator(".sheet").boundingBox())!;
+  expect(pin.y).toBeGreaterThan(64);
+  expect(pin.y + pin.height).toBeLessThan(sheet.y);
+});
+
+test("the OSM credit is uncovered at every sheet position", async ({ page }) => {
+  await planA01Base(page);
+  for (const state of ["peek", "half", "full"] as const) {
+    await snapTo(page, state);
+    const seen = await page.locator(".maplibregl-ctrl-attrib").evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return [[r.left + 8, r.top + 3], [r.left + 8, r.bottom - 3], [r.right - 8, r.top + 3], [r.right - 8, r.bottom - 3]]
+        .every(([x, y]) => el.contains(document.elementFromPoint(x!, y!)));
+    });
+    expect(seen, state).toBe(true);
+  }
 });
 
 test("the peek stats show only at peek", async ({ page }) => {

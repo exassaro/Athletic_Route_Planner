@@ -39,7 +39,14 @@ export function basemapUrl(origin: string): string {
  * the end flag could only be covered or hidden. These may step aside instead, and sit on the point when it is free.
  */
 const PLACE_NAME_LAYERS = ["places_locality", "places_subplace"];
-const STEP_ASIDE = { "text-variable-anchor": ["center", "top", "bottom", "right", "left"], "text-radial-offset": 1.2, "text-justify": "auto" };
+// On the point, else beside it, else diagonally, else a step further out (offsets in ems: [right, down]). In A01 the
+// flag and stop 6 take every side of Kozhikode's point except the diagonal above right.
+const STEP_ASIDE = {
+  "text-variable-anchor-offset": ["center", [0, 0], "top", [0, 1.2], "bottom", [0, -1.2], "right", [-1.2, 0], "left", [1.2, 0],
+    "bottom-left", [1, -1], "top-left", [1, 1], "bottom-right", [-1, -1], "top-right", [-1, 1],
+    "left", [2.6, 0], "bottom", [0, -2.6], "right", [-2.6, 0], "top", [0, 2.6]],
+  "text-justify": "auto",
+};
 
 export function basemapStyle(origin: string, theme: Theme = "light"): StyleSpecification {
   return {

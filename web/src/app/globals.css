@@ -151,7 +151,7 @@ a { color: var(--accent-text); }
 .planner {
   position: fixed; inset: 0;
   --peek-px: 136px;
-  --top-gap: 64px;
+  --top-gap: 92px;   /* the top bar (64) and, below it, the OSM credit: always visible, at full too */
   --sheet-full: calc(100dvh - var(--top-gap));
   --snap-h: 50dvh;
 }

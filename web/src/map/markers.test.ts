@@ -86,7 +86,7 @@ describe("basemap", () => {
     expect(flavor("light")).toMatchObject({ earth: "#ECE9E3", water: "#CFDDE1" });
     expect(flavor("dark")).toMatchObject({ earth: "#1B1E22", water: "#1F3138" });
     const town = basemapStyle("https://x").layers.find((l) => l.id === "places_locality")!;
-    expect((town.layout as Record<string, unknown>)["text-variable-anchor"]).toContain("top");
+    expect((town.layout as Record<string, unknown>)["text-variable-anchor-offset"]).toContain("bottom-left");
     expect(basemapStyle("https://x", "dark").sprite).toBe("https://x/basemap/sprites/dark");
   });
 
