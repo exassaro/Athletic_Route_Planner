@@ -48,7 +48,9 @@ function setLinks(map: MapLibreMap, lines: Line[], color: string) {
 }
 
 export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[], selected: number, dimmed: boolean,
-  fitKey: string | null, request: Requested | null = null, theme: Theme = "light", facingWest = false) {
+  fitKey: string | null, request: Requested | null = null, theme: Theme = "light", facingWest = false,
+  /** Changes when something over the map appears: the view fits again, and the pin does not hop again. */
+  covering = "") {
   const markers = useRef<Marker[]>([]);
   const pin = useRef<Marker | null>(null);
   const hopped = useRef<{ route: string | null; start: string | null }>({ route: null, start: null });
@@ -249,5 +251,5 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
     })();
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, fitKey]);
+  }, [map, fitKey, covering]);
 }

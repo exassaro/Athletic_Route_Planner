@@ -685,7 +685,8 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 @media (min-width: 900px) {
   .share-view .to-map { display: none; }
   .share-view .panel-toggle { display: inline-flex; }
-  .share-view.panel-collapsed .sheet { display: none; }
+  .share-view.panel-collapsed .sheet { visibility: hidden; }
+  .share-view.panel-collapsed .sheet-banner { visibility: visible; }   /* the owner's bar stays */
   .share-view.panel-collapsed .topbar { width: auto; background: none; border: 0; }
   .share-view.panel-collapsed .topbar .btn { margin-left: 0; }
 }
@@ -697,6 +698,19 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .saved-page h1:focus { outline: none; }
 .saved-list { list-style: none; padding: 0; display: grid; gap: var(--space-1); }
 .saved-page { padding-bottom: 120px; }   /* room under the last card for the message */
+/* The owner's slim bar on the share page (Phase 5c) */
+.owner-bar {
+  display: flex; align-items: center; min-height: 48px; padding: 0 4px 0 12px;
+  border: 1px solid var(--control); border-radius: var(--radius); background: var(--surface); color: var(--ink);
+}
+.owner-label { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; white-space: nowrap; }
+.owner-action {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0 10px;
+  border: 0; background: transparent; color: var(--accent-text); font-size: 15px; font-weight: 600; text-decoration: none;
+}
+.owner-action:hover:not(:disabled) { border: 0; text-decoration: underline; }
+.owner-action.danger { color: var(--warn); }
+.owner-error { margin: 0 0 4px; padding: 8px 12px; border: 1px solid var(--warn-line); border-radius: var(--radius); background: var(--warn-soft); color: var(--warn); }
 /* Phase 5c: two buttons on a card, the rest in its menu */
 .saved-card { position: relative; padding: var(--space-1) var(--space-2) var(--space-2); border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface); }
 .saved-head { display: flex; align-items: flex-start; gap: var(--space-1); }

@@ -11,9 +11,9 @@ import { MapView } from "@/map/MapView";
 import { useRouteLayers } from "@/map/useRouteLayers";
 import { useTheme } from "@/theme/useTheme";
 
-type Props = { slug: string; route: Schemas["RouteFeature"]; kmMarks: Schemas["KmMark"][] };
+type Props = { slug: string; route: Schemas["RouteFeature"]; kmMarks: Schemas["KmMark"][]; covering?: string };
 
-export function ShareMap({ slug, route, kmMarks }: Props) {
+export function ShareMap({ slug, route, kmMarks, covering }: Props) {
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [theme] = useTheme();
   const candidates = useMemo(() => [{ ...(route.properties as Schemas["CandidateOut"]),
@@ -24,6 +24,6 @@ export function ShareMap({ slug, route, kmMarks }: Props) {
   const west = kmMarks[0] && startLon != null
     ? kmMarks[0].lon < startLon
     : cand.geometry.length > 1 && cand.geometry[1]![0] < cand.geometry[0]![0];
-  useRouteLayers(map, candidates, 0, false, slug, null, theme, west);
+  useRouteLayers(map, candidates, 0, false, slug, null, theme, west, covering);
   return <MapView onReady={setMap} theme={theme} />;
 }
