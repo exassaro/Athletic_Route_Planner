@@ -1,0 +1,1254 @@
+{
+ "measured_on": "the development laptop, Valhalla in Docker called from the host",
+ "chosen": "junction_15m",
+ "tracks": {
+  "A01 recommended": {
+   "length_m": 25000.0,
+   "scores": {
+    "geometry_only": {
+     "cues": 45,
+     "steps": 69,
+     "turns": 32,
+     "turns_found": 32,
+     "steps_confirmed": 48,
+     "cues_per_km": 1.8,
+     "recall_pct": 100.0,
+     "precision_pct": 69.6
+    },
+    "junction_5m": {
+     "cues": 31,
+     "steps": 40,
+     "turns": 32,
+     "turns_found": 32,
+     "steps_confirmed": 39,
+     "cues_per_km": 1.2,
+     "recall_pct": 100.0,
+     "precision_pct": 97.5
+    },
+    "junction_10m": {
+     "cues": 35,
+     "steps": 45,
+     "turns": 32,
+     "turns_found": 32,
+     "steps_confirmed": 41,
+     "cues_per_km": 1.4,
+     "recall_pct": 100.0,
+     "precision_pct": 91.1
+    },
+    "junction_15m": {
+     "cues": 35,
+     "steps": 47,
+     "turns": 32,
+     "turns_found": 32,
+     "steps_confirmed": 43,
+     "cues_per_km": 1.4,
+     "recall_pct": 100.0,
+     "precision_pct": 91.5
+    },
+    "junction_20m": {
+     "cues": 35,
+     "steps": 47,
+     "turns": 32,
+     "turns_found": 32,
+     "steps_confirmed": 43,
+     "cues_per_km": 1.4,
+     "recall_pct": 100.0,
+     "precision_pct": 91.5
+    },
+    "junction_25m": {
+     "cues": 36,
+     "steps": 49,
+     "turns": 32,
+     "turns_found": 32,
+     "steps_confirmed": 44,
+     "cues_per_km": 1.4,
+     "recall_pct": 100.0,
+     "precision_pct": 89.8
+    }
+   },
+   "cues": [
+    {
+     "at_m": 2466.2,
+     "turn": "right",
+     "road": null,
+     "then": [
+      {
+       "at_m": 2479.6692910580878,
+       "turn": "left",
+       "road": null
+      },
+      {
+       "at_m": 2492.7760649694155,
+       "turn": "right",
+       "road": "Chaliyam - Kadalundi - Kottakadavu Road"
+      }
+     ]
+    },
+    {
+     "at_m": 3821.3,
+     "turn": "right",
+     "road": "Chaliyam Road",
+     "then": []
+    },
+    {
+     "at_m": 6045.5,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 6128.3,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 6276.3,
+     "turn": "right",
+     "road": null,
+     "then": [
+      {
+       "at_m": 6276.2530969244945,
+       "turn": "left",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 6394.2,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 6477.2,
+     "turn": "right",
+     "road": "Chaliyam - Feroke Road",
+     "then": []
+    },
+    {
+     "at_m": 11261.7,
+     "turn": "left",
+     "road": null,
+     "then": [
+      {
+       "at_m": 11293.993015862512,
+       "turn": "left",
+       "road": "Old NH17 Road"
+      }
+     ]
+    },
+    {
+     "at_m": 11938.2,
+     "turn": "left",
+     "road": null,
+     "then": [
+      {
+       "at_m": 11979.248492150875,
+       "turn": "right",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 12207.1,
+     "turn": "right",
+     "road": "Feroke Railway Station Road",
+     "then": []
+    },
+    {
+     "at_m": 12460.1,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 12872.7,
+     "turn": "left",
+     "road": "Beypoor - Cheruvannur Road",
+     "then": []
+    },
+    {
+     "at_m": 15183.9,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 15447.2,
+     "turn": "right",
+     "road": "Beypoor - Meenchanda Road",
+     "then": []
+    },
+    {
+     "at_m": 18904.8,
+     "turn": "left",
+     "road": "Panniyankara Payyanakkal Meenchanda Road",
+     "then": [
+      {
+       "at_m": 18904.84788017189,
+       "turn": "right",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 19083.8,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 19758.0,
+     "turn": "right",
+     "road": null,
+     "then": [
+      {
+       "at_m": 19771.379698453773,
+       "turn": "left",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 20335.5,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 20556.8,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 21198.5,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 21641.0,
+     "turn": "left",
+     "road": null,
+     "then": [
+      {
+       "at_m": 21673.854492137776,
+       "turn": "right",
+       "road": null
+      },
+      {
+       "at_m": 21692.320527625783,
+       "turn": "left",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 21777.8,
+     "turn": "left",
+     "road": null,
+     "then": [
+      {
+       "at_m": 21817.113101159466,
+       "turn": "right",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 21884.8,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 22106.1,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 22187.0,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 22420.3,
+     "turn": "right",
+     "road": "Old NH17 Road",
+     "then": [
+      {
+       "at_m": 22420.261850187788,
+       "turn": "left",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 23351.5,
+     "turn": "left",
+     "road": "Vattampoyil Railway gate",
+     "then": []
+    },
+    {
+     "at_m": 23410.0,
+     "turn": "right",
+     "road": "PP Hassan Koya road",
+     "then": []
+    },
+    {
+     "at_m": 23786.1,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 24015.3,
+     "turn": "right",
+     "road": "Manthalpalam Road",
+     "then": [
+      {
+       "at_m": 24023.89554307127,
+       "turn": "left",
+       "road": "Francis Road"
+      }
+     ]
+    },
+    {
+     "at_m": 24197.9,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 24383.8,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 24715.5,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 24806.6,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 24964.8,
+     "turn": "left",
+     "road": null,
+     "then": []
+    }
+   ]
+  },
+  "S02 loop": {
+   "length_m": 9982.4,
+   "scores": {
+    "geometry_only": {
+     "cues": 39,
+     "steps": 55,
+     "turns": 37,
+     "turns_found": 37,
+     "steps_confirmed": 42,
+     "cues_per_km": 3.9,
+     "recall_pct": 100.0,
+     "precision_pct": 76.4
+    },
+    "junction_5m": {
+     "cues": 35,
+     "steps": 41,
+     "turns": 37,
+     "turns_found": 37,
+     "steps_confirmed": 38,
+     "cues_per_km": 3.5,
+     "recall_pct": 100.0,
+     "precision_pct": 92.7
+    },
+    "junction_10m": {
+     "cues": 37,
+     "steps": 43,
+     "turns": 37,
+     "turns_found": 37,
+     "steps_confirmed": 39,
+     "cues_per_km": 3.7,
+     "recall_pct": 100.0,
+     "precision_pct": 90.7
+    },
+    "junction_15m": {
+     "cues": 37,
+     "steps": 45,
+     "turns": 37,
+     "turns_found": 37,
+     "steps_confirmed": 40,
+     "cues_per_km": 3.7,
+     "recall_pct": 100.0,
+     "precision_pct": 88.9
+    },
+    "junction_20m": {
+     "cues": 37,
+     "steps": 45,
+     "turns": 37,
+     "turns_found": 37,
+     "steps_confirmed": 40,
+     "cues_per_km": 3.7,
+     "recall_pct": 100.0,
+     "precision_pct": 88.9
+    },
+    "junction_25m": {
+     "cues": 37,
+     "steps": 46,
+     "turns": 37,
+     "turns_found": 37,
+     "steps_confirmed": 41,
+     "cues_per_km": 3.7,
+     "recall_pct": 100.0,
+     "precision_pct": 89.1
+    }
+   },
+   "cues": [
+    {
+     "at_m": 74.8,
+     "turn": "right",
+     "road": "Mananchira Road",
+     "then": []
+    },
+    {
+     "at_m": 205.7,
+     "turn": "left",
+     "road": "S M Street",
+     "then": []
+    },
+    {
+     "at_m": 651.7,
+     "turn": "right",
+     "road": "Oyitty Road",
+     "then": [
+      {
+       "at_m": 672.8461297752862,
+       "turn": "left",
+       "road": "Railway Station Road"
+      }
+     ]
+    },
+    {
+     "at_m": 736.1,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 1513.6,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 1920.5,
+     "turn": "right",
+     "road": "Vattampoyil Railway gate",
+     "then": [
+      {
+       "at_m": 1963.9680889871727,
+       "turn": "left",
+       "road": "PP Hassan Koya road"
+      }
+     ]
+    },
+    {
+     "at_m": 2201.3,
+     "turn": "left",
+     "road": "East Kallayi Road",
+     "then": []
+    },
+    {
+     "at_m": 2423.1,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 2966.6,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 3224.4,
+     "turn": "right",
+     "road": "Madhavan Nair Road (Mankavu Road)",
+     "then": []
+    },
+    {
+     "at_m": 3798.5,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 4015.5,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 4225.4,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 4301.0,
+     "turn": "right",
+     "road": "Valayanad 2",
+     "then": []
+    },
+    {
+     "at_m": 4885.9,
+     "turn": "left",
+     "road": "Mini Byepass Road",
+     "then": []
+    },
+    {
+     "at_m": 5088.4,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 5229.8,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 5329.2,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 5865.5,
+     "turn": "left",
+     "road": "Govindapuram Road",
+     "then": [
+      {
+       "at_m": 5880.092822166793,
+       "turn": "right",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 6023.0,
+     "turn": "right",
+     "road": "kallittanada - mylambadi road",
+     "then": []
+    },
+    {
+     "at_m": 6130.7,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 6508.6,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 6631.1,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 6737.7,
+     "turn": "left",
+     "road": null,
+     "then": [
+      {
+       "at_m": 6737.718186068601,
+       "turn": "right",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 6913.6,
+     "turn": "right",
+     "road": "Puthiyara Road",
+     "then": [
+      {
+       "at_m": 6931.010833834486,
+       "turn": "left",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 7163.2,
+     "turn": "left",
+     "road": null,
+     "then": [
+      {
+       "at_m": 7163.15933325723,
+       "turn": "right",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 7272.7,
+     "turn": "left",
+     "road": "Mavoor Road",
+     "then": []
+    },
+    {
+     "at_m": 7348.4,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 7564.0,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 7703.6,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 7857.3,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 7998.8,
+     "turn": "left",
+     "road": "Mavoor Road",
+     "then": [
+      {
+       "at_m": 8033.7992242266855,
+       "turn": "right",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 8212.4,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 8305.7,
+     "turn": "left",
+     "road": null,
+     "then": [
+      {
+       "at_m": 8338.833069890152,
+       "turn": "left",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 8477.0,
+     "turn": "right",
+     "road": "Puthiyara Kuthiravattom Road",
+     "then": []
+    },
+    {
+     "at_m": 8803.8,
+     "turn": "left",
+     "road": "Puthiyara Road",
+     "then": []
+    },
+    {
+     "at_m": 9949.5,
+     "turn": "right",
+     "road": "Wayanad Road",
+     "then": []
+    }
+   ]
+  },
+  "A01 shortest": {
+   "length_m": 25052.7,
+   "scores": {
+    "geometry_only": {
+     "cues": 27,
+     "steps": 39,
+     "turns": 21,
+     "turns_found": 21,
+     "steps_confirmed": 28,
+     "cues_per_km": 1.1,
+     "recall_pct": 100.0,
+     "precision_pct": 71.8
+    },
+    "junction_5m": {
+     "cues": 20,
+     "steps": 25,
+     "turns": 21,
+     "turns_found": 21,
+     "steps_confirmed": 25,
+     "cues_per_km": 0.8,
+     "recall_pct": 100.0,
+     "precision_pct": 100.0
+    },
+    "junction_10m": {
+     "cues": 22,
+     "steps": 27,
+     "turns": 21,
+     "turns_found": 21,
+     "steps_confirmed": 25,
+     "cues_per_km": 0.9,
+     "recall_pct": 100.0,
+     "precision_pct": 92.6
+    },
+    "junction_15m": {
+     "cues": 22,
+     "steps": 28,
+     "turns": 21,
+     "turns_found": 21,
+     "steps_confirmed": 26,
+     "cues_per_km": 0.9,
+     "recall_pct": 100.0,
+     "precision_pct": 92.9
+    },
+    "junction_20m": {
+     "cues": 22,
+     "steps": 28,
+     "turns": 21,
+     "turns_found": 21,
+     "steps_confirmed": 26,
+     "cues_per_km": 0.9,
+     "recall_pct": 100.0,
+     "precision_pct": 92.9
+    },
+    "junction_25m": {
+     "cues": 23,
+     "steps": 29,
+     "turns": 21,
+     "turns_found": 21,
+     "steps_confirmed": 26,
+     "cues_per_km": 0.9,
+     "recall_pct": 100.0,
+     "precision_pct": 89.7
+    }
+   },
+   "cues": [
+    {
+     "at_m": 593.2,
+     "turn": "left",
+     "road": "CBHS ROAD",
+     "then": []
+    },
+    {
+     "at_m": 2471.6,
+     "turn": "right",
+     "road": null,
+     "then": [
+      {
+       "at_m": 2485.0381206497523,
+       "turn": "left",
+       "road": null
+      },
+      {
+       "at_m": 2498.2307451109386,
+       "turn": "right",
+       "road": "Chaliyam - Kadalundi - Kottakadavu Road"
+      }
+     ]
+    },
+    {
+     "at_m": 3826.8,
+     "turn": "right",
+     "road": "Chaliyam Road",
+     "then": []
+    },
+    {
+     "at_m": 6051.0,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 6133.6,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 6281.6,
+     "turn": "right",
+     "road": null,
+     "then": [
+      {
+       "at_m": 6281.61493855602,
+       "turn": "left",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 6399.6,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 6482.6,
+     "turn": "right",
+     "road": "Chaliyam - Feroke Road",
+     "then": []
+    },
+    {
+     "at_m": 11267.2,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 12561.9,
+     "turn": "left",
+     "road": "Beypoor - Cheruvannur Road",
+     "then": []
+    },
+    {
+     "at_m": 15004.6,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 15267.9,
+     "turn": "right",
+     "road": "Beypoor - Meenchanda Road",
+     "then": []
+    },
+    {
+     "at_m": 22361.5,
+     "turn": "left",
+     "road": "Vattampoyil Railway gate",
+     "then": []
+    },
+    {
+     "at_m": 22420.0,
+     "turn": "right",
+     "road": "PP Hassan Koya road",
+     "then": []
+    },
+    {
+     "at_m": 22815.4,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 23028.4,
+     "turn": "left",
+     "road": null,
+     "then": [
+      {
+       "at_m": 23035.239952057313,
+       "turn": "right",
+       "road": "Francis Road"
+      }
+     ]
+    },
+    {
+     "at_m": 23209.3,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 23395.3,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 23456.6,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 23976.7,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 24054.3,
+     "turn": "left",
+     "road": null,
+     "then": [
+      {
+       "at_m": 24071.603403135276,
+       "turn": "around",
+       "road": null
+      },
+      {
+       "at_m": 24088.901628970812,
+       "turn": "left",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 24309.3,
+     "turn": "right",
+     "road": "Beach Road",
+     "then": []
+    }
+   ]
+  },
+  "A01 half, out and back": {
+   "length_m": 25000.0,
+   "scores": {
+    "geometry_only": {
+     "cues": 23,
+     "steps": 47,
+     "turns": 22,
+     "turns_found": 22,
+     "steps_confirmed": 36,
+     "cues_per_km": 0.9,
+     "recall_pct": 100.0,
+     "precision_pct": 76.6
+    },
+    "junction_5m": {
+     "cues": 21,
+     "steps": 31,
+     "turns": 22,
+     "turns_found": 22,
+     "steps_confirmed": 30,
+     "cues_per_km": 0.8,
+     "recall_pct": 100.0,
+     "precision_pct": 96.8
+    },
+    "junction_10m": {
+     "cues": 21,
+     "steps": 31,
+     "turns": 22,
+     "turns_found": 22,
+     "steps_confirmed": 30,
+     "cues_per_km": 0.8,
+     "recall_pct": 100.0,
+     "precision_pct": 96.8
+    },
+    "junction_15m": {
+     "cues": 21,
+     "steps": 33,
+     "turns": 22,
+     "turns_found": 22,
+     "steps_confirmed": 32,
+     "cues_per_km": 0.8,
+     "recall_pct": 100.0,
+     "precision_pct": 97.0
+    },
+    "junction_20m": {
+     "cues": 21,
+     "steps": 33,
+     "turns": 22,
+     "turns_found": 22,
+     "steps_confirmed": 32,
+     "cues_per_km": 0.8,
+     "recall_pct": 100.0,
+     "precision_pct": 97.0
+    },
+    "junction_25m": {
+     "cues": 23,
+     "steps": 35,
+     "turns": 22,
+     "turns_found": 22,
+     "steps_confirmed": 32,
+     "cues_per_km": 0.9,
+     "recall_pct": 100.0,
+     "precision_pct": 91.4
+    }
+   },
+   "cues": [
+    {
+     "at_m": 2466.2,
+     "turn": "right",
+     "road": null,
+     "then": [
+      {
+       "at_m": 2479.6692910580878,
+       "turn": "left",
+       "road": null
+      },
+      {
+       "at_m": 2492.7760649694155,
+       "turn": "right",
+       "road": "Chaliyam - Kadalundi - Kottakadavu Road"
+      }
+     ]
+    },
+    {
+     "at_m": 3821.3,
+     "turn": "right",
+     "road": "Chaliyam Road",
+     "then": []
+    },
+    {
+     "at_m": 6045.5,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 6128.3,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 6276.3,
+     "turn": "right",
+     "road": null,
+     "then": [
+      {
+       "at_m": 6276.2530969244945,
+       "turn": "left",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 6394.2,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 6477.2,
+     "turn": "right",
+     "road": "Chaliyam - Feroke Road",
+     "then": []
+    },
+    {
+     "at_m": 11261.7,
+     "turn": "left",
+     "road": null,
+     "then": [
+      {
+       "at_m": 11293.993015862512,
+       "turn": "left",
+       "road": "Old NH17 Road"
+      }
+     ]
+    },
+    {
+     "at_m": 11938.2,
+     "turn": "left",
+     "road": null,
+     "then": [
+      {
+       "at_m": 11979.248492150875,
+       "turn": "right",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 12207.1,
+     "turn": "right",
+     "road": "Feroke Railway Station Road",
+     "then": []
+    },
+    {
+     "at_m": 12460.1,
+     "turn": "left",
+     "road": null,
+     "then": [
+      {
+       "at_m": 12499.996205894284,
+       "turn": "around",
+       "road": null
+      },
+      {
+       "at_m": 12540.010881141263,
+       "turn": "right",
+       "road": "Feroke Railway Station Road"
+      }
+     ]
+    },
+    {
+     "at_m": 12792.9,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 13020.7,
+     "turn": "left",
+     "road": null,
+     "then": [
+      {
+       "at_m": 13061.780846076503,
+       "turn": "right",
+       "road": "Old NH17 Road"
+      }
+     ]
+    },
+    {
+     "at_m": 13706.0,
+     "turn": "right",
+     "road": null,
+     "then": [
+      {
+       "at_m": 13738.294249365725,
+       "turn": "right",
+       "road": "Feroke Railway Station Road"
+      }
+     ]
+    },
+    {
+     "at_m": 18522.8,
+     "turn": "left",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 18605.8,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 18723.7,
+     "turn": "right",
+     "road": null,
+     "then": [
+      {
+       "at_m": 18723.739314864062,
+       "turn": "left",
+       "road": null
+      }
+     ]
+    },
+    {
+     "at_m": 18871.9,
+     "turn": "right",
+     "road": null,
+     "then": []
+    },
+    {
+     "at_m": 18954.5,
+     "turn": "left",
+     "road": "Chaliyam Road",
+     "then": []
+    },
+    {
+     "at_m": 21178.7,
+     "turn": "left",
+     "road": "Chaliyam - Kadalundi - Kottakadavu Road",
+     "then": []
+    },
+    {
+     "at_m": 22507.2,
+     "turn": "left",
+     "road": null,
+     "then": [
+      {
+       "at_m": 22520.32312073047,
+       "turn": "right",
+       "road": null
+      },
+      {
+       "at_m": 22533.793800929016,
+       "turn": "left",
+       "road": "calicut-Feroke - Kadalundi Road"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "valhalla": {
+  "version": "3.9.2-2dc688aa7",
+  "tileset_last_modified": 1794830855
+ },
+ "od_pairs": {
+  "routes": 54,
+  "scores": {
+   "geometry_only": {
+    "cues": 1591,
+    "steps": 2051,
+    "turns": 883,
+    "turns_found": 880,
+    "steps_confirmed": 1068,
+    "cues_per_km": 1.8,
+    "recall_pct": 99.7,
+    "precision_pct": 52.1
+   },
+   "junction_5m": {
+    "cues": 905,
+    "steps": 987,
+    "turns": 883,
+    "turns_found": 852,
+    "steps_confirmed": 923,
+    "cues_per_km": 1.0,
+    "recall_pct": 96.5,
+    "precision_pct": 93.5
+   },
+   "junction_10m": {
+    "cues": 933,
+    "steps": 1034,
+    "turns": 883,
+    "turns_found": 871,
+    "steps_confirmed": 953,
+    "cues_per_km": 1.0,
+    "recall_pct": 98.6,
+    "precision_pct": 92.2
+   },
+   "junction_15m": {
+    "cues": 957,
+    "steps": 1088,
+    "turns": 883,
+    "turns_found": 877,
+    "steps_confirmed": 986,
+    "cues_per_km": 1.1,
+    "recall_pct": 99.3,
+    "precision_pct": 90.6
+   },
+   "junction_20m": {
+    "cues": 971,
+    "steps": 1128,
+    "turns": 883,
+    "turns_found": 878,
+    "steps_confirmed": 1014,
+    "cues_per_km": 1.1,
+    "recall_pct": 99.4,
+    "precision_pct": 89.9
+   },
+   "junction_25m": {
+    "cues": 987,
+    "steps": 1162,
+    "turns": 883,
+    "turns_found": 878,
+    "steps_confirmed": 1031,
+    "cues_per_km": 1.1,
+    "recall_pct": 99.4,
+    "precision_pct": 88.7
+   }
+  }
+ }
+}

@@ -8,11 +8,8 @@ away from the solve slots.
 Every failure is a 503 in the usual shape: the web app then uses evenly spaced km marks.
 """
 
-import asyncio
-import logging
 import uuid
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
 
 import httpx
 from athlete_engine.valhalla import Valhalla, ValhallaError
@@ -20,16 +17,13 @@ from athlete_solver.engine import NoRoute, ValhallaEngine
 
 from . import builds
 from .deps import Services
+from .engine_work import CALL_TIMEOUT_S, EngineWork
 from .errors import ApiError
 from .overview import LonLat, Overview, overview
 from .schemas import OverviewPoint, OverviewPointsOut
 
-log = logging.getLogger("athlete_api.overview")
-
 PREFIX = "overview:v1:"   # raise the version when the rule in overview.py changes
-WORKERS = 2
 WAIT_S = 10.0             # what one request waits; the computation carries on and is cached
-CALL_TIMEOUT_S = 5.0      # one engine call
 
 # (geometry, N) -> Overview. Runs in a worker thread.
 OverviewPort = Callable[[list[LonLat], int], Overview]
@@ -66,8 +60,7 @@ def overview_error(err: Exception) -> ApiError:
 class OverviewService:
     def __init__(self, svc: Services, port: OverviewPort, wait_s: float = WAIT_S):
         self.svc, self.port, self.wait_s = svc, port, wait_s
-        self._pool = ThreadPoolExecutor(max_workers=WORKERS, thread_name_prefix="overview")
-        self._inflight: dict[str, asyncio.Task] = {}
+        self._work = EngineWork("overview")
 
     async def valhalla_build(self) -> str:
         try:
@@ -79,12 +72,8 @@ class OverviewService:
         key = f"{PREFIX}{route_id}:{limit}:{await self.valhalla_build()}"
         if self.svc.settings.cache_enabled and (blob := await self.svc.redis.get(key)) is not None:
             return OverviewPointsOut.model_validate_json(blob)
-        task = self._inflight.get(key)
-        if task is None:
-            task = self._inflight[key] = asyncio.create_task(self._compute(key, geometry, limit))
-            task.add_done_callback(lambda t: self._done(key, t))
         try:
-            return await asyncio.wait_for(asyncio.shield(task), self.wait_s)
+            return await self._work.shared(key, lambda: self._compute(key, geometry, limit), self.wait_s)
         except TimeoutError:
             raise ApiError(503, "overview_timeout",
                            f"Working out the overview points took longer than {self.wait_s:g} s. Try again shortly.",
@@ -92,7 +81,7 @@ class OverviewService:
 
     async def _compute(self, key: str, geometry: list[LonLat], limit: int) -> OverviewPointsOut:
         try:
-            found = await asyncio.get_running_loop().run_in_executor(self._pool, self.port, geometry, limit)
+            found = await self._work.in_thread(self.port, geometry, limit)
         except Exception as err:
             raise overview_error(err) from err
         out = OverviewPointsOut(points=[OverviewPoint(lon=lon, lat=lat, at_m=at) for lon, lat, at in found.points],
@@ -101,13 +90,5 @@ class OverviewService:
             await self.svc.redis.set(key, out.model_dump_json(), ex=self.svc.settings.cache_ttl_s)
         return out
 
-    def _done(self, key: str, task: asyncio.Task) -> None:
-        self._inflight.pop(key, None)
-        if not task.cancelled() and (err := task.exception()) is not None:
-            # every waiter may have timed out: the error is read here. No coordinates are logged.
-            log.warning("overview points failed: %r", err)
-
     async def close(self) -> None:
-        for task in list(self._inflight.values()):
-            task.cancel()
-        self._pool.shutdown(wait=False, cancel_futures=True)
+        await self._work.close()

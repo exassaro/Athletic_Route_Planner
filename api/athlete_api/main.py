@@ -16,6 +16,8 @@ from . import (errors, routes_features, routes_health, routes_places, routes_pla
 from .config import Settings, get_settings
 from .db import make_engine, make_sessionmaker
 from .deps import Services
+from .following import FollowService
+from .following import real_port as follow_port
 from .overviewing import OverviewService, real_port
 from .places import Photon
 from .planning import Planner
@@ -45,11 +47,13 @@ def create_app(settings: Settings | None = None, solver: SolverPort | None = Non
         app.state.planner = Planner(svc, SolveRunner(solver or real_solver(settings), settings.solve_slots,
                                                      settings.slot_wait_s))
         app.state.overview = OverviewService(svc, real_port(settings.valhalla_url))
+        app.state.follow = FollowService(svc, follow_port(settings.valhalla_url))
         try:
             yield
         finally:
             await app.state.planner.close()
             await app.state.overview.close()
+            await app.state.follow.close()
             await http.aclose()
             await redis.aclose()
             await db_engine.dispose()

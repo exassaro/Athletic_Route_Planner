@@ -19,10 +19,11 @@ from .deps import Services, client_id_if_known, client_ip, limited, services
 from .elevation import PROFILE_STEP_M, climb_approximate, smoothed
 from .errors import ApiError, responses
 from .examples import content
+from .following import FollowService
 from .overviewing import OverviewService
 from .routes_saved import newest_saved, saved_out
-from .schemas import (ElevationOut, KmMark, LineStringZ, OverviewPointsOut, RouteFeature, SavedOut, SaveIn,
-                      SharedRouteOut)
+from .schemas import (ElevationOut, FollowOut, KmMark, LineStringZ, OverviewPointsOut, RouteFeature, SavedOut,
+                      SaveIn, SharedRouteOut)
 from .store import candidate_of, geometry_of
 
 router = APIRouter(prefix="/v1", tags=["routes"])
@@ -37,6 +38,10 @@ MAX_POINTS = Query(..., alias="max", ge=1, le=9,
 
 def overviews(request: Request) -> OverviewService:
     return request.app.state.overview
+
+
+def follows(request: Request) -> FollowService:
+    return request.app.state.follow
 
 
 async def _owned(svc: Services, route_id: uuid.UUID, client_id: uuid.UUID) -> tuple[Route, PlanVersion]:
@@ -131,6 +136,16 @@ async def get_overview_points(route_id: uuid.UUID, limit: int = MAX_POINTS, clie
     return await over.get(route.id, geometry_of(route)[0], limit)
 
 
+@router.get("/routes/{route_id}/follow", response_model=FollowOut, responses=responses(401, 404, 429),
+            summary="Follow data: metres along the route and turn cues")
+async def get_follow(route_id: uuid.UUID, client: Client = Depends(limited("read")), svc: Services = Depends(services),
+                     fol: FollowService = Depends(follows)) -> FollowOut:
+    """Fetched once, before the run: no position is ever sent (Phase 5d A15). A cue is a turn at a junction, with
+    the road's name where OSM has one. Without Valhalla still 200: every bend, no names."""
+    route, _ = await _owned(svc, route_id, client.id)
+    return await fol.get(route.id, geometry_of(route)[0], route.length_m)
+
+
 @router.get("/routes/{route_id}/gpx", response_class=Response, responses={
     200: {"content": {GPX_TYPE: {}}, "description": "GPX 1.1 course"}, **responses(401, 404, 429)},
     summary="GPX 1.1 course")
@@ -221,3 +236,13 @@ async def get_shared_overview_points(slug: str, response: Response, limit: int =
     response.headers.update(NO_STORE)
     _, route, _ = await _shared(svc, slug, ip)
     return await over.get(route.id, geometry_of(route)[0], limit)
+
+
+@router.get("/share/{slug}/follow", response_model=FollowOut, responses=responses(404, 429), tags=["share"],
+            summary="Follow data for a shared route (public, no token)")
+async def get_shared_follow(slug: str, response: Response, ip: str = Depends(client_ip),
+                            svc: Services = Depends(services), fol: FollowService = Depends(follows)) -> FollowOut:
+    """As the owner's, without a token. A deleted link answers 404 exactly as an unknown one, cached or not."""
+    response.headers.update(NO_STORE)
+    _, route, _ = await _shared(svc, slug, ip)
+    return await fol.get(route.id, geometry_of(route)[0], route.length_m)

@@ -277,6 +277,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/routes/{route_id}/follow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Follow data: metres along the route and turn cues
+         * @description Fetched once, before the run: no position is ever sent (Phase 5d A15). A cue is a turn at a junction, with
+         *     the road's name where OSM has one. Without Valhalla still 200: every bend, no names.
+         */
+        get: operations["get_follow_v1_routes__route_id__follow_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/routes/{route_id}/gpx": {
         parameters: {
             query?: never;
@@ -375,6 +396,26 @@ export interface paths {
          *     link answers 404 exactly as an unknown one.
          */
         get: operations["get_shared_v1_share__slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/share/{slug}/follow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Follow data for a shared route (public, no token)
+         * @description As the owner's, without a token. A deleted link answers 404 exactly as an unknown one, cached or not.
+         */
+        get: operations["get_shared_follow_v1_share__slug__follow_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -902,6 +943,79 @@ export interface components {
             };
             /** Message */
             message: string;
+        };
+        /** FollowCue */
+        FollowCue: {
+            /**
+             * At M
+             * @description Distance along the route to the turn, measured from the geometry
+             */
+            at_m: number;
+            /**
+             * Road
+             * @description The road turned onto, from OSM. Null: unnamed, the road the runner is already on, or no Valhalla
+             */
+            road: string | null;
+            /**
+             * Then
+             * @description Turns that follow under 50 m apart, in order: "turn right, then left"
+             */
+            then: components["schemas"]["FollowStep"][];
+            /**
+             * Turn
+             * @enum {string}
+             */
+            turn: "left" | "right" | "around";
+        };
+        /**
+         * FollowOut
+         * @description Everything Follow mode needs of the route, fetched once before the run (Phase 5d A15).
+         */
+        FollowOut: {
+            /**
+             * Along M
+             * @description Distance along the route at each of `points`, measured from the geometry. The last is the route's length
+             */
+            along_m: number[];
+            /**
+             * Cue Source
+             * @description "geometry": Valhalla could not be asked, so every bend over 35 degrees is a cue and none has a road name
+             * @enum {string}
+             */
+            cue_source: "junctions" | "geometry";
+            /** Cues */
+            cues: components["schemas"]["FollowCue"][];
+            /**
+             * Points
+             * @description [lon, lat] of every vertex: the stored geometry
+             */
+            points: [
+                number,
+                number
+            ][];
+            /**
+             * Route Id
+             * Format: uuid
+             */
+            route_id: string;
+        };
+        /** FollowStep */
+        FollowStep: {
+            /**
+             * At M
+             * @description Distance along the route to the turn, measured from the geometry
+             */
+            at_m: number;
+            /**
+             * Road
+             * @description The road turned onto, from OSM. Null: unnamed, the road the runner is already on, or no Valhalla
+             */
+            road: string | null;
+            /**
+             * Turn
+             * @enum {string}
+             */
+            turn: "left" | "right" | "around";
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2590,6 +2704,67 @@ export interface operations {
             };
         };
     };
+    get_follow_v1_routes__route_id__follow_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Token from POST /v1/session */
+                "x-client-token"?: string | null;
+            };
+            path: {
+                route_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     get_gpx_v1_routes__route_id__gpx_get: {
         parameters: {
             query?: {
@@ -2851,6 +3026,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SharedRouteOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    get_shared_follow_v1_share__slug__follow_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowOut"];
                 };
             };
             /** @description Not Found */

@@ -1275,6 +1275,150 @@
     "title": "Flag",
     "type": "object"
    },
+   "FollowCue": {
+    "properties": {
+     "at_m": {
+      "description": "Distance along the route to the turn, measured from the geometry",
+      "title": "At M",
+      "type": "number"
+     },
+     "road": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "The road turned onto, from OSM. Null: unnamed, the road the runner is already on, or no Valhalla",
+      "title": "Road"
+     },
+     "then": {
+      "description": "Turns that follow under 50 m apart, in order: \"turn right, then left\"",
+      "items": {
+       "$ref": "#/components/schemas/FollowStep"
+      },
+      "title": "Then",
+      "type": "array"
+     },
+     "turn": {
+      "enum": [
+       "left",
+       "right",
+       "around"
+      ],
+      "title": "Turn",
+      "type": "string"
+     }
+    },
+    "required": [
+     "at_m",
+     "turn",
+     "road",
+     "then"
+    ],
+    "title": "FollowCue",
+    "type": "object"
+   },
+   "FollowOut": {
+    "description": "Everything Follow mode needs of the route, fetched once before the run (Phase 5d A15).",
+    "properties": {
+     "along_m": {
+      "description": "Distance along the route at each of `points`, measured from the geometry. The last is the route's length",
+      "items": {
+       "type": "number"
+      },
+      "title": "Along M",
+      "type": "array"
+     },
+     "cue_source": {
+      "description": "\"geometry\": Valhalla could not be asked, so every bend over 35 degrees is a cue and none has a road name",
+      "enum": [
+       "junctions",
+       "geometry"
+      ],
+      "title": "Cue Source",
+      "type": "string"
+     },
+     "cues": {
+      "items": {
+       "$ref": "#/components/schemas/FollowCue"
+      },
+      "title": "Cues",
+      "type": "array"
+     },
+     "points": {
+      "description": "[lon, lat] of every vertex: the stored geometry",
+      "items": {
+       "maxItems": 2,
+       "minItems": 2,
+       "prefixItems": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "number"
+        }
+       ],
+       "type": "array"
+      },
+      "title": "Points",
+      "type": "array"
+     },
+     "route_id": {
+      "format": "uuid",
+      "title": "Route Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "route_id",
+     "points",
+     "along_m",
+     "cue_source",
+     "cues"
+    ],
+    "title": "FollowOut",
+    "type": "object"
+   },
+   "FollowStep": {
+    "properties": {
+     "at_m": {
+      "description": "Distance along the route to the turn, measured from the geometry",
+      "title": "At M",
+      "type": "number"
+     },
+     "road": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "The road turned onto, from OSM. Null: unnamed, the road the runner is already on, or no Valhalla",
+      "title": "Road"
+     },
+     "turn": {
+      "enum": [
+       "left",
+       "right",
+       "around"
+      ],
+      "title": "Turn",
+      "type": "string"
+     }
+    },
+    "required": [
+     "at_m",
+     "turn",
+     "road"
+    ],
+    "title": "FollowStep",
+    "type": "object"
+   },
    "HTTPValidationError": {
     "properties": {
      "detail": {
@@ -20486,6 +20630,98 @@
     ]
    }
   },
+  "/v1/routes/{route_id}/follow": {
+   "get": {
+    "description": "Fetched once, before the run: no position is ever sent (Phase 5d A15). A cue is a turn at a junction, with\nthe road's name where OSM has one. Without Valhalla still 200: every bend, no names.",
+    "operationId": "get_follow_v1_routes__route_id__follow_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "route_id",
+      "required": true,
+      "schema": {
+       "format": "uuid",
+       "title": "Route Id",
+       "type": "string"
+      }
+     },
+     {
+      "description": "Token from POST /v1/session",
+      "in": "header",
+      "name": "x-client-token",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Token from POST /v1/session",
+       "title": "X-Client-Token"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FollowOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "401": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Unauthorized"
+     },
+     "404": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Not Found"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     },
+     "429": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Too Many Requests"
+     }
+    },
+    "summary": "Follow data: metres along the route and turn cues",
+    "tags": [
+     "routes"
+    ]
+   }
+  },
   "/v1/routes/{route_id}/gpx": {
    "get": {
     "description": "A track with elevation and waypoints for the start, each checkpoint and the end. No timestamps: import\nit as a course (Garmin Connect) or a route (Strava).",
@@ -21225,6 +21461,70 @@
      }
     },
     "summary": "A shared route (public, no token)",
+    "tags": [
+     "routes",
+     "share"
+    ]
+   }
+  },
+  "/v1/share/{slug}/follow": {
+   "get": {
+    "description": "As the owner's, without a token. A deleted link answers 404 exactly as an unknown one, cached or not.",
+    "operationId": "get_shared_follow_v1_share__slug__follow_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "slug",
+      "required": true,
+      "schema": {
+       "title": "Slug",
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FollowOut"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "404": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Not Found"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     },
+     "429": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorBody"
+        }
+       }
+      },
+      "description": "Too Many Requests"
+     }
+    },
+    "summary": "Follow data for a shared route (public, no token)",
     "tags": [
      "routes",
      "share"

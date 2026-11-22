@@ -35,9 +35,11 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
    - the bearing back to the line, shown in words.
 
    None of the three is sent, stored or logged.
-6. **A15, follow data:** `GET /v1/routes/{route_id}/follow` and `GET /v1/share/{slug}/follow`, fetched once, before the run. They return the metres along the route at each vertex, and the cues.
-   - A cue is a bearing change over 35° within 20 m, at a junction, with the road's name where Valhalla has one: "In 300 m: turn left onto <road>", otherwise "In 300 m: turn left". Cues under 50 m apart are merged (*default*).
-   - Valhalla down: still 200, with cues from the geometry alone and no names.
+6. **A15, follow data:** `GET /v1/routes/{route_id}/follow` and `GET /v1/share/{slug}/follow`, fetched once, before the run. They return the route's vertices, the metres along the route at each, and the cues. The vertices come in the same answer, so they cannot belong to another route than the metres when a share link is updated.
+   - A cue is a bearing change over 35° within 20 m, at a junction, with the road's name where Valhalla has one: "In 300 m: turn left onto <road>", otherwise "In 300 m: turn left". Cues under 50 m apart are merged (*default*): the later turns follow ("turn right, then left"), none is dropped.
+   - At a junction: within 15 m along the line of a node where another walkable edge meets it (*default*, from [the measurement](reports/phase5d/cues.md)). A turnaround is always a cue.
+   - The name is the road after the turn (*default*). It is left out when it is the road the runner is already on, and a name that is only a class of road ("MDR") is never used.
+   - Valhalla down: still 200, with cues from the geometry alone and no names (`cue_source` says which). A stretch Valhalla cannot match keeps its bends as unnamed cues.
 7. **Location never leaves the device.** Permission is asked only when Follow is tapped, with one line saying why. No request may depend on a position: no API call carries one, and the map loads the tiles of the route's corridor at the start, then none for the moving camera. A browser test checks this.
 8. **Progress is the snapped distance along the route**, never a sum of GPS steps, within a forward-only window.
    - Where passes tie while tracking, the one nearest the expected progress wins.
@@ -927,6 +929,8 @@ Rewritten for Phase 4. Every path is under `/v1`. Requests and responses use the
 | `GET /v1/share/{slug}/gpx` | The shared route as GPX | No token needed. Added in Phase 4 so a share page can offer the download |
 | `GET /v1/routes/{id}/overview-points?max=N` | Waypoints (N from 1 to 9) for a Google Maps overview link (Phase 5d A14) | `points`, `max_deviation_m`, `overlap_pct` (leg by leg, Valhalla standing in for Google); cached by route, N and Valhalla build |
 | `GET /v1/share/{slug}/overview-points?max=N` | The same for a shared route | No token needed; counts against the share link's per-IP read limit; `no-store` |
+| `GET /v1/routes/{id}/follow` | Follow data, fetched once before a run (Phase 5d A15) | `points`, `along_m` at each, `cues` (`at_m`, `turn`, `road`, `then`), `cue_source`; still 200 without Valhalla |
+| `GET /v1/share/{slug}/follow` | The same for a shared route | No token needed; counts against the share link's per-IP read limit; `no-store` |
 | `GET /v1/health` | Valhalla, GraphHopper, Photon, Postgres, Redis; both build ids; OSM pin; solver hash | 200 when the solve path (Valhalla, Postgres, Redis) is up, else 503 |
 
 ### Response for create, patch and version reads

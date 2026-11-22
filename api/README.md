@@ -8,7 +8,8 @@ The Phase 4 backend: FastAPI over the solver (blueprint Phase 4 amendments, sect
     hash), `errors`;
   - `solving` (solve slots, worker thread, shared in-flight solves), `elevation` (Valhalla /height for Z and the
     profile), `cache` (Redis, 24 h), `planning` (build ids -> cache -> solve -> store a version; 429/504),
-    `overview` (A14's algorithm, pure), `overviewing` (its worker threads, cache and errors),
+    `overview` (A14's algorithm, pure), `overviewing` (its cache and errors),
+    `follow` (A15's cue rule, pure), `following` (its cache and fallback), `engine_work` (their worker threads),
     `diff` (version diff), `explain` (template explanations, numbers only from the SolveResult);
   - `routes_*` (endpoints; `routes_saved` manages saved routes, Phase 5c), `purge_deleted` (CLI: removes saved routes soft-deleted more than N days ago), `main` (app factory; `create_app(solver=...)` takes a fake solver in tests).
 - `alembic/` migrations (the schema's authority): `uv run alembic -c api/alembic.ini upgrade head`.
@@ -30,4 +31,6 @@ Phase 5 changes (blueprint Phase 5 amendment 7):
 
 Phase 5d changes (blueprint Phase 5d amendments):
 - **Overview points (A14):** `GET /v1/routes/{id}/overview-points?max=N` and `GET /v1/share/{slug}/overview-points?max=N`: at most N (1 to 9) waypoints for a Google Maps walking link, with the worst deviation and the overlap, both leg by leg against Valhalla's path. A miss makes at most 2N + 1 engine calls, two computations at a time, cached 24 h by route, N and Valhalla build. Any 503 means: use evenly spaced km marks and show no estimate.
+- **Follow data (A15):** `GET /v1/routes/{id}/follow` and `GET /v1/share/{slug}/follow`: the vertices, the metres along the route at each, and the turn cues with OSM road names. One Valhalla trace per piece between turnarounds, cached 24 h by route and Valhalla build. Without Valhalla still 200, `cue_source: "geometry"`, not cached.
+- `scripts/measure_cues.py`: the cues against Valhalla's own turn instructions (`docs/reports/phase5d/cues.md`), and the recorded traces for the unit tests (`tests/fixtures/follow/traces.json`, never edited by hand).
 - `scripts/measure_overview.py`: smart against even spacing (`docs/reports/phase5d/overview_data.json`), and the recorded Valhalla paths for the unit tests (`tests/fixtures/overview/legs.json`, never edited by hand).
