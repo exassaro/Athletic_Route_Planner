@@ -15,6 +15,41 @@ async function snapTo(page: Page, state: "peek" | "half" | "full") {
   await page.waitForTimeout(400); // the sheet's settle
 }
 
+test("km labels: from zoom 12, over the route lines, never under a marker", async ({ page }) => {
+  await planA01Base(page);
+  await addStop(page, PLACES.kottakkadavu);
+  await waitVersion(page, 2);
+  await page.waitForTimeout(2000); // the fit and the profile
+  await page.screenshot({ path: test.info().outputPath("labels-fitted.png") });
+
+  const fitted = await page.evaluate(() => {
+    const map = (window as unknown as { athleteMap: import("maplibre-gl").Map }).athleteMap;
+    return { zoom: map.getZoom(), labels: map.queryRenderedFeatures({ layers: ["km-labels"] }).length, order: map.getLayersOrder() };
+  });
+  if (fitted.zoom < 12) expect(fitted.labels, "no labels below zoom 12").toBe(0);
+  const lastLine = Math.max(...fitted.order.map((id, i) => (id.startsWith("cand-") ? i : -1)));
+  for (const id of ["km-marks", "km-labels", "pin-links"]) expect(fitted.order.indexOf(id), id).toBeGreaterThan(lastLine);
+  expect(fitted.order.at(-1)).toBe("pin-obstacles");
+
+  // A label placed under the stop's disc and one in the open: only the second may be drawn.
+  const drawn = await page.evaluate(async () => {
+    const map = (window as unknown as { athleteMap: import("maplibre-gl").Map }).athleteMap;
+    const pins = await map.getSource<import("maplibre-gl").GeoJSONSource>("pin-obstacles")!.getData() as GeoJSON.FeatureCollection<GeoJSON.Point>;
+    const stop = pins.features.find((f) => f.properties!.anchor === "center")!.geometry.coordinates as [number, number];
+    map.jumpTo({ center: stop, zoom: 14 });
+    const p = map.project(stop);
+    const clear = map.unproject([p.x - 100, p.y - 80]);
+    const mark = (km: number, at: number[]) => ({ type: "Feature" as const, properties: { km, major: true },
+      geometry: { type: "Point" as const, coordinates: at } });
+    map.getSource<import("maplibre-gl").GeoJSONSource>("km-marks")!.setData({ type: "FeatureCollection",
+      features: [mark(995, stop), mark(990, [clear.lng, clear.lat])] });
+    await new Promise((r) => setTimeout(r, 2000));
+    return map.queryRenderedFeatures({ layers: ["km-labels"] }).map((f) => f.properties.km);
+  });
+  expect(drawn).toContain(990);
+  expect(drawn, "under the stop's disc").not.toContain(995);
+});
+
 test("the Undo message moves with the sheet and covers no content", async ({ page }) => {
   await planA01Base(page);
   await addStop(page, PLACES.kottakkadavu);

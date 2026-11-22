@@ -14,11 +14,16 @@ import { km } from "@/plan/format";
 import { lineStyle, ROUTE_COLORS } from "@/plan/routeStyle";
 import type { Theme } from "@/theme/theme";
 import { endFlag, groupByScreen, placePoint, startPin, stopPin } from "./markers";
+import { layerAbove, setObstacles, type Obstacle } from "./overlays";
 
 type Candidate = Schemas["CandidateOut"];
 type StopOnRoute = NonNullable<Candidate["stops"]>[number];
 const PREFIX = "cand-";
 const LINKS = "pin-links";
+const PIN_BOX = { w: 52, h: 44, anchor: "bottom" } as const;
+const PLACE_BOX = { w: 14, h: 14, anchor: "center" } as const;
+/** A stop's disc: 28 px, wider when it holds a group ("3·4"). */
+const stopBox = (count: number) => ({ w: 28 + (count - 1) * 16, h: 28, anchor: "center" }) as const;
 /** A place point is drawn when it is at least this far from where the route passes, on screen. */
 const PLACE_GAP_PX = 16;
 
@@ -34,7 +39,8 @@ function setLinks(map: MapLibreMap, lines: Line[], color: string) {
   if (src) src.setData(data);
   else {
     map.addSource(LINKS, { type: "geojson", data });
-    map.addLayer({ id: LINKS, type: "line", source: LINKS, paint: { "line-color": color, "line-width": 1.5, "line-dasharray": [2, 2] } });
+    map.addLayer({ id: LINKS, type: "line", source: LINKS, paint: { "line-color": color, "line-width": 1.5, "line-dasharray": [2, 2] } },
+      layerAbove(map, LINKS));
   }
   map.setPaintProperty(LINKS, "line-color", color);
 }
@@ -59,6 +65,8 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
       });
     });
     const casing = ROUTE_COLORS[theme].casing;
+    // Under every overlay: lines redrawn for a new version must not cover the km marks and labels.
+    const above = layerAbove(map);
     for (const i of order) {
       const c = candidates[i]!;
       const s = lineStyle(c.label, c.option, i, theme);
@@ -66,11 +74,11 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
       const opacity = (on ? 1 : 0.6) * (dimmed ? 0.4 : 1);
       map.addLayer({ id: `${PREFIX}${i}-casing`, type: "line", source: `${PREFIX}${i}`,
         layout: { "line-join": "round", "line-cap": "round" },
-        paint: { "line-color": casing, "line-width": on ? 10 : 5, "line-opacity": opacity } });
+        paint: { "line-color": casing, "line-width": on ? 10 : 5, "line-opacity": opacity } }, above);
       map.addLayer({ id: `${PREFIX}${i}`, type: "line", source: `${PREFIX}${i}`,
         layout: { "line-join": "round", "line-cap": s.dash ? "butt" : "round" },
         paint: { "line-color": s.color, "line-width": on ? 6 : 3, "line-opacity": opacity,
-          ...(s.dash ? { "line-dasharray": s.dash } : {}) } });
+          ...(s.dash ? { "line-dasharray": s.dash } : {}) } }, above);
     }
     drawn.current = candidates.length;
   }, [map, candidates, selected, dimmed, theme]);
@@ -88,16 +96,21 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
         markers.current.push(new maplibregl.Marker({ element: el, anchor: opts.anchor ?? "center", offset: opts.offset })
           .setLngLat(at).addTo(map));
       const links: Line[] = [];
+      const boxes: Obstacle[] = [];
       const c = candidates[selected];
       if (!c) {
         // No route (setup, or a conflict): the start and the stops as asked, never a blank map.
         if (request?.start) {
           const pin = startPin(request.start.label ?? "the start", false);
           add(pin.el, [request.start.lon, request.start.lat], { anchor: "bottom", offset: pin.offset });
+          boxes.push({ at: [request.start.lon, request.start.lat], ...PIN_BOX });
         }
-        (request?.checkpoints ?? []).forEach((cp, k) => add(stopPin(String(k + 1), `${k + 1}. ${cp.label}, as asked`,
-          { asked: true, must: !!cp.must_reach }), [cp.lon, cp.lat]));
+        (request?.checkpoints ?? []).forEach((cp, k) => {
+          add(stopPin(String(k + 1), `${k + 1}. ${cp.label}, as asked`, { asked: true, must: !!cp.must_reach }), [cp.lon, cp.lat]);
+          boxes.push({ at: [cp.lon, cp.lat], ...stopBox(1) });
+        });
         setLinks(map, [], ROUTE_COLORS[theme].link);
+        setObstacles(map, boxes);
         return;
       }
       const stops = c.stops ?? [];
@@ -105,6 +118,7 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
       if (start) {
         const pin = startPin(start.label ?? "the start", facingWest);
         add(pin.el, [start.snapped_lon, start.snapped_lat], { anchor: "bottom", offset: pin.offset });
+        boxes.push({ at: [start.snapped_lon, start.snapped_lat], ...PIN_BOX });
       }
       const cps = stops.filter((s) => s.role === "checkpoint");
       const groups = groupByScreen(cps.map((s, k) => {
@@ -116,6 +130,7 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
         const text = g.items.map((i) => String(i.n)).join("·");
         const label = g.items.map((i) => `Stop ${i.n}: ${i.s.label ?? "a stop"}, at ${km(i.s.at_m)}`).join("; ");
         add(stopPin(text, label, { must: g.items.every((i) => i.s.must_reach) }), [first.snapped_lon, first.snapped_lat]);
+        boxes.push({ at: [first.snapped_lon, first.snapped_lat], ...stopBox(g.items.length) });
       }
       for (const s of cps as StopOnRoute[]) {
         const req = s.requested;
@@ -124,6 +139,7 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
         const b = map.project([s.snapped_lon, s.snapped_lat]);
         if (Math.hypot(a.x - b.x, a.y - b.y) < PLACE_GAP_PX) continue;
         add(placePoint(s.label ?? "the place"), [req.lon, req.lat]);
+        boxes.push({ at: [req.lon, req.lat], ...PLACE_BOX });
         links.push([[req.lon, req.lat], [s.snapped_lon, s.snapped_lat]]);
       }
       if (c.end.kind !== "start") {
@@ -131,6 +147,7 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
         add(endFlag(`${auto ? "End (auto)" : "End"}: ${c.end.label ?? "unnamed road"}`), [c.end.lon, c.end.lat], { anchor: "bottom-left" });
       }
       setLinks(map, links, ROUTE_COLORS[theme].link);
+      setObstacles(map, boxes);
     };
     draw();
     const onZoom = () => { draw(); };

@@ -10,6 +10,7 @@ import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { Schemas } from "@/api/client";
 import { km, metres } from "@/plan/format";
 import { lineStyle, ROUTE_COLORS } from "@/plan/routeStyle";
+import { layerAbove } from "@/map/overlays";
 import { useTheme } from "@/theme/useTheme";
 import { planClient } from "@/plan/usePlan";
 import { Num } from "./Num";
@@ -20,6 +21,8 @@ type Elevation = Schemas["ElevationOut"];
 const W = 600;
 const H = 150;
 const PAD = { l: 34, r: 8, t: 10, b: 22 };
+/** Km labels show from this zoom (Phase 5b amendment 14), and so do the marks between every 5th: below it they bead the line. */
+const KM_LABEL_ZOOM = 12;
 
 type Props = {
   map: MapLibreMap | null;
@@ -61,19 +64,20 @@ export function RouteDetail({ map, cand, index, onFirstKm }: Props) {
     const data = { type: "FeatureCollection" as const, features: elev.km_marks.map((m) => ({
       type: "Feature" as const, properties: { km: m.km, major: m.km % 5 === 0 },
       geometry: { type: "Point" as const, coordinates: [m.lon, m.lat] } })) };
-    // Small, quiet marks; the 5 km labels sit beside the line, so the stop pins do not hide them.
+    // Small, quiet marks; the 5 km labels sit beside the line, on either side, and hide where a marker is (overlays.ts).
     const c = theme === "dark" ? { fill: "#1C1F24", ink: "#F2ECDF" } : { fill: "#FBF8F1", ink: "#1C1B18" };
     const src = map.getSource("km-marks") as GeoJSONSource | undefined;
     if (src) src.setData(data);
     else {
       map.addSource("km-marks", { type: "geojson", data });
       map.addLayer({ id: "km-marks", type: "circle", source: "km-marks",
-        paint: { "circle-radius": ["case", ["get", "major"], 5, 2.5], "circle-color": c.fill,
-          "circle-stroke-color": c.ink, "circle-stroke-width": 1.5 } });
-      map.addLayer({ id: "km-labels", type: "symbol", source: "km-marks", filter: ["get", "major"],
+        paint: { "circle-radius": ["step", ["zoom"], ["case", ["get", "major"], 3, 0], KM_LABEL_ZOOM, ["case", ["get", "major"], 5, 2.5]],
+          "circle-color": c.fill, "circle-stroke-color": c.ink,
+          "circle-stroke-width": ["step", ["zoom"], ["case", ["get", "major"], 1.5, 0], KM_LABEL_ZOOM, 1.5] } }, layerAbove(map, "km-marks"));
+      map.addLayer({ id: "km-labels", type: "symbol", source: "km-marks", filter: ["get", "major"], minzoom: KM_LABEL_ZOOM,
         layout: { "text-field": ["concat", ["to-string", ["get", "km"]], " km"], "text-size": 11, "text-font": ["Noto Sans Medium"],
-          "text-anchor": "left", "text-offset": [0.9, 0], "text-allow-overlap": false },
-        paint: { "text-color": c.ink, "text-halo-color": c.fill, "text-halo-width": 1.5 } });
+          "text-variable-anchor": ["left", "right"], "text-radial-offset": 0.9, "text-allow-overlap": false },
+        paint: { "text-color": c.ink, "text-halo-color": c.fill, "text-halo-width": 1.5 } }, layerAbove(map, "km-labels"));
     }
     map.setPaintProperty("km-marks", "circle-color", c.fill);
     map.setPaintProperty("km-marks", "circle-stroke-color", c.ink);
@@ -101,7 +105,7 @@ export function RouteDetail({ map, cand, index, onFirstKm }: Props) {
       map.addSource("chart-cursor", { type: "geojson", data });
       map.addLayer({ id: "chart-cursor", type: "circle", source: "chart-cursor",
         paint: { "circle-radius": 8, "circle-color": lineStyle(cand.label, cand.option, index, theme).color,
-          "circle-stroke-color": ROUTE_COLORS[theme].casing, "circle-stroke-width": 3 } });
+          "circle-stroke-color": ROUTE_COLORS[theme].casing, "circle-stroke-width": 3 } }, layerAbove(map, "chart-cursor"));
     }
     map.setPaintProperty("chart-cursor", "circle-color", lineStyle(cand.label, cand.option, index, theme).color);
     map.setPaintProperty("chart-cursor", "circle-stroke-color", ROUTE_COLORS[theme].casing);
