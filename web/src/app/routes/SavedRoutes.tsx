@@ -6,6 +6,8 @@ import { Sprite } from "@/components/Sprite";
 import { StatNumber } from "@/components/StatNumber";
 import { Button } from "@/components/ui";
 import { Wordmark } from "@/components/Wordmark";
+import { OpenIn } from "@/components/OpenIn";
+import { ownRouteGpx, ownRoutePoints } from "@/export/ownRoute";
 import { downloadGpx, shareUrl } from "@/components/SaveShare";
 import { planClient } from "@/plan/usePlan";
 import Link from "next/link";
@@ -47,6 +49,7 @@ export function SavedRoutes() {
                 <span className="t-body-s muted"> · ends at {r.end_label ?? "an unnamed road"}</span></p>
               <div className="saved-actions">
                 <a className="btn btn-secondary" href={shareUrl(r.share_slug)}>Open</a>
+                <OpenIn loadPoints={() => ownRoutePoints(r.route_id)} loadGpx={(ele) => ownRouteGpx(r.route_id, ele)} />
                 <Button icon="edit" onClick={() => rename(r)}>Rename</Button>
                 <Button icon="download" onClick={() => downloadGpx(r.route_id, true).catch((e) => setMsg(String(e.message)))}>GPX</Button>
               </div>

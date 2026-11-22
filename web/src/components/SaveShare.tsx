@@ -6,7 +6,10 @@
  */
 import { useEffect, useState } from "react";
 import type { Schemas } from "@/api/client";
+import { saveFile } from "@/export/gpxFile";
+import { ownRouteGpx, ownRoutePoints } from "@/export/ownRoute";
 import { planClient } from "@/plan/usePlan";
+import { OpenIn } from "./OpenIn";
 
 type Candidate = Schemas["CandidateOut"];
 
@@ -15,19 +18,7 @@ export function shareUrl(slug: string): string {
 }
 
 export async function downloadGpx(routeId: string, ele: boolean) {
-  const client = planClient();
-  const { data, response } = await client.api.GET("/v1/routes/{route_id}/gpx", {
-    params: { path: { route_id: routeId }, query: { ele } }, parseAs: "blob" });
-  if (!data) throw new Error(`GPX download failed (${response.status}).`);
-  const name = /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") ?? "")?.[1] ?? "route.gpx";
-  const url = URL.createObjectURL(data as Blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  saveFile(await ownRouteGpx(routeId, ele));
 }
 
 export function SaveShare({ cand }: { cand: Candidate }) {
@@ -72,6 +63,7 @@ export function SaveShare({ cand }: { cand: Candidate }) {
         </p>
       )}
       <div className="row">
+        <OpenIn loadPoints={() => ownRoutePoints(cand.route_id)} loadGpx={(ele) => ownRouteGpx(cand.route_id, ele)} />
         <button type="button" onClick={() => downloadGpx(cand.route_id, true).catch((e) => setMsg(String(e.message)))}
           data-testid="gpx">Download GPX</button>
         <button type="button" className="link" onClick={() => downloadGpx(cand.route_id, false).catch((e) => setMsg(String(e.message)))}>

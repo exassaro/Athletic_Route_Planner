@@ -570,6 +570,11 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
   .sheet, .sheet.peek, .sheet.half, .sheet.full { padding-top: 64px; }
   .planner .maplibregl-ctrl-top-right { margin-top: 52px; }
 }
+/* "Open in..." (amendment 20) */
+.open-in { display: grid; gap: var(--space-2); }
+.open-in-group { display: grid; gap: var(--space-1); }
+.open-in-group + .open-in-group { padding-top: var(--space-2); border-top: 1px solid var(--hairline); }
+.open-in-group p { margin: 0; }
 .menu-body { display: grid; gap: var(--space-2); }
 .menu-section { display: grid; gap: var(--space-1); }
 .menu-section h3 { margin: 0; }
