@@ -3,6 +3,7 @@
 tests/fixtures/follow/traces.json is written by api/scripts/measure_cues.py from live Valhalla.
 """
 
+import importlib.util
 import json
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -193,3 +194,12 @@ def test_a_matched_stretch_drops_a_bend_that_is_not_a_junction():
     answer = {"edges": [{"begin_shape_index": 0, "end_shape_index": 2}], "shape": polyline.encode(line.geometry),
               "matched_points": [{"type": "matched", "edge_index": 0}] * 3}
     assert follow.cues(line, line.match(lambda piece: answer)) == []
+
+
+def test_the_webs_follow_fixtures_are_the_apis_response():
+    """tests/fixtures/follow/routes.json, which the web's Follow tests run on (Phase 5d step 5)."""
+    script = ROOT / "api" / "scripts" / "export_follow_fixtures.py"
+    spec = importlib.util.spec_from_file_location("export_follow_fixtures", script)
+    export = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(export)
+    assert json.loads(export.OUT.read_text(encoding="utf-8")) == json.loads(export.render())

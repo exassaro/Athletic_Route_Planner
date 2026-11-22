@@ -37,3 +37,10 @@ End to end and the phone: see `playwright.config.ts` (commands at the top) and `
 Layout: `src/api/` (generated types, clients), `src/plan/` (request edits as JSON Patches, the plan client and its
 waiting rules, formatting), `src/components/` (planner screens), `src/map/` (MapLibre, basemap, route layers),
 `src/app/` (planner `/`, share page `/s/[slug]` server-rendered, saved routes `/routes`, manifest), `e2e/`.
+
+## Follow mode logic (Phase 5d step 5)
+
+`src/follow/` is pure (no DOM, network, storage or clock): `line` (the route), `tracker` (progress), `offRoute`,
+`cues`, `clock`, and `run`, which puts them together as a reducer. `npm run sim:follow` runs these modules under
+simulated GPS (about 10 minutes, Node 22.18 or later for type stripping) and writes
+`docs/reports/phase5d/follow_sim_data.json`; the findings are in `docs/reports/phase5d/follow.md`.

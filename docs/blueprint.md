@@ -44,9 +44,14 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
 8. **Progress is the snapped distance along the route**, never a sum of GPS steps, within a forward-only window.
    - Where passes tie while tracking, the one nearest the expected progress wins.
    - After a gap of T seconds the window is 5 m/s × T + 100 m, back to normal after three good fixes.
-   - While off route the window grows by the same formula, T being the seconds since the last on-route fix, so a runner who rejoins further ahead is found (decided 2026-11-22; to be simulated in step 5).
+   - While off route the window grows by the same formula, T being the seconds since the last on-route fix, so a runner who rejoins further ahead is found (decided 2026-11-22; [simulated](reports/phase5d/follow.md): found in every trial on A01, S02 and the out-and-back, in seconds at the median).
+   - *Defaults from that simulation:*
+     - a rejoin beyond the normal window counts after 40 m along the route, so a crossing moves nothing (after a lock a single fitting pass is taken at once);
+     - direction decides after 20 m of movement, or 2.5 times the accuracy if more; a pass the runner could have walked back to is a candidate and never lowers progress;
+     - a jump is refused while the pass just behind explains the fix as well;
+     - fixes worse than 50 m only move the dot; within 15 m of the end is the end.
    - If more than one pass fits after a gap, progress is held until the direction of the following fixes decides. Expected pace never decides after a gap: on S02 it jumps to the finish after a 33 minute lock at the start.
-9. **Off route:** an amber banner, with a short vibration where supported, after more than 40 m from the line for 10 s **and** two consecutive fresh fixes with accuracy under 30 m. With worse accuracy it says "GPS is weak" and does not guess.
+9. **Off route:** an amber banner, with a short vibration where supported, after more than 40 m from the line for 10 s **and** two consecutive fresh fixes with accuracy under 30 m. With worse accuracy it says "GPS is weak" and does not guess. The distance is to the nearest place on the whole route, so another pass of it is never off the route: progress and cues wait (*default*).
 10. **Screen lock.**
     - On hidden: the time and last snapped position are kept in memory and the off-route timer stops.
     - On visible: "Finding you...", the wake lock is asked for again, and `getCurrentPosition` runs with maximumAge 0 and a 15 s timeout. A fix over 10 s old is discarded.
@@ -63,7 +68,7 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
 - While tracking with the closest point alone, 10 of 20 out-and-back runs were at some point over 100 m wrong in progress; with decision 8's tie-break, none.
 - After a 15 minute lock on the out-and-back, the first fix alone picked the wrong pass in 3.5 to 4.2 % of wakes; the direction of the fixes in 0.5 % with 6 fixes and 0 % with 16, for a runner moving at 1.5 to 4 m/s.
 - A bare 35° bend rule gives 55 cues on A01, 10 of them under 50 m apart: hence decision 6's junctions and merging.
-- Holding progress for a runner who has not moved is not yet simulated.
+- Holding progress for a runner who has not moved was simulated in step 5 ([follow.md](reports/phase5d/follow.md)): no jump except 4 in 500 with poor GPS on S02.
 
 **Status (2026-11-22): in progress.**
 
