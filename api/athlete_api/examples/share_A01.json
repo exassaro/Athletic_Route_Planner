@@ -1,13 +1,13 @@
 {
  "summary": "A shared route (public)",
- "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-18. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
+ "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-22. Geometry and km marks shortened to its first 3 and last 2 points for this page; the API returns every point.",
  "value": {
   "name": "Coast to Kozhikode",
-  "shared_at": "2026-11-18T04:19:36.371594Z",
+  "shared_at": "2026-11-22T07:14:06.670812Z",
   "summary": "The recommended route is 25.0 km, ending at Francis Road.",
   "route": {
    "type": "Feature",
-   "id": "915b504d-af8f-4156-adad-88c39a4664b7",
+   "id": "05b8acad-28ff-42b4-ab3f-f6bd5e0545d8",
    "geometry": {
     "type": "LineString",
     "coordinates": [
@@ -41,14 +41,14 @@
    "properties": {
     "label": "recommended",
     "option": "main",
-    "length_m": 24999.992411787083,
-    "foot_m": 24999.992411787083,
+    "length_m": 24999.99241178757,
+    "foot_m": 24999.99241178757,
     "ferry_m": 0.0,
     "engine_length_m": 25064.898,
-    "sphere_length_m": 25064.99157924046,
+    "sphere_length_m": 25064.99157923431,
     "engine": "graphhopper",
     "edge_count": 228,
-    "deviation_m": -0.007588212916743942,
+    "deviation_m": -0.0075882124292547815,
     "duration_s": 18046.729,
     "gain_m": 106.5,
     "loss_m": 140.1,
@@ -64,7 +64,7 @@
       },
       "snapped_lon": 75.846193,
       "snapped_lat": 11.120867,
-      "offset_m": 15.413560911165037,
+      "offset_m": 15.413560911165208,
       "at_m": 0.0,
       "kind": null,
       "must_reach": false,
@@ -246,10 +246,43 @@
       "data": {}
      }
     ],
-    "route_id": "915b504d-af8f-4156-adad-88c39a4664b7",
-    "version": 1
+    "route_id": "05b8acad-28ff-42b4-ab3f-f6bd5e0545d8",
+    "version": 1,
+    "climb_approximate": true
    }
   },
-  "gpx_url": "http://testserver/v1/share/Q23T8V2Ts8sC/gpx"
+  "km_marks": [
+   {
+    "km": 1,
+    "at_m": 1000.0,
+    "lon": 75.8456817,
+    "lat": 11.1296222
+   },
+   {
+    "km": 2,
+    "at_m": 2000.0,
+    "lon": 75.8416496,
+    "lat": 11.1375739
+   },
+   {
+    "km": 3,
+    "at_m": 3000.0,
+    "lon": 75.8332357,
+    "lat": 11.1398049
+   },
+   {
+    "km": 23,
+    "at_m": 23000.0,
+    "lon": 75.7875451,
+    "lat": 11.2371387
+   },
+   {
+    "km": 24,
+    "at_m": 24000.0,
+    "lon": 75.781343,
+    "lat": 11.2413533
+   }
+  ],
+  "gpx_url": "http://testserver/v1/share/F25XDtK7eaYB/gpx"
  }
 }

@@ -106,6 +106,9 @@ def test_save_list_share(make_client):
     assert body["route"]["properties"]["foot_m"] == v1["candidates"][0]["foot_m"]
     assert body["summary"].startswith("The recommended route is 25.0 km")
     assert saved["share_url"].endswith(f"/v1/share/{saved['share_slug']}")
+    # Phase 5b A9: every km mark, exactly the elevation response's, without a token.
+    elev = api.get(f"/v1/routes/{v1['candidates'][0]['route_id']}/elevation", headers=h).json()
+    assert body["km_marks"] == elev["km_marks"] and len(body["km_marks"]) >= 20
     gpx = api.get(f"/v1/share/{saved['share_slug']}/gpx")
     XSD.assertValid(etree.fromstring(gpx.content))
     assert b"Coast run, take 2" in gpx.content

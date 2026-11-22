@@ -1300,6 +1300,11 @@ export interface components {
         SharedRouteOut: {
             /** Gpx Url */
             gpx_url: string;
+            /**
+             * Km Marks
+             * @description The position of every whole kilometre along the route, as in the elevation response (Phase 5b A9)
+             */
+            km_marks: components["schemas"]["KmMark"][];
             /** Name */
             name: string | null;
             route: components["schemas"]["RouteFeature"];

@@ -212,6 +212,8 @@ class SharedRouteOut(BaseModel):
     shared_at: datetime
     summary: str = Field(description="Template text for this route; numbers from the solver's result only")
     route: RouteFeature
+    km_marks: list[KmMark] = Field(description="The position of every whole kilometre along the route, as in the "
+                                               "elevation response (Phase 5b A9)")
     gpx_url: str
 
 

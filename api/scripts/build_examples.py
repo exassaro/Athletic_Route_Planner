@@ -98,7 +98,9 @@ def main() -> int:
         write("saved_A01", "Saved, with its share link", note("A01"), saved)
         shared = api.get(f"/v1/share/{saved['share_slug']}").json()
         shared["route"]["geometry"]["coordinates"] = shorten(shared["route"]["geometry"]["coordinates"])
-        write("share_A01", "A shared route (public)", note("A01"), shared)
+        shared["km_marks"] = shorten(shared["km_marks"])
+        write("share_A01", "A shared route (public)",
+              note("A01").replace("Geometry shortened", "Geometry and km marks shortened"), shared)
 
         places = api.get("/v1/places/search", params={"q": "Kunnamangalam", "lat": 11.25, "lon": 75.78}, headers=h)
         places.raise_for_status()

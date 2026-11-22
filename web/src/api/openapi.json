@@ -2474,6 +2474,14 @@
       "title": "Gpx Url",
       "type": "string"
      },
+     "km_marks": {
+      "description": "The position of every whole kilometre along the route, as in the elevation response (Phase 5b A9)",
+      "items": {
+       "$ref": "#/components/schemas/KmMark"
+      },
+      "title": "Km Marks",
+      "type": "array"
+     },
      "name": {
       "anyOf": [
        {
@@ -2504,6 +2512,7 @@
      "shared_at",
      "summary",
      "route",
+     "km_marks",
      "gpx_url"
     ],
     "title": "SharedRouteOut",
@@ -20262,10 +20271,42 @@
        "application/json": {
         "examples": {
          "share_A01": {
-          "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-18. Geometry shortened to its first 3 and last 2 points for this page; the API returns every point.",
+          "description": "Real output of the solver through the API for fixture A01 (Acceptance: Athanikkal towards Kozhikode, 25 km, passing near Kottakkadavu, Kadalundi, Chaliyam, the Karuvanthuruthy bridge, Beypore and Kallai), measured on the development laptop on 2026-11-22. Geometry and km marks shortened to its first 3 and last 2 points for this page; the API returns every point.",
           "summary": "A shared route (public)",
           "value": {
-           "gpx_url": "http://testserver/v1/share/Q23T8V2Ts8sC/gpx",
+           "gpx_url": "http://testserver/v1/share/F25XDtK7eaYB/gpx",
+           "km_marks": [
+            {
+             "at_m": 1000.0,
+             "km": 1,
+             "lat": 11.1296222,
+             "lon": 75.8456817
+            },
+            {
+             "at_m": 2000.0,
+             "km": 2,
+             "lat": 11.1375739,
+             "lon": 75.8416496
+            },
+            {
+             "at_m": 3000.0,
+             "km": 3,
+             "lat": 11.1398049,
+             "lon": 75.8332357
+            },
+            {
+             "at_m": 23000.0,
+             "km": 23,
+             "lat": 11.2371387,
+             "lon": 75.7875451
+            },
+            {
+             "at_m": 24000.0,
+             "km": 24,
+             "lat": 11.2413533,
+             "lon": 75.781343
+            }
+           ],
            "name": "Coast to Kozhikode",
            "route": {
             "geometry": {
@@ -20298,7 +20339,7 @@
              ],
              "type": "LineString"
             },
-            "id": "915b504d-af8f-4156-adad-88c39a4664b7",
+            "id": "05b8acad-28ff-42b4-ab3f-f6bd5e0545d8",
             "properties": {
              "bridges_m": [
               [
@@ -20326,7 +20367,8 @@
                23114.6
               ]
              ],
-             "deviation_m": -0.007588212916743942,
+             "climb_approximate": true,
+             "deviation_m": -0.0075882124292547815,
              "duration_s": 18046.729,
              "edge_count": 228,
              "end": {
@@ -20345,10 +20387,10 @@
                "message": "no junction within the snap window; the run ends at the exact distance"
               }
              ],
-             "foot_m": 24999.992411787083,
+             "foot_m": 24999.99241178757,
              "gain_m": 106.5,
              "label": "recommended",
-             "length_m": 24999.992411787083,
+             "length_m": 24999.99241178757,
              "loss_m": 140.1,
              "option": "main",
              "repeat_share": 0.0,
@@ -20358,15 +20400,15 @@
               "secondary": 17647.3,
               "unclassified": 1079.5
              },
-             "route_id": "915b504d-af8f-4156-adad-88c39a4664b7",
+             "route_id": "05b8acad-28ff-42b4-ab3f-f6bd5e0545d8",
              "score": 0.0,
-             "sphere_length_m": 25064.99157924046,
+             "sphere_length_m": 25064.99157923431,
              "stops": [
               {
                "at_m": 0.0,
                "label": "Athanikkal",
                "must_reach": false,
-               "offset_m": 15.413560911165037,
+               "offset_m": 15.413560911165208,
                "requested": {
                 "label": "Athanikkal",
                 "lat": 11.1209333,
@@ -20502,7 +20544,7 @@
             },
             "type": "Feature"
            },
-           "shared_at": "2026-11-18T04:19:36.371594Z",
+           "shared_at": "2026-11-22T07:14:06.670812Z",
            "summary": "The recommended route is 25.0 km, ending at Francis Road."
           }
          }

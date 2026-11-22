@@ -79,6 +79,15 @@ async def get_elevation(route_id: uuid.UUID, client: Client = Depends(limited("r
     return elevation_out(route)
 
 
+def km_marks(geometry: list) -> list[KmMark]:
+    """Where each whole kilometre lies on the stored geometry, the end excluded: the elevation response's
+    (Phase 5 A5) and the share response's (Phase 5b A9)."""
+    samples = geodesy.sample_every(geometry, 1000.0)
+    total = samples[-1][1]
+    return [KmMark(km=round(d / 1000.0), at_m=round(d, 1), lon=round(pt[0], 7), lat=round(pt[1], 7))
+            for pt, d in samples[1:] if 0.0 < d < total]
+
+
 def elevation_out(route: Route) -> ElevationOut:
     """The stored profile, plus where each sample and each whole kilometre lies (Phase 5 A5).
 
@@ -90,11 +99,9 @@ def elevation_out(route: Route) -> ElevationOut:
     samples = geodesy.sample_every(geometry, PROFILE_STEP_M)
     if len(samples) != len(profile) or any(abs(round(d, 1) - p[0]) > 0.05 for (_, d), p in zip(samples, profile)):
         raise ApiError(500, "profile_mismatch", "The stored profile does not match the route geometry.")
-    total = samples[-1][1]
-    marks = [KmMark(km=round(d / 1000.0), at_m=round(d, 1), lon=round(pt[0], 7), lat=round(pt[1], 7))
-             for pt, d in geodesy.sample_every(geometry, 1000.0)[1:] if 0.0 < d < total]
     return ElevationOut(route_id=route.id, step_m=PROFILE_STEP_M, profile=profile,
-                        points=[(round(pt[0], 7), round(pt[1], 7)) for pt, _ in samples], km_marks=marks,
+                        points=[(round(pt[0], 7), round(pt[1], 7)) for pt, _ in samples],
+                        km_marks=km_marks(geometry),
                         smoothed=smoothed(route.elevation, route.bridges_m),
                         climb_approximate=climb_approximate(route.elevation),
                         gain_m=route.gain_m, loss_m=route.loss_m)
@@ -176,6 +183,7 @@ async def get_shared(slug: str, request: Request, ip: str = Depends(client_ip),
     feat = feature(route, version)
     feat.properties.pop("plan_id", None)        # the plan stays private
     return SharedRouteOut(name=saved.name, shared_at=saved.created_at, summary=summary(route), route=feat,
+                          km_marks=km_marks(geometry_of(route)[0]),
                           gpx_url=str(request.url_for("get_shared_gpx", slug=slug)))
 
 

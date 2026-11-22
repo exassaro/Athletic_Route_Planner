@@ -13,6 +13,7 @@ import { API_BASE } from "@/api/client";
 import { serverApi } from "@/api/server";
 import { Num } from "@/components/Num";
 import { ShareMap } from "@/components/ShareMap";
+import { ShareOpenIn } from "@/components/ShareOpenIn";
 import { Sprite } from "@/components/Sprite";
 import { StatNumber } from "@/components/StatNumber";
 import { Icon } from "@/components/ui";
@@ -51,9 +52,11 @@ export default async function SharePage({ params }: Props) {
   const start = stops.find((s) => s.role === "start");
   const end = stops.find((s) => s.role === "end");
   const checkpoints = stops.filter((s) => s.role === "checkpoint");
+  const line = shared.route.geometry.coordinates;
+  const lonLat = (point: readonly number[]) => [point[0]!, point[1]!] as const;
   return (
     <main className="share-page">
-      <div className="share-map"><ShareMap route={shared.route} /></div>
+      <div className="share-map"><ShareMap route={shared.route} kmMarks={shared.km_marks} /></div>
       <section className="share-panel" aria-label="Shared route">
         <p className="brand-row"><Link href="/" aria-label="GATHO: plan your own run"><Wordmark /></Link></p>
         <h1 className="t-title">{shared.name ?? "A shared run"}</h1>
@@ -101,6 +104,7 @@ export default async function SharePage({ params }: Props) {
           )}
         </ol>
         <div className="share-actions">
+          <ShareOpenIn slug={slug} start={lonLat(line[0]!)} end={lonLat(line[line.length - 1]!)} kmMarks={shared.km_marks} />
           <a className="btn btn-secondary" href={`${API_BASE}/v1/share/${slug}/gpx`} data-testid="share-gpx">
             <Icon name="download" />Download GPX
           </a>

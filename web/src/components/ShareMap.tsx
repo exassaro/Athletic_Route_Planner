@@ -12,7 +12,7 @@ import { endFlag, flagPointsLeft, startPin, stopPin } from "@/map/markers";
 import { MapView } from "@/map/MapView";
 import { useTheme } from "@/theme/useTheme";
 
-export function ShareMap({ route }: { route: Schemas["RouteFeature"] }) {
+export function ShareMap({ route, kmMarks }: { route: Schemas["RouteFeature"]; kmMarks: Schemas["KmMark"][] }) {
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [theme] = useTheme();
   useEffect(() => {
@@ -38,8 +38,9 @@ export function ShareMap({ route }: { route: Schemas["RouteFeature"] }) {
       map.setPaintProperty("shared-casing", "line-color", c.casing);
       map.setPaintProperty("shared", "line-color", c.primary);
       const props = route.properties as Schemas["CandidateOut"];
-      // Facing: the first segment's direction (the share response carries no km marks).
-      const west = coords.length > 1 && coords[1]![0] < coords[0]![0];
+      // Facing, as in the planner: towards the API's first km mark; the first segment on a route under 1 km.
+      const startLon = props.stops?.find((s) => s.role === "start")?.snapped_lon ?? coords[0]![0];
+      const west = kmMarks[0] ? kmMarks[0].lon < startLon : coords.length > 1 && coords[1]![0] < coords[0]![0];
       let n = 0;
       for (const s of props.stops ?? []) {
         if (s.role === "start") {
@@ -62,6 +63,6 @@ export function ShareMap({ route }: { route: Schemas["RouteFeature"] }) {
       live = false;
       markers.forEach((m) => m.remove());
     };
-  }, [map, route, theme]);
+  }, [map, route, kmMarks, theme]);
   return <MapView onReady={setMap} theme={theme} />;
 }

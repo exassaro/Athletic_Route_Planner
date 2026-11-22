@@ -51,7 +51,23 @@ test("the result and a saved route: Google Maps, share falling back to a downloa
   await page.getByTestId("route-name").fill("Open in test");
   await page.getByTestId("save").click();
   await expect(page.getByTestId("share-link")).toBeVisible();
+  const share = (await page.getByTestId("share-link").getAttribute("href"))!;
+  const facesWest = await page.locator(".pin-start-flip.west").count();
   await page.goto("/routes");
   await openSheet(page);
   expect(await page.getByTestId("open-google").getAttribute("href")).toBe(href);
+
+  // the share page has the same points (A9), so the same link, and the pin faces the same way
+  await page.goto(share);
+  await expect(page.locator(".pin-start")).toHaveCount(1);
+  expect(await page.locator(".pin-start-flip.west").count(), "faces as in the planner").toBe(facesWest);
+  await openSheet(page);
+  const shared = new URL((await page.getByTestId("open-google").getAttribute("href"))!).searchParams;
+  expect(shared.get("waypoints")).toBe(query.get("waypoints"));
+  for (const key of ["origin", "destination"]) {
+    const [a, b] = [shared.get(key)!, query.get(key)!].map((v) => v.split(",").map(Number));
+    a!.forEach((n, i) => expect(n, key).toBeCloseTo(b![i]!, 5));
+  }
+  const [file] = await Promise.all([page.waitForEvent("download"), page.getByTestId("open-download").click()]);
+  expect(readFileSync(await file.path(), "utf8")).toContain("<trkpt");
 });
