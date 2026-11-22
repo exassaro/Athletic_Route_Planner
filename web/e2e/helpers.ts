@@ -65,6 +65,25 @@ export async function checkNumbers(page: Page, bodies: unknown[]): Promise<numbe
 }
 
 /**
+ * Numbers with a unit (km, m, min, h) that are shown without data-value. Not the map's own labels, SVG (the chart's
+ * axis), what the user typed, or the fixed numbers the copy itself states (marked data-fixed).
+ */
+export async function strayNumbers(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const out: string[] = [];
+    const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let node = walk.nextNode(); node; node = walk.nextNode()) {
+      const text = node.textContent ?? "";
+      const el = node.parentElement;
+      if (!el || !/\d(\.\d+)?\s*(km|m|min|h)\b/.test(text)) continue;
+      if (el.closest("[data-value], [data-fixed], svg, script, style, textarea, .maplibregl-map, dialog:not([open])")) continue;
+      if (el.getClientRects().length) out.push(`${el.tagName.toLowerCase()}.${el.className}: ${text.trim().slice(0, 100)}`);
+    }
+    return out;
+  });
+}
+
+/**
  * The number check at every sheet position (blueprint Phase 5b amendment 9): peek, half and full, then back to the
  * position it started in. On a desktop (no handle) it is one check. Returns how many numbers were checked in all.
  */

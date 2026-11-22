@@ -20,6 +20,7 @@ import { planClient, usePlan, type Busy, type Editing, type Opening } from "@/pl
 import { patchSaved } from "@/saved/api";
 import { EditingSave } from "./EditingSave";
 import type { NewRouteRequest } from "@/api/client";
+import { Num } from "./Num";
 import { PeekBar } from "./PeekBar";
 import { RouteCards } from "./RouteCards";
 import { DirectionPicker, DistanceStepper, PathsToggle, RouteTypePicker } from "./Controls";
@@ -57,7 +58,7 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
   const [sheet, setSheet] = useState<Snap>("half");
   const [picking, setPicking] = useState<null | "start">(null);
   const [locError, setLocError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ text: string; delta?: number } | null>(null);
   /** After an update or a save as new; `undo` is what the saved route showed before. */
   const [savedNote, setSavedNote] = useState<{ text: string; undo?: Editing } | null>(null);
   const v = plan.version;
@@ -88,14 +89,14 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
     if (!v?.diff) return;
     const d = v.diff;
     const parts: string[] = [];
-    if (d.length_delta_m != null) parts.push(signedKm(d.length_delta_m));
     if (d.end_changed) parts.push(`new end: ${v.candidates[0]?.end.label ?? "unnamed road"}`);
     if (d.outcome.from !== d.outcome.to) parts.push(d.outcome.to === "ok" ? "route found" : d.outcome.to.replace(/_/g, " "));
     d.stops_added.forEach((s) => parts.push(`added ${s.label}`));
     d.stops_removed.forEach((s) => parts.push(`removed ${s.label}`));
     const fallback = v.candidates.length === 0 ? "Still no route: see what to change below" : "No change to the route";
     // It stays until the next change or until dismissed (no timer: it must be readable and its Undo reachable).
-    setToast(parts.join(", ") || fallback); // eslint-disable-line react-hooks/set-state-in-effect
+    const delta = d.length_delta_m ?? undefined;
+    setToast({ text: parts.join(", ") || (delta === undefined ? fallback : ""), delta }); // eslint-disable-line react-hooks/set-state-in-effect
     setSavedNote(null);
   }, [v]);
 
@@ -188,10 +189,10 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
         const out = await featureItem("checkpoint", "place", p.place_id, p);
         const e: Edit = { kind: "add", list: "checkpoints", item: out.checkpoint! };
         const why = blocked(request as RouteRequest, e);
-        if (why) setToast(why);
+        if (why) setToast({ text: why });
         else onEdit(e);
       } catch (x) {
-        setToast(String((x as Error).message));
+        setToast({ text: String((x as Error).message) });
       }
     }
   };
@@ -275,7 +276,8 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
         ) : toast && (
           <Snackbar testId="diff-toast" onDismiss={() => setToast(null)}
             actionLabel={v && plan.canUndo && !solving ? "Undo" : undefined} actionIcon="undo" onAction={plan.undo}>
-            {toast}
+            {toast.delta !== undefined && <><Num value={toast.delta} format={(m) => signedKm(m)} field="length_delta_m" />{toast.text && ", "}</>}
+            {toast.text}
           </Snackbar>
         )}>
           {/* what a peeked sheet shows first */}

@@ -63,7 +63,7 @@ export function EditingSave({ editing, request, cand, solving, onUpdated, onSave
       <p className="t-meta muted" id={`${ids}-hint`} data-testid="update-hint">{isChanged ? "" : "No changes yet"}</p>
       <div className="row">
         <label htmlFor={`${ids}-name`} className="sr-only">Name for the new route</label>
-        <input id={`${ids}-name`} placeholder="Name for a new one (optional)" value={name} onChange={(e) => setName(e.target.value)}
+        <input id={`${ids}-name`} placeholder="New name (optional)" value={name} onChange={(e) => setName(e.target.value)}
           aria-invalid={nameLength(name) > NAME_MAX} data-testid="new-name" />
         <Button onClick={saveAsNew} disabled={solving || sending || nameLength(name) > NAME_MAX} data-testid="save-as-new">Save as new</Button>
       </div>

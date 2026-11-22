@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { OG_IMAGE } from "@/brand/meta";
 import { THEME_COLOR, THEME_SCRIPT } from "@/theme/theme";
+import { ThemeSync } from "@/theme/ThemeSync";
 import "./globals.css";
 
 // Silkscreen (OFL), cut to the stat numbers by scripts/subset_pixel_font.py (about 3.4 kB).
@@ -45,7 +46,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <ThemeSync />
+        {children}
+      </body>
     </html>
   );
 }

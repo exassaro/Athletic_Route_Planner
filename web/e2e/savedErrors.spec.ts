@@ -1,5 +1,6 @@
 /** Saved-route errors and edge cases (blueprint Phase 5c): offline, 5xx, dead links. */
 import { expect, test, type Page } from "@playwright/test";
+import { THEME_KEY } from "../src/theme/theme";
 import { actAs, API, savedA01 } from "./savedApi";
 
 async function chooseDelete(page: Page) {
@@ -41,6 +42,13 @@ test("a restore that fails rolls back and can be tried again", async ({ page, re
   await page.unroute("**/restore");
   await page.getByTestId("deleted-toast").getByRole("button", { name: "Undo" }).click();
   await expect(page.locator(".saved-card")).toHaveCount(1);
+});
+
+test("a dead link keeps the dark theme", async ({ page }) => {
+  await page.addInitScript(([key]) => localStorage.setItem(key!, "dark"), [THEME_KEY]);
+  await page.goto("/s/never-issued");
+  await expect(page.getByTestId("dead-link")).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark", { timeout: 5000 });
 });
 
 test("a failed load is not an empty list", async ({ page }) => {

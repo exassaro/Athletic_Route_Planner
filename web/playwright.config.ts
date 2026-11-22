@@ -26,7 +26,7 @@ export default defineConfig({
     // E2E_INSECURE=1: through Caddy's local CA (https://<LAN IP>), which this Chromium does not trust
     ignoreHTTPSErrors: process.env.E2E_INSECURE === "1" },
   projects: [
-    { name: "phone", testMatch: /journeys\.spec\.ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
+    { name: "phone", testMatch: /(journeys|sr01)\.spec\.ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "screens", testMatch: /screens\.spec\.ts/, use: { browserName: "chromium" } },
     { name: "basemap", testMatch: /basemap\.spec\.ts/, use: { ...devices["iPhone 16"], browserName: "chromium" } },
     { name: "layout", testMatch: /layout[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
@@ -39,6 +39,7 @@ export default defineConfig({
     { name: "saved", testMatch: /saved[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "owner", testMatch: /owner[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "errors", testMatch: /savedErrors[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
+    { name: "screens5c", testMatch: /savedScreens[.]spec[.]ts/, use: { browserName: "chromium" } },
     { name: "pincost", testMatch: /pincost\.spec\.ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
   ],
 });
