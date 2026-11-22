@@ -32,6 +32,9 @@ type Props = {
   solving: boolean;
   canPlan: boolean;
   onPlan: () => void;
+  /** Where it opens: the step this tab was on (Phase 5e amendment 2). */
+  initialStep?: number;
+  onStep?: (step: number) => void;
 };
 
 const STEPS = ["Where do you start?", "How far?", "What shape?", "Which way?", "Any stops on the way?"];
@@ -42,8 +45,9 @@ const SHAPES: { value: RouteType; label: string; sub: string; icon: IconName }[]
   { value: "loop", label: "Loop", sub: "Come back to the start another way", icon: "loop" },
 ];
 
-export function SetupFlow({ draft, onEdit, startControls, near, map, onDirectionStep, solving, canPlan, onPlan }: Props) {
-  const [step, setStep] = useState(1);
+export function SetupFlow({ draft, onEdit, startControls, near, map, onDirectionStep, solving, canPlan, onPlan, initialStep = 1,
+  onStep }: Props) {
+  const [step, setStep] = useState(initialStep);
   const title = useRef<HTMLHeadingElement>(null);
   const hadStart = useRef(!!draft.start);
 
@@ -56,8 +60,15 @@ export function SetupFlow({ draft, onEdit, startControls, near, map, onDirection
     onDirectionStep?.(step === 4);
     return () => onDirectionStep?.(false);
   }, [step, onDirectionStep]);
-  // Each new question gets the focus, so a screen reader hears it.
   useEffect(() => {
+    onStep?.(step);
+  }, [step, onStep]);
+  // Each new question gets the focus, so a screen reader hears it. Not the one it opens on: focus would lift a
+  // peeked sheet.
+  const asked = useRef(step);
+  useEffect(() => {
+    if (asked.current === step) return;
+    asked.current = step;
     if (step > 1) title.current?.focus();
   }, [step]);
 

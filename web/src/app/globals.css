@@ -194,6 +194,15 @@ a { color: var(--accent-text); }
   .sheet-handle { display: none; }
   .sheet-body { flex: 1; height: auto; }
 }
+/* Restoring (Phase 5e amendment 2): the sheet waits for the restored state, so step 1 never flashes. */
+html[data-restoring] .planner .sheet { visibility: hidden; transition: none; }
+.sheet-action { position: absolute; top: 0; right: 8px; }
+.sheet-action .btn { min-height: 44px; padding: 0 8px; gap: 4px; font-size: 14px; }
+@media (min-width: 900px) { .sheet-action { position: static; align-self: flex-end; margin: 8px 16px 0; } }
+@media (max-width: 359px) { .sheet-action .icon { display: none; } }
+.sheet .sheet-body .peek-bar.restoring-bar { display: grid; }   /* at every height: above the rules that hide a peek bar */
+.skeleton { display: block; width: 72px; height: 24px; margin: 4px 0; background: var(--soft); }
+.older-map { padding: var(--space-1) 12px; border-radius: var(--radius); background: var(--soft); }
 .maplibregl-ctrl-attrib { font-size: 12px; }
 @media (max-width: 899px) {
   .planner .maplibregl-ctrl-bottom-right { bottom: var(--snap-h); transition: bottom 0.22s; }
@@ -775,6 +784,8 @@ dialog.rename-dialog { width: calc(100% - 32px); max-width: 420px; margin: 16dvh
 .follow .sheet { height: auto; max-height: calc(100dvh - 80px); transform: none; transition: none; }
 .follow .sheet-body { flex: 1 1 auto; height: auto; padding-top: var(--space-2); }
 .follow .sheet-body > :first-child { margin-top: 0; }
+/* the sheet jumps to each screen's height, so the OSM credit must jump with it or be under it for 220 ms */
+.planner.follow .maplibregl-ctrl-bottom-right { transition: none; }
 .follow .follow-back { pointer-events: auto; background: var(--surface); }
 .follow .topbar-brand { text-decoration: none; }
 .follow h1:focus { outline: none; }

@@ -133,7 +133,7 @@ export function CandidateCard({ cand, index, total, selected, pace, target, onSe
           </Button>
         )}
       </div>
-      <FollowButton query={{ route: cand.route_id }} newTab />
+      <FollowButton query={{ route: cand.route_id }} />
       {open !== null && flags[open] && (
         <p className="t-body-s route-card-detail">{flags[open]!.title}. <span className="muted">{flags[open]!.detail}</span></p>
       )}

@@ -32,11 +32,13 @@ export function snapAfterDrag(from: Snap, visible: number, velocity: number, hei
 }
 
 /** halfRatio: the share of the screen "half" takes (the planner root's CSS says the same: 0.5, or 0.64 in setup). */
-type Props = { snap: Snap; onSnap: (s: Snap) => void; label: string; children: ReactNode; halfRatio?: number; banner?: ReactNode };
+type Props = { snap: Snap; onSnap: (s: Snap) => void; label: string; children: ReactNode; halfRatio?: number; banner?: ReactNode;
+  /** A button in the sheet's header, beside the handle ("New run"). */
+  action?: ReactNode };
 
 type Drag = { id: number; startY: number; startVisible: number; full: number; lastY: number; lastT: number; v: number; moved: boolean };
 
-export function BottomSheet({ snap, onSnap, label, children, halfRatio = 0.5, banner }: Props) {
+export function BottomSheet({ snap, onSnap, label, children, halfRatio = 0.5, banner, action }: Props) {
   const sheet = useRef<HTMLElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
@@ -119,7 +121,7 @@ export function BottomSheet({ snap, onSnap, label, children, halfRatio = 0.5, ba
       }}
       onFocusCapture={(e) => {
         const el = e.target as HTMLElement;
-        if (snap !== "peek" || el === e.currentTarget || el.closest(".sheet-handle, .sheet-banner")) return;
+        if (snap !== "peek" || el === e.currentTarget || el.closest(".sheet-handle, .sheet-banner, .sheet-action")) return;
         if (performance.now() - press.current.at < 1000) press.current.opens = true;
         else onSnap("half");
       }}>
@@ -129,6 +131,7 @@ export function BottomSheet({ snap, onSnap, label, children, halfRatio = 0.5, ba
         <span aria-hidden="true" />
       </button>
       <span id="sheet-handle-hint" className="sr-only">Drag, tap, or use the arrow keys to change the panel size.</span>
+      {action && <div className="sheet-action">{action}</div>}
       {banner && <div className="sheet-banner">{banner}</div>}
       <div className="sheet-body" ref={body}>{children}</div>
     </section>

@@ -3,10 +3,14 @@
  * The planner (section 13, Phase 5 amendments 4 to 6): a full-screen map with a bottom sheet on a phone and a
  * side panel on a desktop. Before the first solve the controls fill a draft; "Plan my run" creates the plan, and
  * from then on every control sends a patch and the screen shows what the API returns.
+ *
+ * It survives a refresh and Back (Phase 5e amendments 1 to 3): the address points at the plan, this tab keeps
+ * the rest (src/restore), and only "Plan a new run" or closing the tab starts clean.
  */
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
+import { KOZHIKODE } from "@/map/basemap";
 import { MapView } from "@/map/MapView";
 import { useRouteLayers } from "@/map/useRouteLayers";
 import { useTheme } from "@/theme/useTheme";
@@ -16,17 +20,21 @@ import { applyToDraft, blocked, patchFor, type Edit, type Point, type RouteReque
 import { pace as formatPace, parsePace, signedKm } from "@/plan/format";
 import { usePace } from "@/plan/pace";
 import type { Place } from "@/plan/places";
-import { planClient, usePlan, type Busy, type Editing, type Opening } from "@/plan/usePlan";
+import { planClient, usePlan, type Busy, type Editing, type Kept, type Opening } from "@/plan/usePlan";
+import { RESTORING } from "@/restore/boot";
+import { MY_LOCATION, rebuildItems, serialise, type Draft, type RunPointer, type View } from "@/restore/draft";
+import { clearTab, planAddress, readAddress, readTab, tabWriter } from "@/restore/tab";
 import { patchSaved } from "@/saved/api";
+import { ClearedMessage } from "./ClearedMessage";
 import { EditingSave } from "./EditingSave";
-import type { NewRouteRequest } from "@/api/client";
+import type { NewRouteRequest, Schemas } from "@/api/client";
 import { Num } from "./Num";
 import { PeekBar } from "./PeekBar";
 import { RouteCards } from "./RouteCards";
 import { DirectionPicker, DistanceStepper, PathsToggle, RouteTypePicker } from "./Controls";
 import { OutcomePanel } from "./OutcomePanel";
 import { PlaceSearch } from "./PlaceSearch";
-import { RouteDetail } from "./RouteDetail";
+import { LazyRouteDetail } from "./LazyRouteDetail";
 import { SaveShare } from "./SaveShare";
 import { StopsPanel } from "./StopsPanel";
 import { HealthBanner } from "./HealthBanner";
@@ -41,16 +49,28 @@ import { SetupFlow } from "./setup/SetupFlow";
 import { SneakerCycle } from "./Sprite";
 
 /** The form before the first solve: the API fills every field left out with its default. */
-type Draft = Omit<NewRouteRequest, "start"> & { start: Point | null };
-
 const NEW_DRAFT: Draft = { route_type: "point_to_point", start: null, target_distance_m: 10000, direction: null };
 
 function placePoint(p: Place): Point {
   return { lon: p.lon, lat: p.lat, label: p.label, place_id: p.place_id };
 }
 
-export function Planner({ editSavedId = null }: { editSavedId?: string | null }) {
-  const plan = usePlan(editSavedId);
+const NEW_VIEW: View = { center: KOZHIKODE, zoom: 12 };
+
+/** Everything "Plan a new run" takes away. */
+type Cleared = { plan: Kept; draft: Draft; step: number; seq: number; sheet: Snap; view: View | null; rebuild: boolean };
+type Builds = NonNullable<Schemas["HealthOut"]["builds"]>;
+
+function olderMap(made: Schemas["BuildsOut"], now: Builds | null): boolean {
+  if (!now) return false;
+  return (["osm", "valhalla", "graphhopper"] as const).some((key) => {
+    const [a, b] = [made[key], (now as Record<string, unknown>)[key]];
+    return !!a && !!b && a !== b;         // an engine that is down is not another map
+  });
+}
+
+export function Planner() {
+  const plan = usePlan();
   const [pace, setPace] = usePace();
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [draft, setDraft] = useState<Draft>(NEW_DRAFT);
@@ -69,7 +89,7 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
   // A new version starts at its first card; while a saved route is edited, at the saved route's own alternative.
   const versionKey = v ? `${v.plan_id}/${v.version}` : "";
   const selected = useMemo(() => {
-    if (picked?.key === versionKey) return picked.index;
+    if (picked?.key === versionKey && picked.index < candidates.length) return picked.index;
     return preferredCandidate(candidates, plan.editing?.route ?? null);
   }, [candidates, picked, plan.editing, versionKey]);
   const setSelected = (index: number) => setPicked({ key: versionKey, index });
@@ -82,7 +102,9 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
   const facingWest = !!cand && (firstKm?.routeId === cand.route_id && startLon != null
     ? firstKm.lon < startLon
     : cand.geometry.length > 1 && cand.geometry[1]![0] < cand.geometry[0]![0]);
-  useRouteLayers(map, candidates, selected, solving, v ? `${v.plan_id}/${v.version}` : null, request, theme, facingWest);
+  /** The plan whose view came back with it, so it is not fitted again. */
+  const [keptView, setKeptView] = useState<string | null>(null);
+  useRouteLayers(map, candidates, selected, solving, v ? `${v.plan_id}/${v.version}` : null, request, theme, facingWest, "", keptView);
 
   // The diff after every edit, as the API reports it ("+3.0 km, new end: X").
   useEffect(() => {
@@ -109,7 +131,10 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
     });
   }, [plan]);
 
+  /** The map is centred on the runner's location, so its view may not be kept (Phase 5e amendment 2). */
+  const atLocation = useRef(false);
   const setStart = useCallback((point: Point) => {
+    atLocation.current = point.label === MY_LOCATION && !point.place_id;
     onEdit({ kind: "start", point });
     if (!map) return;
     // into the part of the map the sheet (or the desktop panel) leaves free, or its hops are never seen
@@ -145,7 +170,7 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
     setLocError(null);
     if (!navigator.geolocation) return setLocError("This browser cannot share its location.");
     navigator.geolocation.getCurrentPosition(
-      (pos) => setStart({ lon: pos.coords.longitude, lat: pos.coords.latitude, label: "My location", place_id: null }),
+      (pos) => setStart({ lon: pos.coords.longitude, lat: pos.coords.latitude, label: MY_LOCATION, place_id: null }),
       // Over plain http (other than localhost) browsers report PERMISSION_DENIED, so check the context first.
       (err) => setLocError(!window.isSecureContext ? "Location needs a secure page: open the planner over https://." :
         err.code === err.PERMISSION_DENIED ? "Location permission was refused." :
@@ -198,8 +223,190 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
     }
   };
 
-  const menu = (
+  // ------------------------------------------------------------- surviving a refresh and Back (Phase 5e)
+  const [ready, setReady] = useState(false);
+  const [step, setStep] = useState(1);
+  const [flow, setFlow] = useState(0);             // a new number: the setup opens again, on `step`
+  const [located, setLocated] = useState(false);   // the start was the runner's location, which is not kept
+  const [rebuild, setRebuild] = useState(false);   // the stops came back without their geometry
+  const [builds, setBuilds] = useState<Builds | null>(null);
+  const [cleared, setCleared] = useState<Cleared | null>(null);
+  const view = useRef<View | null>(null);
+  const jumpTo = useRef<View | null>(null);
+  const before = useRef<RunPointer | null>(null);
+  const [writer] = useState(tabWriter);
+  const { open } = plan;
+
+  // Before paint: what the address names, else what this tab holds. A restore reads; it never solves.
+  useLayoutEffect(() => {
+    const at = readAddress(window.location.search);
+    const stored = readTab(Date.now());
+    before.current = stored?.run ?? null;
+    if (at?.kind === "edit") {
+      open({ kind: "edit", id: at.id });           // asked for by name, so not what was on screen
+    } else {
+      const same = at ? stored?.run?.plan === at.run.plan && stored.run.version === at.run.version : true;
+      const kept = same ? stored : null;
+      if (kept) {
+        /* eslint-disable react-hooks/set-state-in-effect -- storage is readable only after hydration */
+        setDraft(kept.draft);
+        setStep(kept.draft.start ? kept.step : 1);
+        setLocated(kept.located);
+        atLocation.current = kept.located;
+        setRebuild(["checkpoints", "via", "must_use", "avoid"].some((l) => ((kept.draft as Record<string, unknown>)[l] as unknown[] | undefined)?.length));
+        setSheet(kept.sheet);
+        if (kept.run) setEditor(kept.editor);
+        view.current = jumpTo.current = kept.view;
+        /* eslint-enable react-hooks/set-state-in-effect */
+      }
+      const run = at?.run ?? kept?.run;
+      if (run) {
+        const key = `${run.plan}/${run.version}`;
+        if (run.seq !== null) setPicked({ key, index: run.seq });
+        if (kept?.view) setKeptView(key);
+        open({ kind: "plan", plan: run.plan, version: run.version, edit: run.edit, history: kept?.run?.history ?? null });
+      }
+    }
+    setFlow((n) => n + 1);
+    setReady(true);
+  }, [open]);
+
+  useLayoutEffect(() => {
+    if (!ready || !document.documentElement.hasAttribute(RESTORING)) return;
+    void document.querySelector<HTMLElement>(".sheet")?.offsetHeight;      // placed first, so it does not slide
+    document.documentElement.removeAttribute(RESTORING);
+  }, [ready]);
+
+  const pointer = useMemo<RunPointer | null>(() => (v
+    ? { plan: v.plan_id, version: v.version, seq: selected, edit: plan.editingSavedId, history: plan.history }
+    : null), [v, selected, plan.editingSavedId, plan.history]);
+
+  // The address follows the plan, the version and the card, without a navigation
+  useEffect(() => {
+    if (!ready) return;
+    const now = window.location.pathname + window.location.search;
+    let next = now;
+    if (pointer) next = planAddress(pointer);
+    else if (!plan.target || (plan.target.kind === "plan" && plan.opening === "gone")) next = "/";
+    if (next !== now) window.history.replaceState(null, "", next);
+  }, [ready, pointer, plan.target, plan.opening]);
+
+  const snapshot = useRef<() => string | null>(() => null);
+  useEffect(() => {
+    snapshot.current = () => {
+      const { target, opening } = plan;
+      // still opening, or failed to: the pointer is kept for Try again
+      let run = pointer;
+      if (!run && target?.kind === "plan" && opening !== "gone") {
+        run = { plan: target.plan, version: target.version, seq: picked?.index ?? 0, edit: target.edit,
+          history: target.history ?? { versions: [target.version], at: 0 } };
+      }
+      if (!run && target?.kind === "edit") run = before.current;
+      if (!run && !draft.start && !draft.direction && step === 1 && !located
+        && draft.target_distance_m === NEW_DRAFT.target_distance_m && draft.route_type === NEW_DRAFT.route_type
+        && !draft.preferences) return null;
+      return serialise({ run, draft: v ? (v.request as Draft) : draft, located, step, sheet: picking ? "half" : sheet,
+        editor, view: atLocation.current ? null : view.current }, Date.now());
+    };
+    if (ready) writer.schedule(() => snapshot.current());
+  }, [ready, writer, pointer, plan, picked, v, draft, step, located, sheet, picking, editor]);
+
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") writer.flush();
+    };
+    window.addEventListener("pagehide", writer.flush);
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      window.removeEventListener("pagehide", writer.flush);
+      document.removeEventListener("visibilitychange", onHide);
+      writer.flush();                              // to another page of the app
+    };
+  }, [writer]);
+
+  // The map: back where it was, with no animation, and its view kept at the end of each move
+  useEffect(() => {
+    if (!map) return;
+    if (jumpTo.current) map.jumpTo(jumpTo.current);
+    jumpTo.current = null;
+    const onMoved = () => {
+      const { lng, lat } = map.getCenter();
+      view.current = { center: [Number(lng.toFixed(6)), Number(lat.toFixed(6))], zoom: Number(map.getZoom().toFixed(2)) };
+      writer.schedule(() => snapshot.current());
+    };
+    map.on("moveend", onMoved);
+    return () => {
+      map.off("moveend", onMoved);
+    };
+  }, [map, writer]);
+
+  const planIt = async () => {
+    if (!draft.start) return;
+    let send = draft;
+    if (rebuild) {
+      try {
+        send = await rebuildItems(draft, featureItem);
+      } catch (e) {
+        return setToast({ text: `Your stops couldn't be loaded again, so nothing was planned. ${(e as Error).message}` });
+      }
+      setDraft(send);
+      setRebuild(false);
+    }
+    setCleared(null);
+    await plan.create(send as NewRouteRequest);
+  };
+
+  const planNewRun = () => {
+    setCleared({ plan: plan.clear(), draft: v ? (v.request as Draft) : draft, step, seq: selected, sheet,
+      view: view.current, rebuild: v ? false : rebuild });
+    setDraft(NEW_DRAFT);
+    setStep(1);
+    setFlow((n) => n + 1);
+    setPicked(null);
+    setPicking(null);
+    setEditor(null);
+    setLocated(false);
+    setRebuild(false);
+    setKeptView(null);
+    setToast(null);
+    setSavedNote(null);
+    setSheet("half");
+    before.current = null;
+    view.current = null;
+    atLocation.current = false;
+    map?.jumpTo(NEW_VIEW);
+    clearTab();
+    // the button that had the focus is gone
+    setTimeout(() => document.querySelector<HTMLElement>(".setup-title")?.focus({ preventScroll: true }));
+  };
+
+  const undoClear = (was: Cleared) => {
+    setCleared(null);
+    setDraft(was.draft);
+    setStep(was.step);
+    setFlow((n) => n + 1);
+    setRebuild(was.rebuild);
+    setSheet(was.sheet);
+    view.current = was.view;
+    const kept = was.plan.version;
+    if (kept) {
+      const key = `${kept.plan_id}/${kept.version}`;
+      setPicked({ key, index: was.seq });
+      if (was.view) setKeptView(key);
+    }
+    if (was.view) map?.jumpTo(was.view);
+    plan.putBack(was.plan);
+  };
+
+  const anythingPlanned = !!v || !!draft.start || step > 1 || !!plan.opening;
+  const openingRun = plan.target?.kind === "plan";
+  const onOlderMap = !!v && versionKey === plan.restoredKey && olderMap(v.builds, builds);
+
+  const menu = (closeMenu: () => void) => (
     <>
+      {anythingPlanned && (
+        <Button block icon="plus" onClick={() => { closeMenu(); planNewRun(); }} data-testid="menu-new-run">Plan a new run</Button>
+      )}
       {v && (
         <section className="menu-section" aria-labelledby="menu-versions">
           <h3 id="menu-versions" className="t-heading">Versions</h3>
@@ -242,13 +449,17 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
   const onSavedAsNew = (next: Editing) => {
     setEditing(next);
     setToast(null);
+    // the address follows what is edited, so a reload opens the new one
     setSavedNote({ text: `Saved ${next.saved.name ?? "it"} as a new route.` });
-    // a reload opens the new one; replaceState does not render the page again, so the plan on screen stays
-    window.history.replaceState(null, "", `/?edit=${next.saved.saved_id}`);
   };
 
   const startControls = (
     <div className="start-field">
+      {!v && located && !request.start && (
+        <p className="t-body-s muted" data-testid="start-not-kept">
+          Your start was your location, which GATHO doesn&apos;t keep. Tap My location again.
+        </p>
+      )}
       {!v && request.start && (
         <p className="current" data-testid="start-current">Start: <strong>{request.start.label ?? "a point"}</strong></p>
       )}
@@ -269,7 +480,10 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
       <MapView onReady={setMap} theme={theme} pointing={pickingDirection ? pointing(request) : null} />
       <TopBar setupMode={!v} near={near} canAddStop={!!v} onPlace={onPlace} menu={menu} />
       <BottomSheet snap={sheet} onSnap={setSheet} label="Plan your run" halfRatio={v ? 0.5 : 0.64}
-        banner={savedNote ? (
+        action={v && <Button variant="secondary" icon="plus" onClick={planNewRun} data-testid="new-run">New run</Button>}
+        banner={cleared ? (
+          <ClearedMessage onUndo={() => undoClear(cleared)} onGone={() => setCleared(null)} />
+        ) : savedNote ? (
           <Snackbar testId="saved-toast" onDismiss={() => setSavedNote(null)} actionIcon="undo"
             actionLabel={savedNote.undo ? "Undo" : undefined} onAction={() => savedNote.undo && undoUpdate(savedNote.undo)}>
             {savedNote.text}
@@ -283,9 +497,16 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
         )}>
           {/* what a peeked sheet shows first */}
           <StatusLine busy={plan.busy} onDismiss={plan.clearError} />
-          {plan.opening && <OpeningNote reason={plan.openError} state={plan.opening} onRetry={plan.retryOpening} />}
+          {plan.opening && (openingRun
+            ? <RestoringNote reason={plan.openError} state={plan.opening} onRetry={plan.retryOpening} />
+            : <OpeningNote reason={plan.openError} state={plan.opening} onRetry={plan.retryOpening} />)}
           {v && candidates[selected] && <PeekBar cand={candidates[selected]!} pace={pace} />}
-          <HealthBanner trigger={plan.busy.kind === "error" ? plan.busy.error.code : null} />
+          <HealthBanner trigger={plan.busy.kind === "error" ? plan.busy.error.code : null} onBuilds={setBuilds} />
+          {onOlderMap && (
+            <p className="t-body-s older-map" role="status" data-testid="older-map">
+              Built on an older map. Changing anything plans it again on the current one.
+            </p>
+          )}
           {v && <PlanChips request={v.request} attention={attention} onOpen={openChip} />}
           {/* the version number, for screen readers and the end-to-end tests; undo and redo are in the menu */}
           {v && <p className="history sr-only">Version {v.version}</p>}
@@ -296,7 +517,7 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
                 target={v.request.target_distance_m} explanation={v.explanation} versionKey={`${v.plan_id}/${v.version}`} />
               <StopsPanel request={v.request} version={v} selected={candidates[selected] ?? null} onEdit={onEdit} near={near} map={map}
                 onMapPick={mapPick} />
-              {candidates[selected] && <RouteDetail map={map} cand={candidates[selected]!} index={selected}
+              {candidates[selected] && <LazyRouteDetail map={map} cand={candidates[selected]!} index={selected}
                 onFirstKm={(routeId, [lon]) => setFirstKm({ routeId, lon })} />}
               {candidates[selected] && <SaveShare cand={candidates[selected]!} control={plan.editing && (
                 <EditingSave key={plan.editingSavedId} editing={plan.editing} request={v.request} cand={candidates[selected]!}
@@ -306,8 +527,10 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
           )}
           {/* Before the first route: the five setup steps. After it, every change goes through the chips. */}
           {!v && plan.opening !== "loading" && (
-            <SetupFlow draft={draft} onEdit={onEdit} startControls={startControls} near={near} map={map} onDirectionStep={setDirectionStep} solving={solving}
-              canPlan={canPlan} onPlan={() => draft.start && plan.create(draft as NewRouteRequest)} />
+            <SetupFlow key={flow} draft={draft} onEdit={onEdit} startControls={startControls} near={near} map={map}
+              onDirectionStep={setDirectionStep} solving={solving} canPlan={canPlan} onPlan={planIt} initialStep={step}
+              // not before the restore: the first mount would report step 1 over the restored one
+              onStep={ready ? setStep : undefined} />
           )}
       </BottomSheet>
       {v && (
@@ -361,6 +584,30 @@ function OpeningNote({ state, reason, onRetry }: { state: NonNullable<Opening>; 
         {state === "failed" && <Button icon="redo" onClick={onRetry}>Try again</Button>}
         <Link className="btn btn-secondary" href="/routes">Saved routes</Link>
       </div>
+    </div>
+  );
+}
+
+/** A plan being read back after a refresh or Back (Phase 5e amendment 2). */
+function RestoringNote({ state, reason, onRetry }: { state: NonNullable<Opening>; reason: string; onRetry: () => void }) {
+  if (state === "loading") {
+    return (
+      <div role="status" data-testid="restoring">
+        <div className="peek-bar restoring-bar" aria-hidden="true">
+          {["distance", "time", "climb"].map((label) => (
+            <div key={label} className="peek-stat"><span className="skeleton" /><span className="t-meta muted">{label}</span></div>
+          ))}
+        </div>
+        <p className="t-body-s muted">Getting your run back…</p>
+      </div>
+    );
+  }
+  return (
+    <div className="opening-note" role="status" data-testid="restoring-note" data-state={state}>
+      {state === "gone"
+        ? <p className="t-body-s">That run is no longer available</p>
+        : <p className="t-body-s">Your run didn&apos;t load. {reason}</p>}
+      {state === "failed" && <div className="row"><Button icon="redo" onClick={onRetry}>Try again</Button></div>}
     </div>
   );
 }

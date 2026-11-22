@@ -53,3 +53,9 @@ simulated GPS (about 10 minutes, Node 22.18 or later for type stripping) and wri
 in memory (`src/map/corridor.ts`) and its style has no glyphs URL (`src/map/followStyle.ts`). Do not add a lazy
 import, an image or a fetch to anything that shows during a run: `npx playwright test --project=follow` replays A01
 and fails on any request at all.
+
+## Surviving a refresh (Phase 5e items 1 to 3)
+
+`src/restore/`: `draft` (what may be stored, and reading it safely), `tab` (the address and sessionStorage) and
+`boot` (the head script that keeps step 1 from flashing). A restore only reads the API. Nothing with geometry, a
+GPS position or a token goes into storage. Test: `npx playwright test --project=restore`.

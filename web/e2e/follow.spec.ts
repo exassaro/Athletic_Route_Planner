@@ -408,7 +408,7 @@ test("the browser's own geolocation starts a run", async ({ page, context }) => 
   expect(await number(page, "follow.done_m")).toBeLessThan(20);
 });
 
-test("the three Follow buttons, and Back", async ({ page, context }) => {
+test("the three Follow buttons, and Back", async ({ page }) => {
   await planA01Base(page);
   const card = page.locator(".route-card").first();
   await expect(card.getByTestId("follow")).toHaveAttribute("href", `/follow?route=${await card.getAttribute("data-route-id")}`);
@@ -416,10 +416,11 @@ test("the three Follow buttons, and Back", async ({ page, context }) => {
   await card.getByTestId("follow").scrollIntoViewIfNeeded();
   await page.waitForTimeout(400);
   await page.screenshot({ path: test.info().outputPath("route-card.png") });
-  const [tab] = await Promise.all([context.waitForEvent("page"), card.getByTestId("follow").click()]);
-  await expect(tab.getByTestId("follow-start")).toBeVisible();
-  await Promise.all([tab.waitForEvent("close"), tab.getByTestId("follow-back").click()]);
-  await expect(page.locator(".route-card").first(), "the plan is still there").toBeVisible();
+  await card.getByTestId("follow").click();
+  await expect(page.getByTestId("follow-start")).toBeVisible();
+  await page.getByTestId("follow-back").click();
+  await page.waitForURL(/\/\?plan=/);
+  await expect(page.locator(".route-card").first(), "the plan is back").toBeVisible();
 
   await page.getByTestId("route-name").fill("Follow test");
   await page.getByTestId("save").click();

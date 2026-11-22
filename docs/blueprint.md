@@ -2,6 +2,25 @@
 
 Nov 16, 2026 · @Azzm
 
+## Phase 5e amendments
+
+Items 1 to 3 of the Phase 5e brief (resume on refresh), brought forward on 2026-11-22 at the product owner's request and built with Phase 5d step 7. The rest of 5e (faster reload, the performance guard) is not built, and its brief is cut off after "Fail the build". The solver and the API do not change. Where these amendments conflict with an earlier amendment or a later section, they win.
+
+1. **The address is the truth for a computed plan:** `/?plan=<plan_id>&v=<version>&r=<candidate>`, with `&edit=<saved_id>` while a saved route is edited, updated with replaceState.
+   - On load that version is read (`GET /v1/plans/{id}/versions/{n}`) and shown as a fresh result. A restore never solves. Edits then name that version (`from_version`, Phase 5c amendment 7).
+   - The plan id is still private: only its own client can read it, and opening the address without a token makes no session.
+2. **This tab keeps the rest** in sessionStorage, `gatho:draft:v1`: the setup's step and draft, the sheet's position, the open editor, the map's view, and the plan's pointer with its undo list (so the way back from Saved routes restores the run).
+   - **No geometry, no GPS position, no token.** Stops keep their OSM ids and are built again by the API before planning. A start taken from "My location" is not kept (nor the view then): the setup says so.
+   - Written 300 ms after the last change and on pagehide or hidden. Older than 12 hours, another schema or unreadable: a clean start.
+   - The sheet waits for the restored state before it paints. The map jumps to its view without animation.
+   - A plan not found says "That run is no longer available", with the draft filled in. Offline or a server error keeps the draft and offers "Try again". A plan made on other engine builds says "Built on an older map".
+3. **"Plan a new run"** in the menu and, once a route exists, "New run" in the sheet's header. It clears the address, the tab's draft and the editing state and shows step 1, with "Cleared your run. Undo" for 10 seconds. Closing the tab starts clean. No beforeunload prompts.
+4. **No accidental reload:** `overscroll-behavior-y: contain` on html (item 4's first part only).
+
+5. **The elevation chart is loaded when there is a route**, not in the first load of `/` (item 6's list), which keeps `/` within 5 KB of the Phase 5b-fix baseline.
+
+**Not covered:** a refresh during a run in Follow mode, which Phase 5d amendments 4 and 5 forbid storing (open), and an edit still being solved at the moment of the refresh, where the version before it comes back.
+
 ## Phase 5d amendments
 
 Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before Phase 6. The solver does not change. Every API change is additive. Where these amendments conflict with an earlier amendment or a later section, they win. Items marked *default* fill in a detail of the approved plan and stand until the product owner changes them. They replace:
@@ -29,7 +48,7 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
 **Decisions: Follow mode**
 
 4. **`/follow?saved=<saved_id>`, `?route=<route_id>` or `?share=<slug>`**, from a "Follow" button on the saved route card, the route card and the share page. A visitor never gets a session. It is foreground only and needs HTTPS. Nothing about a run is saved, on the server or in the browser; what survives a refresh is decided in Phase 5e.
-   - From the route card it opens a new tab, and Back or Done closes it (*default* until Phase 5e): the planner holds the plan in memory only, so the same tab would lose it.
+   - It opens in the same tab from all three. The planner restores itself on the way back (Phase 5e amendments 1 and 2).
    - The saved route's card has three buttons (Open, Edit, Follow).
 5. **What the UI may work out, in Follow only:**
    - the runner's position along the route, by snapping to the line and interpolating between the API's metres per vertex. Every route distance still comes from the API's measurement;

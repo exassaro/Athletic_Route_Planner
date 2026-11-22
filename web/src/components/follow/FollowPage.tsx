@@ -23,11 +23,8 @@ export function FollowPage({ target }: { target: Target | null }) {
     return () => { live = false; };
   }, [kind, id, attempt]);
 
-  // from the planner this is a tab of its own: closing it shows the plan again
-  const leave = () => {
-    if (kind === "route" && window.history.length <= 1) window.close();
-    window.location.assign(cameFrom(target));
-  };
+  // replace: Back from there must not open the run again. The planner restores itself (Phase 5e amendment 2).
+  const leave = () => window.location.replace(cameFrom(target));
 
   if (loaded.kind === "ready") return <FollowScreen followed={loaded.followed} onLeave={leave} />;
   return (
