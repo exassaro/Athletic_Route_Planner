@@ -5,21 +5,34 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5b**, the GATHO mobile-first redesign of `web/` (blueprint Phase 5b amendments 1 to 11). No new features. Built (steps 0 to 13): `docs/reports/phase5b/summary.md` (before: `before/README.md`). Open: the hopping pin's measurable main-thread cost (options in the summary; waiting for the product owner) and the hallway test (`hallway/script.md`). `npx playwright test --project=pincost` measures the pin. Phase 5 (the web front end) is built: `docs/reports/phase5/summary.md`. Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first (A8, the GPX creator name, is approved).
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5b**, the GATHO mobile-first redesign of `web/` (blueprint Phase 5b amendments 1 to 28). Built: steps 0 to 13 (`docs/reports/phase5b/summary.md`; before: `before/README.md`) and the approved fix round of 2026-11-22, amendments 12 to 28 (`docs/reports/phase5b/fix-summary.md`). No other new features. Open: the hallway test (`hallway/script.md`). `npx playwright test --project=pincost` measures the pin. Phase 5 (the web front end) is built: `docs/reports/phase5/summary.md`. Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first (A8, the GPX creator name, is approved).
 
-## Phase 5b amendments (2026-11-18, full text at the top of docs/blueprint.md; they win over earlier ones)
+## Phase 5b amendments (2026-11-18, fix round 2026-11-22; full text at the top of docs/blueprint.md; they win over earlier ones)
 
 1. Name **GATHO** in the UI, manifest, titles, share page, OpenGraph and about; Python packages, repo and API paths unchanged.
 2. Playful retro, minimal: at most three retro elements per screen (wordmark, pixel numerals, markers, hard shadow); pixel icons are the icon style.
-3. Pixel font (Silkscreen, self-hosted subset; replaced Pixelify Sans, whose "5" reads as "S") only for the wordmark and stat numbers ≥ 24 px; never for body, labels, place names or Malayalam. Body: system font, 15 to 16 px.
+3. Pixel font (Silkscreen, self-hosted subset; replaced Pixelify Sans, whose "5" reads as "S") only for stat numbers ≥ 24 px; **never the wordmark** (drawn from grids, 26), body, labels, place names or Malayalam. Body: system font, 15 to 16 px.
 4. Accent **#0F6E56** (dark #3DBFA3), one amber warning colour, second route dashed in ink.
 5. **Light and dark themes, toggle in the menu, default light.**
-6. Start pin = the supplied pixel **sneaker**; the **runner** is the empty state and its approved 4-frame run cycle the loading animation. Exact strings: `docs/reports/phase5b/sprites.md` (never edit by hand). Build-time static SVG, crispEdges; CSS-only hop on an inner element; none with reduced motion; paused while the map moves or a solve runs.
-7. App icons 512/192/32 show the sneaker.
+6. Start pin = the supplied pixel **sneaker**, also the mascot and (as four column-shifted frames) the loading animation; the runner is withdrawn. Exact strings: `docs/reports/phase5b/sprites.md` (never edit by hand). Build-time static SVG, crispEdges; CSS-only hop on an inner element, by rule 13; none with reduced motion; paused while the map moves or a solve runs.
+7. App icons show the GATHO O (27). The sneaker is the pin and mascot only.
 8. Bottom sheet (peek, half, full), five-step setup, chips as editors, route cards, stops timeline, one-headline conflicts, Undo message.
 9. The number check runs at every sheet state; A01, S02, G01 keep their intent.
-10. Lighthouse accessibility ≥ 95; touch targets ≥ 44 px; performance measured before and after through Caddy (`https://<LAN IP>`), median of three runs. The start pin adds no measurable main-thread time.
+10. Lighthouse accessibility ≥ 95; touch targets ≥ 44 px; performance measured before and after through Caddy (`https://<LAN IP>`), median of three runs. **The start pin has no main-thread cost at rest** (resting = pin removed).
 11. A8 (GPX `creator="GATHO"`, metadata name "<course> · GATHO"; an API change) approved and built (step 10).
+12. **PMTiles: never through the browser cache.** Chrome on Windows returns zero-filled bodies for cached Range responses after overlapping requests are aborted ("Wrong magic number"). pmtiles guards against it only when the UA says "Windows", which device emulation removes. Keep both halves: `basemapArchive` (fetch `no-store`) and the `no-store` header in `next.config.ts`. `no-cache` does not work. One retry, then "Reload map".
+13. **Pin rule: 3 hops** when a route arrives, the start changes or a saved/shared route opens; 1 per tap; then rest. **No continuous loop anywhere** (the loading cycle exists only during a solve).
+14. Km labels from zoom 12; markers reserve their space in label placement; place names step aside; the end flag flies away from the route.
+15. Undo message is part of the sheet, above it; peek stats only at peek; the chip row fades.
+16. Mascot = sneaker at 3 px a pixel. 17. Loading = 4 frames made by shifting whole columns, never redrawn.
+18. **Directions in words** with a map-relative hint and a dial; API values unchanged. The only UI bearing is `bearingToPlace`, for that label; never send or store it.
+19. **Pixel compass** under the menu: true north, tap = north-up, marks the direction being picked.
+20. **"Open in...":** Google Maps (3 waypoints on mobile, 8 elsewhere, from the API's km marks), Share GPX (Chromium refuses `.gpx`: download and say so), Download, help links for Garmin and Strava. No Garmin button, no Strava upload link (courses have no timestamps). Never promise what we can't do.
+21. The share page is the saved-route view: the planner's sheet at peek, a "Map" button, a collapsible desktop panel.
+22. A9 (share response `km_marks`, additive) approved and built.
+23. `web/scripts/make-brand.mjs` draws every brand asset from `web/brand/logo.json`. 24. Logo colours are tokens.
+25. Light wordmark always on `--surface` (3:1); the dot on the icon's tile is exempt. 26. The wordmark is never set in a font, ≥ 14 px, else the icon.
+27. Icons 9 × 9 (maskable 11 × 11; Apple 180 full square). 28. OpenGraph image 1200 × 630; absolute links need `NEXT_PUBLIC_SITE_URL` at build.
 - Phase 5b measurements go through Caddy on the LAN address, because the running `next start` is the same-origin LAN build. `SHOTS_DIR` sets where `e2e/screens.spec.ts` writes.
 
 ## Phase 5 amendments (2026-11-18, full text at the top of docs/blueprint.md; they win over earlier ones)
@@ -243,15 +256,18 @@ uv run python engine/scripts/fetch_basemap.py            # Kerala PMTiles (Proto
 npm run dev | npm test | npm run typecheck | npm run lint | npm run build
 $env:NEXT_DIST_DIR=".next-check"; $env:NEXT_PUBLIC_API_BASE="same-origin"; $env:NEXT_API_PROXY="http://localhost:8000"; npm run build; npx next start --port 3001   # a test build beside the running :3000 server; /v1/* is proxied to the API (same origin, no CORS entry needed)
 $env:E2E_BASE="http://localhost:3001"; $env:E2E_API="http://localhost:8000"; npx playwright test --project=phone   # the journeys against that build
-uv run --no-project --with fonttools --with brotli python web/scripts/subset_pixel_font.py   # Silkscreen Regular (pinned google/fonts commit) -> web/src/fonts/pixel-gatho.woff2 (wordmark + stat characters, tabular digits)
+uv run --no-project --with fonttools --with brotli python web/scripts/subset_pixel_font.py   # Silkscreen Regular (pinned google/fonts commit) -> web/src/fonts/pixel-gatho.woff2 (stat characters, tabular digits)
 ```
 
-- GATHO icons (`web/public/icons/`, gitignored) are drawn from `web/brand/sprites.json` by `scripts/build-brand.mjs` before dev and build. `sprites.json` must equal `docs/reports/phase5b/sprites.md` (a unit test checks).
+- Brand: `npm run gen:brand` (also predev and prebuild) writes `src/brand/logo.ts` (committed) and the gitignored `public/icons/`, `public/favicon.ico`, `public/brand/og.png` from `brand/logo.json`. `logo.json` and `brand/sprites.json` must equal `docs/reports/phase5b/sprites.md` (unit tests check).
 - Themes: `data-theme` on `<html>`, set before first paint by `THEME_SCRIPT` (`src/theme/theme.ts`); tokens in `globals.css`; `src/theme/tokens.test.ts` checks every contrast pair in both themes. React state lives in `src/theme/useTheme.ts`, kept apart so server components can import `theme.ts`.
 - The pixel font (Silkscreen) has no `tnum` and a narrower "1": the subset widens it, so the stat numbers are tabular.
 - Icons: `src/brand/icons.ts` is generated from pixelarticons 2.4.2 (dev dependency, MIT) by `npm run gen:icons`; the list is in `scripts/gen-icons.mjs`, and a unit test fails if the file is stale. Use them through `<Icon>` in `src/components/ui`, 24 px only.
-- Sprites: `src/brand/sprites.ts` is generated from `brand/sprites.json` by `npm run gen:sprites` (a unit test checks it is current and draws exactly the approved pixels). `<Sprite name="sneaker"|"runner">` and `<RunCycle>` (the loading animation) are in `src/components/Sprite.tsx`.
+- Sprites: `src/brand/sprites.ts` is generated from `brand/sprites.json` by `npm run gen:sprites` (a unit test checks it is current and draws exactly the approved pixels). `<Sprite name="sneaker">` and `<SneakerCycle>` (loading) are in `src/components/Sprite.tsx`; `<Mascot>` is a client component of its own.
 - Map markers are plain DOM built in `src/map/markers.ts` (sneaker start pin, stop discs grouped by screen distance, place diamonds, end flag); never transform a marker's root (MapLibre owns it). The sneaker faces the API's first km mark (RouteDetail reports it), the first geometry segment until then. The basemap has light and dark flavours of the same tiles (`basemap.ts`, quietened to the palette); a theme switch keeps drawn layers (`keepDrawn`). Route colours per theme: `ROUTE_COLORS` in `plan/routeStyle.ts`.
+- The start pin is one marker for the map's life (`useRouteLayers`): never rebuild it on zoom, or it hops again. Stops are rebuilt on every zoom.
+- Layer order is `src/map/overlays.ts`: route lines go below every overlay, the invisible marker obstacles on top. Add a map layer with `layerAbove`.
+- The share page uses `useRouteLayers` too; there is no second set of marker code.
 - Before the first route the planner shows the five setup steps (`src/components/setup/SetupFlow.tsx`); the e2e helper `setupRun` walks them. In setup, "half" is 64 % of the screen.
 - Base components (`src/components/ui`): `Button` (primary has the 2 px hard shadow and drops into it when pressed), `IconButton` (label required), `Chip`, `Badge` (a button with a 44 px tap area when it opens a detail), `Snackbar` (no timeout).
 - `/kit` shows every component in both themes; it answers 404 unless the server runs with `GATHO_UI_KIT=1`.
@@ -263,6 +279,7 @@ uv run --no-project --with fonttools --with brotli python web/scripts/subset_pix
 - MapLibre 6 loads its worker from `public/maplibre/` (copied by `scripts/copy-maplibre-worker.mjs` before dev and build); without it the map stays blank ("Worker failed to load").
 - `@rolldown/binding-win32-x64-msvc` and `@rolldown/binding-linux-x64-gnu` are optional dependencies on purpose: npm otherwise drops the Windows one on every `npm install <pkg>`, and a lockfile made on Windows has no Linux binding, so `npm ci` in CI fails ("Cannot find native binding").
 - End to end (live stack, `next start` on :3000, API with `ATHLETE_RATE_SESSION_PER_IP_HOUR=1000`): `npx playwright test` (journeys A01, S02, G01, phone viewport) and `npx playwright test --project=screens` (screenshots -> docs/reports/phase5/screenshots/). Every on-screen number carries `data-value` (its raw API value); `e2e/helpers.ts` checks them all against the responses.
+- Fix-round projects: `basemap` (iPhone 16 viewport, cold, warm and the cache trigger; that last test skips over Caddy's untrusted certificate, so run it on http), `layout`, `pin`, `direction`, `openin` (Google intercepted), `share`, `brand`. `SHOTS_ONLY=01,08` with `--project=screens` writes only those screens. Look at the screenshots: they caught three defects the tests did not.
 - The default limit (10 new sessions per IP per hour) runs out after two or three journey runs: place search then shows no results and every journey times out at the start. Raise it on the API alone: `$env:ATHLETE_RATE_SESSION_PER_IP_HOUR="1000"; docker compose --profile api up -d --no-deps api`, and wait for `/v1/health` before testing. Without `--no-deps`, compose can recreate Postgres too, and the API exits ("connection refused") if it starts first (happened 2026-11-18; `docker start athlete-api` recovered it, data intact). Since 2026-11-19 the API waits for Postgres's `pg_isready` healthcheck. Put it back to 10 the same way afterwards.
 - Phone over the LAN: build with `$env:NEXT_PUBLIC_API_BASE="same-origin"`, then `LAN_HOST=<ip> docker compose --profile api --profile web up -d proxy` (Caddy, `tls internal`, `default_sni` for bare IPs). Steps, firewall and certificate install: docs/reports/phase5/phone.md. In PowerShell an empty `$env:X=''` deletes the variable, hence "same-origin".
 - Lighthouse: `npx lighthouse@13.0.1 http://localhost:3000/` with `CHROME_PATH` set to Playwright's Chromium.

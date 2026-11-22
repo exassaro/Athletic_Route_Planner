@@ -66,9 +66,9 @@ A round of fixes and small features on top of the built Phase 5b, with the final
 27. **App icons:** a 9 × 9 green tile with cut corners, the paper O and the orange centre. The maskable icon is a full square on an 11 × 11 grid, so the O stays in the 80 % safe circle (on 9 × 9 its corners reach 42.3 % of the side from the centre, over the 40 % limit).
 28. **OpenGraph image** 1200 × 630 on #FBF8F1 (amendment 25), without a shadow, the tagline "Plan the run you actually want." in the Geist font bundled with Next, so the build is reproducible. Absolute links come from a site-URL build setting.
 
-**Status (2026-11-22): built 2026-11-18; Phase 5b-fix in progress.**
+**Status (2026-11-22): built 2026-11-18; Phase 5b-fix built 2026-11-22** ([docs/reports/phase5b/fix-summary.md](reports/phase5b/fix-summary.md)).
 - Results: the journeys pass through Caddy; Lighthouse accessibility is 100 on both pages; performance went from 68 to 70 on the planner and from 67 to 69 on the share page.
-- The hopping start pin cost about 2 % of the main thread at 4× slowdown. Decided 2026-11-22 (amendment 13); to be built and measured again in Phase 5b-fix.
+- The hopping start pin cost about 2 % of the main thread at 4× slowdown. Fixed 2026-11-22 (amendment 13): at rest it measures 52 ms per 5 s, against 56 ms with the pin removed.
 - Open: the hallway test waits for the product owner.
 
 See [docs/reports/phase5b/summary.md](reports/phase5b/summary.md).

@@ -1,5 +1,7 @@
 # Phase 5b summary: the GATHO mobile-first redesign
 
+> Updated by [fix-summary.md](fix-summary.md) (2026-11-22): the pin decision, share-page facing, the runner and the logo below are superseded.
+
 The Phase 5 planner is redesigned for the phone, under the name **GATHO**. No new features, no solver change. The one API change is A8 (GPX creator), which was approved. Measured on 2026-11-18 on the development laptop (Windows 11, i5 10th gen, 16 GB), not on a target server.
 
 ## What changed
