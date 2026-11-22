@@ -584,6 +584,7 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
   clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
 }
 .pin-end svg { display: block; }
+.pin-end.west svg { transform: scaleX(-1); }   /* the svg, never the root: MapLibre moves the root */
 .pin-end-ink { fill: var(--ink); }
 .pin-end-light { fill: var(--surface); }
 .pin-end-depth { fill: rgba(0, 0, 0, 0.35); }

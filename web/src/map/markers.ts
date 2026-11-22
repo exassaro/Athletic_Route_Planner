@@ -57,7 +57,10 @@ export function placePoint(label: string): HTMLElement {
   return el;
 }
 
-/** The pixel end flag: a pole and a chequered flag (7 × 9 cells of 4 px), anchored at the foot of the pole. */
+/**
+ * The pixel end flag: a pole and a chequered flag (7 × 9 cells of 4 px), anchored so the foot of the pole's middle
+ * is on the end point, whichever way it points (amendment 14).
+ */
 const FLAG = ["#######", "#.#.#.#", "##.#.##", "#.#.#.#", "#######", "#......", "#......", "#......", "##....."];
 const FLAG_LIGHT = [".......", ".#.#.#.", "..#.#..", ".#.#.#.", ".......", ".......", ".......", ".......", "......."];
 function cells(rows: string[], cell: number, dx = 0, dy = 0) {
@@ -65,16 +68,34 @@ function cells(rows: string[], cell: number, dx = 0, dy = 0) {
   rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === "#") d += `M${x * cell + dx} ${y * cell + dy}h${cell}v${cell}h-${cell}z`; }));
   return d;
 }
-export function endFlag(label: string): HTMLElement {
+export function endFlag(label: string, pointsWest = false): { el: HTMLElement; anchor: "bottom-left" | "bottom-right"; offset: [number, number] } {
   const el = document.createElement("div");
-  el.className = "pin-end";
+  el.className = `pin-end${pointsWest ? " west" : ""}`;
   el.setAttribute("role", "img");
   el.setAttribute("aria-label", label);
   el.title = label;
   el.innerHTML = `<svg width="30" height="38" viewBox="0 0 30 38" shape-rendering="crispEdges" aria-hidden="true">` +
     `<path class="pin-end-depth" d="${cells(FLAG, 4, 2, 2)}"/><path class="pin-end-ink" d="${cells(FLAG, 4)}"/>` +
     `<path class="pin-end-light" d="${cells(FLAG_LIGHT, 4)}"/></svg>`;
-  return el;
+  // the pole is the first 4 px column; the svg has 2 px of depth below and beyond the cells
+  return pointsWest ? { el, anchor: "bottom-right", offset: [2, 2] } : { el, anchor: "bottom-left", offset: [-2, 2] };
+}
+
+/**
+ * Which way the flag flies: away from the route's line near the end. Screen positions only (map.project), like the
+ * grouping: the route's points within `radius` px of the end vote for the side they are on; no vote keeps it right.
+ */
+export function flagPointsLeft(end: { x: number; y: number }, line: { x: number; y: number }[], radius = 70): boolean {
+  let side = 0;
+  for (let i = 1; i < line.length; i++) {
+    const a = line[i - 1]!;
+    const b = line[i]!;
+    const x = (a.x + b.x) / 2 - end.x;
+    const y = (a.y + b.y) / 2 - end.y;
+    if (Math.hypot(x, y) > radius) continue;
+    side += x * Math.hypot(b.x - a.x, b.y - a.y);   // a long piece of line counts for more than a dense bend
+  }
+  return side > 1e-6;
 }
 
 /**

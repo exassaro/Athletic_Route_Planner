@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { lineStyle, ROUTE_COLORS } from "@/plan/routeStyle";
 import { basemapStyle, flavor, keepDrawn } from "./basemap";
-import { endFlag, groupByScreen, placePoint, startPin, stopPin } from "./markers";
+import { endFlag, flagPointsLeft, groupByScreen, placePoint, startPin, stopPin } from "./markers";
 
 describe("markers", () => {
   it("the start pin: the sneaker, labelled, a 52 × 44 tap target, the sole's middle on the point either way", () => {
@@ -23,7 +23,22 @@ describe("markers", () => {
     expect(stopPin("1·2", "two stops").className).toBe("pin-stop group");
     expect(stopPin("1", "asked", { asked: true }).className).toBe("pin-stop asked");
     expect(placePoint("Chaliyam").getAttribute("aria-label")).toBe("Chaliyam: the place itself");
-    expect(endFlag("End (auto): Francis Road").querySelectorAll("path")).toHaveLength(3);
+    expect(endFlag("End (auto): Francis Road").el.querySelectorAll("path")).toHaveLength(3);
+  });
+
+  it("the flag's pole stays on the end point either way", () => {
+    expect(endFlag("End")).toMatchObject({ anchor: "bottom-left", offset: [-2, 2] });
+    const west = endFlag("End", true);
+    expect(west).toMatchObject({ anchor: "bottom-right", offset: [2, 2] });
+    expect(west.el.className).toBe("pin-end west");
+  });
+
+  it("the flag flies away from the route", () => {
+    const end = { x: 100, y: 100 };
+    expect(flagPointsLeft(end, [{ x: 160, y: 130 }, { x: 130, y: 110 }, end])).toBe(true);
+    expect(flagPointsLeft(end, [{ x: 40, y: 130 }, { x: 70, y: 110 }, end])).toBe(false);
+    expect(flagPointsLeft(end, [{ x: 100, y: 160 }, end]), "straight from below: to the right").toBe(false);
+    expect(flagPointsLeft(end, [{ x: 900, y: 100 }, { x: 800, y: 100 }]), "only the route near the end votes").toBe(false);
   });
 
   it("groups stops that overlap on screen, in route order", () => {
@@ -46,6 +61,8 @@ describe("basemap", () => {
   it("light and dark flavours, quietened to the palette, with their own sprites", () => {
     expect(flavor("light")).toMatchObject({ earth: "#ECE9E3", water: "#CFDDE1" });
     expect(flavor("dark")).toMatchObject({ earth: "#1B1E22", water: "#1F3138" });
+    const town = basemapStyle("https://x").layers.find((l) => l.id === "places_locality")!;
+    expect((town.layout as Record<string, unknown>)["text-variable-anchor"]).toContain("top");
     expect(basemapStyle("https://x", "dark").sprite).toBe("https://x/basemap/sprites/dark");
   });
 

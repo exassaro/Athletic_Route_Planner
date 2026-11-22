@@ -8,7 +8,7 @@ import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import type { Schemas } from "@/api/client";
 import { km } from "@/plan/format";
 import { ROUTE_COLORS } from "@/plan/routeStyle";
-import { endFlag, startPin, stopPin } from "@/map/markers";
+import { endFlag, flagPointsLeft, startPin, stopPin } from "@/map/markers";
 import { MapView } from "@/map/MapView";
 import { useTheme } from "@/theme/useTheme";
 
@@ -53,7 +53,9 @@ export function ShareMap({ route }: { route: Schemas["RouteFeature"] }) {
         }
       }
       if (props.end && props.end.kind !== "start") {
-        markers.push(new maplibregl.Marker({ element: endFlag(`End: ${props.end.label ?? "unnamed road"}`), anchor: "bottom-left" })
+        const flag = endFlag(`End: ${props.end.label ?? "unnamed road"}`,
+          flagPointsLeft(map.project([props.end.lon, props.end.lat]), coords.map((p) => map.project(p))));
+        markers.push(new maplibregl.Marker({ element: flag.el, anchor: flag.anchor, offset: flag.offset })
           .setLngLat([props.end.lon, props.end.lat]).addTo(map));
       }
     })();

@@ -13,7 +13,7 @@ import type { Schemas } from "@/api/client";
 import { km } from "@/plan/format";
 import { lineStyle, ROUTE_COLORS } from "@/plan/routeStyle";
 import type { Theme } from "@/theme/theme";
-import { endFlag, groupByScreen, placePoint, startPin, stopPin } from "./markers";
+import { endFlag, flagPointsLeft, groupByScreen, placePoint, startPin, stopPin } from "./markers";
 import { layerAbove, setObstacles, type Obstacle } from "./overlays";
 
 type Candidate = Schemas["CandidateOut"];
@@ -22,6 +22,7 @@ const PREFIX = "cand-";
 const LINKS = "pin-links";
 const PIN_BOX = { w: 52, h: 44, anchor: "bottom" } as const;
 const PLACE_BOX = { w: 14, h: 14, anchor: "center" } as const;
+const FLAG_BOX = { w: 30, h: 38 } as const;
 /** A stop's disc: 28 px, wider when it holds a group ("3·4"). */
 const stopBox = (count: number) => ({ w: 28 + (count - 1) * 16, h: 28, anchor: "center" }) as const;
 /** A place point is drawn when it is at least this far from where the route passes, on screen. */
@@ -83,7 +84,7 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
     drawn.current = candidates.length;
   }, [map, candidates, selected, dimmed, theme]);
 
-  // The markers, regrouped at every zoom (overlap is a matter of screen distance)
+  // The markers, regrouped at every zoom (overlap is a matter of screen distance); a turn of the map turns the flag
   useEffect(() => {
     if (!map) return;
     let live = true;
@@ -92,7 +93,7 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
       if (!live) return;
       markers.current.forEach((m) => m.remove());
       markers.current = [];
-      const add = (el: HTMLElement, at: [number, number], opts: { anchor?: "center" | "bottom" | "bottom-left"; offset?: [number, number] } = {}) =>
+      const add = (el: HTMLElement, at: [number, number], opts: { anchor?: Obstacle["anchor"]; offset?: [number, number] } = {}) =>
         markers.current.push(new maplibregl.Marker({ element: el, anchor: opts.anchor ?? "center", offset: opts.offset })
           .setLngLat(at).addTo(map));
       const links: Line[] = [];
@@ -144,7 +145,11 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
       }
       if (c.end.kind !== "start") {
         const auto = c.end.kind !== "fixed";
-        add(endFlag(`${auto ? "End (auto)" : "End"}: ${c.end.label ?? "unnamed road"}`), [c.end.lon, c.end.lat], { anchor: "bottom-left" });
+        const at: [number, number] = [c.end.lon, c.end.lat];
+        const left = flagPointsLeft(map.project(at), c.geometry.map((p) => map.project([p[0]!, p[1]!])));
+        const flag = endFlag(`${auto ? "End (auto)" : "End"}: ${c.end.label ?? "unnamed road"}`, left);
+        add(flag.el, at, { anchor: flag.anchor, offset: flag.offset });
+        boxes.push({ at, ...FLAG_BOX, anchor: flag.anchor });
       }
       setLinks(map, links, ROUTE_COLORS[theme].link);
       setObstacles(map, boxes);
@@ -152,9 +157,11 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
     draw();
     const onZoom = () => { draw(); };
     map.on("zoomend", onZoom);
+    map.on("rotateend", onZoom);
     return () => {
       live = false;
       map.off("zoomend", onZoom);
+      map.off("rotateend", onZoom);
     };
   }, [map, candidates, selected, request, theme, facingWest]);
 

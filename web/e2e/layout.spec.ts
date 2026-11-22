@@ -50,6 +50,25 @@ test("km labels: from zoom 12, over the route lines, never under a marker", asyn
   expect(drawn, "under the stop's disc").not.toContain(995);
 });
 
+test("the end flag's pole is on the end point and the place name steps clear", async ({ page }) => {
+  await planA01Base(page);
+  await page.waitForTimeout(2000); // the fit
+  await page.screenshot({ path: test.info().outputPath("flag-fitted.png") });
+  const { point, foot } = await page.evaluate(() => {
+    const map = (window as unknown as { athleteMap: import("maplibre-gl").Map }).athleteMap;
+    const line = (map.getSource("cand-0") as import("maplibre-gl").GeoJSONSource).serialize().data as GeoJSON.Feature<GeoJSON.LineString>;
+    const p = map.project(line.geometry.coordinates.at(-1) as [number, number]);
+    const el = document.querySelector(".pin-end")!;
+    const r = el.getBoundingClientRect();
+    return { point: p, foot: { x: el.classList.contains("west") ? r.right - 2 : r.left + 2, y: r.bottom - 2 } };
+  });
+  expect(Math.abs(foot.x - point.x)).toBeLessThan(6);
+  expect(Math.abs(foot.y - point.y)).toBeLessThan(6);
+  const names = await page.evaluate(() => (window as unknown as { athleteMap: import("maplibre-gl").Map }).athleteMap
+    .queryRenderedFeatures({ layers: ["places_locality"] }).map((f) => f.properties["name:en"] ?? f.properties.name));
+  expect(names, "moved aside, not hidden").toContain("Kozhikode");
+});
+
 test("the Undo message moves with the sheet and covers no content", async ({ page }) => {
   await planA01Base(page);
   await addStop(page, PLACES.kottakkadavu);

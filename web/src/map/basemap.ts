@@ -34,6 +34,13 @@ export function basemapUrl(origin: string): string {
   return `${origin}/basemap/kerala.pmtiles`;
 }
 
+/**
+ * Place names give way to the markers (amendment 14): Protomaps pins a name to its point from zoom 8, so one under
+ * the end flag could only be covered or hidden. These may step aside instead, and sit on the point when it is free.
+ */
+const PLACE_NAME_LAYERS = ["places_locality", "places_subplace"];
+const STEP_ASIDE = { "text-variable-anchor": ["center", "top", "bottom", "right", "left"], "text-radial-offset": 1.2, "text-justify": "auto" };
+
 export function basemapStyle(origin: string, theme: Theme = "light"): StyleSpecification {
   return {
     version: 8,
@@ -45,7 +52,8 @@ export function basemapStyle(origin: string, theme: Theme = "light"): StyleSpeci
         url: `pmtiles://${basemapUrl(origin)}`,
       },
     },
-    layers: layers(BASEMAP_SOURCE, flavor(theme), { lang: "en" }),
+    layers: layers(BASEMAP_SOURCE, flavor(theme), { lang: "en" })
+      .map((l) => (PLACE_NAME_LAYERS.includes(l.id) ? { ...l, layout: { ...l.layout, ...STEP_ASIDE } } : l)),
   } as StyleSpecification;
 }
 
