@@ -32,7 +32,7 @@ const TEXT: [string, string][] = [
   ["muted", "paper"], ["muted", "surface"], ["muted", "soft"],
   ["accent-text", "paper"], ["accent-text", "surface"],
   ["on-accent", "accent"],
-  ["warn", "surface"], ["warn", "paper"], ["warn", "warn-soft"],
+  ["warn", "surface"], ["warn", "paper"], ["warn", "warn-soft"], ["warn", "soft"],   // soft: Delete, hovered
   ["snack-fg", "snack-bg"], ["snack-action", "snack-bg"],
   ["paper", "ink"],
 ];

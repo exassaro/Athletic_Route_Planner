@@ -23,10 +23,17 @@ export function OpenIn(props: Props) {
   return (
     <>
       <Button icon="externalLink" onClick={() => setOpen(true)} aria-haspopup="dialog" data-testid="open-in">Open in…</Button>
-      <EditorDialog open={open} title="Open in…" onClose={() => setOpen(false)} testId="open-in-sheet">
-        <Options {...props} />
-      </EditorDialog>
+      <OpenInDialog open={open} onClose={() => setOpen(false)} {...props} />
     </>
+  );
+}
+
+/** The sheet alone, for where something else opens it (a menu). */
+export function OpenInDialog({ open, onClose, ...props }: Props & { open: boolean; onClose: () => void }) {
+  return (
+    <EditorDialog open={open} title="Open in…" onClose={onClose} testId="open-in-sheet">
+      <Options {...props} />
+    </EditorDialog>
   );
 }
 

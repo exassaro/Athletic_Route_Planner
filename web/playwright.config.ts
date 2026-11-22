@@ -36,6 +36,7 @@ export default defineConfig({
     { name: "share", testMatch: /share[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "brand", testMatch: /brand[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "editing", testMatch: /editing[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
+    { name: "saved", testMatch: /saved[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "pincost", testMatch: /pincost\.spec\.ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
   ],
 });

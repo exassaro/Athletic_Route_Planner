@@ -54,7 +54,9 @@ test("the result and a saved route: Google Maps, share falling back to a downloa
   const share = (await page.getByTestId("share-link").getAttribute("href"))!;
   const facesWest = await page.locator(".pin-start-flip.west").count();
   await page.goto("/routes");
-  await openSheet(page);
+  await page.getByRole("button", { name: /^More for/ }).click();      // Phase 5c: in the card's menu
+  await page.getByRole("menuitem", { name: /^Open in/ }).click();
+  await expect(page.getByTestId("open-google")).toBeVisible();
   expect(await page.getByTestId("open-google").getAttribute("href")).toBe(href);
 
   // the share page has the same points (A9), so the same link, and the pin faces the same way
