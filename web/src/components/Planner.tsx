@@ -219,10 +219,16 @@ export function Planner() {
   );
 
   return (
-    <div className={`planner sheet-${sheet}${v ? "" : " setup-mode"}${toast ? " has-snack" : ""}`}>
+    <div className={`planner sheet-${sheet}${v ? "" : " setup-mode"}`}>
       <MapView onReady={setMap} theme={theme} />
       <TopBar setupMode={!v} near={near} canAddStop={!!v} onPlace={onPlace} menu={menu} />
-      <BottomSheet snap={sheet} onSnap={setSheet} label="Plan your run" halfRatio={v ? 0.5 : 0.64}>
+      <BottomSheet snap={sheet} onSnap={setSheet} label="Plan your run" halfRatio={v ? 0.5 : 0.64}
+        banner={toast && (
+          <Snackbar testId="diff-toast" onDismiss={() => setToast(null)}
+            actionLabel={v && plan.canUndo && !solving ? "Undo" : undefined} actionIcon="undo" onAction={plan.undo}>
+            {toast}
+          </Snackbar>
+        )}>
           {/* what a peeked sheet shows first */}
           <StatusLine busy={plan.busy} onDismiss={plan.clearError} />
           {v && candidates[selected] && <PeekBar cand={candidates[selected]!} pace={pace} />}
@@ -248,12 +254,6 @@ export function Planner() {
               canPlan={canPlan} onPlan={() => draft.start && plan.create(draft as NewRouteRequest)} />
           )}
       </BottomSheet>
-      {toast && (
-        <Snackbar floating testId="diff-toast" onDismiss={() => setToast(null)}
-          actionLabel={v && plan.canUndo && !solving ? "Undo" : undefined} actionIcon="undo" onAction={plan.undo}>
-          {toast}
-        </Snackbar>
-      )}
       {v && (
         <EditorDialog open={editor !== null} title={editor ? EDITOR_TITLE[editor] ?? "" : ""} onClose={() => setEditor(null)}
           testId="chip-editor">

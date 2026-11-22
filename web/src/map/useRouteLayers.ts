@@ -161,8 +161,12 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
   // Fit the view when a new version arrives (not when only the selection changes)
   useEffect(() => {
     if (!map || !fitKey) return;
+    let live = true;
     (async () => {
       const maplibregl = await import("maplibre-gl");
+      // Two frames: the new version's Undo message is laid out by then, and the route is fitted clear of it.
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      if (!live) return;
       const b = new maplibregl.LngLatBounds();
       for (const c of candidates) for (const p of c.geometry) b.extend(p as [number, number]);
       if (candidates.length === 0) {
@@ -174,10 +178,13 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
       // keep the route out from under the sheet (phone) or the panel (desktop): measure it; 88 px clears the top bar
       const wide = window.matchMedia("(min-width: 900px)").matches;
       const sheet = document.querySelector(".sheet")?.getBoundingClientRect();
-      const under = sheet ? (wide ? sheet.right : Math.max(0, window.innerHeight - sheet.top)) : 0;
+      const message = document.querySelector(".sheet:not(.full) .sheet-banner")?.getBoundingClientRect();
+      const top = sheet ? Math.min(sheet.top, message?.top ?? sheet.top) : window.innerHeight;
+      const under = sheet ? (wide ? sheet.right : Math.max(0, window.innerHeight - top)) : 0;
       map.fitBounds(b, { padding: wide ? { top: 40, bottom: 40, left: under + 40, right: 60 }
         : { top: 88, bottom: under + 30, left: 30, right: 50 }, duration: 600, maxZoom: 15 });
     })();
+    return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, fitKey]);
 }

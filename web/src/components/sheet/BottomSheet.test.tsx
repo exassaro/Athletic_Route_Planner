@@ -6,6 +6,24 @@ afterEach(cleanup);
 
 const H: Record<Snap, number> = { peek: 136, half: 422, full: 780 };
 
+describe("the banner", () => {
+  it("is part of the sheet, outside its scrolling body, and focusing it does not open a peeked sheet", () => {
+    const onSnap = vi.fn();
+    const { container } = render(
+      <BottomSheet snap="peek" onSnap={onSnap} label="Run" banner={<button type="button">Undo</button>}>
+        <button type="button">Inside</button>
+      </BottomSheet>,
+    );
+    const undo = screen.getByRole("button", { name: "Undo" });
+    expect(undo.closest(".sheet")).not.toBeNull();
+    expect(container.querySelector(".sheet-body")!.contains(undo)).toBe(false);
+    fireEvent.focusIn(undo);
+    expect(onSnap).not.toHaveBeenCalled();
+    fireEvent.focusIn(screen.getByRole("button", { name: "Inside" }));
+    expect(onSnap).toHaveBeenCalledWith("half");
+  });
+});
+
 describe("snapAfterDrag", () => {
   it("settles on the nearest position when let go slowly", () => {
     expect(snapAfterDrag("half", 150, 0, H)).toBe("peek");

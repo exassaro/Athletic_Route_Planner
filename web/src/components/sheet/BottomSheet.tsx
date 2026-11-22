@@ -5,6 +5,9 @@
  * only moves the sheet with a transform, so it stays smooth, and on release it settles on a position chosen by
  * snapAfterDrag. The handle is a button: tap or Enter cycles, the arrow keys go up and down. Focus moving into a
  * peeked sheet opens it to half, so nothing focused is hidden.
+ *
+ * The banner (the Undo message, amendment 15) belongs to the sheet so it moves with it: just above its top edge on
+ * a phone, in its own row under the handle at full, over the map beside the panel on a desktop.
  */
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 
@@ -28,11 +31,11 @@ export function snapAfterDrag(from: Snap, visible: number, velocity: number, hei
 }
 
 /** halfRatio: the share of the screen "half" takes (the planner root's CSS says the same: 0.5, or 0.64 in setup). */
-type Props = { snap: Snap; onSnap: (s: Snap) => void; label: string; children: ReactNode; halfRatio?: number };
+type Props = { snap: Snap; onSnap: (s: Snap) => void; label: string; children: ReactNode; halfRatio?: number; banner?: ReactNode };
 
 type Drag = { id: number; startY: number; startVisible: number; full: number; lastY: number; lastT: number; v: number; moved: boolean };
 
-export function BottomSheet({ snap, onSnap, label, children, halfRatio = 0.5 }: Props) {
+export function BottomSheet({ snap, onSnap, label, children, halfRatio = 0.5, banner }: Props) {
   const sheet = useRef<HTMLElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
@@ -106,7 +109,8 @@ export function BottomSheet({ snap, onSnap, label, children, halfRatio = 0.5 }: 
   return (
     <section ref={sheet} className={`sheet ${snap}${dragging ? " dragging" : ""}`} aria-label={label} data-snap={snap}
       onFocusCapture={(e) => {
-        if (snap === "peek" && e.target !== e.currentTarget && !(e.target as HTMLElement).classList.contains("sheet-handle")) onSnap("half");
+        const el = e.target as HTMLElement;
+        if (snap === "peek" && el !== e.currentTarget && !el.closest(".sheet-handle, .sheet-banner")) onSnap("half");
       }}>
       <button type="button" className="sheet-handle" aria-label={snap === "full" ? "Show the map" : "Show more"}
         aria-describedby="sheet-handle-hint" onClick={onClick} onKeyDown={onKeyDown}
@@ -114,6 +118,7 @@ export function BottomSheet({ snap, onSnap, label, children, halfRatio = 0.5 }: 
         <span aria-hidden="true" />
       </button>
       <span id="sheet-handle-hint" className="sr-only">Drag, tap, or use the arrow keys to change the panel size.</span>
+      {banner && <div className="sheet-banner">{banner}</div>}
       <div className="sheet-body" ref={body}>{children}</div>
     </section>
   );

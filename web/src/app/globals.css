@@ -165,11 +165,18 @@ a { color: var(--accent-text); }
 .sheet-handle:hover:not(:disabled) { border: none; }
 .sheet-handle span { width: 40px; height: 4px; border-radius: 2px; background: var(--control); }
 .sheet-body {
-  flex: none; height: calc(var(--snap-h) - 44px); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+  flex: none; height: calc(var(--snap-h) - 44px); min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
   padding: 0 16px calc(16px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch;
+}
+/* The Undo message (amendment 15): above the sheet and the OSM credit; at full, a row of its own under the handle. */
+.sheet-banner { position: absolute; left: 16px; right: 16px; bottom: calc(100% + 32px); max-width: 560px; margin: 0 auto; }
+@media (max-width: 899px) {
+  .sheet.full .sheet-banner { position: static; flex: none; align-self: stretch; margin: 0 16px var(--space-1); }
+  .sheet.full .sheet-body { flex: 1; height: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .sheet { transition: none; } }
 @media (min-width: 900px) {
+  .sheet-banner { left: calc(100% + 16px); right: auto; bottom: 16px; width: min(400px, calc(100vw - 472px)); }
   .sheet, .sheet.peek, .sheet.half, .sheet.full {
     top: 0; right: auto; width: 440px; height: 100%; transform: none; padding-top: 12px;
     border-top: 0; border-right: 1px solid var(--hairline); border-radius: 0;
@@ -515,7 +522,6 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .menu-links { grid-template-columns: 1fr 1fr; }
 .place-actions { display: grid; gap: var(--space-1); }
 .place-actions .btn { justify-content: flex-start; }
-.planner.has-snack .sheet-body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 
 .outcome {
   display: grid; gap: 12px; margin: var(--space-1) 0 var(--space-2); padding: var(--space-2);
@@ -581,8 +587,6 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .pin-end-ink { fill: var(--ink); }
 .pin-end-light { fill: var(--surface); }
 .pin-end-depth { fill: rgba(0, 0, 0, 0.35); }
-/* At peek the Undo message sits above the sheet and the map credit, so the peek bar and the credit stay visible. */
-.planner.sheet-peek .snackbar-floating { bottom: calc(var(--snap-h) + 32px); }   /* above the OSM credit too */
 
 /* ---------- share page and saved routes (Phase 5b step 10) ---------- */
 .share-panel { padding: var(--space-2) var(--space-2) var(--space-4); background: var(--paper); }
