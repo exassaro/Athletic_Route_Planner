@@ -32,7 +32,7 @@ export function SavedRoutes() {
   };
   return (
     <main className="saved-page">
-      <p className="brand-row"><Link href="/" aria-label="GATHO: plan a run"><Wordmark /></Link></p>
+      <p className="brand-row"><Link href="/" aria-label="GATHO: plan a run"><Wordmark height={28} /></Link></p>
       <h1 className="t-title">Saved routes</h1>
       <p><Link href="/">Plan a run</Link></p>
       {msg && <p role="status">{msg}</p>}

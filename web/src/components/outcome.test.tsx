@@ -54,6 +54,8 @@ describe("TopBar", () => {
     expect(screen.getByText("menu content")).toBeTruthy();
     rerender(<TopBar setupMode near={null} canAddStop={false} onPlace={() => {}} menu={<p>menu content</p>} />);
     expect(screen.queryByRole("button", { name: "Search a place" })).toBeNull();
-    expect(document.querySelector(".topbar-brand")!.textContent).toBe("GATHO");
+    const mark = document.querySelector(".topbar-brand svg")!;
+    expect(mark.getAttribute("aria-label")).toBe("GATHO");
+    expect(document.querySelector(".topbar-brand")!.textContent, "drawn, never typed").toBe("");
   });
 });

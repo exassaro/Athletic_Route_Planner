@@ -29,7 +29,7 @@ export function SharedView({ slug, route, kmMarks, children }: Props) {
     <main className={`planner share-view sheet-${sheet}${collapsed ? " panel-collapsed" : ""}`}>
       <ShareMap slug={slug} route={route} kmMarks={kmMarks} />
       <header className="topbar">
-        <Link className="topbar-brand" href="/" aria-label="GATHO: plan your own run"><Wordmark size={24} /></Link>
+        <Link className="topbar-brand" href="/" aria-label="GATHO: plan your own run"><Wordmark height={21} /></Link>
         <Button icon="map" className="to-map" onClick={() => setSheet("peek")} data-testid="to-map">Map</Button>
         <Button icon={collapsed ? "chevronRight" : "chevronLeft"} className="panel-toggle" aria-expanded={!collapsed}
           onClick={() => setCollapsed(!collapsed)} data-testid="panel-toggle">

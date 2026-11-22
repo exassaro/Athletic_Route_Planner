@@ -5,6 +5,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { THEME_COLOR } from "./theme";
 
 const css = readFileSync(join(__dirname, "..", "app", "globals.css"), "utf8");
 
@@ -36,10 +37,32 @@ const TEXT: [string, string][] = [
   ["paper", "ink"],
 ];
 const NON_TEXT: [string, string][] = [
+  ["logo-ink", "surface"], ["logo-o", "surface"], ["logo-dot", "surface"],   // the wordmark's backing (amendment 25)
+  ["logo-paper", "logo-tile"],                                                // the icon's O on its tile
   ["control", "surface"], ["control", "paper"], ["focus", "surface"], ["focus", "paper"], ["accent", "surface"], ["accent", "paper"],
 ];
 
 const THEMES = { light: block(':root, [data-theme="light"]'), dark: block('[data-theme="dark"]') };
+
+describe("brand", () => {
+  const logo = JSON.parse(readFileSync(join(__dirname, "..", "..", "brand", "logo.json"), "utf8"));
+  const light = THEMES.light;
+
+  it("the generated images use the tokens' colours", () => {
+    expect([logo.icon.tile, logo.icon.o, logo.icon.dot]).toEqual([light["logo-tile"], light["logo-paper"], light["logo-dot"]]);
+    expect([logo.og.background, logo.og.ink, logo.og.o, logo.og.dot, logo.og.muted])
+      .toEqual([light.surface, light["logo-ink"], light["logo-o"], light["logo-dot"], light.muted]);
+    expect(THEME_COLOR).toEqual({ light: THEMES.light.paper, dark: THEMES.dark.paper });   // the manifest's colours
+  });
+
+  it("the OpenGraph tagline is readable", () => {
+    expect(contrast(logo.og.muted, logo.og.background)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("the one exemption: the dot on the icon's tile is decorative (amendment 25)", () => {
+    expect(contrast(logo.icon.dot, logo.icon.tile)).toBeLessThan(3);
+  });
+});
 
 describe("colour tokens", () => {
   it("both themes define the same tokens", () => {

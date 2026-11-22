@@ -37,3 +37,28 @@ Blueprint Phase 5b amendment 17. No pixel is redrawn: each frame is the sneaker 
 ## Mascot
 
 The same sneaker at 3 px a pixel (93 px wide) with a soft ground shadow (amendment 16). The runner and its run cycle (2026-11-18) were withdrawn by the product owner on 2026-11-22 and deleted.
+
+## Logo: the wordmark and the app icon (final, 2026-11-22)
+
+Supplied by the product owner (blueprint Phase 5b amendments 23 to 28). Each letter is 5 columns by 7 rows, `1` a filled cell, with one blank column between letters and a margin of one cell round the word. The O has one extra orange cell at its centre (column 2, row 3).
+
+```json
+{
+ "G": ["01110", "10001", "10000", "10111", "10001", "10001", "01110"],
+ "A": ["01110", "10001", "10001", "11111", "10001", "10001", "10001"],
+ "T": ["11111", "00100", "00100", "00100", "00100", "00100", "00100"],
+ "H": ["10001", "10001", "10001", "11111", "10001", "10001", "10001"],
+ "O": ["01110", "10001", "10001", "10001", "10001", "10001", "01110"]
+}
+```
+
+**The wordmark is never set in a font.** `<Wordmark>` draws it from these grids. The smallest is 14 px tall; below that the icon is shown.
+
+| Part | Light | Dark |
+| --- | --- | --- |
+| Letters | #1E1E1C | #F7F5EE |
+| O | #1D9E75 | #3DBFA3 |
+| Dot | #E8673A | #E8673A |
+| Behind it | surface #FBF8F1 | surface #1C1F24 |
+
+**App icon:** 9 × 9, tile #1D9E75 with the corners cut by one cell, the O in #F7F5EE at column 2, row 1, the centre cell (4, 4) in #E8673A. The maskable icon is a full square on 11 × 11, so the O stays in the 80 % safe circle. The 180 px Apple icon is a full square, because iOS rounds it and fills transparent corners with black. The sneaker is the map pin and mascot only.

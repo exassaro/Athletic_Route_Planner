@@ -11,7 +11,7 @@ export function Kit() {
   const [shape, setShape] = useState("point_to_point");
   return (
     <main className="kit-page">
-      <h1 className="kit-title"><Wordmark size={32} /> <span className="t-heading">components</span></h1>
+      <h1 className="kit-title"><Wordmark height={28} /> <span className="t-heading">components</span></h1>
       <ThemeToggle />
 
       <section aria-labelledby="k-buttons">

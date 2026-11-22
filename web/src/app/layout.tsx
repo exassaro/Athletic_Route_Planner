@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { OG_IMAGE } from "@/brand/meta";
 import { THEME_COLOR, THEME_SCRIPT } from "@/theme/theme";
 import "./globals.css";
 
-// Silkscreen (OFL), cut to the wordmark and the stat numbers by scripts/subset_pixel_font.py (about 3.4 kB).
+// Silkscreen (OFL), cut to the stat numbers by scripts/subset_pixel_font.py (about 3.4 kB).
 const pixel = localFont({
   src: "../fonts/pixel-gatho.woff2",
   variable: "--font-pixel",
@@ -15,14 +16,19 @@ const pixel = localFont({
 const DESCRIPTION = "Running routes that are the distance you asked for, through the places you choose.";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: { default: "GATHO", template: "%s · GATHO" },
   description: DESCRIPTION,
   applicationName: "GATHO",
   icons: {
-    icon: [{ url: "/icons/icon.svg", type: "image/svg+xml" }, { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" }],
-    apple: "/icons/apple-touch-icon.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16 32x32" },
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: { url: "/icons/icon-180.png", sizes: "180x180" },
   },
-  openGraph: { siteName: "GATHO", type: "website", title: "GATHO", description: DESCRIPTION },
+  openGraph: { siteName: "GATHO", type: "website", title: "GATHO", description: DESCRIPTION, images: [OG_IMAGE] },
 };
 
 export const viewport: Viewport = {

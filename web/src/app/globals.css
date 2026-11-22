@@ -10,6 +10,11 @@
   --hairline: #CFC6B4;
   --control: #8A8273;
   --accent: #0F6E56;
+  --logo-ink: #1E1E1C;
+  --logo-o: #1D9E75;
+  --logo-dot: #E8673A;
+  --logo-tile: #1D9E75;
+  --logo-paper: #F7F5EE;
   --on-accent: #FFFFFF;
   --accent-text: #0F6E56;
   --accent-soft: #DDEBE5;
@@ -40,6 +45,11 @@
   --hairline: #3A3F46;
   --control: #7D838C;
   --accent: #3DBFA3;
+  --logo-ink: #F7F5EE;
+  --logo-o: #3DBFA3;
+  --logo-dot: #E8673A;
+  --logo-tile: #1D9E75;
+  --logo-paper: #F7F5EE;
   --on-accent: #0B1512;
   --accent-text: #5FD3B9;
   --accent-soft: #173A33;
@@ -100,8 +110,7 @@ p { margin: 4px 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .good { color: var(--good); font-weight: 600; }
 
-/* ---------- type scale: pixel only for the wordmark and stat numbers at 24 px or more ---------- */
-.t-wordmark { font-family: var(--font-pixel-stack); font-weight: 400; letter-spacing: 0.02em; line-height: 1; }
+/* ---------- type scale: pixel only for the stat numbers at 24 px or more ---------- */
 /* Silkscreen: wide pixel digits, so the spacing is tightened a little; units keep normal spacing */
 .t-stat-xl, .t-stat-l, .t-stat-m { font-family: var(--font-pixel-stack); font-weight: 400; letter-spacing: -0.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .t-stat-xl { font-size: 28px; line-height: 32px; }
@@ -316,8 +325,17 @@ a.button.primary { background: var(--accent); color: var(--accent-fg); border-co
 .saved-list { list-style: none; padding: 0; display: grid; gap: 10px; }
 
 /* ---------- GATHO brand (Phase 5b step 1) ---------- */
-.wordmark { color: var(--ink); white-space: nowrap; }
-.wordmark-o { color: var(--accent-text); }
+/* The logo (amendments 24 and 25): always on the surface token, which is what keeps the light one at 3:1. */
+.wordmark, .logo-icon { display: block; flex: none; max-width: 100%; }
+.logo-backing { fill: var(--surface); }
+.logo-ink { fill: var(--logo-ink); }
+.logo-o { fill: var(--logo-o); }
+.logo-dot { fill: var(--logo-dot); }
+.logo-tile { fill: var(--logo-tile); }
+.logo-paper { fill: var(--logo-paper); }
+/* The splash: in the map's box until MapLibre has drawn. */
+.map-splash { position: absolute; z-index: 1; top: 128px; left: 50%; transform: translateX(-50%); pointer-events: none; }
+@media (min-width: 900px) { .planner .map-splash { top: 40%; left: calc(50% + 220px); } }
 .brand-row { margin: 0 0 8px; }
 .brand-row a { display: inline-flex; align-items: center; min-height: var(--tap); text-decoration: none; }
 
@@ -540,7 +558,7 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .topbar-search:hover:not(:disabled) { border-color: var(--ink); }
 .topbar-brand {
   flex: 1; display: flex; align-items: center; height: 48px; padding: 0 12px; border-radius: var(--radius);
-  background: var(--paper); border: 1px solid var(--hairline); max-width: max-content;
+  background: var(--surface); border: 1px solid var(--hairline); max-width: max-content;
 }
 .topbar-brand + .icon-btn { margin-left: auto; }
 /* The compass (amendment 19): top right, under the menu button, the zoom buttons below it. */

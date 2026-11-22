@@ -4,6 +4,7 @@ const config: NextConfig = {
   reactStrictMode: true,
   // NEXT_DIST_DIR=.next-check builds beside a running `next start` (which keeps serving .next) without breaking it.
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // NEXT_PUBLIC_SITE_URL (read at build time): the public address, for absolute OpenGraph links (Phase 5b amendment 28).
   // The API's address as the browser sees it. "same-origin": the page's own origin (behind Caddy, Phase 5
   // amendment 9). Unset: the dev API on :8000. Read at build time.
   env: { NEXT_PUBLIC_API_BASE: process.env.NEXT_PUBLIC_API_BASE === "same-origin" ? ""

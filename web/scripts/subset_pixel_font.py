@@ -1,6 +1,6 @@
 """Builds the GATHO pixel font: Silkscreen Regular (SIL OFL 1.1, no Reserved Font Name) from a pinned google/fonts
-commit, cut down to the characters the pixel type uses (the wordmark and the stat numbers, blueprint Phase 5b
-amendment 3), with tabular figures: Silkscreen's "1" is narrower than the other digits, so it is widened to their
+commit, cut down to the characters the pixel type uses (the stat numbers, blueprint Phase 5b amendment 3;
+the wordmark is drawn, never set in a font: amendment 26), with tabular figures: Silkscreen's "1" is narrower than the other digits, so it is widened to their
 advance and centred. Writes web/src/fonts/pixel-gatho.woff2 and the licence beside it.
 
 Silkscreen replaced Pixelify Sans on 2026-11-18 (product owner): Pixelify's "5" reads as an "S" at every weight.
@@ -22,7 +22,7 @@ FILES = {
     "Silkscreen-Regular.ttf": "c845473330b94c2079ce9af01c51ac8ba2d99c24f4d14c039843bbb8e642ebd8",
     "OFL.txt": "86c5e9c9382cdcc5948704fdfe60f2aa164a719746931219a42736ecd9cefbd3",
 }
-TEXT = "GATHO0123456789.,:+± "
+TEXT = "0123456789.,:+± "
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "src" / "fonts"

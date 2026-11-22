@@ -49,8 +49,10 @@ web/e2e-results/
 # Basemap copied from data/basemap by engine/scripts/fetch_basemap.py
 web/public/basemap/
 web/public/maplibre/
-# GATHO icons, generated from web/brand/sprites.json by web/scripts/build-brand.mjs (predev, prebuild)
+# GATHO icons and OpenGraph image, generated from web/brand/logo.json by web/scripts/make-brand.mjs (predev, prebuild)
 web/public/icons/
+web/public/brand/
+web/public/favicon.ico
 web/*.tmp.mjs
 
 # Personal run guide (not shared)

@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import Link from "next/link";
 import type { Schemas } from "@/api/client";
+import { OG_IMAGE } from "@/brand/meta";
 import { API_BASE } from "@/api/client";
 import { serverApi } from "@/api/server";
 import { Num } from "@/components/Num";
@@ -37,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: name,
     description: shared.summary,
-    openGraph: { title: `${name} · GATHO`, description: shared.summary, siteName: "GATHO", type: "article" },
+    openGraph: { title: `${name} · GATHO`, description: shared.summary, siteName: "GATHO", type: "article", images: [OG_IMAGE] },
   };
 }
 

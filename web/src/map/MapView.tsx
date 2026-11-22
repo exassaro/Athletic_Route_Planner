@@ -4,6 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap, VectorTileSource } from "maplibre-gl";
 import { Button } from "@/components/ui";
+import { Wordmark } from "@/components/Wordmark";
 import type { Theme } from "@/theme/theme";
 import { Compass } from "./Compass";
 import { ATTRIBUTION, BASEMAP_SOURCE, basemapStyle, basemapUrl, keepDrawn, KOZHIKODE } from "./basemap";
@@ -106,6 +107,7 @@ export function MapView({ onReady, className, interactive = true, center = KOZHI
     <>
       <div ref={box} className={`map-box${className ? ` ${className}` : ""}`} style={{ position: "absolute", inset: 0 }} data-testid="map" />
       {interactive && <Compass map={map} pointing={pointing} />}
+      {!map && !failed && <div className="map-splash" aria-hidden="true" data-testid="splash"><Wordmark height={35} /></div>}
       {failed && (
         <div className="map-notice" role="status" data-testid="map-failed">
           <p className="t-body-s">The map background didn&apos;t load.</p>

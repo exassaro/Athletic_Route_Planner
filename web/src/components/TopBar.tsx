@@ -32,7 +32,7 @@ export function TopBar({ setupMode, near, canAddStop, onPlace, menu }: Props) {
   return (
     <header className="topbar">
       {setupMode ? (
-        <span className="topbar-brand"><Wordmark size={24} /></span>
+        <span className="topbar-brand"><Wordmark height={21} /></span>
       ) : (
         <button type="button" className="topbar-search" onClick={() => setSearching(true)} aria-haspopup="dialog" data-testid="top-search-open">
           <Icon name="search" /><span>Search a place</span>

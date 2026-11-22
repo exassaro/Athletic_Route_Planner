@@ -8,8 +8,8 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "predev": "node scripts/copy-maplibre-worker.mjs && node scripts/build-brand.mjs",
-    "prebuild": "node scripts/copy-maplibre-worker.mjs && node scripts/build-brand.mjs",
+    "predev": "node scripts/copy-maplibre-worker.mjs && node scripts/make-brand.mjs",
+    "prebuild": "node scripts/copy-maplibre-worker.mjs && node scripts/make-brand.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -19,6 +19,7 @@
     "gen:api": "openapi-typescript src/api/openapi.json -o src/api/schema.d.ts",
     "check:api": "npm run gen:api && git diff --exit-code -- src/api",
     "gen:icons": "node scripts/gen-icons.mjs",
+    "gen:brand": "node scripts/make-brand.mjs",
     "gen:sprites": "node scripts/gen-sprites.mjs"
   },
   "dependencies": {
