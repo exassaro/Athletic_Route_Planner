@@ -599,6 +599,13 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .open-in-group { display: grid; gap: var(--space-1); }
 .open-in-group + .open-in-group { padding-top: var(--space-2); border-top: 1px solid var(--hairline); }
 .open-in-group p { margin: 0; }
+.open-in-message { padding: var(--space-1); border-radius: var(--radius); background: var(--soft); }
+.open-in-loading { min-height: 48px; }
+.open-in-steps summary {
+  min-height: 48px; padding: 12px 0; line-height: 24px; font-size: 16px; font-weight: 600; cursor: pointer;
+}
+.open-in-steps ol { margin: var(--space-1) 0; padding-left: 24px; }
+.open-in-steps li + li { margin-top: 4px; }
 .menu-body { display: grid; gap: var(--space-2); }
 .menu-section { display: grid; gap: var(--space-1); }
 .menu-section h3 { margin: 0; }

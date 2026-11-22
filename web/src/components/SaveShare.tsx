@@ -8,7 +8,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { Schemas } from "@/api/client";
 import { saveFile } from "@/export/gpxFile";
-import { ownRouteGpx, ownRoutePoints } from "@/export/ownRoute";
+import { ownRouteGpx, ownRouteOverview, ownRoutePoints } from "@/export/ownRoute";
 import { planClient } from "@/plan/usePlan";
 import { saveRoute } from "@/saved/api";
 import { NAME_MAX } from "@/saved/name";
@@ -66,7 +66,8 @@ export function SaveShare({ cand, control }: { cand: Candidate; control?: ReactN
       )}
       </>}
       <div className="row">
-        <OpenIn loadPoints={() => ownRoutePoints(cand.route_id)} loadGpx={(ele) => ownRouteGpx(cand.route_id, ele)} />
+        <OpenIn footM={cand.foot_m} loadPoints={() => ownRoutePoints(cand.route_id)}
+          loadOverview={(max) => ownRouteOverview(cand.route_id, max)} loadGpx={(ele) => ownRouteGpx(cand.route_id, ele)} />
         <button type="button" onClick={() => downloadGpx(cand.route_id, true).catch((e) => setMsg(String(e.message)))}
           data-testid="gpx">Download GPX</button>
         <button type="button" className="link" onClick={() => downloadGpx(cand.route_id, false).catch((e) => setMsg(String(e.message)))}>

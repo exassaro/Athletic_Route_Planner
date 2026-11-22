@@ -1,5 +1,6 @@
 /**
- * The GPX as a file: downloaded, or shared where the browser allows it (blueprint Phase 5b amendment 20).
+ * The GPX as a file: shared where the browser allows it, else downloaded, saying how to open it (blueprint
+ * Phase 5d amendment 3).
  *
  * Chromium, on desktop and Android, refuses `.gpx` in navigator.share even when canShare says yes (its list of
  * permitted extensions has no gpx), so a refusal is expected and ends in a download that says so.
@@ -44,9 +45,11 @@ export async function shareOrSave(file: File, browser: Sharer = navigator, save:
   }
 }
 
+const HOW_TO_OPEN = "To open it, find it in your downloads, then open or share it with Organic Maps or OsmAnd.";
+
 export const SHARE_MESSAGE: Record<Shared, string | null> = {
   shared: null,
   cancelled: null,
-  unsupported: "This browser can't share files, so the GPX was downloaded instead.",
-  refused: "This browser doesn't allow sharing GPX files, so it was downloaded instead. Open it from your downloads.",
+  unsupported: `This browser can't share files, so the GPX was downloaded instead. ${HOW_TO_OPEN}`,
+  refused: `This browser doesn't allow sharing GPX files, so it was downloaded instead. ${HOW_TO_OPEN}`,
 };

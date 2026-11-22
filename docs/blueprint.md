@@ -14,7 +14,7 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
 
 **Decisions: route fidelity**
 
-1. **Google Maps is an overview; the GPX is the exact route.** The link stays `travelmode=walking` (driving is road-only and obeys one-ways). It has at most 3 waypoints on a mobile browser (a coarse pointer and a narrow viewport, or the user agent; one tested function) and 9 elsewhere, [Google's limits](https://developers.google.com/maps/documentation/urls/get-started).
+1. **Google Maps is an overview; the GPX is the exact route.** The link stays `travelmode=walking` (driving is road-only and obeys one-ways). It has at most 3 waypoints on a mobile browser (a coarse pointer and a narrow viewport, or the user agent; one tested function. *Default:* narrow is under 900 px, the app's desktop breakpoint, of the viewport or the screen, whichever is smaller, because a phone's "Desktop site" widens only the viewport) and 9 elsewhere, [Google's limits](https://developers.google.com/maps/documentation/urls/get-started).
 2. **A14, overview points:** `GET /v1/routes/{route_id}/overview-points?max=N` and `GET /v1/share/{slug}/overview-points?max=N`, 1 ≤ N ≤ 9.
    - Start and end are fixed. The route point that deviates most from the Valhalla pedestrian route between its current neighbours is added (maximum distance, sampled every 25 m) until N are used or every deviation is under 30 m.
    - It returns the points in route order, `max_deviation_m` and `overlap_pct`: the share of our length within 30 m of that Valhalla path, **leg by leg** (decided 2026-11-22: against the whole path an out-and-back scored 100 % while 1.9 km short). Valhalla stands in for Google.

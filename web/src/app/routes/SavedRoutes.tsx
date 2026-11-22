@@ -14,7 +14,7 @@ import { downloadGpx } from "@/components/SaveShare";
 import { StatNumber } from "@/components/StatNumber";
 import { Button, Snackbar } from "@/components/ui";
 import { Wordmark } from "@/components/Wordmark";
-import { ownRouteGpx, ownRoutePoints } from "@/export/ownRoute";
+import { ownRouteGpx, ownRouteOverview, ownRoutePoints } from "@/export/ownRoute";
 import { apiSaid, type ApiFailure } from "@/plan/planClient";
 import { planClient } from "@/plan/usePlan";
 import { deleteSaved, listSaved, patchSaved, restoreSaved, type SavedRow } from "@/saved/api";
@@ -150,7 +150,9 @@ export function SavedRoutes() {
           const id = openingIn.saved_id;
           setOpeningIn(null);
           setTimeout(() => toggles.current.get(id)?.focus());
-        }} loadPoints={() => ownRoutePoints(openingIn.route_id)} loadGpx={(ele) => ownRouteGpx(openingIn.route_id, ele)} />
+        }} footM={openingIn.foot_m} loadPoints={() => ownRoutePoints(openingIn.route_id)}
+          loadOverview={(max) => ownRouteOverview(openingIn.route_id, max)}
+          loadGpx={(ele) => ownRouteGpx(openingIn.route_id, ele)} />
       )}
 
       <div className="page-messages">

@@ -90,7 +90,7 @@ export default async function SharePage({ params }: Props) {
           )}
         </ol>
         <div className="share-actions">
-          <ShareOpenIn slug={slug} start={lonLat(line[0]!)} end={lonLat(line[line.length - 1]!)} kmMarks={shared.km_marks} />
+          <ShareOpenIn slug={slug} footM={p.foot_m} start={lonLat(line[0]!)} end={lonLat(line[line.length - 1]!)} kmMarks={shared.km_marks} />
           <a className="btn btn-secondary" href={`${API_BASE}/v1/share/${slug}/gpx`} data-testid="share-gpx">
             <Icon name="download" />Download GPX
           </a>
