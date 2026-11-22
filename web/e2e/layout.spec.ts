@@ -78,6 +78,17 @@ test("the peek stats show only at peek", async ({ page }) => {
   }
 });
 
+test("the chip row fades where it is clipped", async ({ page }) => {
+  await planA01Base(page);
+  const row = page.getByTestId("chips");
+  await expect(row).toHaveClass(/more-right/);
+  await expect(row).not.toHaveClass(/more-left/);
+  await page.screenshot({ path: test.info().outputPath("chips-start.png") });
+  await row.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
+  await expect(row).toHaveClass(/more-left/);
+  await expect(row).not.toHaveClass(/more-right/);
+});
+
 test("the Undo message moves with the sheet and covers no content", async ({ page }) => {
   await planA01Base(page);
   await addStop(page, PLACES.kottakkadavu);

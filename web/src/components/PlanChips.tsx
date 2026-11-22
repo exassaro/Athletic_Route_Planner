@@ -2,7 +2,9 @@
 /**
  * The plan as chips (blueprint Phase 5b amendment 8): one chip per constraint of the current RouteRequest; a tap
  * opens its editor. The chip that needs changing (the distance, when the stops need more than it) is marked.
+ * The row scrolls: it fades at an edge with more beyond it, and snaps chip by chip (amendment 15).
  */
+import { useEffect, useRef, useState } from "react";
 import type { RouteRequest } from "@/plan/edits";
 import { km } from "@/plan/format";
 import type { IconName } from "@/brand/icons";
@@ -19,7 +21,31 @@ const SHAPE: Record<RouteRequest["route_type"], { label: string; icon: IconName 
 
 type Props = { request: RouteRequest; attention?: ChipKey[]; onOpen: (key: ChipKey) => void };
 
+/** Which edges of a scrolling row have more beyond them (1 px of slack for fractional widths). */
+export function hiddenEdges(scrollLeft: number, width: number, contentWidth: number) {
+  return { left: scrollLeft > 1, right: scrollLeft + width < contentWidth - 1 };
+}
+
 export function PlanChips({ request, attention = [], onOpen }: Props) {
+  const row = useRef<HTMLUListElement>(null);
+  const [more, setMore] = useState({ left: false, right: false });
+  useEffect(() => {
+    const el = row.current;
+    if (!el) return;
+    const update = () => setMore((was) => {
+      const now = hiddenEdges(el.scrollLeft, el.clientWidth, el.scrollWidth);
+      return now.left === was.left && now.right === was.right ? was : now;
+    });
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const size = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
+    size?.observe(el);
+    for (const chip of el.children) size?.observe(chip);   // a longer label moves the edge too
+    return () => {
+      el.removeEventListener("scroll", update);
+      size?.disconnect();
+    };
+  }, [request]);
   const chips: { key: ChipKey; label: React.ReactNode; icon?: IconName; name: string }[] = [];
   if (request.start) chips.push({ key: "start", label: `From ${request.start.label ?? "a point"}`, icon: "mapPin", name: "Change the start" });
   chips.push({ key: "distance", name: "Change the distance",
@@ -38,7 +64,7 @@ export function PlanChips({ request, attention = [], onOpen }: Props) {
   chips.push({ key: "paths", name: "Change the road preference",
     label: request.preferences?.paths === "allow" ? "Paths allowed" : "Roads first" });
   return (
-    <ul className="plan-chips" aria-label="Your plan: tap a chip to change it" data-testid="chips">
+    <ul ref={row} className={`plan-chips${more.left ? " more-left" : ""}${more.right ? " more-right" : ""}`} aria-label="Your plan: tap a chip to change it" data-testid="chips">
       {chips.map((c) => (
         <li key={c.key} data-chip={c.key}>
           <Chip icon={c.icon} attention={attention.includes(c.key)} onClick={() => onOpen(c.key)}

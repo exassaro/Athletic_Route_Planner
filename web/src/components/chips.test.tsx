@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RouteRequest } from "@/plan/edits";
 import { EditorDialog } from "./EditorDialog";
-import { PlanChips } from "./PlanChips";
+import { hiddenEdges, PlanChips } from "./PlanChips";
 
 afterEach(cleanup);
 
@@ -48,5 +48,14 @@ describe("EditorDialog", () => {
     rerender(<EditorDialog open={false} title="Distance" onClose={onClose} testId="chip-editor"><p>stepper</p></EditorDialog>);
     expect(dlg.hasAttribute("open")).toBe(false);
     expect(screen.queryByText("stepper")).toBeNull();
+  });
+});
+
+describe("hiddenEdges", () => {
+  it("fades only an edge with more beyond it", () => {
+    expect(hiddenEdges(0, 360, 700)).toEqual({ left: false, right: true });
+    expect(hiddenEdges(120, 360, 700)).toEqual({ left: true, right: true });
+    expect(hiddenEdges(339.6, 360, 700)).toEqual({ left: true, right: false });
+    expect(hiddenEdges(0, 360, 360)).toEqual({ left: false, right: false });
   });
 });

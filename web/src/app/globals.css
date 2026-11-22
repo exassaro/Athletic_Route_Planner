@@ -389,9 +389,18 @@ a.button.primary { background: var(--accent); color: var(--accent-fg); border-co
 .plan-chips {
   list-style: none; display: flex; gap: var(--space-1); margin: 0 -16px var(--space-1); padding: 2px 16px 4px;
   overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity; scroll-padding: 0 16px;
+  --fade-left: 0px; --fade-right: 0px;
 }
 .plan-chips::-webkit-scrollbar { display: none; }
-.plan-chips li { flex: none; }
+.plan-chips li { flex: none; scroll-snap-align: start; }
+/* The fade (amendment 15): only at an edge with more beyond it. */
+.plan-chips.more-left { --fade-left: 28px; }
+.plan-chips.more-right { --fade-right: 36px; }
+.plan-chips.more-left, .plan-chips.more-right {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fade-left), #000 calc(100% - var(--fade-right)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--fade-left), #000 calc(100% - var(--fade-right)), transparent);
+}
 dialog.editor {
   width: 100%; max-width: 560px; max-height: 85dvh; margin: auto auto 0; padding: 0; overflow: auto;
   border: 0; border-top: 1px solid var(--hairline); border-radius: 8px 8px 0 0; background: var(--paper); color: var(--ink);
