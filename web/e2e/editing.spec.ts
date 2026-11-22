@@ -46,6 +46,53 @@ test("opens on the saved route's candidate", async ({ page, request }) => {
   await expect(page.locator(".route-card.selected")).toBeInViewport();
 });
 
+test("Update keeps the link, Undo puts the route back, Save as new makes another", async ({ page, request }) => {
+  const { token, headers, v1, saved } = await savedA01(request, "Coast run");
+  const footM = async (slug = saved.share_slug) =>
+    (await (await request.get(`${API}/v1/share/${slug}`)).json()).route.properties.foot_m;
+  await actAs(page, token);
+  await page.goto(`/?edit=${saved.saved_id}`);
+  await waitVersion(page, 1);
+  const update = page.getByTestId("update");
+  await expect(update).toHaveText("Update Coast run");
+  await expect(update).toBeDisabled();
+  await expect(page.getByTestId("update-hint")).toHaveText("No changes yet");
+  await expect(page.getByTestId("editing-save")).toContainText("Anyone with the share link will see the updated route.");
+
+  await setDistance(page, 20);
+  await waitVersion(page, 2);
+  await expect(update).toBeEnabled();
+  // undoing the edit is a new route id, and still "no changes"
+  await page.getByTestId("diff-toast").getByRole("button", { name: "Undo" }).click();
+  await waitVersion(page, 3);
+  await expect(update).toBeDisabled();
+
+  await setDistance(page, 20);
+  await waitVersion(page, 4);
+  const shown = Number(await page.locator(".route-card.selected [data-field=foot_m]").first().getAttribute("data-value"));
+  await update.click();
+  await expect(page.getByTestId("saved-toast")).toContainText("Updated Coast run.");
+  await expect(update).toBeDisabled();
+  expect(await footM()).toBe(shown);
+  await page.getByTestId("saved-toast").getByRole("button", { name: "Undo" }).click();
+  await expect(page.getByTestId("saved-toast")).toContainText("Update undone");
+  expect(await footM()).toBe(v1.candidates[0]!.foot_m);
+  await expect(update).toBeEnabled();
+
+  await page.getByTestId("new-name").fill("Short coast run");
+  await page.getByTestId("save-as-new").click();
+  await expect(update).toHaveText("Update Short coast run");
+  await expect(update).toBeDisabled();
+  await expect(page.locator(".history"), "still on screen, not reloaded").toContainText("Version 4");
+  const slug = (await page.getByTestId("share-link").getAttribute("href"))!.split("/s/")[1]!;
+  expect(slug).not.toBe(saved.share_slug);
+  expect(await footM(slug)).toBe(shown);
+  expect(await footM(), "the first is untouched").toBe(v1.candidates[0]!.foot_m);
+  const list = await (await request.get(`${API}/v1/me/routes`, { headers })).json();
+  expect(list).toHaveLength(2);
+  await expect(page).toHaveURL(new RegExp(`edit=${list[0].saved_id}$`));
+});
+
 test("a route that isn't this client's, or is deleted: a calm message and the setup steps", async ({ page, request }) => {
   const mine = await savedA01(request);
   const theirs = await savedA01(request);

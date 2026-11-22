@@ -588,6 +588,12 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
   border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface); color: var(--ink);
 }
 .opening-note p { margin: 0; }
+/* The save control while editing (Phase 5c amendment 2) */
+.editing-save { display: grid; gap: var(--space-1); margin-bottom: var(--space-1); }
+.editing-save p { margin: 0; }
+.editing-save input { flex: 1; min-width: 0; }
+.update-button { max-width: 100%; }
+.ellipsis { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* "Open in..." (amendment 20) */
 .open-in { display: grid; gap: var(--space-2); }
 .open-in-group { display: grid; gap: var(--space-1); }

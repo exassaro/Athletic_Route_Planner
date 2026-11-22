@@ -3,25 +3,24 @@
  * Save (and rename), share link, GPX download (section 13 "Keep"). Saving again renames and keeps the link
  * (Phase 4 choice 9). The GPX needs the client token, so it is fetched and handed to the browser as a file;
  * the runner can leave the elevation out (Phase 5 A2) so the importing app uses its own.
+ * While a saved route is edited its own control takes the place of Save (EditingSave, Phase 5c).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { Schemas } from "@/api/client";
 import { saveFile } from "@/export/gpxFile";
 import { ownRouteGpx, ownRoutePoints } from "@/export/ownRoute";
 import { planClient } from "@/plan/usePlan";
+import { NAME_MAX } from "@/saved/name";
+import { shareUrl } from "@/saved/share";
 import { OpenIn } from "./OpenIn";
 
 type Candidate = Schemas["CandidateOut"];
-
-export function shareUrl(slug: string): string {
-  return `${window.location.origin}/s/${slug}`;
-}
 
 export async function downloadGpx(routeId: string, ele: boolean) {
   saveFile(await ownRouteGpx(routeId, ele));
 }
 
-export function SaveShare({ cand }: { cand: Candidate }) {
+export function SaveShare({ cand, control }: { cand: Candidate; control?: ReactNode }) {
   const [name, setName] = useState("");
   const [saved, setSaved] = useState<Schemas["SavedOut"] | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -50,10 +49,11 @@ export function SaveShare({ cand }: { cand: Candidate }) {
   return (
     <section className="keep" aria-label="Save and share">
       <h2>Keep this route</h2>
+      {control ?? <>
       <div className="row">
         <label htmlFor="route-name" className="sr-only">Name</label>
         <input id="route-name" placeholder="Name (optional)" value={name} onChange={(e) => setName(e.target.value)}
-          maxLength={200} data-testid="route-name" />
+          maxLength={NAME_MAX} data-testid="route-name" />
         <button type="button" onClick={save} data-testid="save">{saved ? "Rename" : "Save"}</button>
       </div>
       {saved && (
@@ -62,6 +62,7 @@ export function SaveShare({ cand }: { cand: Candidate }) {
           <button type="button" onClick={copy}>Copy link</button>
         </p>
       )}
+      </>}
       <div className="row">
         <OpenIn loadPoints={() => ownRoutePoints(cand.route_id)} loadGpx={(ele) => ownRouteGpx(cand.route_id, ele)} />
         <button type="button" onClick={() => downloadGpx(cand.route_id, true).catch((e) => setMsg(String(e.message)))}

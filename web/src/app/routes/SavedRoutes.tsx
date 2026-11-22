@@ -8,7 +8,8 @@ import { Button } from "@/components/ui";
 import { Wordmark } from "@/components/Wordmark";
 import { OpenIn } from "@/components/OpenIn";
 import { ownRouteGpx, ownRoutePoints } from "@/export/ownRoute";
-import { downloadGpx, shareUrl } from "@/components/SaveShare";
+import { downloadGpx } from "@/components/SaveShare";
+import { shareUrl } from "@/saved/share";
 import { planClient } from "@/plan/usePlan";
 import Link from "next/link";
 

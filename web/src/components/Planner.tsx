@@ -16,7 +16,9 @@ import { applyToDraft, blocked, patchFor, type Edit, type Point, type RouteReque
 import { pace as formatPace, parsePace, signedKm } from "@/plan/format";
 import { usePace } from "@/plan/pace";
 import type { Place } from "@/plan/places";
-import { planClient, usePlan, type Busy, type Opening } from "@/plan/usePlan";
+import { planClient, usePlan, type Busy, type Editing, type Opening } from "@/plan/usePlan";
+import { patchSaved } from "@/saved/api";
+import { EditingSave } from "./EditingSave";
 import type { NewRouteRequest } from "@/api/client";
 import { PeekBar } from "./PeekBar";
 import { RouteCards } from "./RouteCards";
@@ -56,6 +58,8 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
   const [picking, setPicking] = useState<null | "start">(null);
   const [locError, setLocError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  /** After an update or a save as new; `undo` is what the saved route showed before. */
+  const [savedNote, setSavedNote] = useState<{ text: string; undo?: Editing } | null>(null);
   const v = plan.version;
   const request: Draft = v ? v.request : draft;
   const solving = plan.busy.kind === "solving" || plan.busy.kind === "busy" || plan.busy.kind === "waiting";
@@ -92,6 +96,7 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
     const fallback = v.candidates.length === 0 ? "Still no route: see what to change below" : "No change to the route";
     // It stays until the next change or until dismissed (no timer: it must be readable and its Undo reachable).
     setToast(parts.join(", ") || fallback); // eslint-disable-line react-hooks/set-state-in-effect
+    setSavedNote(null);
   }, [v]);
 
   const onEdit = useCallback((e: Edit) => {
@@ -217,6 +222,29 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
     </>
   );
 
+  const { setEditing } = plan;
+  const onUpdated = (next: Editing, previous: Editing) => {
+    setEditing(next);
+    setToast(null);
+    setSavedNote({ text: `Updated ${next.saved.name ?? "this route"}.`, undo: previous });
+  };
+  const undoUpdate = async (previous: Editing) => {
+    try {
+      const out = await patchSaved(plan.client, previous.saved.saved_id, { route_id: previous.saved.route_id });
+      setEditing({ ...previous, saved: out });
+      setSavedNote({ text: "Update undone. The share link shows the earlier route again." });
+    } catch {
+      setSavedNote({ text: "Could not undo. Try again.", undo: previous });
+    }
+  };
+  const onSavedAsNew = (next: Editing) => {
+    setEditing(next);
+    setToast(null);
+    setSavedNote({ text: `Saved ${next.saved.name ?? "it"} as a new route.` });
+    // a reload opens the new one; replaceState does not render the page again, so the plan on screen stays
+    window.history.replaceState(null, "", `/?edit=${next.saved.saved_id}`);
+  };
+
   const startControls = (
     <div className="start-field">
       {!v && request.start && (
@@ -239,7 +267,12 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
       <MapView onReady={setMap} theme={theme} pointing={pickingDirection ? pointing(request) : null} />
       <TopBar setupMode={!v} near={near} canAddStop={!!v} onPlace={onPlace} menu={menu} />
       <BottomSheet snap={sheet} onSnap={setSheet} label="Plan your run" halfRatio={v ? 0.5 : 0.64}
-        banner={toast && (
+        banner={savedNote ? (
+          <Snackbar testId="saved-toast" onDismiss={() => setSavedNote(null)} actionIcon="undo"
+            actionLabel={savedNote.undo ? "Undo" : undefined} onAction={() => savedNote.undo && undoUpdate(savedNote.undo)}>
+            {savedNote.text}
+          </Snackbar>
+        ) : toast && (
           <Snackbar testId="diff-toast" onDismiss={() => setToast(null)}
             actionLabel={v && plan.canUndo && !solving ? "Undo" : undefined} actionIcon="undo" onAction={plan.undo}>
             {toast}
@@ -262,7 +295,10 @@ export function Planner({ editSavedId = null }: { editSavedId?: string | null })
                 onMapPick={mapPick} />
               {candidates[selected] && <RouteDetail map={map} cand={candidates[selected]!} index={selected}
                 onFirstKm={(routeId, [lon]) => setFirstKm({ routeId, lon })} />}
-              {candidates[selected] && <SaveShare cand={candidates[selected]!} />}
+              {candidates[selected] && <SaveShare cand={candidates[selected]!} control={plan.editing && (
+                <EditingSave key={plan.editingSavedId} editing={plan.editing} request={v.request} cand={candidates[selected]!}
+                  solving={solving} onUpdated={onUpdated} onSavedAsNew={onSavedAsNew} />
+              )} />}
             </>
           )}
           {/* Before the first route: the five setup steps. After it, every change goes through the chips. */}
