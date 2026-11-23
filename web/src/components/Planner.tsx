@@ -258,6 +258,9 @@ export function Planner() {
         setSheet(kept.sheet);
         if (kept.run) setEditor(kept.editor);
         view.current = jumpTo.current = kept.view;
+        // the setup opens again on the restored step. Only then: a remount replaces the server's first paint,
+        // which made the largest paint wait for the scripts (Lighthouse, Phase 5d step 9)
+        setFlow((n) => n + 1);
         /* eslint-enable react-hooks/set-state-in-effect */
       }
       const run = at?.run ?? kept?.run;
@@ -268,7 +271,6 @@ export function Planner() {
         open({ kind: "plan", plan: run.plan, version: run.version, edit: run.edit, history: kept?.run?.history ?? null });
       }
     }
-    setFlow((n) => n + 1);
     setReady(true);
   }, [open]);
 

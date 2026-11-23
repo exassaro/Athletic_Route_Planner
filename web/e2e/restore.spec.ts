@@ -41,6 +41,18 @@ async function expectHalfASetup(page: Page) {
   await expect(page.locator(".setup-answers")).toContainText("Athanikkal · 18.0 km · Loop");
 }
 
+test("a fresh tab keeps the server's step 1: nothing is restored, so nothing is drawn again", async ({ page }) => {
+  // a remount after hydration made the largest paint wait for every script (Lighthouse, Phase 5d step 9)
+  await page.addInitScript(() => document.addEventListener("DOMContentLoaded", () => {
+    const title = document.querySelector(".setup-title");
+    if (title) (title as HTMLElement).dataset.fromServer = "yes";
+  }));
+  await page.goto("/");
+  await expect(page.getByTestId("start-search")).toBeVisible();
+  await page.waitForTimeout(1500);
+  await expect(page.locator(".setup-title"), "the server's heading, not a new one").toHaveAttribute("data-from-server", "yes");
+});
+
 test("refresh during setup: the same step, answers, sheet and map view, and step 1 never flashes", async ({ page }) => {
   await halfASetup(page);
   await page.locator(".sheet-handle").click();
