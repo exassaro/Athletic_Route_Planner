@@ -19,7 +19,14 @@ Items 1 to 3 of the Phase 5e brief (resume on refresh), brought forward on 2026-
 
 5. **The elevation chart is loaded when there is a route**, not in the first load of `/` (item 6's list), which keeps `/` within 5 KB of the Phase 5b-fix baseline.
 
-**Not covered:** a refresh during a run in Follow mode, which Phase 5d amendments 4 and 5 forbid storing (open), and an edit still being solved at the moment of the refresh, where the version before it comes back.
+6. **A run in Follow mode survives a refresh, in its tab only** (decided 2026-11-23; it replaces "nothing about a run is saved ... in the browser" in Phase 5d amendments 4, 5, 8, 10 and 11).
+   - sessionStorage `gatho:run:v1` holds three things: **metres done, the start time and the pauses** (their total, and since when the open one; Stop is the last pause, with a mark). With them only the schema and the route's id, so the metres are never applied to another route.
+   - **No coordinates, no time of the last fix, no gaps.** Metres along a known route still say where the runner is, which is why this needed a decision. They are never sent or logged.
+   - The tracker takes the earliest time those metres could have been reached (5 m/s, 100 m of slack) as its last match, so the window is not too small. [Simulated](reports/phase5d/follow.md): 4 wrong passes in 14,400 refreshes, against 1 with the time stored.
+   - Coming back shows "Your run is still going", and the location is asked for only when "Carry on" is tapped. The summary then says that earlier time away and skipped parts aren't known.
+   - It is cleared by Done and by "Plan a new run" (whose Undo puts it back), replaced when another run starts, and ignored after 12 hours (*default*, as the draft).
+
+**Not covered:** an edit still being solved at the moment of the refresh, where the version before it comes back.
 
 ## Phase 5d amendments
 
@@ -41,13 +48,13 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
    - The rule stays greedy. It must deviate less than even spacing at N = 3 and N = 9, the limits the app uses, on A01 and S02 (tested; decided 2026-11-22 after [the measurement](reports/phase5d/overview.md): at N = 1 and 2 it can tie or lose).
 3. **"Open in...", in this order:**
    - **"Get GPX (exact route)"**, the primary button. It shares the file where the browser can. Otherwise (Chrome on Android refuses `.gpx`) it downloads it and says how to open it. Under it: "Open it in Organic Maps or OsmAnd (free, offline maps) to see the exact line."
-   - **"Google Maps (overview)"**, with "Google may re-route between points, so the path and distance can differ. Our route: <km>. Estimated overlap: <n>% (tested with our router, not Google)." Without overview points the last sentence is left out. The estimate is never called Google's path.
+   - **"Google Maps (overview)"**, with "Google may re-route between points, so the path and distance can differ. Our route: <km>. Estimated overlap: <n>% (tested with our router, not Google)." Above 95 the number reads "over 95%" (decided 2026-11-23), because it is our router's estimate. Without overview points the last sentence is left out. The estimate is never called Google's path.
    - **"How to see the exact line in Google Maps"**, collapsed: the steps from [My Maps help](https://support.google.com/mymaps/answer/3024836), saying "needs a computer", because My Maps is not available on Android or iOS.
    - Garmin and Strava stay as manual notes.
 
 **Decisions: Follow mode**
 
-4. **`/follow?saved=<saved_id>`, `?route=<route_id>` or `?share=<slug>`**, from a "Follow" button on the saved route card, the route card and the share page. A visitor never gets a session. It is foreground only and needs HTTPS. Nothing about a run is saved, on the server or in the browser; what survives a refresh is decided in Phase 5e.
+4. **`/follow?saved=<saved_id>`, `?route=<route_id>` or `?share=<slug>`**, from a "Follow" button on the saved route card, the route card and the share page. A visitor never gets a session. It is foreground only and needs HTTPS. Nothing about a run is saved on the server. Its tab keeps three values until Done (Phase 5e amendment 6).
    - It opens in the same tab from all three. The planner restores itself on the way back (Phase 5e amendments 1 and 2).
    - The saved route's card has three buttons (Open, Edit, Follow).
 5. **What the UI may work out, in Follow only:**
@@ -55,7 +62,7 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
    - the straight-line distance back to the line, always labelled straight-line;
    - the bearing back to the line, shown in words.
 
-   None of the three is sent, stored or logged.
+   None of the three is sent or logged. Of them only the metres done are stored, in the tab (Phase 5e amendment 6).
 6. **A15, follow data:** `GET /v1/routes/{route_id}/follow` and `GET /v1/share/{slug}/follow`, fetched once, before the run. They return the route's vertices, the metres along the route at each, and the cues. The vertices come in the same answer, so they cannot belong to another route than the metres when a share link is updated.
    - A cue is a bearing change over 35° within 20 m, at a junction, with the road's name where Valhalla has one: "In 300 m: turn left onto <road>", otherwise "In 300 m: turn left". Cues under 50 m apart are merged (*default*): the later turns follow ("turn right, then left"), none is dropped.
    - At a junction: within 15 m along the line of a node where another walkable edge meets it (*default*, from [the measurement](reports/phase5d/cues.md)). A turnaround is always a cue.
@@ -81,10 +88,10 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
     - After more than 30 s away: "You were away for 2 min 10 s. Cues are off while the screen is locked." (with the real gap). The summary counts the gaps.
     - Elapsed time comes from timestamps, never from a timer.
 11. **Start screen:** "Locking your phone pauses GATHO's tracking. Keep the screen on, or use the GPX in Organic Maps or on a watch for long runs." A missing or refused wake lock shows one line. A refused location permission shows a calm message.
-    - **Back during a run** (added 2026-11-22 at the product owner's request) asks "Stop this run?" instead of losing it: one history entry made in a tap, nothing stored, no beforeunload prompt. A second Back leaves.
+    - **Back during a run** (added 2026-11-22 at the product owner's request) asks "Stop this run?" instead of losing it: one history entry made in a tap, no beforeunload prompt. A second Back leaves, and the run can be carried on from this tab (Phase 5e amendment 6).
 12. **Screen and HUD:** the map shows the route with the part done dimmed, and a live dot with its accuracy ring. At peek: km done, km left, elapsed and pace in the pixel numerals with `data-value`, and the next cue. Pause, resume and stop. Stop shows a summary (distance done, time, gaps) and "Done".
     - The distances and pace are labelled "along the route", because a shortcut counts as done. When progress jumped over a part, the summary says "includes a skipped part" (decided 2026-11-22).
-    - When the runner may have finished while locked (the window reaches the end, and they are at it or not yet found), Stop asks "Did you finish the route?", and a yes records 100 % (decided 2026-11-22: a loop's finish cannot be told from standing at its start). Any other Stop asks "Stop this run?" once, because nothing is saved (*default*).
+    - When the runner may have finished while locked (the window reaches the end, and they are at it or not yet found), Stop asks "Did you finish the route?", and a yes records 100 % (decided 2026-11-22: a loop's finish cannot be told from standing at its start). Any other Stop asks "Stop this run?" once, because a stopped run can't be carried on (*default*).
 13. **Voice cues:** English, off by default, offered only with an on-device voice (`localService`), because a remote voice sends the text away.
 14. **Motion and battery:** the sneaker pin stays still (the live dot is the runner) and reduced motion is respected. "Battery saver" is an optional near-black HUD with no map animation; the screen stays on. It also darkens the map, keeping the sprite already loaded so that it makes no request during a run (*default*).
 15. **Gates:** no Lighthouse regression, with `/follow` reported; the Follow code and the contents of "Open in..." are not in the first load of `/`; both themes; 44 px targets. The report gives the overlap before and after, the browser limits, and what was not tested on real devices, with the Redmi lock test (lock for 60 s mid-run, wake, time the first fix).

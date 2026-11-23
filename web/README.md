@@ -40,7 +40,7 @@ waiting rules, formatting), `src/components/` (planner screens), `src/map/` (Map
 
 ## Follow mode logic (Phase 5d step 5)
 
-`src/follow/` is pure (no DOM, network, storage or clock): `line` (the route), `tracker` (progress), `offRoute`,
+`src/follow/` is pure (no DOM, network, storage or clock; `kept` is the text a tab keeps of a run, Phase 5e amendment 6): `line` (the route), `tracker` (progress), `offRoute`,
 `cues`, `clock`, and `run`, which puts them together as a reducer. `npm run sim:follow` runs these modules under
 simulated GPS (about 10 minutes, Node 22.18 or later for type stripping) and writes
 `docs/reports/phase5d/follow_sim_data.json`; the findings are in `docs/reports/phase5d/follow.md`.
@@ -58,4 +58,4 @@ and fails on any request at all.
 
 `src/restore/`: `draft` (what may be stored, and reading it safely), `tab` (the address and sessionStorage) and
 `boot` (the head script that keeps step 1 from flashing). A restore only reads the API. Nothing with geometry, a
-GPS position or a token goes into storage. Test: `npx playwright test --project=restore`.
+GPS position or a token goes into storage. A run keeps metres done, start time and pauses only (`gatho:run:v1`). Test: `npx playwright test --project=restore`.

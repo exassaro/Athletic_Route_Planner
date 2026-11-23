@@ -23,7 +23,7 @@ import type { Place } from "@/plan/places";
 import { planClient, usePlan, type Busy, type Editing, type Kept, type Opening } from "@/plan/usePlan";
 import { RESTORING } from "@/restore/boot";
 import { MY_LOCATION, rebuildItems, serialise, type Draft, type RunPointer, type View } from "@/restore/draft";
-import { clearTab, planAddress, readAddress, readTab, tabWriter } from "@/restore/tab";
+import { clearTab, planAddress, readAddress, readTab, runText, storeRun, tabWriter } from "@/restore/tab";
 import { patchSaved } from "@/saved/api";
 import { ClearedMessage } from "./ClearedMessage";
 import { EditingSave } from "./EditingSave";
@@ -58,7 +58,8 @@ function placePoint(p: Place): Point {
 const NEW_VIEW: View = { center: KOZHIKODE, zoom: 12 };
 
 /** Everything "Plan a new run" takes away. */
-type Cleared = { plan: Kept; draft: Draft; step: number; seq: number; sheet: Snap; view: View | null; rebuild: boolean };
+type Cleared = { plan: Kept; draft: Draft; step: number; seq: number; sheet: Snap; view: View | null; rebuild: boolean;
+  /** A run in Follow mode. */ run: string | null };
 type Builds = NonNullable<Schemas["HealthOut"]["builds"]>;
 
 function olderMap(made: Schemas["BuildsOut"], now: Builds | null): boolean {
@@ -358,7 +359,7 @@ export function Planner() {
 
   const planNewRun = () => {
     setCleared({ plan: plan.clear(), draft: v ? (v.request as Draft) : draft, step, seq: selected, sheet,
-      view: view.current, rebuild: v ? false : rebuild });
+      view: view.current, rebuild: v ? false : rebuild, run: runText() });
     setDraft(NEW_DRAFT);
     setStep(1);
     setFlow((n) => n + 1);
@@ -376,12 +377,14 @@ export function Planner() {
     atLocation.current = false;
     map?.jumpTo(NEW_VIEW);
     clearTab();
+    storeRun(null);
     // the button that had the focus is gone
     setTimeout(() => document.querySelector<HTMLElement>(".setup-title")?.focus({ preventScroll: true }));
   };
 
   const undoClear = (was: Cleared) => {
     setCleared(null);
+    storeRun(was.run);
     setDraft(was.draft);
     setStep(was.step);
     setFlow((n) => n + 1);

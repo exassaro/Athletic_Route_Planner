@@ -32,6 +32,7 @@ async function setVisible(state: DocumentVisibilityState, seconds: number) {
 
 beforeEach(() => {
   clock = T0;
+  window.history.replaceState(null, "");        // the guard reads its mark from it
   vi.spyOn(Date, "now").mockImplementation(() => clock);
   watchPosition = vi.fn((ok: PositionCallback, failed: PositionErrorCallback) => {
     onFix = ok;
@@ -50,6 +51,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  sessionStorage.clear();
   vi.restoreAllMocks();
 });
 
@@ -328,5 +330,55 @@ describe("what /follow loads", () => {
       expect(isGone(failure)).toBe(true);
     }
     expect(fetched).not.toHaveBeenCalled();
+  });
+});
+
+describe("a refresh during a run", () => {
+  it("waits for Carry on, then follows the same run", () => {
+    const { line } = show();
+    tap("follow-start");
+    for (let t = 0; t <= 300; t += 5) fix(line, t, t * 3);
+    const done = value("follow.done_m");
+    cleanup();
+    watchPosition.mockClear();
+    wakeRequest.mockClear();
+    clock = T0 + 320_000;
+    show();
+    expect(view()).toBe("carry-on");
+    expect(value("follow.done_m")).toBe(done);
+    expect(value("follow.elapsed_s")).toBe(320);
+    expect(watchPosition, "the location waits for the tap").not.toHaveBeenCalled();
+    expect(wakeRequest).not.toHaveBeenCalled();
+    tap("follow-carry-on-button");
+    expect(watchPosition).toHaveBeenCalledTimes(1);
+    fix(line, 325, 975);
+    expect(view()).toBe("running");
+    expect(Math.abs(value("follow.done_m") - 975)).toBeLessThan(30);
+  });
+
+  it("a refreshed summary stays a summary, and Done clears the tab", () => {
+    const { line } = show();
+    tap("follow-start");
+    for (let t = 0; t <= 60; t += 5) fix(line, t, t * 3);
+    tap("follow-stop");
+    tap("follow-stop-confirm");
+    cleanup();
+    clock = T0 + 500_000;
+    const { onLeave } = show();
+    expect(view()).toBe("finished");
+    expect(value("follow.elapsed_s")).toBe(60);
+    expect(screen.getByTestId("follow-resumed").textContent).toContain("aren't known");
+    tap("follow-done");
+    expect(sessionStorage.length).toBe(0);
+    expect(onLeave).toHaveBeenCalledTimes(1);
+  });
+
+  it("another route's run is not carried on", () => {
+    const { line } = show();
+    tap("follow-start");
+    fix(line, 0, 0);
+    cleanup();
+    show("A01");
+    expect(view()).toBe("start");
   });
 });

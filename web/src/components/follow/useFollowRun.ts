@@ -1,14 +1,16 @@
 "use client";
 /**
  * The browser's side of a run (blueprint Phase 5d amendments 7 and 10): the position, handed to the pure reducer
- * (src/follow/run.ts) and to nothing else. It is asked for only when Follow is tapped, held in memory, and never
- * sent, stored or logged. The clock shown is read from timestamps; the interval only redraws it.
+ * (src/follow/run.ts) and to nothing else. It is asked for only when Follow or Carry on is tapped, held in memory,
+ * and never sent, stored or logged: the tab keeps only what src/follow/kept.ts lists. The clock shown is read from timestamps; the interval only redraws it.
  * A locked or hidden page gets no fixes: hiding and showing are told to the reducer, and on showing one fresh
  * position is asked for at once.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { keepRun, resumeRun } from "@/follow/kept";
 import type { Line } from "@/follow/line";
 import { reduceRun, startRun, type Run, type RunEvent } from "@/follow/run";
+import { runText, storeRun } from "@/restore/tab";
 
 export type Access =
   | "idle"
@@ -25,12 +27,13 @@ const TICK_MS = 1000;
 /** The first position after a wake or a resume. */
 const FRESH: PositionOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 };
 
-export function useFollowRun(line: Line) {
-  const [run, setRun] = useState<Run | null>(null);
+export function useFollowRun(line: Line, routeId: string) {
+  // the screen is only ever made in the browser, once the route is there
+  const [run, setRun] = useState<Run | null>(() => resumeRun(line, routeId, runText(), Date.now()));
   const [access, setAccess] = useState<Access>("idle");
   /** The browser can't get a position just now (indoors, no signal). */
   const [noPosition, setNoPosition] = useState(false);
-  const [now, setNow] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
   const watch = useRef<number | null>(null);
 
   const unwatch = useCallback(() => {
@@ -38,6 +41,11 @@ export function useFollowRun(line: Line) {
     watch.current = null;
   }, []);
   useEffect(() => unwatch, [unwatch]);
+
+  const kept = run && keepRun(routeId, run);
+  useEffect(() => {
+    if (kept) storeRun(kept);       // only when one of the kept values changes
+  }, [kept]);
 
   const running = run?.phase === "running";
   useEffect(() => {
@@ -125,6 +133,6 @@ export function useFollowRun(line: Line) {
     findNow();
   };
 
-  return { run, access, noPosition, now, start, cancel, pause: () => act("pause"), resume, stop,
+  return { run, access, noPosition, now, start, cancel, forget: () => storeRun(null), pause: () => act("pause"), resume, stop,
     dismissGap: () => send({ type: "dismissGap" }) };
 }

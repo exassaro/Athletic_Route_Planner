@@ -25,8 +25,9 @@ export const STRAVA_HELP = "https://support.strava.com/en-us/articles/15402061-h
 // say My Maps isn't available there.
 export const MY_MAPS_HELP = "https://support.google.com/mymaps/answer/3024836";
 
-/** Rounded down, as the API does: never 100 % while part of the route is off the path. */
-const wholePercent = (value: number) => `${Math.floor(value)}%`;
+/** Our router's estimate, so it never claims more than "over 95%". Up to that it is rounded down, as the API does. */
+const OVERLAP_CAP = 95;
+const overlapText = (value: number) => (value > OVERLAP_CAP ? `over ${OVERLAP_CAP}%` : `${Math.floor(value)}%`);
 
 /** Mounted only while the sheet is open, so everything is fetched fresh for the route it was opened on. */
 export default function OpenInOptions({ footM, loadPoints, loadOverview, loadGpx }: OpenInProps) {
@@ -85,7 +86,7 @@ export default function OpenInOptions({ footM, loadPoints, loadOverview, loadGpx
           <Num value={footM} format={(v) => km(v)} field="foot_m" />.
           {smart && (
             <>
-              {" "}Estimated overlap: <Num value={smart.overlap_pct} format={wholePercent} field="overlap_pct" />{" "}
+              {" "}Estimated overlap: <Num value={smart.overlap_pct} format={overlapText} field="overlap_pct" />{" "}
               (tested with our router, not Google).
             </>
           )}

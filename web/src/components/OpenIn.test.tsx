@@ -60,10 +60,13 @@ describe("the sheet's order and words", () => {
     expect(document.querySelector('[data-field="overlap_pct"]')!.getAttribute("data-value")).toBe("78.9");
   });
 
-  it("99.9 is shown as 99%, never 100", async () => {
-    open({ loadOverview: async () => ({ ...smart, overlap_pct: 99.9 }) });
-    await waitFor(() => expect(note()).toContain("Estimated overlap: 99%"));
-  });
+  for (const [pct, shown] of [[100, "over 95%"], [99.9, "over 95%"], [95.1, "over 95%"], [95, "95%"], [94.9, "94%"]] as const) {
+    it(`${pct} is shown as ${shown}`, async () => {
+      open({ loadOverview: async () => ({ ...smart, overlap_pct: pct }) });
+      await waitFor(() => expect(note()).toContain(`Estimated overlap: ${shown} (tested`));
+      expect(document.querySelector('[data-field="overlap_pct"]')!.getAttribute("data-value")).toBe(String(pct));
+    });
+  }
 
   it("the My Maps steps are collapsed and say they need a computer", async () => {
     open();

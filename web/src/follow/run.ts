@@ -1,6 +1,6 @@
 /**
  * One run in Follow mode (blueprint Phase 5d amendments 8 to 10): every event gives a new state, held in memory
- * only. The screen sends what the browser says (a fix, hidden, visible) and what the runner taps (pause, resume,
+ * (what a tab keeps of it: kept.ts). The screen sends what the browser says (a fix, hidden, visible) and what the runner taps (pause, resume,
  * stop), and draws the state. Nothing here reads the time, stores, logs or sends.
  */
 import { pauseClock, resumeClock, startClock, stopClock, type Clock } from "./clock";
@@ -41,11 +41,13 @@ export type Run = {
   here: { point: LonLat; accuracy: number } | null;
   /** The way back to the line: straight-line metres and a bearing. Never sent, stored or logged. */
   back: { offM: number; bearing: number | null } | null;
+  /** Carried on from what the tab kept: the gaps and skipped parts from before are not known. */
+  resumed: boolean;
 };
 
 export function startRun(at: number): Run {
   return { phase: "running", clock: startClock(at), track: startTrack(at), off: ON_ROUTE, hidden: null, gaps: [],
-    away: null, finding: true, lastFixAt: -Infinity, here: null, back: null };
+    away: null, finding: true, lastFixAt: -Infinity, here: null, back: null, resumed: false };
 }
 
 export function reduceRun(line: Line, s: Run, e: RunEvent): Run {

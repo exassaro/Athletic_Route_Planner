@@ -44,6 +44,27 @@ export function clearTab() {
   }
 }
 
+/** A run in Follow mode (Phase 5e amendment 6): src/follow/kept.ts says what is in it. */
+export const RUN_KEY = "gatho:run:v1";
+
+export function runText(): string | null {
+  try {
+    return window.sessionStorage.getItem(RUN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** `null` removes it. */
+export function storeRun(text: string | null) {
+  try {
+    if (text === null) window.sessionStorage.removeItem(RUN_KEY);
+    else window.sessionStorage.setItem(RUN_KEY, text);
+  } catch {
+    /* no storage: the run is on this page only */
+  }
+}
+
 export const WRITE_AFTER_MS = 300;
 
 /** Writes the latest text 300 ms after the last change, when idle; `flush` writes it now. */

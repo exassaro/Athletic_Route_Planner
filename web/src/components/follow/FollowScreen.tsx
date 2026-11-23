@@ -1,7 +1,7 @@
 "use client";
 /**
  * Follow's screens (blueprint Phase 5d amendments 11 and 12): start, running or paused, the questions at Stop, and
- * the summary. Foreground only, and nothing about a run is saved.
+ * the summary. Foreground only. A run is carried on after a refresh from what its tab kept (Phase 5e amendment 6).
  *
  * The retro budget (Phase 5b amendment 2): before a run the wordmark, the markers and the primary button's shadow;
  * during and after one the numerals, the markers and at most that shadow, so there is no wordmark then.
@@ -57,7 +57,8 @@ function NoAccess({ access }: { access: Access }) {
 export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
   const line = useMemo(() => createLine(route.points, route.along_m), [route]);
   const turns = useMemo(() => turnsOf(route.cues), [route]);
-  const { run, access, noPosition, now, start, cancel, pause, resume, stop, dismissGap } = useFollowRun(line);
+  const { run, access, noPosition, now, start, cancel, forget, pause, resume, stop, dismissGap } =
+    useFollowRun(line, route.route_id);
   const [question, setQuestion] = useState<Question>(null);
   const [saver, setSaver] = useState(false);
   const [theme] = useTheme();
@@ -67,13 +68,15 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
   const stopped = run?.phase === "stopped";
   const live = !!run && !stopped;
   const blocked = access === "denied" || access === "insecure" || access === "unsupported";
-  const screenLock = useWakeLock(live || access === "asking");
+  /** A run the tab kept, before "Carry on": the location waits for that tap. */
+  const waiting = live && access === "idle";
+  const screenLock = useWakeLock((live && !waiting) || access === "asking");
   const askStop = () => setQuestion(run && mayHaveFinished(line, run, Date.now()) ? "finished" : "stop");
   const guard = useBackGuard(() => {
     if (live) askStop();
     else if (access === "asking") cancel();
   });
-  const view = stopped ? "finished" : live ? (question ? "question" : run.phase)
+  const view = stopped ? "finished" : live ? (question ? "question" : waiting ? "carry-on" : run.phase)
     : blocked ? access : access === "idle" ? "start" : "asking";
 
   // the OSM credit and the map's notices sit above the sheet, whatever it holds
@@ -104,6 +107,10 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
     start();
     if (window.isSecureContext && navigator.geolocation) guard.arm();
   };
+  const done = () => {
+    forget();
+    onLeave();
+  };
   const keepGoing = () => {
     setQuestion(null);
     guard.arm();
@@ -118,7 +125,7 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
   return (
     <main ref={root} className={`planner follow${saver ? " saver" : ""}`} data-testid="follow-screen" data-view={view}
       data-screen-lock={screenLock} data-theme={saver ? "dark" : undefined}>
-      <FollowMap line={line} doneM={run?.track.doneM ?? 0} here={run?.here ?? null} following={live} theme={theme} saver={saver} />
+      <FollowMap line={line} doneM={run?.track.doneM ?? 0} here={run?.here ?? null} following={live && !waiting} theme={theme} saver={saver} />
       {live && (
         <IconButton icon="battery" label="Battery saver" aria-pressed={saver} className="icon-btn follow-saver"
           onClick={() => setSaver(!saver)} data-testid="follow-saver" />
@@ -188,7 +195,19 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
             </div>
           )}
 
-          {live && !question && (
+          {live && !question && waiting && (
+            <div className="follow-copy" data-testid="follow-carry-on">
+              <h1 className="t-title">{run.phase === "paused" ? "Your run is paused" : "Your run is still going"}</h1>
+              <p className="t-body-s">This tab kept it. Carry on to use your location again.</p>
+              <Stats line={line} run={run} now={now} />
+              <div className="follow-actions">
+                <Button variant="primary" icon="play" onClick={follow} data-testid="follow-carry-on-button">Carry on</Button>
+                <Button icon="stop" onClick={askStop} data-testid="follow-stop">Stop</Button>
+              </div>
+            </div>
+          )}
+
+          {live && !question && !waiting && (
             <>
               <h1 className="sr-only">Following the route</h1>
               {access === "denied"
@@ -215,7 +234,7 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
               <p className="t-body-s">
                 {question === "finished"
                   ? "GATHO couldn't track all of it, and the end is within reach of where it last saw you."
-                  : "Nothing is saved, so a stopped run can't be carried on."}
+                  : "A stopped run can't be carried on."}
               </p>
               <div className={`follow-actions${question === "finished" ? " follow-question-actions" : ""}`}>
                 {question === "finished" ? (
@@ -244,8 +263,13 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
                   {" "}for <Num value={away} format={gapText} field="follow.away_ms" /> in all. The time counts it.
                 </p>
               )}
-              <p className="t-body-s muted">Nothing was saved.</p>
-              <Button variant="primary" block icon="check" onClick={onLeave} data-testid="follow-done">Done</Button>
+              {run.resumed && (
+                <p className="t-body-s" data-testid="follow-resumed">
+                  This run was picked up again in this tab, so time away and any skipped part before that aren&apos;t known.
+                </p>
+              )}
+              <p className="t-body-s muted">Done clears this run. It isn&apos;t saved.</p>
+              <Button variant="primary" block icon="check" onClick={done} data-testid="follow-done">Done</Button>
             </div>
           )}
         </div>

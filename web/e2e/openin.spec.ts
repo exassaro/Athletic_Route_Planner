@@ -8,6 +8,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { checkNumbers, planA01Base, recordApi, strayNumbers } from "./helpers";
 
 const text = (p: readonly number[]) => `${p[1]!.toFixed(6)},${p[0]!.toFixed(6)}`;
+const shownOverlap = (pct: number) => (pct > 95 ? "over 95%" : `${Math.floor(pct)}%`);
 const NOTE = "Google may re-route between points, so the path and distance can differ. Our route: ";
 
 async function openSheet(page: Page) {
@@ -60,7 +61,7 @@ test("the result, a saved route and its share page: the GPX, and Google Maps wit
 
   const note = page.getByTestId("open-google-note");
   await expect(note).toContainText(NOTE);
-  await expect(note).toContainText(`Estimated overlap: ${Math.floor(overlap)}% (tested with our router, not Google).`);
+  await expect(note).toContainText(`Estimated overlap: ${shownOverlap(overlap)} (tested with our router, not Google).`);
   await expect(page.locator(".open-in button").first()).toHaveText("Get GPX (exact route)");
   await expect(page.getByTestId("open-in-sheet").locator(".btn-primary")).toHaveCount(1);
   await expect(page.getByTestId("open-mymaps")).not.toHaveAttribute("open");
@@ -123,7 +124,7 @@ test("the result, a saved route and its share page: the GPX, and Google Maps wit
     const [a, b] = [shared.get(key)!, query.get(key)!].map((v) => v.split(",").map(Number));
     a!.forEach((n, i) => expect(n, key).toBeCloseTo(b![i]!, 5));
   }
-  await expect(page.getByTestId("open-google-note")).toContainText(`Estimated overlap: ${Math.floor(overlap)}%`);
+  await expect(page.getByTestId("open-google-note")).toContainText(`Estimated overlap: ${shownOverlap(overlap)}`);
   await page.screenshot({ path: test.info().outputPath("sheet-share.png") });
   const [file] = await Promise.all([page.waitForEvent("download"), page.getByTestId("open-download").click()]);
   expect(readFileSync(await file.path(), "utf8")).toContain("<trkpt");

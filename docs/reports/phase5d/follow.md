@@ -47,6 +47,21 @@ Throwaway, read-only runs on the development database's geometries (not committe
   - 1 jump in 1,200 crossings;
   - 2 of 80 whole runs with poor GPS passed 100 m out, at one fix a second.
 
+## Resuming after a refresh (2026-11-23)
+
+A tab keeps only the metres done, the start time and the pauses, so the tracker does not know when it last matched. It assumes the earliest time those metres could have been reached. Throwaway simulation on this laptop with the modules that ship: A01, S02 and the out-and-back, drift and poor GPS, 800 trials a case. The cases are a refresh of 2 to 20 s moving, the same standing, and 1 to 15 minutes away.
+
+| Measure | Time of the last match known | From the three kept values |
+|---|--:|--:|
+| Wrong pass (14,400 each) | 1 | 4 |
+| False banner | 0 | 0 |
+| Out-and-back, refresh while moving: decided at the first fix | 98.8 to 99.8 % | 54.8 to 55.6 % |
+| Out-and-back, refresh while moving: wait, 95th percentile | 0 s | 16 to 25 s |
+| Out-and-back, refresh while standing: still waiting after 2 min | 0.9 to 1.6 % | 44.5 to 44.8 % (until the runner moves) |
+| A01 and S02, refresh while moving: wait, 95th percentile | 0 s | 0 to 11 s |
+
+The three values are enough to resume. Storing the time of the last match would remove most of the out-and-back's wait; it is not approved and not stored.
+
 ## Bugs the simulation found, fixed
 
 | Bug in the first version | Before | After |

@@ -24,7 +24,10 @@ type Mock = {
 async function mockPosition(context: BrowserContext) {
   await context.addInitScript(() => {
     const realNow = Date.now.bind(Date);
-    let ahead = 0;
+    // the clock moved by the test carries over a reload, as a real one does (window.name outlives the page)
+    const MARK = "gathoTestAhead:";
+    let ahead = window.name.startsWith(MARK) ? Number(window.name.slice(MARK.length)) || 0 : 0;
+    const move = (ms: number) => { ahead += ms; window.name = MARK + ahead; };
     Date.now = () => realNow() + ahead;
     let next = 0;
     const watchers = new Map<number, PositionCallback>();
@@ -54,7 +57,7 @@ async function mockPosition(context: BrowserContext) {
       __freshAsked: freshAsked,
       __wake: wake,
       async __visibility(state: DocumentVisibilityState, after: number) {
-        ahead += after * 1000;
+        move(after * 1000);
         visibility = state;
         document.dispatchEvent(new Event("visibilitychange"));
         await new Promise((r) => setTimeout(r, 100));
@@ -62,7 +65,7 @@ async function mockPosition(context: BrowserContext) {
       async __replay(fixes: { lon: number; lat: number; after: number; accuracy?: number; age?: number }[]) {
         for (let i = 0; i < fixes.length; i++) {
           const f = fixes[i]!;
-          ahead += f.after * 1000;
+          move(f.after * 1000);
           for (const ok of [...watchers.values()]) {
             ok({ timestamp: Date.now() - (f.age ?? 0) * 1000, coords: { longitude: f.lon, latitude: f.lat, accuracy: f.accuracy ?? 6 } } as GeolocationPosition);
           }
@@ -206,6 +209,11 @@ test("A01's GPX at running speed reaches 100 %, and the whole run asks the serve
     }
   });
 
+  const kept = await page.evaluate(() => sessionStorage.getItem("gatho:run:v1")!);
+  expect(Object.keys(JSON.parse(kept)).sort(), "three values, the route and the schema")
+    .toEqual(["doneM", "pausedAt", "pausedMs", "route", "schema", "startedAt", "stopped"]);
+  expect(kept, "no coordinate").not.toMatch(/(^|[^\d.])(7[56]|1[01])\.\d{4}/);
+
   await replay(page, fixes.slice(half));
   await page.waitForTimeout(800);
   expect(await number(page, "follow.done_m")).toBe(total);
@@ -234,7 +242,9 @@ test("A01's GPX at running speed reaches 100 %, and the whole run asks the serve
   });
   await expect.poll(() => asked.filter((url) => url.includes("canary=")).length, { message: "the recorder hears fetches" }).toBe(2);
   context.off("request", onRequest);
-  expect(await page.evaluate(() => JSON.stringify([{ ...localStorage }, { ...sessionStorage }, document.cookie])), "stored").toBe(stored);
+  expect(await page.evaluate(() => JSON.stringify([{ ...localStorage },
+    Object.fromEntries(Object.entries({ ...sessionStorage }).filter(([key]) => key !== "gatho:run:v1")), document.cookie])),
+  "stored nothing but the run's three values").toBe(stored);
   expect(logged.filter((line) => /7[56]\.\d{4}|1[01]\.\d{4}/.test(line)), "logged").toEqual([]);
   await checkLayout(page);
   await bothThemes(page, "finished");
@@ -366,6 +376,79 @@ test("the Back gesture during a run asks instead of losing it", async ({ page, c
   await page.getByTestId("follow-keep-going").click();
   await replay(page, running(points, along, 615, 700));
   expect(await number(page, "follow.done_m")).toBeGreaterThan(650);
+});
+
+test("a refresh during a run keeps it, and Done clears it", async ({ page, context }) => {
+  await mockPosition(context);
+  await actAs(page, made.token);
+  await page.goto("/routes");
+  const { points, along_m: along } = await openFollow(page, `saved=${made.saved.saved_id}`);
+  await page.getByTestId("follow-start").click();
+  await replay(page, running(points, along, 0, 1500, 1).map((f) => ({ ...f, after: 0.01 })));
+  const done = await number(page, "follow.done_m");
+  expect(done).toBeGreaterThan(1400);
+
+  await page.reload();
+  await expect(page.getByTestId("follow-carry-on")).toContainText("Your run is still going");
+  expect(await number(page, "follow.done_m")).toBe(done);
+  expect(await page.evaluate(() => (window as unknown as Mock).__watching()), "the location waits for the tap").toBe(0);
+  await page.waitForTimeout(900);
+  await checkLayout(page);
+  await bothThemes(page, "carry-on");
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.waitForTimeout(700);
+  await checkLayout(page);
+  await page.screenshot({ path: test.info().outputPath("carry-on-small.png") });
+
+  await page.goBack();
+  await expect(page.getByTestId("follow-question"), "Back still asks after a refresh").toBeVisible();
+  await page.getByTestId("follow-keep-going").click();
+  await page.getByTestId("follow-carry-on-button").click();
+  await replay(page, running(points, along, 1520, 1600));
+  expect(await number(page, "follow.done_m"), "the same run goes on").toBeGreaterThan(1550);
+
+  await page.getByTestId("follow-pause").click();
+  await page.reload();
+  await expect(page.getByTestId("follow-carry-on")).toContainText("Your run is paused");
+  await page.getByTestId("follow-stop").click();
+  await page.getByTestId("follow-stop-confirm").click();
+  const time = await number(page, "follow.elapsed_s");
+  await page.waitForTimeout(500);        // the guard's entry is popped
+  await page.reload();
+  await expect(page.getByTestId("follow-summary")).toContainText("Run stopped");
+  await expect(page.getByTestId("follow-resumed")).toBeVisible();
+  expect(await number(page, "follow.elapsed_s"), "stopped at the same time").toBe(time);
+  await page.getByTestId("follow-done").click();
+  await page.waitForURL(/\/routes$/);
+  expect(await page.evaluate(() => sessionStorage.getItem("gatho:run:v1"))).toBeNull();
+  await page.goBack();
+  expect(page.url(), "Back does not open the run again").not.toContain("/follow");
+});
+
+test("a second Back leaves and the run can be carried on; Plan a new run clears it", async ({ page, context }) => {
+  await mockPosition(context);
+  await planA01Base(page);
+  await page.locator(".sheet-handle").click();
+  const button = page.locator(".route-card").first().getByTestId("follow");
+  const answered = page.waitForResponse((r) => r.url().includes("/v1/") && r.url().endsWith("/follow"));
+  await button.click();
+  const { points, along_m: along } = await (await answered).json();
+  await expect(page.getByTestId("follow-start")).toBeVisible();
+  await page.getByTestId("follow-start").click();
+  await replay(page, running(points, along, 0, 300));
+  await page.goBack();
+  await expect(page.getByTestId("follow-question")).toBeVisible();
+  await page.goBack();
+  await page.waitForURL(/\/\?plan=/);
+  await button.click();
+  await expect(page.getByTestId("follow-carry-on")).toBeVisible();
+
+  await page.goBack();
+  await page.waitForURL(/\/\?plan=/);
+  await page.getByTestId("new-run").click();
+  expect(await page.evaluate(() => sessionStorage.getItem("gatho:run:v1"))).toBeNull();
+  await page.getByTestId("cleared-toast").getByRole("button", { name: "Undo" }).click();
+  await expect.poll(() => page.evaluate(() => !!sessionStorage.getItem("gatho:run:v1")), { message: "Undo puts it back" }).toBe(true);
 });
 
 test("Did you finish: yes records 100 %", async ({ page, context }) => {
