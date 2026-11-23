@@ -5,7 +5,30 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 ## Working rules
 
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
-- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5c**, managing saved routes (blueprint Phase 5c amendments 1 to 12). Built: `docs/reports/phase5c/summary.md`. Phase 5b (the GATHO redesign and its fix round) is built: `docs/reports/phase5b/summary.md`, `fix-summary.md`. Open: the hallway test (`docs/reports/phase5b/hallway/script.md`), and the shared per-IP limits behind Caddy (a separate change). Phase 5 (the web front end) is built: `docs/reports/phase5/summary.md`. Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first (A8, the GPX creator name, is approved).
+- **Phase by phase**, following blueprint section 15. Current phase: **Phase 5d**, route fidelity and Follow mode (blueprint Phase 5d amendments 1 to 15), with Phase 5e amendments 1 to 6 (planning and a run survive a refresh). Built: `docs/reports/phase5d/summary.md`. Open: the rest of the Phase 5e brief (cut off after "Fail the build"; faster reload and the bundle budget in CI are not built), and the device tests listed in that summary. Phase 5c (managing saved routes) is built: `docs/reports/phase5c/summary.md`. Phase 5b (the GATHO redesign and its fix round) is built: `docs/reports/phase5b/summary.md`, `fix-summary.md`. Open: the hallway test (`docs/reports/phase5b/hallway/script.md`), and the shared per-IP limits behind Caddy (a separate change). Phase 5 (the web front end) is built: `docs/reports/phase5/summary.md`. Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first (A8, the GPX creator name, is approved).
+
+## Phase 5e amendments (2026-11-22 and 2026-11-23, full text at the top of docs/blueprint.md; they win over earlier ones)
+
+1. **The address holds a computed plan:** `/?plan=<id>&v=<n>&r=<candidate>[&edit=<saved_id>]`, replaceState. On load that version is read and shown as a fresh result. **A restore never solves.**
+2. **sessionStorage `gatho:draft:v1`** keeps the setup, the sheet, the open editor, the map's view and the plan's pointer, for this tab. **No geometry, no GPS position, no token**: stops keep their OSM ids and are built again by the API. A "My location" start is not kept. 300 ms debounce, flushed on pagehide; 12 h; anything unreadable is a clean start.
+3. **"Plan a new run"** (menu) and "New run" (sheet) clear it, with Undo for 10 s. No beforeunload prompts.
+4. `overscroll-behavior-y: contain` on html. 5. The elevation chart loads with the first route (LazyRouteDetail).
+6. **A run survives a refresh in its tab:** sessionStorage `gatho:run:v1` = metres done, start time, pauses (+ schema, route id, a stopped mark). **No coordinates, no time of the last fix, no gaps.** The tracker assumes the earliest time those metres could be reached. "Carry on" asks for the location again. Cleared by Done and "Plan a new run".
+- The setup is remounted only when a stored step or draft comes back: a remount on every load made Lighthouse's largest paint wait for every script (planner 55 instead of 69; a `restore` test guards it).
+
+## Phase 5d amendments (2026-11-22, full text at the top of docs/blueprint.md; they win over earlier ones)
+
+1. **Google Maps is an overview, the GPX is the exact route.** `travelmode=walking`; **3 waypoints on a mobile browser, 9 elsewhere** (`waypointLimit(thisDevice())`, narrow = under 900 px).
+2. **A14** `GET /v1/routes/{id}/overview-points?max=N` and `/v1/share/{slug}/overview-points`: greedy waypoints against Valhalla's path, `overlap_pct` **leg by leg**; cached by route, N, Valhalla build; 503 → even km marks. Above 95 % the sheet says "over 95%".
+3. "Open in...": "Get GPX (exact route)" first, Google Maps (overview) with "Estimated overlap: n% (tested with our router, not Google)", My Maps steps (a computer only), Garmin and Strava notes.
+4. **`/follow?saved=|route=|share=`**, same tab, from the route card, saved card and share page. A visitor never gets a session. Foreground only, HTTPS.
+5. In Follow only, the UI may compute the position along the route (snapped, metres interpolated from the API's), the straight line back and its bearing. Never sent or logged.
+6. **A15** `GET /v1/routes/{id}/follow` and `/v1/share/{slug}/follow`: vertices, metres at each, cues (35° within 20 m, at a junction within 15 m, merged under 50 m); always 200.
+7. **Location never leaves the device.** No request may depend on a position: the corridor's tiles load before the run and are served from memory; the Follow style has no glyphs URL. The `follow` tests record every request during a run and fail on any.
+8. Progress = snapped distance, forward-only window (5 m/s × T + 100 m after a gap). 9. Off route: > 40 m for 10 s and two fixes under 30 m; 200 ms buzz.
+10. Screen lock: "Finding you...", one fresh fix (maximumAge 0, 15 s), the gap line, gaps in the summary. 11. Back during a run asks "Stop this run?".
+12. HUD: km done, left, time, pace in pixel numerals with `data-value`, "along the route". 13. **Voice cues:** off by default, English, only an on-device voice (`localService`), never the browser's default unless it is one.
+14. The sneaker stays still in Follow; battery saver = near-black, no map animation. 15. Gates: Lighthouse through Caddy, a11y 100; Follow code not in the first load of `/`.
 
 ## Phase 5c amendments (2026-11-22, full text at the top of docs/blueprint.md; they win over earlier ones)
 
@@ -41,7 +64,7 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 16. Mascot = sneaker at 3 px a pixel. 17. Loading = 4 frames made by shifting whole columns, never redrawn.
 18. **Directions in words** with a map-relative hint and a dial; API values unchanged. The only UI bearing is `bearingToPlace`, for that label; never send or store it.
 19. **Pixel compass** under the menu: true north, tap = north-up, marks the direction being picked.
-20. **"Open in...":** Google Maps (3 waypoints on mobile, 8 elsewhere, from the API's km marks), Share GPX (Chromium refuses `.gpx`: download and say so), Download, help links for Garmin and Strava. No Garmin button, no Strava upload link (courses have no timestamps). Never promise what we can't do.
+20. **"Open in..."** (replaced by Phase 5d amendments 1 to 3): Google Maps (3 waypoints on mobile, 9 elsewhere, from A14), Share GPX (Chromium refuses `.gpx`: download and say so), Download, help links for Garmin and Strava. No Garmin button, no Strava upload link (courses have no timestamps). Never promise what we can't do.
 21. The share page is the saved-route view: the planner's sheet at peek, a "Map" button, a collapsible desktop panel.
 22. A9 (share response `km_marks`, additive) approved and built.
 23. `web/scripts/make-brand.mjs` draws every brand asset from `web/brand/logo.json`. 24. Logo colours are tokens.
@@ -258,6 +281,9 @@ uv run python api/scripts/measure_climb.py [--bridges]   # elevation smoothing m
 docker compose --profile api up -d --build api        # the containerised API on :8000 (migrates on start; one worker)
 uv run python api/scripts/measure_latency.py         # through the container, every active fixture -> docs/reports/phase4/latency.md (raise ATHLETE_RATE_* first; see the script)
 uv run python api/scripts/measure_stack_memory.py    # memory of every container during six concurrent solves through the API
+uv run python api/scripts/measure_overview.py        # needs Valhalla: smart against even waypoints (A14) -> docs/reports/phase5d/overview_data.json
+uv run python api/scripts/measure_cues.py            # needs Valhalla: Follow cues against Valhalla's turns (A15) -> docs/reports/phase5d/cues_data.json
+uv run python api/scripts/export_follow_fixtures.py [--check]   # no services: A15 answers for the web's Follow tests -> tests/fixtures/follow/routes.json
 ```
 
 Tests never use development data: `tests/devguard.py` stops any app a test starts on a database or Redis db outside its lists. Pass `live_database` and `live_redis` (or the `tests/api` settings), never plain `Settings()`; a new test database is added to the list.
@@ -298,7 +324,11 @@ uv run --no-project --with fonttools --with brotli python web/scripts/subset_pix
 - `@rolldown/binding-win32-x64-msvc` and `@rolldown/binding-linux-x64-gnu` are optional dependencies on purpose: npm otherwise drops the Windows one on every `npm install <pkg>`, and a lockfile made on Windows has no Linux binding, so `npm ci` in CI fails ("Cannot find native binding").
 - End to end (live stack, `next start` on :3000, API with `ATHLETE_RATE_SESSION_PER_IP_HOUR=1000`): `npx playwright test --project=phone` (journeys A01, S02, G01, SR01, phone viewport; without `--project` every project runs) and `npx playwright test --project=screens` (screenshots; set `SHOTS_DIR`, or the committed ones are overwritten). Every on-screen number carries `data-value` (its raw API value); `e2e/helpers.ts` checks them all against the responses.
 - Fix-round projects: `basemap` (iPhone 16 viewport, cold, warm and the cache trigger; that last test skips over Caddy's untrusted certificate, so run it on http), `layout`, `pin`, `direction`, `openin` (Google intercepted), `share`, `brand`. `SHOTS_ONLY=01,08` with `--project=screens` writes only those screens. Look at the screenshots: they caught three defects the tests did not.
-- Phase 5c projects: `editing`, `saved`, `owner`, `errors`; SR01 is in `phone` (`sr01.spec.ts`); `screens5c` writes docs/reports/phase5c/screenshots.
+- Phase 5c projects: `editing`, `saved`, `owner`, `errors`; SR01 is in `phone` (`sr01.spec.ts`); **`screens5c` always writes the committed docs/reports/phase5c/screenshots (it ignores `SHOTS_DIR`)**: run it only to replace them.
+- Phase 5d/5e projects: `follow` (Follow with a mocked position: A01 replayed at running speed, screen lock, refresh, voice; zero requests during a run), `restore` (refresh and Back while planning), `openin`. Follow and Open-in screenshots land in each test's output folder; the report's copies are in docs/reports/phase5d/screenshots.
+- Follow test mocks: the page clock moved by a test is carried over a reload in `window.name`; feed fixes one per frame when a test depends on what each render sees (batches skip a turn's 25 m window); Chromium accepts only its own voices on its own utterances, so the speech stub replaces `SpeechSynthesisUtterance`; a theme switch loads the other sprite, so take theme screenshots outside a request recording.
+- `src/follow/` is pure (no DOM, network, storage or clock; a test checks it): `line`, `tracker`, `offRoute`, `cues`, `clock`, `run`, `kept` (what a tab keeps of a run), `voice`. `npm run sim:follow` simulates them with noisy GPS (about 10 minutes) -> docs/reports/phase5d/follow_sim_data.json.
+- Lighthouse for a phase: build `main` from `git archive main web` (link `public/basemap` with a junction, and remove only the junction afterwards), serve both builds behind one throwaway Caddy on two ports, and interleave the runs: the laptop's load moves the score by several points.
 - **The dev stack is the developer's: run `docker ps -a` before any compose command, and never a bare `docker compose down` as cleanup.** The API container migrates the dev database on start, so rebuilding it applies new migrations: back up first and ask. To test a migration or an API change, use a copy: a database from `pg_dump | pg_restore`, the API from the host on :8100 (`ATHLETE_DATABASE_URL`, `ATHLETE_REDIS_URL` on a spare db), the web built with `NEXT_DIST_DIR=.next-check` and `NEXT_API_PROXY=http://localhost:8100`, started with `API_INTERNAL_BASE` pointing at :8100, and a throwaway Caddy on :8443.
 - `notFound()` pages are a client-rendered shell where the head theme script does not run: `ThemeSync` in the layout applies the theme.
 - Generated files compared byte for byte by tests are pinned `eol=lf` in `.gitattributes`. Test a fresh clone with `core.autocrlf=true`, as this laptop has.

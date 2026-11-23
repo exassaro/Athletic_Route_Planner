@@ -28,6 +28,8 @@ Items 1 to 3 of the Phase 5e brief (resume on refresh), brought forward on 2026-
 
 **Not covered:** an edit still being solved at the moment of the refresh, where the version before it comes back.
 
+**Status (2026-11-23): items 1 to 3 and 6 built**, with the first part of item 4 and item 6's lazy chart ([Phase 5d summary](reports/phase5d/summary.md)). Items 5 and 6 of the brief (faster reload, the bundle budget in CI) are not built.
+
 ## Phase 5d amendments
 
 Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before Phase 6. The solver does not change. Every API change is additive. Where these amendments conflict with an earlier amendment or a later section, they win. Items marked *default* fill in a detail of the approved plan and stand until the product owner changes them. They replace:
@@ -107,7 +109,7 @@ Decided 2026-11-22 by the product owner: route fidelity and Follow mode, before 
 - A bare 35° bend rule gives 55 cues on A01, 10 of them under 50 m apart: hence decision 6's junctions and merging.
 - Holding progress for a runner who has not moved was simulated in step 5 ([follow.md](reports/phase5d/follow.md)): no jump except 4 in 500 with poor GPS on S02.
 
-**Status (2026-11-22): in progress.**
+**Status (2026-11-23): built** ([docs/reports/phase5d/summary.md](reports/phase5d/summary.md)). Not tested on a phone; the development API container is not rebuilt yet.
 
 ## Phase 5c amendments
 
