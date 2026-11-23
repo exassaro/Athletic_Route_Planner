@@ -243,8 +243,8 @@ describe("what the HUD may say", () => {
 describe("the logic itself", () => {
   const files = readdirSync(__dirname).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts") && f !== "testing.ts");
 
-  it("is seven modules", () => {
-    expect(files.sort()).toEqual(["clock.ts", "cues.ts", "kept.ts", "line.ts", "offRoute.ts", "run.ts", "tracker.ts"]);
+  it("is eight modules", () => {
+    expect(files.sort()).toEqual(["clock.ts", "cues.ts", "kept.ts", "line.ts", "offRoute.ts", "run.ts", "tracker.ts", "voice.ts"]);
   });
 
   for (const file of files) {

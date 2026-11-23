@@ -13,7 +13,7 @@ import { Wordmark } from "@/components/Wordmark";
 import { gapText } from "@/follow/clock";
 import { turnsOf } from "@/follow/cues";
 import { createLine } from "@/follow/line";
-import { mayHaveFinished } from "@/follow/run";
+import { justLeft, mayHaveFinished } from "@/follow/run";
 import { km } from "@/plan/format";
 import { useTheme } from "@/theme/useTheme";
 import { FollowMap } from "./FollowMap";
@@ -21,6 +21,7 @@ import { AwayLine, CueLine, OffRouteBanner, Stats } from "./Hud";
 import type { Followed } from "./load";
 import { useBackGuard } from "./useBackGuard";
 import { useFollowRun, type Access } from "./useFollowRun";
+import { useVoice } from "./useVoice";
 import { useWakeLock, WAKE_NOTICE } from "./useWakeLock";
 
 type Props = { followed: Followed; onLeave: () => void };
@@ -62,6 +63,7 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
   const [question, setQuestion] = useState<Question>(null);
   const [saver, setSaver] = useState(false);
   const [theme] = useTheme();
+  const voice = useVoice(turns, run);
   const root = useRef<HTMLElement>(null);
   const sheet = useRef<HTMLElement>(null);
 
@@ -86,6 +88,14 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
     watch.observe(sheet.current);
     return () => watch.disconnect();
   }, []);
+
+  // a short buzz when the off-route banner appears (amendment 9), where the browser can
+  const before = useRef(run);
+  useEffect(() => {
+    const was = before.current;
+    before.current = run;
+    if (was && run && justLeft(was, run) && "vibrate" in navigator) navigator.vibrate(200);
+  }, [run]);
 
   // the controls that had the focus are gone with each screen
   const shown = useRef(view);
@@ -130,6 +140,10 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
         <IconButton icon="battery" label="Battery saver" aria-pressed={saver} className="icon-btn follow-saver"
           onClick={() => setSaver(!saver)} data-testid="follow-saver" />
       )}
+      {live && voice.available && (
+        <IconButton icon="voice" label="Voice cues" aria-pressed={voice.on} className="icon-btn follow-voice"
+          onClick={voice.toggle} data-testid="follow-voice" />
+      )}
       {!run && (
         <header className="topbar">
           <span className="topbar-brand"><Wordmark height={21} /></span>
@@ -170,6 +184,12 @@ export function FollowScreen({ followed: { route, name }, onLeave }: Props) {
                     <input type="checkbox" checked={saver} onChange={(e) => setSaver(e.target.checked)} data-testid="follow-saver-choice" />
                     <span>Battery saver: a near-black screen, no map animation</span>
                   </label>
+                  {voice.available && (
+                    <label className="toggle follow-saver-choice">
+                      <input type="checkbox" checked={voice.on} onChange={voice.toggle} data-testid="follow-voice-choice" />
+                      <span>Voice cues: the turns said aloud, by a voice on this phone</span>
+                    </label>
+                  )}
                   <Button variant="primary" size="lg" block icon="play" onClick={follow} data-testid="follow-start">Follow</Button>
                 </>
               ) : (

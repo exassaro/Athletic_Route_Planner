@@ -11,6 +11,7 @@ import { actAs, API, savedA01, type Made } from "./savedApi";
 const GPX = readFileSync(new URL("../../docs/reports/phase4/gpx/A01_recommended.gpx", import.meta.url), "utf8");
 const TRACK = [...GPX.matchAll(/<trkpt lat="([^"]+)" lon="([^"]+)"/g)].map((m) => [Number(m[2]), Number(m[1])] as [number, number]);
 
+type Turn = { at_m: number; turn: string; road: string | null };
 type Fix = { lon: number; lat: number; after: number; accuracy?: number; /** seconds old when it arrives */ age?: number };
 type Mock = {
   __replay: (fixes: Fix[]) => Promise<void>;
@@ -449,6 +450,88 @@ test("a second Back leaves and the run can be carried on; Plan a new run clears 
   expect(await page.evaluate(() => sessionStorage.getItem("gatho:run:v1"))).toBeNull();
   await page.getByTestId("cleared-toast").getByRole("button", { name: "Undo" }).click();
   await expect.poll(() => page.evaluate(() => !!sessionStorage.getItem("gatho:run:v1")), { message: "Undo puts it back" }).toBe(true);
+});
+
+/** A speech engine that records instead of speaking: one remote voice (the default) and one on the device. */
+async function recordSpeech(context: BrowserContext) {
+  await context.addInitScript(() => {
+    const said: { text: string; voice: string | null; lang: string }[] = [];
+    const buzz: unknown[] = [];
+    const voices = [
+      { name: "Remote English", lang: "en-US", localService: false, default: true, voiceURI: "remote" },
+      { name: "English on this phone", lang: "en-IN", localService: true, default: false, voiceURI: "here" },
+    ];
+    // a plain class: Chromium takes only its own voices on its own utterances
+    class Utterance { voice: { voiceURI: string } | null = null; lang = ""; constructor(public text: string) {} }
+    Object.assign(window, { SpeechSynthesisUtterance: Utterance });
+    Object.defineProperty(window, "speechSynthesis", { configurable: true, value: {
+      speaking: false, pending: false, getVoices: () => voices, addEventListener() {}, removeEventListener() {},
+      speak: (u: Utterance) => said.push({ text: u.text, voice: u.voice?.voiceURI ?? null, lang: u.lang }),
+      cancel() {},
+    } });
+    Object.defineProperty(navigator, "vibrate", { configurable: true, value: (pattern: unknown) => { buzz.push(pattern); return true; } });
+    Object.assign(window, { __said: said, __buzz: buzz });
+  });
+}
+
+test("voice cues, off by default, with the voice on this phone; a buzz with the banner; still no request", async ({ page, context }) => {
+  await mockPosition(context);
+  await recordSpeech(context);
+  await actAs(page, made.token);
+  const { points, along_m: along, cues } = await openFollow(page, `saved=${made.saved.saved_id}`) as Awaited<ReturnType<typeof openFollow>>
+    & { cues: (Turn & { then: Turn[] })[] };
+  const choice = page.getByTestId("follow-voice-choice");
+  await expect(choice).not.toBeChecked();
+  const asked: string[] = [];
+  const onRequest = (r: Request) => { if (!/^(blob|data):/.test(r.url())) asked.push(r.url()); };
+  context.on("request", onRequest);
+  await choice.check();
+  await page.getByTestId("follow-start").click();
+  // one fix a frame, as a phone gives them: in batches React draws progress past a turn's window
+  for (const fix of running(points, along, 0, 3500)) await replay(page, [fix]);
+  await page.waitForTimeout(500);
+  await expect(page.getByTestId("follow-voice")).toHaveAttribute("aria-pressed", "true");
+  const said = await page.evaluate(() => (window as unknown as { __said: { text: string; voice: string; lang: string }[] }).__said);
+  expect(said[0]).toEqual({ text: "Voice cues on.", voice: "here", lang: "en-IN" });
+  expect(said.every((s) => s.voice === "here"), "never the remote default").toBe(true);
+  // the API's own cues, said by name: the first named one on the way
+  const named = cues.flatMap((c) => [c, ...c.then]).find((c) => c.road && c.at_m > 120 && c.at_m < 3400)!;
+  expect(said.map((s) => s.text)).toContainEqual(expect.stringContaining(`Now, turn ${named.turn} onto ${named.road}`));
+  expect(said.some((s) => s.text.startsWith("In "))).toBe(true);
+  expect(said.slice(1).every((s) => /^(In \d+ metres|Now), turn /.test(s.text))).toBe(true);
+  await page.waitForTimeout(700);
+  await checkLayout(page);
+
+  // 60 m to the side: the banner, one buzz, and the voice says nothing of a cue
+  const i = along.findIndex((m) => m >= 3500);
+  const [a, b] = [points[i - 1]!, points[i]!];
+  const here = running(points, along, 3500, 3500)[0]!;
+  const [kx, ky] = [109_230, 110_620];
+  const [dx, dy] = [(b[0] - a[0]) * kx, (b[1] - a[1]) * ky];
+  const size = Math.hypot(dx, dy);
+  const count = said.length;
+  await replay(page, Array.from({ length: 14 }, () => ({ lon: here.lon - (dy / size) * 60 / kx, lat: here.lat + (dx / size) * 60 / ky, after: 1 })));
+  await expect(page.getByTestId("follow-off")).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { __buzz: unknown[] }).__buzz)).toEqual([200]);
+  expect(await page.evaluate(() => (window as unknown as { __said: unknown[] }).__said.length)).toBe(count);
+
+  await page.getByTestId("follow-voice").click();
+  await expect(page.getByTestId("follow-voice")).toHaveAttribute("aria-pressed", "false");
+  context.off("request", onRequest);
+  expect(asked, "speech and the buzz ask the server for nothing").toEqual([]);
+  await page.getByTestId("follow-voice").click();
+  await bothThemes(page, "voice-on");       // a theme switch loads the other sprite: not during the recording
+});
+
+test("this browser's own voices: offered only when one is on the device", async ({ page }) => {
+  await actAs(page, made.token);
+  await openFollow(page, `saved=${made.saved.saved_id}`);
+  const local = await page.evaluate(async () => {
+    const read = () => speechSynthesis.getVoices();
+    if (!read().length) await new Promise((r) => { speechSynthesis.onvoiceschanged = r; setTimeout(r, 3000); });
+    return read().some((v) => v.localService && /^en[-_]?/i.test(v.lang));
+  });
+  await expect(page.getByTestId("follow-voice-choice")).toHaveCount(local ? 1 : 0);
 });
 
 test("Did you finish: yes records 100 %", async ({ page, context }) => {

@@ -382,3 +382,82 @@ describe("a refresh during a run", () => {
     expect(view()).toBe("start");
   });
 });
+
+describe("voice cues and the buzz", () => {
+  type Line = { text: string; voice: string | undefined; lang: string };
+  let said: Line[];
+  let cancelled: number;
+  let voices: { name: string; lang: string; localService: boolean; default: boolean; voiceURI: string }[];
+
+  beforeEach(() => {
+    said = [];
+    cancelled = 0;
+    voices = [{ name: "Remote", lang: "en-US", localService: false, default: true, voiceURI: "remote" },
+      { name: "Here", lang: "en-GB", localService: true, default: false, voiceURI: "here" }];
+    class Utterance { voice: { voiceURI: string } | null = null; lang = ""; constructor(public text: string) {} }
+    vi.stubGlobal("SpeechSynthesisUtterance", Utterance);
+    Object.defineProperty(window, "speechSynthesis", { configurable: true, value: {
+      speaking: false, pending: false, getVoices: () => voices, addEventListener() {}, removeEventListener() {},
+      speak: (u: Utterance) => said.push({ text: u.text, voice: u.voice?.voiceURI, lang: u.lang }),
+      cancel: () => { cancelled++; },
+    } });
+    Object.defineProperty(navigator, "vibrate", { configurable: true, value: vi.fn(() => true) });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(window, "speechSynthesis");
+    Reflect.deleteProperty(navigator, "vibrate");
+  });
+
+  it("off by default; on, it says the turns with the voice on this phone, and stops on pause", () => {
+    const { line } = show("A01");
+    const choice = screen.getByTestId("follow-voice-choice") as HTMLInputElement;
+    expect(choice.checked).toBe(false);
+    tap("follow-start");
+    for (let t = 0; t <= 200; t += 5) fix(line, t, t * 3);
+    expect(said, "nothing until it is turned on").toEqual([]);
+    tap("follow-voice");
+    expect(screen.getByTestId("follow-voice").getAttribute("aria-pressed")).toBe("true");
+    for (let t = 205; t <= 1500; t += 5) fix(line, t, t * 3);
+    expect(said[0]).toEqual({ text: "Voice cues on.", voice: "here", lang: "en-GB" });
+    expect(said.length).toBeGreaterThan(2);
+    expect(said.every((s) => s.voice === "here")).toBe(true);
+    expect(said.slice(1).every((s) => /^(In \d+ metres|Now), turn /.test(s.text))).toBe(true);
+    const before = cancelled;
+    tap("follow-pause");
+    expect(cancelled).toBeGreaterThan(before);
+    const count = said.length;
+    tap("follow-resume");
+    tap("follow-voice");
+    for (let t = 1505; t <= 3000; t += 5) fix(line, t, t * 3);
+    expect(said.length, "off again").toBe(count);
+  });
+
+  it("a speech engine that throws leaves the run going", () => {
+    const { line } = show("A01");
+    (window.speechSynthesis as unknown as { speak: () => void }).speak = () => { throw new Error("busy"); };
+    tap("follow-voice-choice");
+    tap("follow-start");
+    for (let t = 0; t <= 1500; t += 5) fix(line, t, t * 3);
+    expect(view()).toBe("running");
+    expect(value("follow.done_m")).toBeGreaterThan(4400);
+  });
+
+  it("not offered without an English voice on this phone", () => {
+    voices = voices.filter((v) => !v.localService);
+    show();
+    expect(screen.queryByTestId("follow-voice-choice")).toBeNull();
+    tap("follow-start");
+    expect(screen.queryByTestId("follow-voice")).toBeNull();
+  });
+
+  it("a short buzz when the banner appears, once", () => {
+    const { line } = show();
+    tap("follow-start");
+    for (let t = 0; t <= 60; t += 5) fix(line, t, t * 3);
+    for (let t = 61; t <= 80; t++) fix(line, t, 180, 80);
+    expect(screen.getByTestId("follow-off")).toBeTruthy();
+    expect(navigator.vibrate).toHaveBeenCalledTimes(1);
+    expect(navigator.vibrate).toHaveBeenCalledWith(200);
+  });
+});

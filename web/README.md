@@ -54,6 +54,9 @@ in memory (`src/map/corridor.ts`) and its style has no glyphs URL (`src/map/foll
 import, an image or a fetch to anything that shows during a run: `npx playwright test --project=follow` replays A01
 and fails on any request at all.
 
+Voice cues (step 8): `src/follow/voice.ts` decides what is said and picks an English voice that is on the device;
+`src/components/follow/useVoice.ts` speaks through the browser. A remote voice is never used, even as the default.
+
 ## Surviving a refresh (Phase 5e items 1 to 3)
 
 `src/restore/`: `draft` (what may be stored, and reading it safely), `tab` (the address and sessionStorage) and
