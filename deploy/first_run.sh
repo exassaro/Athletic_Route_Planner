@@ -105,8 +105,9 @@ osm_features() {
 		echo "   osm_ways and osm_boundaries are loaded already"
 		return 0
 	fi
-	# A one-off container on the project network, without the api service's 1 GiB limit.
-	docker run --rm --network athlete-prod_default \
+	# A one-off container on the project network: the load peaks at 1,337 MiB (full Kerala extract, measured
+	# 2026-11-24 in athlete-api:prod), above the api service's 1 GiB limit. 2 GiB of RAM (+1 GiB swap) is its own.
+	docker run --rm --memory 2g --memory-swap 3g --network athlete-prod_default \
 		-v "$ROOT/data/osm:/app/data/osm:ro" \
 		-v "$ROOT/data/manifest.json:/app/data/manifest.json:ro" \
 		-v "$ROOT/engine/osm_pin.json:/app/engine/osm_pin.json:ro" \

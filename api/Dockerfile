@@ -4,6 +4,10 @@
 FROM python@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
 COPY --from=ghcr.io/astral-sh/uv:0.13.8 /uv /uvx /bin/
 
+# Runtime libraries the wheels link against but slim lacks: osmium's modules need libexpat.so.1 (used by
+# api/scripts/load_osm_features.py). `ldd` over every .so in the venv finds nothing else missing.
+RUN apt-get update && apt-get install -y --no-install-recommends libexpat1 && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PYTHONUNBUFFERED=1
 

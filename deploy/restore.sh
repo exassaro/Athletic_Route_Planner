@@ -33,7 +33,8 @@ say "Restore"
 dc exec -T postgres pg_restore -U athlete -d athlete --clean --if-exists --no-owner <"$dump"
 
 say "OSM ways and boundaries (left out of the dump)"
-docker run --rm --network athlete-prod_default \
+# peaks at 1,337 MiB, above the api service's 1 GiB limit (first_run.sh, osm_features)
+docker run --rm --memory 2g --memory-swap 3g --network athlete-prod_default \
 	-v "$ROOT/data/osm:/app/data/osm:ro" \
 	-v "$ROOT/data/manifest.json:/app/data/manifest.json:ro" \
 	-v "$ROOT/engine/osm_pin.json:/app/engine/osm_pin.json:ro" \
