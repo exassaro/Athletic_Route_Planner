@@ -8,6 +8,10 @@ Usage:  uv run python engine/scripts/fetch_basemap.py
 3. Fonts and sprites from protomaps/basemaps-assets at the pinned commit (sparse clone) into data/basemap/assets.
 4. Copies all of it into web/public/basemap/ (gitignored), where the Next.js server and Caddy serve it.
 No API key, no per-load fee; OSM attribution comes with the style.
+
+The Protomaps daily build is deleted upstream after a few days (20261115 answered 404 on 2026-11-24). Then copy
+data/basemap/<pin file> from a machine that has it (deploy/RUNBOOK.md); the script checks it against the pin and
+skips the extract.
 """
 
 import hashlib
@@ -15,6 +19,7 @@ import json
 import shutil
 import subprocess
 import sys
+import tarfile
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -34,25 +39,34 @@ def sha256(path: Path) -> str:
 
 
 def cli() -> Path:
+    """The pinned pmtiles CLI for this platform (Windows on the laptop, Linux on the VM), checked by sha256."""
     c = PIN["pmtiles_cli"]
+    linux = sys.platform.startswith("linux")
+    url, digest = (c["linux_url"], c["linux_sha256"]) if linux else (c["url"], c["sha256"])
     folder = ROOT / "data" / "tools" / f"pmtiles-{c['version']}"
-    exe = folder / "bin" / "pmtiles.exe"
+    exe = folder / "bin" / ("pmtiles" if linux else "pmtiles.exe")
     if exe.exists():
         return exe
     folder.mkdir(parents=True, exist_ok=True)
-    archive = folder / Path(c["url"]).name
-    urllib.request.urlretrieve(c["url"], archive)
-    if sha256(archive) != c["sha256"]:
+    archive = folder / Path(url).name
+    urllib.request.urlretrieve(url, archive)
+    if sha256(archive) != digest:
         sys.exit(f"{archive} does not match the pinned sha256")
-    with zipfile.ZipFile(archive) as z:
-        z.extractall(folder / "bin")
+    if linux:
+        with tarfile.open(archive) as t:
+            t.extractall(folder / "bin", filter="data")
+        exe.chmod(0o755)
+    else:
+        with zipfile.ZipFile(archive) as z:
+            z.extractall(folder / "bin")
     return exe
 
 
-def tiles(exe: Path) -> Path:
+def tiles() -> Path:
     out = DATA / PIN["file"]
     if not (out.exists() and out.stat().st_size == PIN["size_bytes"] and sha256(out) == PIN["sha256"]):
         DATA.mkdir(parents=True, exist_ok=True)
+        exe = cli()   # only when the extract must be made: a copied file that matches the pin needs no CLI
         bbox = ",".join(str(x) for x in PIN["bbox"])
         subprocess.run([str(exe), "extract", PIN["source_url"], str(out), f"--bbox={bbox}"], check=True)
         if out.stat().st_size != PIN["size_bytes"] or sha256(out) != PIN["sha256"]:
@@ -74,8 +88,7 @@ def assets() -> Path:
 
 
 def main() -> int:
-    exe = cli()
-    pm = tiles(exe)
+    pm = tiles()
     src = assets()
     if PUBLIC.exists():
         shutil.rmtree(PUBLIC)
