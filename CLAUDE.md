@@ -7,6 +7,30 @@ A running route planner: distance-budgeted, direction-aware routes with mandator
 - **Blueprint first.** If you disagree with something in the blueprint, say why and wait. Do not quietly do something else.
 - **Phase by phase**, following blueprint section 15. Current phase: **Phase 5d**, route fidelity and Follow mode (blueprint Phase 5d amendments 1 to 15), with Phase 5e amendments 1 to 6 (planning and a run survive a refresh). Built: `docs/reports/phase5d/summary.md`. Open: the rest of the Phase 5e brief (cut off after "Fail the build"; faster reload and the bundle budget in CI are not built), and the device tests listed in that summary. Phase 5c (managing saved routes) is built: `docs/reports/phase5c/summary.md`. Phase 5b (the GATHO redesign and its fix round) is built: `docs/reports/phase5b/summary.md`, `fix-summary.md`. Open: the hallway test (`docs/reports/phase5b/hallway/script.md`), and the shared per-IP limits behind Caddy (a separate change). Phase 5 (the web front end) is built: `docs/reports/phase5/summary.md`. Phase 4 (the API in `api/`) is built: `docs/reports/phase4/summary.md`. No LLM chat (Phase 6), no drag-to-edit (Phase 7). **The solver's behaviour must not change**, and a front-end need that requires an API change is listed and approved first (A8, the GPX creator name, is approved).
 
+## Production (Phase 8a, 2026-11-24): one VM, split origin
+
+Front end on Vercel (https://gatho.shahinsha.xyz); the VM serves the API and `/basemap/` at https://api.gatho.shahinsha.xyz. Runbook: `deploy/RUNBOOK.md`; costs: `deploy/COSTS.md`.
+
+- **VM:** AWS EC2 m7i-flex.large, ap-southeast-2 (Sydney), 2 vCPU, 7.6 GiB RAM + 4 GiB swap (swappiness 10), 36 GB free disk, Ubuntu 24.04, user `ubuntu`, Elastic IP 54.252.91.95. AWS free plan ($120 credit, ends 2027-05-24, never "Upgrade"). Stop it when idle.
+- **`deploy/docker-compose.prod.yml` is standalone** (an override cannot remove the dev ports), project `athlete-prod`, containers `athlete-prod-*`, API image `athlete-api:prod` (`:rollback` = the previous one). Only Caddy publishes 80/443. Always with `--env-file deploy/.env.prod` (`source deploy/lib.sh` gives `dc`). Never run it on the laptop beside the dev stack.
+- **First-run order** (`deploy/first_run.sh`, resumable): extract (`--from-backup`), basemap, Photon index -> images -> postgres, redis -> migrations -> `load_osm_features.py` (one-off container, no 1 GiB limit) -> Valhalla build (Photon and GraphHopper stopped) -> `configure_valhalla.py` (run in the API image: the files are root's) + restart -> GraphHopper import -> Photon -> API -> Caddy -> `health.sh`. Photon `depends_on` healthy Valhalla and GraphHopper, so a bare `up -d` cannot start it beside the tile build.
+- **The basemap archive cannot be fetched any more** (Protomaps build 20261115: 404 on 2026-11-24): copy `data/basemap/kerala-20261115.pmtiles` to the VM; `fetch_basemap.py` checks it and needs the pmtiles CLI (Linux one now pinned too) only to extract.
+- **Caddyfile.prod** = web/README.md "Split origin": `/basemap/*` with Allow-Origin the front end, preflight 204 (`Range`), exposes ETag/Content-Range/Accept-Ranges/Content-Length, `no-store` on `.pmtiles`, fonts and sprites 30 days immutable; compression for JSON only; 1 MB bodies; access log rotated (50 MiB × 10, 30 days). The API's CORS stays FastAPI's (`ATHLETE_CORS_ORIGINS`). `ATHLETE_TRUST_FORWARDED_FOR=true` and `FORWARDED_ALLOW_IPS=*` (only Caddy reaches the API).
+- **Memory limits (MiB)**, measured use from the laptop: graphhopper 4096 (2113), photon 2560 (523; was 3072 in dev), valhalla 2048 (541 serving; build peak not measured), api 1024 (125), postgres 512 (133), redis 320 (5), caddy 256. Sum 10,816 = 10.6 GiB: above RAM, below RAM + swap; working set about 3.5 GiB.
+- Backups: `pg_dump -Fc` without the OSM tables' rows (restore.sh reloads them), `/home/ubuntu/backups`, 7 kept, cron 18:30 UTC.
+- `deploy/test_caddy.sh` checks the Caddyfile locally (fake basemap, Python stand-in API) on **127.0.0.1:18080**: something else on this laptop listens on `[::1]:8080`, so `localhost:8080` reaches it. Output: docs/reports/phase8a/caddy_local_test.txt. Deploy files are `eol=lf`.
+
+```
+bash deploy/bootstrap_vm.sh   # on the VM, once; then log in again
+bash deploy/gen_secrets.sh    # deploy/.env.prod (600, gitignored)
+bash deploy/first_run.sh      # in tmux
+bash deploy/health.sh         # anywhere; PUBLIC_URL=... SKIP_API=1 for the basemap rules only
+bash deploy/smoke.sh          # session, A01 plan, save, GPX, share API and page, delete (KEEP=1 keeps it)
+bash deploy/update.sh | backup.sh | restore.sh <dump>
+bash deploy/test_caddy.sh     # laptop, Docker running
+uvx --from shellcheck-py shellcheck -x deploy/*.sh
+```
+
 ## Phase 5e amendments (2026-11-22 and 2026-11-23, full text at the top of docs/blueprint.md; they win over earlier ones)
 
 1. **The address holds a computed plan:** `/?plan=<id>&v=<n>&r=<candidate>[&edit=<saved_id>]`, replaceState. On load that version is read and shown as a fresh result. **A restore never solves.**
@@ -205,7 +229,7 @@ Solo developer, comfortable with Python and Next.js. Windows 11, Intel i5 10th g
 - `data/` is gitignored (extract, tiles, index).
 - `solver/athlete_solver/` solver package with a CLI (`python -m athlete_solver`): `models` (request, candidate, conflict), `engine` (Valhalla adapter, the yardstick), `graphhopper` (the "recommended" generator, model R5, measured by Valhalla), `passnear` (checkpoints into route points), `avoid`, `ordering`, `p2p` (base route, gate, cut, truncation), `lengthen` (section 8 step 10: one through via on the longest leg; fixed ends), `loop` (loops without stops: shapes through the start, scaled to the distance, vias pulled out of water and off dead-end stubs), `out_and_back`, `scoring` (hard rules, NH flag, diversity), `solve` (both alternatives in parallel). It calls Valhalla only through `athlete_engine`.
 - `tests/fixtures/scenarios/` solver scenarios (section 16); `docs/reports/phase3/` Phase 3 KPI report and the quieter spike; `docs/reports/phase3b/` Phase 3b KPI report and the rules spike; `docs/reports/phase3c/` Phase 3c KPI report.
-- `api/athlete_api/` the Phase 4 backend (FastAPI; module list in `api/README.md`). `api/alembic/` migrations. `api/scripts/` measurement scripts (`measure_memory.py`). `docs/reports/phase4/` its reports. `tests/api/api_fixtures.py` has a fake solver that returns A01's real result. `web/` is a placeholder for Phase 5.
+- `api/athlete_api/` the Phase 4 backend (FastAPI; module list in `api/README.md`). `api/alembic/` migrations. `api/scripts/` measurement scripts (`measure_memory.py`). `docs/reports/phase4/` its reports. `tests/api/api_fixtures.py` has a fake solver that returns A01's real result. `web/` is a placeholder for Phase 5. `deploy/` the production files for one VM (Phase 8a); `engine/caddy/Caddyfile.prod` its Caddy.
 
 ## Commands
 

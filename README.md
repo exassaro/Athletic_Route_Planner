@@ -130,6 +130,26 @@ Start with [docs/reports/phase3/summary.md](docs/reports/phase3/summary.md).
 
 Start with [docs/reports/phase2/summary.md](docs/reports/phase2/summary.md).
 
+## Production deployment (Phase 8a)
+
+Split origin: the front end is on Vercel (https://gatho.shahinsha.xyz); one VM serves the API and the basemap at
+https://api.gatho.shahinsha.xyz (AWS EC2 m7i-flex.large in Sydney: 2 vCPU, 7.6 GiB RAM, 4 GiB swap, Ubuntu 24.04).
+Everything is in [deploy/](deploy/); start with [deploy/RUNBOOK.md](deploy/RUNBOOK.md) and [deploy/COSTS.md](deploy/COSTS.md).
+
+| File | What it does |
+| --- | --- |
+| `deploy/bootstrap_vm.sh` | Docker, 4 GB swap, ufw (22, 80, 443), unattended upgrades, uv (idempotent) |
+| `deploy/gen_secrets.sh` | `deploy/.env.prod` from `.env.prod.example` with a random Postgres password (mode 600, gitignored) |
+| `deploy/docker-compose.prod.yml` | the stack; standalone, only Caddy publishes ports |
+| `engine/caddy/Caddyfile.prod` | HTTPS, `/v1` to the API, `/basemap/` with the CORS and Range rules of web/README.md "Split origin" |
+| `deploy/first_run.sh` | data, then services in an order that fits in memory; resumable |
+| `deploy/update.sh` | pull, rebuild and migrate the API, restart it, roll back the image if unhealthy |
+| `deploy/backup.sh`, `deploy/restore.sh` | daily `pg_dump`, 7 kept; restore reloads the OSM tables |
+| `deploy/health.sh`, `deploy/smoke.sh` | public checks (health, CORS, Range 206, disk, memory); one real journey |
+| `deploy/test_caddy.sh` | local check of the Caddyfile with a fake basemap (no server needed) |
+
+The basemap archive must be copied from the laptop: its Protomaps daily build is gone upstream.
+
 ## Repository layout
 
 | Path | Contents |
@@ -140,6 +160,7 @@ Start with [docs/reports/phase2/summary.md](docs/reports/phase2/summary.md).
 | `web/` | Next.js front end (Phase 5) |
 | `docs/` | Blueprint and generated reports |
 | `tests/` | Unit tests, integration tests, fixtures |
+| `deploy/` | Production deployment on one VM (Phase 8a) |
 | `data/` | Downloaded and built data, not in git |
 
 ## Ground rule
