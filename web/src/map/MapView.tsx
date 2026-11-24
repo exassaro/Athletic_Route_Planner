@@ -7,7 +7,7 @@ import { Button } from "@/components/ui";
 import { Wordmark } from "@/components/Wordmark";
 import type { Theme } from "@/theme/theme";
 import { Compass } from "./Compass";
-import { ATTRIBUTION, BASEMAP_SOURCE, basemapStyle, basemapUrl, keepDrawn, KOZHIKODE } from "./basemap";
+import { ATTRIBUTION, BASEMAP_SOURCE, basemapOrigin, basemapStyle, basemapUrl, keepDrawn, KOZHIKODE } from "./basemap";
 
 type Props = {
   onReady?: (map: MapLibreMap) => void;
@@ -58,12 +58,12 @@ export function MapView({ onReady, className, interactive = true, center = KOZHI
       const [maplibregl, { Protocol }, { basemapArchive, watchBasemap }] = libraries;
       maplibregl.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs"); // copied by scripts/copy-maplibre-worker.mjs
       const protocol = new Protocol();
-      const url = basemapUrl(window.location.origin);
+      const url = basemapUrl(basemapOrigin());
       protocol.add(basemapArchive(url));
       maplibregl.addProtocol("pmtiles", protocol.tile);
       m = new maplibregl.Map({
         container: box.current,
-        style: basemapStyle(window.location.origin, shown.current),
+        style: basemapStyle(basemapOrigin(), shown.current),
         center,
         zoom,
         interactive,
@@ -96,7 +96,7 @@ export function MapView({ onReady, className, interactive = true, center = KOZHI
   useEffect(() => {
     if (!map || shown.current === theme) return;
     shown.current = theme;
-    map.setStyle(basemapStyle(window.location.origin, theme), { transformStyle: keepDrawn });
+    map.setStyle(basemapStyle(basemapOrigin(), theme), { transformStyle: keepDrawn });
   }, [map, theme]);
   const reload = () => {
     if (retryTiles.current) return retryTiles.current();

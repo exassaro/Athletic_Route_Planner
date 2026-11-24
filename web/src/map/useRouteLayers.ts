@@ -50,7 +50,9 @@ function setLinks(map: MapLibreMap, lines: Line[], color: string) {
 export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[], selected: number, dimmed: boolean,
   fitKey: string | null, request: Requested | null = null, theme: Theme = "light", facingWest = false,
   /** Changes when something over the map appears: the view fits again, and the pin does not hop again. */
-  covering = "") {
+  covering = "",
+  /** The fitKey whose view was restored with it: not fitted again (Phase 5e amendment 2). */
+  keptView: string | null = null) {
   const markers = useRef<Marker[]>([]);
   const pin = useRef<Marker | null>(null);
   const hopped = useRef<{ route: string | null; start: string | null }>({ route: null, start: null });
@@ -224,7 +226,7 @@ export function useRouteLayers(map: MapLibreMap | null, candidates: Candidate[],
 
   // Fit the view when a new version arrives (not when only the selection changes)
   useEffect(() => {
-    if (!map || !fitKey) return;
+    if (!map || !fitKey || fitKey === keptView) return;
     let live = true;
     (async () => {
       const maplibregl = await import("maplibre-gl");

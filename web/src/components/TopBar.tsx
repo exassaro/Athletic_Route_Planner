@@ -19,7 +19,8 @@ type Props = {
   near: [number, number] | null;
   canAddStop: boolean;
   onPlace: (p: Place, action: PlaceAction) => void;
-  menu: ReactNode;
+  /** What the menu holds; a function when an item of it closes the menu. */
+  menu: ReactNode | ((close: () => void) => ReactNode);
 };
 
 export function TopBar({ setupMode, near, canAddStop, onPlace, menu }: Props) {
@@ -54,7 +55,7 @@ export function TopBar({ setupMode, near, canAddStop, onPlace, menu }: Props) {
       </EditorDialog>
 
       <EditorDialog open={menuOpen} title="Menu" onClose={() => setMenuOpen(false)} testId="menu">
-        <div className="menu-body">{menu}</div>
+        <div className="menu-body">{typeof menu === "function" ? menu(() => setMenuOpen(false)) : menu}</div>
       </EditorDialog>
     </header>
   );

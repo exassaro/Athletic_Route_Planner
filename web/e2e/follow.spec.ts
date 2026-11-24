@@ -1,0 +1,671 @@
+/**
+ * Follow mode (blueprint Phase 5d amendments 4 to 15) on the live stack. The position is mocked: A01's committed GPX
+ * replayed at running speed, with the page's clock moved along with it. The refusal is the browser's own.
+ * The screen lock is simulated: visibilitychange is dispatched.
+ */
+import { readFileSync } from "node:fs";
+import { expect, test, type BrowserContext, type Page, type Request } from "@playwright/test";
+import { planA01Base, strayNumbers } from "./helpers";
+import { actAs, API, savedA01, type Made } from "./savedApi";
+
+const GPX = readFileSync(new URL("../../docs/reports/phase4/gpx/A01_recommended.gpx", import.meta.url), "utf8");
+const TRACK = [...GPX.matchAll(/<trkpt lat="([^"]+)" lon="([^"]+)"/g)].map((m) => [Number(m[2]), Number(m[1])] as [number, number]);
+
+type Turn = { at_m: number; turn: string; road: string | null };
+type Fix = { lon: number; lat: number; after: number; accuracy?: number; /** seconds old when it arrives */ age?: number };
+type Mock = {
+  __replay: (fixes: Fix[]) => Promise<void>;
+  __watching: () => number;
+  __visibility: (state: DocumentVisibilityState, after: number) => Promise<void>;
+  __freshAsked: PositionOptions[];
+  __wake: { asked: number; released: number };
+};
+
+/** A geolocation that says only what the test feeds it, each fix `after` seconds of the page's clock later. */
+async function mockPosition(context: BrowserContext) {
+  await context.addInitScript(() => {
+    const realNow = Date.now.bind(Date);
+    // the clock moved by the test carries over a reload, as a real one does (window.name outlives the page)
+    const MARK = "gathoTestAhead:";
+    let ahead = window.name.startsWith(MARK) ? Number(window.name.slice(MARK.length)) || 0 : 0;
+    const move = (ms: number) => { ahead += ms; window.name = MARK + ahead; };
+    Date.now = () => realNow() + ahead;
+    let next = 0;
+    const watchers = new Map<number, PositionCallback>();
+    const freshAsked: PositionOptions[] = [];
+    const fake = {
+      watchPosition(ok: PositionCallback) {
+        watchers.set(++next, ok);
+        return next;
+      },
+      clearWatch(id: number) { watchers.delete(id); },
+      getCurrentPosition(_ok: PositionCallback, _failed: PositionErrorCallback, options: PositionOptions) {
+        freshAsked.push(options);
+      },
+    };
+    const wake = { asked: 0, released: 0 };
+    Object.defineProperty(navigator, "wakeLock", { configurable: true, value: {
+      async request() {
+        wake.asked++;
+        return Object.assign(new EventTarget(), { async release() { wake.released++; } });
+      },
+    } });
+    let visibility: DocumentVisibilityState = "visible";
+    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => visibility });
+    Object.defineProperty(navigator, "geolocation", { configurable: true, value: fake });
+    Object.assign(window, {
+      __watching: () => watchers.size,
+      __freshAsked: freshAsked,
+      __wake: wake,
+      async __visibility(state: DocumentVisibilityState, after: number) {
+        move(after * 1000);
+        visibility = state;
+        document.dispatchEvent(new Event("visibilitychange"));
+        await new Promise((r) => setTimeout(r, 100));
+      },
+      async __replay(fixes: { lon: number; lat: number; after: number; accuracy?: number; age?: number }[]) {
+        for (let i = 0; i < fixes.length; i++) {
+          const f = fixes[i]!;
+          move(f.after * 1000);
+          for (const ok of [...watchers.values()]) {
+            ok({ timestamp: Date.now() - (f.age ?? 0) * 1000, coords: { longitude: f.lon, latitude: f.lat, accuracy: f.accuracy ?? 6 } } as GeolocationPosition);
+          }
+          if (i % 25 === 24) await new Promise((r) => setTimeout(r, 0));
+        }
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      },
+    });
+  });
+}
+
+const replay = (page: Page, fixes: Fix[]) => page.evaluate((f) => (window as unknown as Mock).__replay(f), fixes);
+
+/** Fixes every `step` seconds at 3 m/s along a route, its metres given by the API's follow response. */
+function running(points: [number, number][], along: number[], fromM: number, toM: number, step = 5): Fix[] {
+  const out: Fix[] = [];
+  let i = 0;
+  for (let m = fromM; ; m += 3 * step) {
+    const at = Math.min(m, toM);
+    while (i + 2 < along.length && along[i + 1]! < at) i++;
+    const t = Math.min(1, Math.max(0, (at - along[i]!) / (along[i + 1]! - along[i]! || 1)));
+    const [a, b] = [points[i]!, points[i + 1]!];
+    out.push({ lon: a[0] + t * (b[0] - a[0]), lat: a[1] + t * (b[1] - a[1]), after: step });
+    if (at >= toM) return out;
+  }
+}
+
+/** Opens /follow on a route, waits until its corridor is in and the map is drawn, and hands back the API's answer. */
+async function openFollow(page: Page, query: string) {
+  const answered = page.waitForResponse((r) => r.url().includes("/follow") && r.url().includes("/v1/") && r.ok());
+  await page.goto(`/follow?${query}`);
+  const route = await (await answered).json() as { points: [number, number][]; along_m: number[]; cue_source: string };
+  await expect(page.getByTestId("map")).toHaveAttribute("data-corridor", "ready");
+  await expect(page.getByTestId("map")).toHaveAttribute("data-drawn", "yes");
+  await page.waitForTimeout(1200);       // the style's sprite, the first labels
+  return route;
+}
+
+const number = async (page: Page, field: string) =>
+  Number(await page.locator(`[data-field="${field}"]`).first().getAttribute("data-value"));
+
+async function checkLayout(page: Page) {
+  const small = await page.locator("button, a.btn").evaluateAll((els) => els
+    .filter((e) => e.getClientRects().length && e.getBoundingClientRect().height < 44).map((e) => e.textContent));
+  expect(small, "under 44 px").toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), "sideways").toBeLessThanOrEqual(0);
+  expect(await strayNumbers(page)).toEqual([]);
+  if ((page.viewportSize()?.width ?? 0) >= 900) return;
+  const credit = (await page.locator(".maplibregl-ctrl-attrib").boundingBox())!;
+  const sheet = (await page.locator(".follow .sheet").boundingBox())!;
+  expect(credit.y + credit.height, "the OSM credit is above the sheet").toBeLessThanOrEqual(sheet.y + 1);
+}
+
+async function bothThemes(page: Page, name: string) {
+  for (const theme of ["light", "dark"]) {
+    await page.evaluate((t) => {
+      localStorage.setItem("gatho-theme", t);
+      document.documentElement.dataset.theme = t;
+      window.dispatchEvent(new Event("gatho-theme"));
+    }, theme);
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: test.info().outputPath(`${name}-${theme}.png`) });
+  }
+  await page.evaluate(() => {
+    localStorage.setItem("gatho-theme", "light");
+    document.documentElement.dataset.theme = "light";
+    window.dispatchEvent(new Event("gatho-theme"));
+  });
+  await page.waitForTimeout(500);
+}
+
+let made: Made;
+test.beforeAll(async ({ request }) => {
+  made = await savedA01(request, "Coast run");
+});
+
+test("A01's GPX at running speed reaches 100 %, and the whole run asks the server for nothing", async ({ page, context }) => {
+  await mockPosition(context);
+  await actAs(page, made.token);
+  const logged: string[] = [];
+  page.on("console", (m) => logged.push(m.text()));
+  const { points, along_m: along, cue_source: source } = await openFollow(page, `saved=${made.saved.saved_id}`);
+  expect(source).toBe("junctions");
+  expect(points.length, "the committed GPX is this route").toBe(TRACK.length);
+  for (const [i, [lon, lat]] of TRACK.entries()) {
+    expect(points[i]![0]).toBeCloseTo(lon, 6);
+    expect(points[i]![1]).toBeCloseTo(lat, 6);
+  }
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Coast run");
+  expect(await page.evaluate(() => (window as unknown as Mock).__watching()), "asked only when tapped").toBe(0);
+  await checkLayout(page);
+
+  const stored = await page.evaluate(() => JSON.stringify([{ ...localStorage }, { ...sessionStorage }, document.cookie]));
+  const asked: string[] = [];
+  const onRequest = (r: Request) => { if (!/^(blob|data):/.test(r.url())) asked.push(r.url()); };
+  context.on("request", onRequest);
+
+  await page.getByTestId("follow-start").click();
+  const fixes = running(TRACK, along, 0, along.at(-1)!);
+  const half = Math.floor(fixes.length / 2);
+  await replay(page, [{ ...fixes[0]!, after: 0 }, ...fixes.slice(1, half)]);
+  await page.waitForTimeout(800);
+
+  const total = along.at(-1)!;
+  const done = await number(page, "follow.done_m");
+  expect(Math.abs(done - total / 2)).toBeLessThan(80);
+  expect(done + (await number(page, "follow.left_m"))).toBeCloseTo(total, 3);
+  const elapsed = await number(page, "follow.elapsed_s");
+  expect(await number(page, "follow.pace_s_per_km")).toBeGreaterThan(300);
+  expect(await number(page, "follow.pace_s_per_km")).toBeLessThan(360);
+  expect(elapsed).toBeGreaterThan(3900);
+  await expect(page.getByTestId("follow-cue")).toContainText(/(^In .+|^Now): turn (left|right|around)/);
+  await expect(page.getByTestId("follow-off")).toHaveCount(0);
+  await checkLayout(page);
+
+  const drawn = await page.evaluate(() => {
+    const map = (window as unknown as { athleteMap: import("maplibre-gl").Map }).athleteMap;
+    const all = map.queryRenderedFeatures();
+    const of = (p: (f: (typeof all)[number]) => boolean) => all.filter(p).length;
+    return {
+      roads: of((f) => f.source === "protomaps" && f.sourceLayer === "roads"),
+      labels: of((f) => f.source === "protomaps" && f.layer.type === "symbol"),
+      dot: of((f) => f.layer.id === "follow-dot"),
+      done: of((f) => f.layer.id === "follow-done"),
+      left: of((f) => f.layer.id === "follow-left"),
+    };
+  });
+  expect(drawn.roads, "the corridor's roads, from memory").toBeGreaterThan(0);
+  expect(drawn.labels, "labels, drawn on the device").toBeGreaterThan(0);
+  expect([drawn.dot, drawn.done, drawn.left].map((n) => n > 0)).toEqual([true, true, true]);
+  expect(await page.evaluate(() => !!(window as unknown as { athleteMap: import("maplibre-gl").Map }).athleteMap
+    .getLayer("pin-obstacles")), "labels give way to the markers").toBe(true);
+  await expect(page.locator(".pin-start.hop")).toHaveCount(0);
+
+  // the camera wanders where the corridor is not: still nothing may be asked
+  await page.evaluate(async () => {
+    const map = (window as unknown as { athleteMap: import("maplibre-gl").Map }).athleteMap;
+    for (const [center, zoom] of [[[76.3, 9.98], 14], [[75.3704, 11.8745], 17], [[75.8, 11.2], 9.5]] as const) {
+      map.jumpTo({ center: [center[0], center[1]], zoom });
+      await new Promise((r) => setTimeout(r, 700));
+    }
+  });
+
+  const kept = await page.evaluate(() => sessionStorage.getItem("gatho:run:v1")!);
+  expect(Object.keys(JSON.parse(kept)).sort(), "three values, the route and the schema")
+    .toEqual(["doneM", "pausedAt", "pausedMs", "route", "schema", "startedAt", "stopped"]);
+  expect(kept, "no coordinate").not.toMatch(/(^|[^\d.])(7[56]|1[01])\.\d{4}/);
+
+  await replay(page, fixes.slice(half));
+  await page.waitForTimeout(800);
+  expect(await number(page, "follow.done_m")).toBe(total);
+  expect(await number(page, "follow.left_m")).toBe(0);
+  await expect(page.getByTestId("follow-cue")).toHaveAttribute("data-state", "arrived");
+
+  await page.getByTestId("follow-stop").click();
+  await expect(page.getByTestId("follow-question")).toContainText("Stop this run?");
+  await page.getByTestId("follow-stop-confirm").click();
+  await expect(page.getByTestId("follow-summary")).toContainText("Route finished");
+  expect(await number(page, "follow.done_m")).toBe(total);
+  await expect(page.getByTestId("follow-skipped")).toHaveCount(0);
+  expect(await page.evaluate(() => (window as unknown as Mock).__watching()), "stopped watching").toBe(0);
+
+  expect(asked, "requests during the run").toEqual([]);
+  // canaries: the recorder does hear a fetch, from the page and from a worker (MapLibre fetches from both)
+  await page.evaluate(async () => {
+    await fetch("/icons/icon.svg?canary=page", { cache: "no-store" });
+    const code = "onmessage = (e) => fetch(e.data, { cache: 'no-store' }).then(() => postMessage(1))";
+    const worker = new Worker(URL.createObjectURL(new Blob([code], { type: "text/javascript" })));
+    await new Promise((resolve) => {
+      worker.onmessage = resolve;
+      worker.postMessage(`${location.origin}/icons/icon.svg?canary=worker`);
+    });
+    worker.terminate();
+  });
+  await expect.poll(() => asked.filter((url) => url.includes("canary=")).length, { message: "the recorder hears fetches" }).toBe(2);
+  context.off("request", onRequest);
+  expect(await page.evaluate(() => JSON.stringify([{ ...localStorage },
+    Object.fromEntries(Object.entries({ ...sessionStorage }).filter(([key]) => key !== "gatho:run:v1")), document.cookie])),
+  "stored nothing but the run's three values").toBe(stored);
+  expect(logged.filter((line) => /7[56]\.\d{4}|1[01]\.\d{4}/.test(line)), "logged").toEqual([]);
+  await checkLayout(page);
+  await bothThemes(page, "finished");
+});
+
+test("start, running, a 60 m detour with its banner, and back", async ({ page, context }) => {
+  await mockPosition(context);
+  await actAs(page, made.token);
+  const { points, along_m: along } = await openFollow(page, `route=${made.v1.candidates[0]!.route_id}`);
+  await expect(page.getByTestId("follow-lock")).toContainText("Locking your phone pauses GATHO's tracking.");
+  await expect(page.getByTestId("follow-why")).toContainText("stays on this phone");
+  await bothThemes(page, "start");
+
+  await page.getByTestId("follow-start").click();
+  await expect(page.getByTestId("follow-asking")).toBeVisible();
+  await replay(page, running(points, along, 0, 3500));
+  await page.waitForTimeout(900);
+  await expect(page.getByTestId("follow-cue")).toContainText("turn right onto Chaliyam Road");
+  await bothThemes(page, "running");
+
+  // 60 m to the side of the segment being run
+  const i = along.findIndex((m) => m >= 3500);
+  const [a, b] = [points[i - 1]!, points[i]!];
+  const here = running(points, along, 3500, 3500)[0]!;
+  const [kx, ky] = [109_230, 110_620];
+  const [dx, dy] = [(b[0] - a[0]) * kx, (b[1] - a[1]) * ky];
+  const size = Math.hypot(dx, dy);
+  const away = { lon: here.lon + ((-dy / size) * 60) / kx, lat: here.lat + ((dx / size) * 60) / ky };
+  await replay(page, Array.from({ length: 9 }, () => ({ ...away, after: 1 })));
+  await expect(page.getByTestId("follow-off")).toHaveCount(0);
+  await replay(page, Array.from({ length: 3 }, () => ({ ...away, after: 1 })));
+  await expect(page.getByTestId("follow-off")).toBeVisible();
+  await expect(page.getByTestId("follow-off")).toContainText("off the route, in a straight line. Head ");
+  const off = await number(page, "follow.off_m");
+  expect(off).toBeGreaterThan(50);
+  expect(off).toBeLessThan(66);
+  await page.waitForTimeout(700);
+  await checkLayout(page);
+  await bothThemes(page, "off-route");
+
+  await replay(page, [{ ...here, after: 1 }, { ...here, after: 1 }]);
+  await expect(page.getByTestId("follow-off")).toHaveCount(0);
+
+  await page.getByTestId("follow-pause").click();
+  await expect(page.getByTestId("follow-cue")).toHaveText("Paused");
+  const paused = await number(page, "follow.done_m");
+  await replay(page, running(points, along, 3500, 3600));
+  expect(await number(page, "follow.done_m")).toBe(paused);
+  await page.getByTestId("follow-resume").click();
+  await replay(page, running(points, along, 3605, 3650));
+  expect(await number(page, "follow.done_m")).toBeGreaterThan(3600);
+
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.waitForTimeout(700);
+  await checkLayout(page);
+  await page.screenshot({ path: test.info().outputPath("running-small.png") });
+  const sheet = (await page.locator(".follow .sheet").boundingBox())!;
+  expect(sheet.y, "the map keeps a good part of a small screen").toBeGreaterThan(640 * 0.38);
+});
+
+test("screen lock: hidden, visible, a stale fix, then a fresh one 4 s later, and all of it asks for nothing", async ({ page, context }) => {
+  await mockPosition(context);
+  await actAs(page, made.token);
+  const { points, along_m: along } = await openFollow(page, `saved=${made.saved.saved_id}`);
+  const asked: string[] = [];
+  const onRequest = (r: Request) => { if (!/^(blob|data):/.test(r.url())) asked.push(r.url()); };
+  context.on("request", onRequest);
+  await page.getByTestId("follow-start").click();
+  await replay(page, running(points, along, 0, 900));
+  const before = await number(page, "follow.done_m");
+  const wake = () => page.evaluate(() => ({ ...(window as unknown as Mock).__wake }));
+  expect((await wake()).asked).toBe(1);
+
+  const visibility = (state: DocumentVisibilityState, after: number) =>
+    page.evaluate(([s, a]) => (window as unknown as Mock).__visibility(s, a), [state, after] as const);
+  await visibility("hidden", 1);
+  await visibility("visible", 130);
+  await expect(page.getByTestId("follow-cue")).toHaveText("Finding you…");
+  await expect(page.getByTestId("follow-away")).toContainText("You were away for 2 min 10 s. Cues are off while the screen is locked.");
+  expect((await wake()).asked, "asked for again").toBe(2);
+  expect(await page.evaluate(() => (window as unknown as Mock).__freshAsked.at(-1)))
+    .toEqual({ enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+
+  const then = running(points, along, 900, 900)[0]!;
+  await replay(page, [{ ...then, after: 0, age: 120 }]);
+  await expect(page.getByTestId("follow-cue"), "the stale fix is discarded").toHaveText("Finding you…");
+  expect(await number(page, "follow.done_m")).toBe(before);
+
+  const now = running(points, along, 1300, 1300)[0]!;
+  await replay(page, [{ ...now, after: 4 }]);
+  await expect(page.getByTestId("follow-off")).toHaveCount(0);
+  expect(Math.abs((await number(page, "follow.done_m")) - 1300), "progress jumps to the runner").toBeLessThan(25);
+  await expect(page.getByTestId("follow-away")).toBeVisible();
+  await page.waitForTimeout(700);
+  await checkLayout(page);
+  await page.screenshot({ path: test.info().outputPath("away.png") });
+
+  await page.getByTestId("follow-saver").click();
+  await page.waitForTimeout(900);
+  await expect(page.getByTestId("follow-screen")).toHaveClass(/saver/);
+  expect(await page.locator(".follow .sheet").evaluate((e) => getComputedStyle(e).backgroundColor)).toBe("rgb(0, 0, 0)");
+  await replay(page, running(points, along, 1310, 1400));
+  expect(await page.evaluate(() => (window as unknown as { athleteMap: import("maplibre-gl").Map }).athleteMap.isMoving()),
+    "no map animation").toBe(false);
+  await checkLayout(page);
+  await page.screenshot({ path: test.info().outputPath("saver.png") });
+
+  await page.getByTestId("follow-stop").click();
+  await page.getByTestId("follow-stop-confirm").click();
+  await expect(page.getByTestId("follow-gaps")).toContainText("once, for 2 min 10 s in all");
+  expect((await wake()).released).toBeGreaterThan(0);
+  context.off("request", onRequest);
+  expect(asked, "the lock, the saver and the stop ask the server for nothing").toEqual([]);
+});
+
+test("the Back gesture during a run asks instead of losing it", async ({ page, context }) => {
+  await mockPosition(context);
+  await actAs(page, made.token);
+  const { points, along_m: along } = await openFollow(page, `saved=${made.saved.saved_id}`);
+  await page.getByTestId("follow-start").click();
+  await replay(page, running(points, along, 0, 600));
+  const done = await number(page, "follow.done_m");
+  await page.goBack();
+  await expect(page.getByTestId("follow-question")).toContainText("Stop this run?");
+  await page.getByTestId("follow-keep-going").click();
+  expect(await number(page, "follow.done_m"), "the same run").toBe(done);
+  await page.goBack();
+  await expect(page.getByTestId("follow-question")).toBeVisible();
+  await page.getByTestId("follow-keep-going").click();
+  await replay(page, running(points, along, 615, 700));
+  expect(await number(page, "follow.done_m")).toBeGreaterThan(650);
+});
+
+test("a refresh during a run keeps it, and Done clears it", async ({ page, context }) => {
+  await mockPosition(context);
+  await actAs(page, made.token);
+  await page.goto("/routes");
+  const { points, along_m: along } = await openFollow(page, `saved=${made.saved.saved_id}`);
+  await page.getByTestId("follow-start").click();
+  await replay(page, running(points, along, 0, 1500, 1).map((f) => ({ ...f, after: 0.01 })));
+  const done = await number(page, "follow.done_m");
+  expect(done).toBeGreaterThan(1400);
+
+  await page.reload();
+  await expect(page.getByTestId("follow-carry-on")).toContainText("Your run is still going");
+  expect(await number(page, "follow.done_m")).toBe(done);
+  expect(await page.evaluate(() => (window as unknown as Mock).__watching()), "the location waits for the tap").toBe(0);
+  await page.waitForTimeout(900);
+  await checkLayout(page);
+  await bothThemes(page, "carry-on");
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.waitForTimeout(700);
+  await checkLayout(page);
+  await page.screenshot({ path: test.info().outputPath("carry-on-small.png") });
+
+  await page.goBack();
+  await expect(page.getByTestId("follow-question"), "Back still asks after a refresh").toBeVisible();
+  await page.getByTestId("follow-keep-going").click();
+  await page.getByTestId("follow-carry-on-button").click();
+  await replay(page, running(points, along, 1520, 1600));
+  expect(await number(page, "follow.done_m"), "the same run goes on").toBeGreaterThan(1550);
+
+  await page.getByTestId("follow-pause").click();
+  await page.reload();
+  await expect(page.getByTestId("follow-carry-on")).toContainText("Your run is paused");
+  await page.getByTestId("follow-stop").click();
+  await page.getByTestId("follow-stop-confirm").click();
+  const time = await number(page, "follow.elapsed_s");
+  await page.waitForTimeout(500);        // the guard's entry is popped
+  await page.reload();
+  await expect(page.getByTestId("follow-summary")).toContainText("Run stopped");
+  await expect(page.getByTestId("follow-resumed")).toBeVisible();
+  expect(await number(page, "follow.elapsed_s"), "stopped at the same time").toBe(time);
+  await page.getByTestId("follow-done").click();
+  await page.waitForURL(/\/routes$/);
+  expect(await page.evaluate(() => sessionStorage.getItem("gatho:run:v1"))).toBeNull();
+  await page.goBack();
+  expect(page.url(), "Back does not open the run again").not.toContain("/follow");
+});
+
+test("a second Back leaves and the run can be carried on; Plan a new run clears it", async ({ page, context }) => {
+  await mockPosition(context);
+  await planA01Base(page);
+  await page.locator(".sheet-handle").click();
+  const button = page.locator(".route-card").first().getByTestId("follow");
+  const answered = page.waitForResponse((r) => r.url().includes("/v1/") && r.url().endsWith("/follow"));
+  await button.click();
+  const { points, along_m: along } = await (await answered).json();
+  await expect(page.getByTestId("follow-start")).toBeVisible();
+  await page.getByTestId("follow-start").click();
+  await replay(page, running(points, along, 0, 300));
+  await page.goBack();
+  await expect(page.getByTestId("follow-question")).toBeVisible();
+  await page.goBack();
+  await page.waitForURL(/\/\?plan=/);
+  await button.click();
+  await expect(page.getByTestId("follow-carry-on")).toBeVisible();
+
+  await page.goBack();
+  await page.waitForURL(/\/\?plan=/);
+  await page.getByTestId("new-run").click();
+  expect(await page.evaluate(() => sessionStorage.getItem("gatho:run:v1"))).toBeNull();
+  await page.getByTestId("cleared-toast").getByRole("button", { name: "Undo" }).click();
+  await expect.poll(() => page.evaluate(() => !!sessionStorage.getItem("gatho:run:v1")), { message: "Undo puts it back" }).toBe(true);
+});
+
+/** A speech engine that records instead of speaking: one remote voice (the default) and one on the device. */
+async function recordSpeech(context: BrowserContext) {
+  await context.addInitScript(() => {
+    const said: { text: string; voice: string | null; lang: string }[] = [];
+    const buzz: unknown[] = [];
+    const voices = [
+      { name: "Remote English", lang: "en-US", localService: false, default: true, voiceURI: "remote" },
+      { name: "English on this phone", lang: "en-IN", localService: true, default: false, voiceURI: "here" },
+    ];
+    // a plain class: Chromium takes only its own voices on its own utterances
+    class Utterance { voice: { voiceURI: string } | null = null; lang = ""; constructor(public text: string) {} }
+    Object.assign(window, { SpeechSynthesisUtterance: Utterance });
+    Object.defineProperty(window, "speechSynthesis", { configurable: true, value: {
+      speaking: false, pending: false, getVoices: () => voices, addEventListener() {}, removeEventListener() {},
+      speak: (u: Utterance) => said.push({ text: u.text, voice: u.voice?.voiceURI ?? null, lang: u.lang }),
+      cancel() {},
+    } });
+    Object.defineProperty(navigator, "vibrate", { configurable: true, value: (pattern: unknown) => { buzz.push(pattern); return true; } });
+    Object.assign(window, { __said: said, __buzz: buzz });
+  });
+}
+
+test("voice cues, off by default, with the voice on this phone; a buzz with the banner; still no request", async ({ page, context }) => {
+  await mockPosition(context);
+  await recordSpeech(context);
+  await actAs(page, made.token);
+  const { points, along_m: along, cues } = await openFollow(page, `saved=${made.saved.saved_id}`) as Awaited<ReturnType<typeof openFollow>>
+    & { cues: (Turn & { then: Turn[] })[] };
+  const choice = page.getByTestId("follow-voice-choice");
+  await expect(choice).not.toBeChecked();
+  const asked: string[] = [];
+  const onRequest = (r: Request) => { if (!/^(blob|data):/.test(r.url())) asked.push(r.url()); };
+  context.on("request", onRequest);
+  await choice.check();
+  await page.getByTestId("follow-start").click();
+  // one fix a frame, as a phone gives them: in batches React draws progress past a turn's window
+  for (const fix of running(points, along, 0, 3500)) await replay(page, [fix]);
+  await page.waitForTimeout(500);
+  await expect(page.getByTestId("follow-voice")).toHaveAttribute("aria-pressed", "true");
+  const said = await page.evaluate(() => (window as unknown as { __said: { text: string; voice: string; lang: string }[] }).__said);
+  expect(said[0]).toEqual({ text: "Voice cues on.", voice: "here", lang: "en-IN" });
+  expect(said.every((s) => s.voice === "here"), "never the remote default").toBe(true);
+  // the API's own cues, said by name: the first named one on the way
+  const named = cues.flatMap((c) => [c, ...c.then]).find((c) => c.road && c.at_m > 120 && c.at_m < 3400)!;
+  expect(said.map((s) => s.text)).toContainEqual(expect.stringContaining(`Now, turn ${named.turn} onto ${named.road}`));
+  expect(said.some((s) => s.text.startsWith("In "))).toBe(true);
+  expect(said.slice(1).every((s) => /^(In \d+ metres|Now), turn /.test(s.text))).toBe(true);
+  await page.waitForTimeout(700);
+  await checkLayout(page);
+
+  // 60 m to the side: the banner, one buzz, and the voice says nothing of a cue
+  const i = along.findIndex((m) => m >= 3500);
+  const [a, b] = [points[i - 1]!, points[i]!];
+  const here = running(points, along, 3500, 3500)[0]!;
+  const [kx, ky] = [109_230, 110_620];
+  const [dx, dy] = [(b[0] - a[0]) * kx, (b[1] - a[1]) * ky];
+  const size = Math.hypot(dx, dy);
+  const count = said.length;
+  await replay(page, Array.from({ length: 14 }, () => ({ lon: here.lon - (dy / size) * 60 / kx, lat: here.lat + (dx / size) * 60 / ky, after: 1 })));
+  await expect(page.getByTestId("follow-off")).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { __buzz: unknown[] }).__buzz)).toEqual([200]);
+  expect(await page.evaluate(() => (window as unknown as { __said: unknown[] }).__said.length)).toBe(count);
+
+  await page.getByTestId("follow-voice").click();
+  await expect(page.getByTestId("follow-voice")).toHaveAttribute("aria-pressed", "false");
+  context.off("request", onRequest);
+  expect(asked, "speech and the buzz ask the server for nothing").toEqual([]);
+  await page.getByTestId("follow-voice").click();
+  await bothThemes(page, "voice-on");       // a theme switch loads the other sprite: not during the recording
+});
+
+test("this browser's own voices: offered only when one is on the device", async ({ page }) => {
+  await actAs(page, made.token);
+  await openFollow(page, `saved=${made.saved.saved_id}`);
+  const local = await page.evaluate(async () => {
+    const read = () => speechSynthesis.getVoices();
+    if (!read().length) await new Promise((r) => { speechSynthesis.onvoiceschanged = r; setTimeout(r, 3000); });
+    return read().some((v) => v.localService && /^en[-_]?/i.test(v.lang));
+  });
+  await expect(page.getByTestId("follow-voice-choice")).toHaveCount(local ? 1 : 0);
+});
+
+test("Did you finish: yes records 100 %", async ({ page, context }) => {
+  await mockPosition(context);
+  await actAs(page, made.token);
+  const { points, along_m: along } = await openFollow(page, `saved=${made.saved.saved_id}`);
+  await page.getByTestId("follow-start").click();
+  const total = along.at(-1)!;
+  await replay(page, running(points, along, 0, 300));
+  // out of sight long enough for the window to reach the end, then by the end but too inexact to snap
+  const [lon, lat] = points.at(-1)!;
+  await replay(page, [{ lon, lat, after: Math.ceil(total / 5) + 30, accuracy: 45 }]);
+  await page.getByTestId("follow-stop").click();
+  await expect(page.getByTestId("follow-question")).toContainText("Did you finish the route?");
+  await checkLayout(page);
+  await page.screenshot({ path: test.info().outputPath("did-you-finish.png") });
+  await page.getByTestId("follow-finished-yes").click();
+  await expect(page.getByTestId("follow-summary")).toContainText("Route finished");
+  expect(await number(page, "follow.done_m")).toBe(total);
+});
+
+test("a denied permission shows the calm message", async ({ page }) => {
+  await actAs(page, made.token);
+  await openFollow(page, `saved=${made.saved.saved_id}`);      // no permission granted: the browser itself refuses
+  await page.getByTestId("follow-start").click();
+  await expect(page.getByTestId("follow-blocked")).toContainText("Location is off for GATHO");
+  await expect(page.getByTestId("follow-blocked")).toContainText("That's fine.");
+  await expect(page.getByRole("alert").filter({ hasText: /./ })).toHaveCount(0);
+  await checkLayout(page);
+  await bothThemes(page, "denied");
+});
+
+test("the browser's own geolocation starts a run", async ({ page, context }) => {
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ longitude: TRACK[0]![0], latitude: TRACK[0]![1], accuracy: 5 });
+  await actAs(page, made.token);
+  await openFollow(page, `saved=${made.saved.saved_id}`);
+  await page.getByTestId("follow-start").click();
+  await expect(page.getByTestId("follow-screen")).toHaveAttribute("data-view", "running");
+  expect(await number(page, "follow.done_m")).toBeLessThan(20);
+});
+
+test("the three Follow buttons, and Back", async ({ page }) => {
+  await planA01Base(page);
+  const card = page.locator(".route-card").first();
+  await expect(card.getByTestId("follow")).toHaveAttribute("href", `/follow?route=${await card.getAttribute("data-route-id")}`);
+  await page.locator(".sheet-handle").click();
+  await card.getByTestId("follow").scrollIntoViewIfNeeded();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: test.info().outputPath("route-card.png") });
+  await card.getByTestId("follow").click();
+  await expect(page.getByTestId("follow-start")).toBeVisible();
+  await page.getByTestId("follow-back").click();
+  await page.waitForURL(/\/\?plan=/);
+  await expect(page.locator(".route-card").first(), "the plan is back").toBeVisible();
+
+  await page.getByTestId("route-name").fill("Follow test");
+  await page.getByTestId("save").click();
+  const share = (await page.getByTestId("share-link").getAttribute("href"))!;
+
+  await page.goto("/routes");
+  const follow = page.locator(".saved-card").first().getByTestId("follow");
+  expect((await follow.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await page.screenshot({ path: test.info().outputPath("saved-card.png") });
+  await follow.click();
+  await expect(page.getByTestId("follow-start")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Follow test");
+  await page.getByTestId("follow-back").click();
+  await page.waitForURL(/\/routes$/);
+
+  await page.goto(share);
+  await page.locator(".sheet-handle").click();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: test.info().outputPath("share-follow.png") });
+  await page.getByTestId("follow").click();
+  await expect(page.getByTestId("follow-start")).toBeVisible();
+  await page.getByTestId("follow-back").click();
+  await page.waitForURL(/\/s\//);
+});
+
+test("a visitor follows a share link and never gets a session", async ({ page }) => {
+  const sessions: string[] = [];
+  page.on("request", (r) => {
+    if (r.url().includes("/v1/session") || r.headers()["x-client-token"]) sessions.push(r.url());
+  });
+  await openFollow(page, `share=${made.saved.share_slug}`);
+  await expect(page.getByTestId("follow-start")).toBeVisible();
+  await page.goto(`/follow?saved=${made.saved.saved_id}`);
+  await expect(page.getByTestId("follow-page")).toHaveAttribute("data-state", "gone");
+  await expect(page.getByTestId("follow-page")).toContainText("That route is no longer available");
+  await page.screenshot({ path: test.info().outputPath("gone.png") });
+  expect(sessions).toEqual([]);
+});
+
+test("the map failing to load leaves Follow working", async ({ page, context }) => {
+  await mockPosition(context);
+  await context.route(/\/basemap\/kerala\.pmtiles/, (route) => route.abort());
+  await actAs(page, made.token);
+  const answered = page.waitForResponse((r) => r.url().includes("/v1/") && r.url().endsWith("/follow"));
+  await page.goto(`/follow?saved=${made.saved.saved_id}`);
+  const route = await (await answered).json();
+  await expect(page.getByTestId("map-failed")).toContainText("Follow still works");
+  await page.getByTestId("follow-start").click();
+  await replay(page, running(route.points, route.along_m, 0, 200));
+  expect(await number(page, "follow.done_m")).toBeGreaterThan(150);
+});
+
+test("a share link updated while its page is open never mixes two routes (step 4's race)", async ({ page, request }) => {
+  const other = await savedA01(request, "Race");
+  await page.goto(`/s/${other.saved.share_slug}`);
+  await page.locator(".sheet-handle").click();
+  await page.waitForTimeout(400);
+  const changed = await request.patch(`${API}/v1/me/routes/${other.saved.saved_id}`,
+    { headers: other.headers, data: { route_id: other.v1.candidates[1]!.route_id } });
+  expect(changed.ok()).toBe(true);
+  await page.getByTestId("open-in").click();
+  await expect(page.getByTestId("open-in-sheet").getByRole("alert")).toContainText("This link now has a new route. Reload the page");
+  await expect(page.getByTestId("open-google")).toHaveAttribute("data-points", "even");
+  await expect(page.getByTestId("open-google-note")).not.toContainText("overlap");
+  await expect(page.getByTestId("open-share")).toBeDisabled();
+});
+
+test.describe("on a computer", () => {
+  test.use({ viewport: { width: 1366, height: 800 }, isMobile: false, hasTouch: false, deviceScaleFactor: 1 });
+
+  test("the panel", async ({ page, context }) => {
+    await mockPosition(context);
+    await actAs(page, made.token);
+    const { points, along_m: along } = await openFollow(page, `saved=${made.saved.saved_id}`);
+    await checkLayout(page);
+    await page.getByTestId("follow-start").click();
+    await replay(page, running(points, along, 0, 1500));
+    await page.waitForTimeout(800);
+    await checkLayout(page);
+    await page.screenshot({ path: test.info().outputPath("running-desktop.png") });
+  });
+});

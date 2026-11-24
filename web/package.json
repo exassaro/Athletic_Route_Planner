@@ -20,7 +20,8 @@
     "check:api": "npm run gen:api && git diff --exit-code -- src/api",
     "gen:icons": "node scripts/gen-icons.mjs",
     "gen:brand": "node scripts/make-brand.mjs",
-    "gen:sprites": "node scripts/gen-sprites.mjs"
+    "gen:sprites": "node scripts/gen-sprites.mjs",
+    "sim:follow": "node scripts/simulate-follow.mjs"
   },
   "dependencies": {
     "@protomaps/basemaps": "5.7.2",

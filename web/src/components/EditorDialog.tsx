@@ -2,14 +2,15 @@
 /**
  * A chip's small editor (blueprint Phase 5b amendment 8): a native modal <dialog>, so focus stays inside, Escape
  * closes it and focus goes back to the chip. Anchored to the bottom on a phone, centred on a desktop. Every control
- * inside sends its own patch, so "Done" only closes.
+ * inside sends its own patch, so "Done" only closes. It is the primary button unless the content has its own.
  */
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { Button, IconButton } from "./ui";
 
-type Props = { open: boolean; title: string; onClose: () => void; children: ReactNode; testId?: string };
+type Props = { open: boolean; title: string; onClose: () => void; children: ReactNode; testId?: string;
+  doneVariant?: "primary" | "secondary" };
 
-export function EditorDialog({ open, title, onClose, children, testId }: Props) {
+export function EditorDialog({ open, title, onClose, children, testId, doneVariant = "primary" }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const id = useId();
   useEffect(() => {
@@ -35,7 +36,7 @@ export function EditorDialog({ open, title, onClose, children, testId }: Props) 
             <IconButton icon="close" label="Close" onClick={onClose} />
           </header>
           <div className="editor-body">{children}</div>
-          <Button variant="primary" block onClick={onClose}>Done</Button>
+          <Button variant={doneVariant} block onClick={onClose}>Done</Button>
         </div>
       )}
     </dialog>

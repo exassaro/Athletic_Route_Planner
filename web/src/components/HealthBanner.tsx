@@ -24,7 +24,7 @@ const MEANING: Record<string, string> = {
   osm_features: "Bridges, roads and place areas can't be added right now.",
 };
 
-export function HealthBanner({ trigger }: { trigger: string | null }) {
+export function HealthBanner({ trigger, onBuilds }: { trigger: string | null; onBuilds?: (builds: Health["builds"]) => void }) {
   const [health, setHealth] = useState<Health | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   useEffect(() => {
@@ -34,6 +34,7 @@ export function HealthBanner({ trigger }: { trigger: string | null }) {
       const body: unknown = data ?? error;   // 503 still carries the body
       const known = isHealth(body);
       setHealth(known ? body : null);
+      if (known && body.builds) onBuilds?.(body.builds);
       setProblem(known ? null : apiFailure(response.status, body).message);
     }, (e: unknown) => {
       if (live) setProblem(asFailure(e).message);
@@ -41,7 +42,7 @@ export function HealthBanner({ trigger }: { trigger: string | null }) {
     return () => {
       live = false;
     };
-  }, [trigger]);
+  }, [trigger, onBuilds]);
   if (problem) return <p className="banner warn" role="alert" data-testid="health-banner">{problem}</p>;
   if (!health || health.status === "ok") return null;
   const down = Object.entries(health.services).filter(([, s]) => !s.ok).map(([n]) => n);

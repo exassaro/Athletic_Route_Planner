@@ -100,6 +100,7 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); }
+html { overscroll-behavior-y: contain; }   /* no pull-to-refresh by accident (Phase 5e item 4) */
 body { overscroll-behavior: none; }
 h1, h2, h3 { margin: 0 0 6px; line-height: 1.2; }
 h2 { font-size: 1.05rem; }
@@ -193,6 +194,15 @@ a { color: var(--accent-text); }
   .sheet-handle { display: none; }
   .sheet-body { flex: 1; height: auto; }
 }
+/* Restoring (Phase 5e amendment 2): the sheet waits for the restored state, so step 1 never flashes. */
+html[data-restoring] .planner .sheet { visibility: hidden; transition: none; }
+.sheet-action { position: absolute; top: 0; right: 8px; }
+.sheet-action .btn { min-height: 44px; padding: 0 8px; gap: 4px; font-size: 14px; }
+@media (min-width: 900px) { .sheet-action { position: static; align-self: flex-end; margin: 8px 16px 0; } }
+@media (max-width: 359px) { .sheet-action .icon { display: none; } }
+.sheet .sheet-body .peek-bar.restoring-bar { display: grid; }   /* at every height: above the rules that hide a peek bar */
+.skeleton { display: block; width: 72px; height: 24px; margin: 4px 0; background: var(--soft); }
+.older-map { padding: var(--space-1) 12px; border-radius: var(--radius); background: var(--soft); }
 .maplibregl-ctrl-attrib { font-size: 12px; }
 @media (max-width: 899px) {
   .planner .maplibregl-ctrl-bottom-right { bottom: var(--snap-h); transition: bottom 0.22s; }
@@ -293,6 +303,7 @@ a { color: var(--accent-text); }
 .route-card-flags { list-style: none; display: flex; flex-wrap: wrap; gap: 0 var(--space-1); margin: 0; padding: 0; }
 .route-card-why { margin-left: auto; padding: 0 4px; }
 .route-card-detail { margin: 4px 0 0; }
+.route-card .follow-link { width: 100%; margin-top: var(--space-1); }
 .why { margin: var(--space-1) 0 0; padding: 12px var(--space-2); border-radius: var(--radius); background: var(--soft); }
 .swatch { flex: none; }
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin: 8px 0; }
@@ -599,6 +610,13 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .open-in-group { display: grid; gap: var(--space-1); }
 .open-in-group + .open-in-group { padding-top: var(--space-2); border-top: 1px solid var(--hairline); }
 .open-in-group p { margin: 0; }
+.open-in-message { padding: var(--space-1); border-radius: var(--radius); background: var(--soft); }
+.open-in-loading { min-height: 48px; }
+.open-in-steps summary {
+  min-height: 48px; padding: 12px 0; line-height: 24px; font-size: 16px; font-weight: 600; cursor: pointer;
+}
+.open-in-steps ol { margin: var(--space-1) 0; padding-left: 24px; }
+.open-in-steps li + li { margin-top: 4px; }
 .menu-body { display: grid; gap: var(--space-2); }
 .menu-section { display: grid; gap: var(--space-1); }
 .menu-section h3 { margin: 0; }
@@ -720,7 +738,8 @@ dialog.editor::backdrop { background: rgba(20, 22, 26, 0.5); }
 .saved-name { flex: 1; min-width: 0; margin: 0; padding-top: 12px; overflow-wrap: anywhere; }
 .saved-line { margin: 2px 0 0; }
 .saved-when { margin: 2px 0 var(--space-1); }
-.saved-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-1); }
+.saved-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-1); }
+.saved-actions .btn { padding: 0 4px; }
 .saved-empty { display: grid; justify-items: center; gap: var(--space-2); padding: var(--space-4) 0; }
 .saved-empty p { margin: 0; }
 .card-menu { position: relative; flex: none; }
@@ -759,3 +778,59 @@ dialog.rename-dialog { width: calc(100% - 32px); max-width: 420px; margin: 16dvh
 .map-notice p { margin: 0; }
 @media (min-width: 900px) { .planner .map-notice { left: 456px; } }
 [data-theme="dark"] .map-box { background: #1B1E22; }
+
+/* ---------- Follow (Phase 5d amendments 4 to 15) ---------- */
+/* The sheet is as tall as what it holds: it has one position, peek, and FollowScreen sets --snap-h from it. */
+.follow .sheet { height: auto; max-height: calc(100dvh - 80px); transform: none; transition: none; }
+.follow .sheet-body { flex: 1 1 auto; height: auto; padding-top: var(--space-2); }
+.follow .sheet-body > :first-child { margin-top: 0; }
+/* the sheet jumps to each screen's height, so the OSM credit must jump with it or be under it for 220 ms */
+.planner.follow .maplibregl-ctrl-bottom-right { transition: none; }
+.follow .follow-back { pointer-events: auto; background: var(--surface); }
+.follow .topbar-brand { text-decoration: none; }
+.follow h1:focus { outline: none; }
+.follow-copy { display: grid; gap: var(--space-1); }
+.follow-copy p, .follow-copy h1 { margin: 0; }
+.follow-lock { padding: var(--space-1) 12px; border-radius: var(--radius); background: var(--soft); }
+.follow-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-1); margin-top: 12px; }
+.follow-actions > :only-child { grid-column: 1 / -1; }
+.follow-actions.follow-question-actions { grid-template-columns: 1fr; }
+.follow-cue { min-height: 48px; margin: 0 0 var(--space-1); display: flex; align-items: center; }
+.follow-cue p { margin: 0; overflow-wrap: anywhere; }
+.follow-hud { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1) var(--space-2); margin: 0; }
+.follow-stat { display: flex; flex-direction: column-reverse; min-width: 0; }
+.follow-stat dd { margin: 0; white-space: nowrap; }
+.follow-off {
+  display: flex; gap: var(--space-1); align-items: flex-start; padding: var(--space-1) 12px;
+  border: 1px solid var(--warn-line); border-radius: var(--radius); background: var(--warn-soft); color: var(--ink);
+}
+.follow-off .icon { color: var(--warn); }
+.follow-off p { margin: 0; }
+.follow-note { margin: var(--space-1) 0 0; }
+.follow .pin-start { cursor: default; }
+.follow .follow-centre { position: absolute; z-index: 2; right: 16px; top: 128px; background: var(--surface); }
+@media (min-width: 900px) {
+  .follow .sheet { top: 0; height: 100%; max-height: none; }
+  .follow .follow-centre { top: 64px; }
+}
+/* Battery saver (Phase 5d amendment 14): the dark tokens, with the paper and surfaces near black for OLED. */
+.follow.saver {
+  --paper: #000000;
+  --surface: #0A0B0D;
+  --soft: #121417;
+  color: var(--ink);
+}
+.follow.saver * { transition: none; }
+.follow .follow-saver { position: absolute; z-index: 2; left: 16px; top: 16px; }
+.follow .follow-voice { position: absolute; z-index: 2; left: 72px; top: 16px; }
+.follow .follow-saver[aria-pressed="true"], .follow .follow-voice[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+@media (min-width: 900px) { .follow .follow-saver { left: 456px; } .follow .follow-voice { left: 512px; } }
+.follow-saver-choice { font-size: 15px; line-height: 20px; }
+.follow-banners { display: grid; gap: var(--space-1); }
+.follow-away {
+  display: flex; align-items: center; gap: var(--space-1); padding: 4px 4px 4px 12px;
+  border: 1px solid var(--control); border-radius: var(--radius); background: var(--surface); color: var(--ink);
+}
+.follow-away p { flex: 1; margin: 0; }
+.follow-away .icon-btn { flex: none; }
+.follow-wake { margin: 0 0 var(--space-1); }

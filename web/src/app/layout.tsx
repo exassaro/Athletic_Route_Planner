@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { OG_IMAGE } from "@/brand/meta";
+import { RESTORE_SCRIPT } from "@/restore/boot";
 import { THEME_COLOR, THEME_SCRIPT } from "@/theme/theme";
 import { ThemeSync } from "@/theme/ThemeSync";
 import "./globals.css";
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" data-theme="light" className={pixel.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: RESTORE_SCRIPT }} />
       </head>
       <body>
         <ThemeSync />

@@ -42,6 +42,8 @@ export default defineConfig({
     { name: "errors", testMatch: /savedErrors[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "screens5c", testMatch: /savedScreens[.]spec[.]ts/, use: { browserName: "chromium" } },
     { name: "unreachable", testMatch: /unreachable[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
+    { name: "follow", testMatch: /follow[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
+    { name: "restore", testMatch: /restore[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "pincost", testMatch: /pincost\.spec\.ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
   ],
 });

@@ -186,6 +186,47 @@ class ElevationOut(BaseModel):
     loss_m: float | None
 
 
+class OverviewPoint(BaseModel):
+    lon: float
+    lat: float
+    at_m: float = Field(description="Distance along the route, measured from the geometry")
+
+
+class OverviewPointsOut(BaseModel):
+    """Waypoints for a Google Maps overview link (Phase 5d A14). Valhalla stands in for Google."""
+
+    points: list[OverviewPoint] = Field(description="The waypoints in route order, at most `max`. The route's start "
+                                                    "and end are fixed and not among them")
+    max_deviation_m: float = Field(description="The worst straight-line distance between our line and Valhalla's "
+                                               "walking path through the points, leg by leg. Never a route distance")
+    overlap_pct: float = Field(description="The share of our length within 30 m of that path, leg by leg, rounded "
+                                           "down. An estimate: tested with our router, not with Google")
+
+
+class FollowStep(BaseModel):
+    at_m: float = Field(description="Distance along the route to the turn, measured from the geometry")
+    turn: Literal["left", "right", "around"]
+    road: str | None = Field(description="The road turned onto, from OSM. Null: unnamed, the road the runner is "
+                                         "already on, or no Valhalla")
+
+
+class FollowCue(FollowStep):
+    then: list[FollowStep] = Field(description='Turns that follow under 50 m apart, in order: "turn right, then left"')
+
+
+class FollowOut(BaseModel):
+    """Everything Follow mode needs of the route, fetched once before the run (Phase 5d A15)."""
+
+    route_id: uuid.UUID
+    points: list[tuple[float, float]] = Field(description="[lon, lat] of every vertex: the stored geometry")
+    along_m: list[float] = Field(description="Distance along the route at each of `points`, measured from the "
+                                             "geometry. The last is the route's length")
+    cue_source: Literal["junctions", "geometry"] = Field(
+        description='"geometry": Valhalla could not be asked, so every bend over 35 degrees is a cue and none has '
+                    "a road name")
+    cues: list[FollowCue]
+
+
 class SaveIn(BaseModel):
     name: str | None = Field(None, max_length=200)
     as_new: bool | None = Field(None, description="true: always a new saved route with a new share link. Otherwise "

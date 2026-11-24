@@ -13,6 +13,7 @@ import type { Schemas } from "@/api/client";
 import { OG_IMAGE } from "@/brand/meta";
 import { API_BASE } from "@/api/client";
 import { serverApi } from "@/api/server";
+import { FollowButton } from "@/components/FollowButton";
 import { Num } from "@/components/Num";
 import { SharedView } from "@/components/SharedView";
 import { ShareOpenIn } from "@/components/ShareOpenIn";
@@ -90,7 +91,8 @@ export default async function SharePage({ params }: Props) {
           )}
         </ol>
         <div className="share-actions">
-          <ShareOpenIn slug={slug} start={lonLat(line[0]!)} end={lonLat(line[line.length - 1]!)} kmMarks={shared.km_marks} />
+          <FollowButton query={{ share: slug }} />
+          <ShareOpenIn slug={slug} routeId={shared.route.id} footM={p.foot_m} start={lonLat(line[0]!)} end={lonLat(line[line.length - 1]!)} kmMarks={shared.km_marks} />
           <a className="btn btn-secondary" href={`${API_BASE}/v1/share/${slug}/gpx`} data-testid="share-gpx">
             <Icon name="download" />Download GPX
           </a>

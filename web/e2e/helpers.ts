@@ -162,6 +162,14 @@ type Pick = { q: string; id: string };
  */
 export async function setupRun(page: Page, o: { start: Pick; km?: number; shape?: "Point to point" | "Out and back" | "Loop"; towards?: Pick }) {
   await page.goto("/");
+  // the tab keeps its run (Phase 5e amendment 2): a second one starts as a runner starts it
+  if (await page.evaluate(() => sessionStorage.getItem("gatho:draft:v1") !== null)) {
+    await expect(page.locator("html[data-restoring]")).toHaveCount(0);
+    await page.getByTestId("menu-open").click();
+    await page.getByTestId("menu-new-run").click();
+    await expect(page.locator(".setup")).toHaveAttribute("data-step", "1");
+    await page.getByTestId("cleared-toast").getByRole("button", { name: "Dismiss" }).click();
+  }
   await pickPlace(page, "start-search", o.start);
   await expect(page.locator(".setup")).toHaveAttribute("data-step", "2");
   if (o.km != null) await setDistance(page, o.km);

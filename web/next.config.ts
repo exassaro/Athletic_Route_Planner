@@ -11,6 +11,8 @@ const config: NextConfig = {
     : (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") },
   // Phase 5b amendment 12: Chrome on Windows corrupts cached Range responses (zero-filled bodies, "Wrong magic
   // number for PMTiles archive"), so the archive is never stored. no-cache is not enough: it still stores them.
+  // This covers the archive only where Next serves it (development, the LAN Caddy). With NEXT_PUBLIC_BASEMAP_ORIGIN
+  // set, the basemap's own server must send it (web/README.md, "Split origin").
   async headers() {
     return [{ source: "/basemap/kerala.pmtiles", headers: [{ key: "Cache-Control", value: "no-store" }] }];
   },

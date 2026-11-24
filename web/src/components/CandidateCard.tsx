@@ -11,6 +11,7 @@ import { flagText } from "@/plan/flags";
 import { km, signedKm } from "@/plan/format";
 import { lineStyle, svgDash } from "@/plan/routeStyle";
 import { useTheme } from "@/theme/useTheme";
+import { FollowButton } from "./FollowButton";
 import { Badge, Button } from "./ui";
 import { Num } from "./Num";
 import { StatNumber } from "./StatNumber";
@@ -132,6 +133,7 @@ export function CandidateCard({ cand, index, total, selected, pace, target, onSe
           </Button>
         )}
       </div>
+      <FollowButton query={{ route: cand.route_id }} />
       {open !== null && flags[open] && (
         <p className="t-body-s route-card-detail">{flags[open]!.title}. <span className="muted">{flags[open]!.detail}</span></p>
       )}

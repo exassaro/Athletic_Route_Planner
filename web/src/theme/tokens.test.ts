@@ -43,6 +43,8 @@ const NON_TEXT: [string, string][] = [
 ];
 
 const THEMES = { light: block(':root, [data-theme="light"]'), dark: block('[data-theme="dark"]') };
+/** Follow's battery saver: the dark tokens with its own paper and surfaces (Phase 5d amendment 14). */
+const SAVER = { ...THEMES.dark, ...block(".follow.saver") };
 
 describe("brand", () => {
   const logo = JSON.parse(readFileSync(join(__dirname, "..", "..", "brand", "logo.json"), "utf8"));
@@ -70,7 +72,12 @@ describe("colour tokens", () => {
     expect(THEMES.light.accent).toBe("#0F6E56");
   });
 
-  for (const [name, t] of Object.entries(THEMES)) {
+  it("battery saver is near black", () => {
+    expect(SAVER.paper).toBe("#000000");
+    expect(luminance(SAVER.surface!)).toBeLessThan(0.005);
+  });
+
+  for (const [name, t] of Object.entries({ ...THEMES, saver: SAVER })) {
     it(`${name}: text pairs are 4.5:1 or more`, () => {
       for (const [fg, bg] of TEXT) expect(contrast(t[fg]!, t[bg]!), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
     });

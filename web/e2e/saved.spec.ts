@@ -9,7 +9,7 @@ test("the card, its menu and the rename dialog", async ({ page, request }) => {
   const card = page.locator(".saved-card");
   await expect(card).toContainText("Updated just now");
   await expect(card).toContainText("ends at Francis Road");
-  await expect(card.locator(".saved-actions .btn")).toHaveText(["Open", "Edit"]);
+  await expect(card.locator(".saved-actions .btn")).toHaveText(["Open", "Edit", "Follow"]);   // Follow: Phase 5d
   await expect(card.locator("[data-value]")).toHaveCount(1);
   await page.screenshot({ path: test.info().outputPath("saved-card.png") });
 
