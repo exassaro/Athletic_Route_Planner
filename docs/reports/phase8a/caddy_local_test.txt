@@ -1,0 +1,142 @@
+# Output of deploy/test_caddy.sh on the development laptop (Docker Desktop), 2026-11-24. Not the real server.
+==> caddy validate
+Valid configuration
+==> Fake basemap: a 200 kB file that starts with the PMTiles magic, one font range, one sprite JSON
+==> Headers
+
+$ curl -sS -m 20 -o /dev/null -D - -H Origin: https://gatho.shahinsha.xyz -H Range: bytes=0-126 -H Accept-Encoding: gzip, zstd http://127.0.0.1:18080/basemap/kerala.pmtiles
+HTTP/1.1 206 Partial Content
+Accept-Ranges: bytes
+Access-Control-Allow-Origin: https://gatho.shahinsha.xyz
+Access-Control-Expose-Headers: ETag, Content-Range, Accept-Ranges, Content-Length
+Cache-Control: no-store
+Content-Length: 127
+Content-Range: bytes 0-126/200008
+Etag: "dn371qctfldc4abs"
+Last-Modified: Tue, 24 Nov 2026 05:32:37 GMT
+Permissions-Policy: geolocation=(), camera=(), microphone=()
+Referrer-Policy: strict-origin-when-cross-origin
+Strict-Transport-Security: max-age=31536000
+Vary: Origin
+Vary: Accept-Encoding
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Date: Tue, 24 Nov 2026 05:32:41 GMT
+
+
+$ curl -sS -m 20 -o /dev/null -D - -X OPTIONS -H Origin: https://gatho.shahinsha.xyz -H Access-Control-Request-Method: GET -H Access-Control-Request-Headers: range http://127.0.0.1:18080/basemap/kerala.pmtiles
+HTTP/1.1 204 No Content
+Access-Control-Allow-Headers: Range
+Access-Control-Allow-Methods: GET, HEAD, OPTIONS
+Access-Control-Allow-Origin: https://gatho.shahinsha.xyz
+Access-Control-Expose-Headers: ETag, Content-Range, Accept-Ranges, Content-Length
+Access-Control-Max-Age: 86400
+Cache-Control: no-store
+Permissions-Policy: geolocation=(), camera=(), microphone=()
+Referrer-Policy: strict-origin-when-cross-origin
+Strict-Transport-Security: max-age=31536000
+Vary: Origin
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Date: Tue, 24 Nov 2026 05:32:41 GMT
+
+
+$ curl -sS -m 20 -o /dev/null -D - -H Origin: https://gatho.shahinsha.xyz http://127.0.0.1:18080/basemap/fonts/Noto%20Sans%20Regular/0-255.pbf
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Access-Control-Allow-Origin: https://gatho.shahinsha.xyz
+Access-Control-Expose-Headers: ETag, Content-Range, Accept-Ranges, Content-Length
+Cache-Control: public, max-age=2592000, immutable
+Content-Length: 3000
+Etag: "dn371qdhjsuk2bc"
+Last-Modified: Tue, 24 Nov 2026 05:32:37 GMT
+Permissions-Policy: geolocation=(), camera=(), microphone=()
+Referrer-Policy: strict-origin-when-cross-origin
+Strict-Transport-Security: max-age=31536000
+Vary: Origin
+Vary: Accept-Encoding
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Date: Tue, 24 Nov 2026 05:32:41 GMT
+
+
+$ curl -sS -m 20 -o /dev/null -D - -H Origin: https://gatho.shahinsha.xyz -H Accept-Encoding: gzip http://127.0.0.1:18080/basemap/sprites/v4/light.json
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: https://gatho.shahinsha.xyz
+Access-Control-Expose-Headers: ETag, Content-Range, Accept-Ranges, Content-Length
+Cache-Control: public, max-age=2592000, immutable
+Content-Encoding: gzip
+Content-Type: application/json
+Etag: "dn371qlzcd6kbem-gzip"
+Last-Modified: Tue, 24 Nov 2026 05:32:37 GMT
+Permissions-Policy: geolocation=(), camera=(), microphone=()
+Referrer-Policy: strict-origin-when-cross-origin
+Strict-Transport-Security: max-age=31536000
+Vary: Origin
+Vary: Accept-Encoding
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Date: Tue, 24 Nov 2026 05:32:41 GMT
+Content-Length: 1075
+
+
+$ curl -sS -m 20 -o /dev/null -D - -H Range: bytes=999999- http://127.0.0.1:18080/basemap/kerala.pmtiles
+HTTP/1.1 416 Requested Range Not Satisfiable
+Access-Control-Allow-Origin: https://gatho.shahinsha.xyz
+Access-Control-Expose-Headers: ETag, Content-Range, Accept-Ranges, Content-Length
+Content-Range: bytes */200008
+Content-Type: text/plain; charset=utf-8
+Permissions-Policy: geolocation=(), camera=(), microphone=()
+Referrer-Policy: strict-origin-when-cross-origin
+Strict-Transport-Security: max-age=31536000
+Vary: Origin
+Vary: Accept-Encoding
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Date: Tue, 24 Nov 2026 05:32:41 GMT
+Content-Length: 33
+
+
+$ curl -sS -m 20 -D - http://127.0.0.1:18080/v1/health
+HTTP/1.1 200 OK
+Content-Length: 47
+Content-Type: application/json
+Date: Tue, 24 Nov 2026 05:32:42 GMT
+Permissions-Policy: geolocation=(), camera=(), microphone=()
+Referrer-Policy: strict-origin-when-cross-origin
+Strict-Transport-Security: max-age=31536000
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+
+{"status":"ok","services":{"stub":{"ok":true}}}
+$ curl -sS -m 20 -o /dev/null -D - http://127.0.0.1:18080/something-else
+HTTP/1.1 404 Not Found
+Content-Type: text/plain; charset=utf-8
+Permissions-Policy: geolocation=(), camera=(), microphone=()
+Referrer-Policy: strict-origin-when-cross-origin
+Strict-Transport-Security: max-age=31536000
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Date: Tue, 24 Nov 2026 05:32:42 GMT
+Content-Length: 9
+
+
+$ curl -sS -m 20 -o /dev/null -w POST 2 MB to /v1/plans -> HTTP %{http_code}\n -X POST -H Content-Type: application/json --data-binary @/tmp/tmp.W4G7fJUaLN/big.json http://127.0.0.1:18080/v1/plans
+POST 2 MB to /v1/plans -> HTTP 413
+
+access log lines written: 9
+==> deploy/health.sh against it
+Checking http://127.0.0.1:18080 (front end https://gatho.shahinsha.xyz)
+  ok    Range request on kerala.pmtiles: 206, bytes 0-126/200008
+  ok    the body starts with the PMTiles magic
+  ok    Allow-Origin https://gatho.shahinsha.xyz
+  ok    Cache-Control: no-store
+  ok    exposes ETag
+  ok    exposes Content-Range
+  ok    exposes Content-Length
+  ok    ETag present
+  ok    not compressed
+  ok    basemap preflight: 204, Allow-Headers Range, Allow-Methods GET, HEAD, OPTIONS
+  ok    font glyphs: 200, Cache-Control public, max-age=2592000, immutable
+
+All checks passed.

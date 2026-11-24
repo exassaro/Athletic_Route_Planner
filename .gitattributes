@@ -5,3 +5,6 @@ web/src/brand/icons.ts text eol=lf
 web/src/brand/logo.ts text eol=lf
 web/src/brand/sprites.ts text eol=lf
 docs/reports/phase5b/sprites.md text eol=lf
+# Deploy scripts and configuration run on Linux: LF on every checkout.
+deploy/** text eol=lf
+engine/caddy/Caddyfile.prod text eol=lf

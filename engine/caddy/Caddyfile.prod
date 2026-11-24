@@ -1,0 +1,89 @@
+# Production: the API and the basemap at https://api.gatho.shahinsha.xyz, for the front end on Vercel
+# (https://gatho.shahinsha.xyz). Phase 8a; served by the caddy service in deploy/docker-compose.prod.yml.
+#
+# Certificates come from Let's Encrypt automatically (needs ports 80 and 443 open and the DNS A record).
+# API_SITE and WEB_ORIGIN are set by compose; the defaults are production. deploy/test_caddy.sh runs this file
+# with API_SITE=http://:18080 (an http:// address: no certificate, no redirect) to check the basemap rules.
+#
+# Basemap rules: web/README.md, "Split origin" (the basemap server requirements).
+
+# No trusted_proxies: nothing sits in front of Caddy, so it ignores any X-Forwarded-For a client sends and writes
+# the client's own address for the API (ATHLETE_TRUST_FORWARDED_FOR=true reads it).
+
+{$API_SITE:api.gatho.shahinsha.xyz} {
+	# Access log (IP, method, path, status, size, time), rotated by Caddy: 50 MiB a file, 10 files, 30 days.
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 50MiB
+			roll_keep 10
+			roll_keep_for 720h
+		}
+		format json
+	}
+
+	# Request bodies: a RouteRequest or a JSON Patch is a few kB. Larger is refused (413).
+	request_body {
+		max_size 1MB
+	}
+
+	# Compress JSON only (the API's answers, sprite JSON). Never .pmtiles: pmtiles reads byte ranges, and the
+	# archive's tiles are compressed already. GPX is left alone too (downloaded, not parsed by the page).
+	encode {
+		zstd
+		gzip
+		match {
+			header Content-Type application/json*
+		}
+	}
+
+	# Security headers for everything. No Cross-Origin-Resource-Policy: the basemap is fetched cross-origin.
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), camera=(), microphone=()"
+		-Server
+		-Via
+	}
+
+	# The basemap (web/README.md, Split origin): CORS for the front end, Range answered with 206 by file_server.
+	@basemap path /basemap/*
+	handle @basemap {
+		header {
+			Access-Control-Allow-Origin "{$WEB_ORIGIN:https://gatho.shahinsha.xyz}"
+			Access-Control-Expose-Headers "ETag, Content-Range, Accept-Ranges, Content-Length"
+			Vary "Origin"
+		}
+		# Preflight: pmtiles sends a Range header, which not every browser treats as safelisted.
+		@preflight method OPTIONS
+		handle @preflight {
+			header {
+				Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+				Access-Control-Allow-Headers "Range"
+				Access-Control-Max-Age "86400"
+			}
+			respond 204
+		}
+		# Never through the browser cache (Phase 5b amendment 12: Chrome on Windows returns zero-filled bodies for
+		# cached Range responses). no-cache is not enough.
+		@pmtiles path *.pmtiles
+		header @pmtiles Cache-Control "no-store"
+		# Fonts and sprites are pinned by commit (engine/basemap_pin.json); a new pin changes them in place, so
+		# 30 days rather than a year.
+		@assets path /basemap/fonts/* /basemap/sprites/*
+		header @assets Cache-Control "public, max-age=2592000, immutable"
+		root * /srv
+		file_server
+	}
+
+	# The API (FastAPI, one worker). Its own CORS middleware answers for /v1 (ATHLETE_CORS_ORIGINS).
+	@api path /v1/* /docs /docs/* /redoc /openapi.json
+	handle @api {
+		reverse_proxy api:8000
+	}
+
+	handle {
+		respond "Not found" 404
+	}
+}

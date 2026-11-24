@@ -1,0 +1,195 @@
+# Production stack for one VM (Phase 8a): the API and the basemap at https://api.gatho.shahinsha.xyz.
+# The front end is on Vercel (https://gatho.shahinsha.xyz).
+#
+# Standalone, not an override of ../docker-compose.yml: an override can only add `ports`, never take the dev ones
+# away, so a merge would publish Postgres, Redis and the engines. Images are pinned exactly as in the dev file.
+#
+# Always run it through the scripts, or as:
+#   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod <command>
+# (deploy/lib.sh defines `dc` for that). Paths below are relative to this file's folder (deploy/).
+#
+# Only caddy publishes ports (80, 443). Everything else is on the project network only.
+#
+# First run (deploy/first_run.sh does this in order):
+#   postgres, redis -> migrations -> OSM features -> valhalla (tile + elevation build, then our overrides)
+#   -> graphhopper (import) -> photon -> api -> caddy
+# The Valhalla tile build must never run beside Photon: photon `depends_on` valhalla and graphhopper being
+# healthy, and Valhalla is healthy only once its tiles are built and it serves /status. So even a bare
+# `up -d` on an empty VM starts Photon last.
+#
+# Memory (VM: 7.6 GiB RAM + 4 GiB swap), limits in MiB, measured use from docs/reports/phase4 (laptop):
+#   graphhopper 4096 (2,113 used)   photon 2560 (523; heap capped at 1.5 GiB, about 1.9 GiB resident at most)
+#   valhalla    2048 (541 serving)  api    1024 (125)    postgres 512 (133)   redis 320 (5)   caddy 256 (not measured)
+#   sum of limits 10,816 MiB = 10.6 GiB; measured use about 3.5 GiB. See deploy/RUNBOOK.md, "Memory".
+
+name: athlete-prod
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  valhalla:
+    image: ghcr.io/valhalla/valhalla-scripted@sha256:6e3a8a6deb570f111ab628826f0ffc5c59ea428d3c578d303dce07638c180843
+    container_name: athlete-prod-valhalla
+    volumes:
+      - ../data/valhalla:/custom_files
+      - ../data/osm/kerala.osm.pbf:/custom_files/kerala.osm.pbf:ro
+    environment:
+      - use_tiles_ignore_pbf=True
+      - force_rebuild=False
+      - build_elevation=True
+      - build_admins=False
+      - build_time_zones=False
+      - build_tar=True
+      - serve_tiles=True
+      - server_threads=2            # 2 vCPU
+    # Healthy = tiles built and the service answers. The first build (tiles + elevation download) takes a while
+    # on 2 vCPU, hence the long start period; failures inside it do not count.
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8002 && printf \"GET /status HTTP/1.0\\r\\n\\r\\n\" >&3 && head -n1 <&3 | grep -q \" 200 \"'"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 2h
+    mem_limit: 2g
+    logging: *logging
+    restart: unless-stopped
+
+  graphhopper:
+    build:
+      context: ../engine/graphhopper
+    image: athlete-graphhopper:11.1
+    container_name: athlete-prod-graphhopper
+    volumes:
+      - ../data/graphhopper:/data
+      - ../data/osm/kerala.osm.pbf:/osm/kerala.osm.pbf:ro
+    environment:
+      - JAVA_OPTS=-Xmx3g
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8989 && printf \"GET /health HTTP/1.0\\r\\n\\r\\n\" >&3 && head -n1 <&3 | grep -q \" 200 \"'"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 1h
+    mem_limit: 4g
+    logging: *logging
+    restart: unless-stopped
+
+  photon:
+    build:
+      context: ../engine/photon
+    image: athlete-photon:1.3.0
+    container_name: athlete-prod-photon
+    volumes:
+      - ../data/photon:/photon
+    environment:
+      - JAVA_OPTS=-Xmx1500m
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/2322 && printf \"GET /status HTTP/1.0\\r\\n\\r\\n\" >&3 && head -n1 <&3 | grep -q \" 200 \"'"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 5m
+    depends_on:
+      valhalla:
+        condition: service_healthy   # never beside the Valhalla tile build
+      graphhopper:
+        condition: service_healthy   # nor beside the GraphHopper import
+    mem_limit: 2560m
+    logging: *logging
+    restart: unless-stopped
+
+  postgres:
+    image: postgis/postgis@sha256:44126d872ac91993766c341e369c539e8196614321765d36a6f1bab0419a5fa5
+    container_name: athlete-prod-postgres
+    environment:
+      - POSTGRES_USER=athlete
+      # Read only when the data directory is first created; changing it later needs ALTER USER (RUNBOOK).
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env.prod (deploy/gen_secrets.sh)}
+      - POSTGRES_DB=athlete
+    volumes:
+      - ../data/postgres:/var/lib/postgresql/data
+    command: ["postgres", "-c", "shared_buffers=128MB", "-c", "max_connections=40"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U athlete -d athlete"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    stop_grace_period: 90s
+    mem_limit: 512m
+    logging: *logging
+    restart: unless-stopped
+
+  redis:
+    image: redis@sha256:7f7d30b7fdd09467bac58198a1f166dd69789d348d4fe859cccb20e0cf287fbe
+    container_name: athlete-prod-redis
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb",
+              "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    mem_limit: 320m
+    logging: *logging
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
+    image: athlete-api:prod
+    container_name: athlete-prod-api
+    env_file:
+      - .env.prod
+    environment:
+      - VALHALLA_URL=http://valhalla:8002
+      - GRAPHHOPPER_URL=http://graphhopper:8989
+      - ATHLETE_PHOTON_URL=http://photon:2322
+      - ATHLETE_DATABASE_URL=postgresql+asyncpg://athlete:${POSTGRES_PASSWORD:?}@postgres:5432/athlete
+      - ATHLETE_REDIS_URL=redis://redis:6379/0
+      # Behind Caddy: the client IP comes from X-Forwarded-For (Caddy overwrites a value sent by the client),
+      # and uvicorn trusts Caddy's X-Forwarded-Proto, so absolute links (share_url) say https.
+      - ATHLETE_TRUST_FORWARDED_FOR=true
+      - FORWARDED_ALLOW_IPS=*
+    volumes:
+      - ../data/manifest.json:/app/data/manifest.json:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/v1/health', timeout=5)"]
+      interval: 15s
+      timeout: 8s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: 1g
+    logging: *logging
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.10.2
+    container_name: athlete-prod-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    environment:
+      - API_SITE=${API_SITE:-api.gatho.shahinsha.xyz}
+      - WEB_ORIGIN=${WEB_ORIGIN:-https://gatho.shahinsha.xyz}
+    volumes:
+      - ../engine/caddy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - ../web/public/basemap:/srv/basemap:ro
+      - ../data/caddy-prod/data:/data        # certificates: keep, or Let's Encrypt rate limits bite on re-issue
+      - ../data/caddy-prod/config:/config
+      - ../data/logs/caddy:/var/log/caddy
+    depends_on:
+      - api
+    mem_limit: 256m
+    logging: *logging
+    restart: unless-stopped
