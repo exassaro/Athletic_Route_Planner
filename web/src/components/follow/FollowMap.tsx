@@ -13,7 +13,7 @@ import { IconButton, Button } from "@/components/ui";
 import type { Line } from "@/follow/line";
 import type { Run } from "@/follow/run";
 import { Compass } from "@/map/Compass";
-import { ATTRIBUTION, BASEMAP_SOURCE, basemapUrl, keepDrawn } from "@/map/basemap";
+import { ATTRIBUTION, BASEMAP_SOURCE, basemapOrigin, basemapUrl, keepDrawn } from "@/map/basemap";
 import { corridorTiles, loadCorridor, MIN_ZOOM, tileFromMemory } from "@/map/corridor";
 import { addFollowLayers, paintFollowLayers, setHere, setProgress } from "@/map/followLayers";
 import { CORRIDOR_PROTOCOL, corridorTileUrl, followStyle } from "@/map/followStyle";
@@ -72,7 +72,7 @@ export function FollowMap({ line, doneM, here, following, theme, saver }: Props)
         try {
           const { basemapArchive } = await import("@/map/tiles");
           if (stop.signal.aborted) return;
-          const got = await loadCorridor(basemapArchive(basemapUrl(window.location.origin)), list, stop.signal);
+          const got = await loadCorridor(basemapArchive(basemapUrl(basemapOrigin())), list, stop.signal);
           tiles.current = got;
           load.current += 1;
           setCorridor({ state: "ready", tiles: got.size });
@@ -110,7 +110,7 @@ export function FollowMap({ line, doneM, here, following, theme, saver }: Props)
       try {
         made = new maplibregl.Map({
           container: box.current,
-          style: followStyle(window.location.origin, shown.current.look, load.current, shown.current.sprite),
+          style: followStyle(basemapOrigin(), shown.current.look, load.current, shown.current.sprite),
           bounds,
           fitBoundsOptions: { padding: 48 },
           minZoom: MIN_ZOOM,
@@ -164,7 +164,7 @@ export function FollowMap({ line, doneM, here, following, theme, saver }: Props)
     if (shown.current.look === look && shown.current.sprite === theme) return;
     shown.current = { look, sprite: theme };
     if (!map) return;
-    map.setStyle(followStyle(window.location.origin, look, load.current, theme), { transformStyle: keepDrawn });
+    map.setStyle(followStyle(basemapOrigin(), look, load.current, theme), { transformStyle: keepDrawn });
     paintFollowLayers(map, look);
     setObstacles(map, taken.current);      // their images belong to the style
   }, [map, theme, look]);

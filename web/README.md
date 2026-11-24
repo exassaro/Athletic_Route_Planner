@@ -62,3 +62,37 @@ Voice cues (step 8): `src/follow/voice.ts` decides what is said and picks an Eng
 `src/restore/`: `draft` (what may be stored, and reading it safely), `tab` (the address and sessionStorage) and
 `boot` (the head script that keeps step 1 from flashing). A restore only reads the API. Nothing with geometry, a
 GPS position or a token goes into storage. A run keeps metres done, start time and pauses only (`gatho:run:v1`). Test: `npx playwright test --project=restore`.
+
+## Split origin (front end on Vercel, API and basemap on a VM)
+
+Three build-time variables, set in the Vercel project (Production):
+
+| Variable | Value | What reads it |
+| --- | --- | --- |
+| `NEXT_PUBLIC_API_BASE` | the API's public address, e.g. `https://api.<domain>` (no trailing `/v1`) | every API call from the browser (`src/api/client.ts`); the share page's server render too, unless `API_INTERNAL_BASE` is set |
+| `NEXT_PUBLIC_SITE_URL` | `https://gatho.shahinsha.xyz` | absolute OpenGraph and icon links (`src/app/layout.tsx`) |
+| `NEXT_PUBLIC_BASEMAP_ORIGIN` | the origin that serves `/basemap/`, e.g. `https://tiles.<domain>` (no path) | the PMTiles archive, fonts and sprites (`basemapOrigin()` in `src/map/basemap.ts`) |
+
+All three are inlined at build time: changing one needs a redeploy. Unset, `NEXT_PUBLIC_BASEMAP_ORIGIN` falls back
+to the page's own origin, which is how development and the LAN Caddy work.
+
+**The API** must allow the front end's origin: `ATHLETE_CORS_ORIGINS=https://gatho.shahinsha.xyz` (exactly that, no
+trailing slash; comma-separated if more are needed). The CORS middleware already allows `X-Client-Token`, PATCH and
+DELETE, and exposes `Retry-After` and `Content-Disposition`.
+
+**The basemap server** (Caddy on the VM, a later step) must, for everything under `/basemap/`:
+
+- send `Access-Control-Allow-Origin: https://gatho.shahinsha.xyz` (or `*`: no credentials are sent; pmtiles and
+  MapLibre fetch with `credentials: "same-origin"`, which sends none cross-origin);
+- answer the `OPTIONS` preflight with `Access-Control-Allow-Methods: GET, HEAD, OPTIONS` and
+  `Access-Control-Allow-Headers: Range` (pmtiles sends a `Range` header; not every browser treats it as safelisted);
+- send `Access-Control-Expose-Headers: ETag, Content-Range, Content-Length` (pmtiles reads `ETag` to notice a
+  replaced archive and `Content-Range` on a 416; without exposure it sees `null`);
+- answer Range requests with 206 (Caddy's `file_server` does);
+- keep **`Cache-Control: no-store` on `/basemap/kerala.pmtiles`** (Phase 5b amendment 12; the rule in
+  `next.config.ts` covers only files that Next itself serves, i.e. development and the LAN setup). Fonts and sprites
+  may be cached.
+
+Nothing else assumes one origin: there is no CSP, no preload link and no service worker for the basemap, and the
+Follow map's style still has no `glyphs` URL (its tiles come from the corridor in memory, loaded from the archive
+before the run). Share links (`src/saved/share.ts`) use the page's origin, which is the front end, as they should.

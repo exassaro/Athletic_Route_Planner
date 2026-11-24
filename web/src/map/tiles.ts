@@ -4,7 +4,8 @@
  * Every Range request bypasses the browser cache. Chrome on Windows can return zero-filled bodies for cached Range
  * responses once overlapping requests have been aborted ("Wrong magic number for PMTiles archive"). pmtiles works
  * around it only when the user agent contains "Windows", which device emulation removes, so it is forced here. The
- * server also sends no-store (next.config.ts); no-cache does not prevent the bug.
+ * server also sends no-store (next.config.ts, or the basemap's own server when it is on another origin: web/README.md,
+ * "Split origin"); no-cache does not prevent the bug.
  */
 import { FetchSource, PMTiles } from "pmtiles";
 import type { ErrorEvent, Map as MapLibreMap } from "maplibre-gl";

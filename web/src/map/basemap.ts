@@ -30,6 +30,16 @@ export function flavor(theme: Theme): Flavor {
   return { ...namedFlavor(theme), ...QUIET[theme] };
 }
 
+/**
+ * Where /basemap/ (PMTiles, fonts, sprites) is served. NEXT_PUBLIC_BASEMAP_ORIGIN (read at build time) when the web
+ * app and the basemap are on different origins (front end on Vercel, basemap on the VM); unset, the page's own
+ * origin, as in development and behind the LAN Caddy. The basemap's server must then answer CORS, Range included
+ * (web/README.md, "Split origin").
+ */
+export function basemapOrigin(configured: string | undefined = process.env.NEXT_PUBLIC_BASEMAP_ORIGIN): string {
+  return configured ? configured.replace(/\/+$/, "") : window.location.origin;
+}
+
 export function basemapUrl(origin: string): string {
   return `${origin}/basemap/kerala.pmtiles`;
 }
