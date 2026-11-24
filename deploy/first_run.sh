@@ -74,8 +74,10 @@ basemap() {
 }
 
 photon_data() {
-	if [ -d data/photon/photon_data ] && [ -f data/photon/photon-db-india.tar.bz2 ]; then
-		echo "   data/photon/photon_data exists; checking the archive against the published md5"
+	# fetch_photon.py follows upstream's "latest" index: once unpacked, never replace it under a running Photon
+	if [ -d data/photon/photon_data ]; then
+		echo "   data/photon/photon_data exists; keeping it (delete it and run again to refresh the index)"
+		return 0
 	fi
 	"$UV" run --no-dev python engine/scripts/fetch_photon.py
 }
@@ -113,7 +115,6 @@ osm_features() {
 }
 
 valhalla() {
-	dc stop photon graphhopper 2>/dev/null || true # nothing big beside the tile build
 	mkdir -p data/valhalla
 	local user image
 	image=$(grep -m1 -o 'ghcr.io/valhalla/valhalla-scripted@sha256:[0-9a-f]*' "$COMPOSE_FILE")
@@ -124,6 +125,7 @@ valhalla() {
 	if [ -f data/valhalla/valhalla_tiles.tar ]; then
 		echo "   tiles are built already; starting Valhalla"
 	else
+		dc stop photon graphhopper 2>/dev/null || true # nothing big beside the tile build
 		echo "   building tiles and downloading elevation (tens of minutes on 2 vCPU); log: docker logs -f athlete-prod-valhalla"
 	fi
 	dc up -d --no-deps valhalla
