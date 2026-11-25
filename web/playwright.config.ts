@@ -29,6 +29,8 @@ export default defineConfig({
   projects: [
     // Step 9: two browsers, A saves and shows a link, B claims it (live stack; the API must have migration 0006)
     { name: "link", testMatch: /link[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
+    // Step 9 item 8: no request leaves GATHO's own origins (live stack)
+    { name: "privacy", testMatch: /thirdparty[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "phone", testMatch: /(journeys|sr01)\.spec\.ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "screens", testMatch: /screens\.spec\.ts/, use: { browserName: "chromium" } },
     { name: "basemap", testMatch: /basemap\.spec\.ts/, use: { ...devices["iPhone 16"], browserName: "chromium" } },

@@ -10,6 +10,7 @@ import { CardMenu } from "@/components/CardMenu";
 import { DeletedMessage } from "@/components/DeletedMessage";
 import { FollowButton } from "@/components/FollowButton";
 import { Mascot } from "@/components/Mascot";
+import { SiteFooter } from "@/components/SiteFooter";
 import { OpenInDialog } from "@/components/OpenIn";
 import { RenameDialog } from "@/components/RenameDialog";
 import { downloadGpx } from "@/components/SaveShare";
@@ -112,7 +113,7 @@ export function SavedRoutes() {
       <p className="brand-row"><Link href="/" aria-label="GATHO: plan a run"><Wordmark height={28} /></Link></p>
       <h1 className="t-title" ref={title} tabIndex={-1}>Saved routes</h1>
       <p><Link href="/">Plan a run</Link></p>
-      <p className="t-meta muted" data-testid="device-note">Saved routes live on this device until you sign in</p>
+      <p className="t-meta muted" data-testid="device-note">Saved in this browser. Use another device or keep the GPX.</p>
       <p><Button icon="link" onClick={() => setLinking(true)} data-testid="link-open">
         Use on another device</Button></p>
       {loadError ? (
@@ -173,6 +174,8 @@ export function SavedRoutes() {
           loadOverview={(max) => ownRouteOverview(openingIn.route_id, max)}
           loadGpx={(ele) => ownRouteGpx(openingIn.route_id, ele)} />
       )}
+
+      <SiteFooter />
 
       {linking && (
         <LinkDeviceDialog onClose={() => {

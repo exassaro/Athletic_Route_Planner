@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Mascot } from "@/components/Mascot";
+import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui";
 import { Wordmark } from "@/components/Wordmark";
 import { apiSaid, asFailure } from "@/plan/planClient";
@@ -145,6 +146,7 @@ export function LinkClaim() {
       )}
 
       {state.kind !== "confirm" && state.kind !== "checking" && state.kind !== "claiming" && <Mascot />}
+      <SiteFooter />
     </main>
   );
 }

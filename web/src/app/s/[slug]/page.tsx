@@ -18,6 +18,7 @@ import { Num } from "@/components/Num";
 import { SharedView } from "@/components/SharedView";
 import { ShareOpenIn } from "@/components/ShareOpenIn";
 import { Sprite } from "@/components/Sprite";
+import { SiteFooter } from "@/components/SiteFooter";
 import { Icon } from "@/components/ui";
 import { km, metres } from "@/plan/format";
 
@@ -99,6 +100,7 @@ export default async function SharePage({ params }: Props) {
           <a className="btn btn-quiet" href={`${API_BASE}/v1/share/${slug}/gpx?ele=false`}>GPX without elevation</a>
         </div>
         <p><Link className="btn btn-secondary btn-block" href="/">Plan your own run</Link></p>
+        <SiteFooter />
       </div>
     </SharedView>
   );

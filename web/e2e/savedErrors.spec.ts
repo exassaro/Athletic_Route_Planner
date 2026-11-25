@@ -13,7 +13,7 @@ for (const failure of ["offline", "a 503"] as const) {
     const { token, saved } = await savedA01(request);
     await actAs(page, token);
     await page.goto("/routes");
-    await expect(page.getByTestId("device-note")).toHaveText("Saved routes live on this device until you sign in");
+    await expect(page.getByTestId("device-note")).toHaveText("Saved in this browser. Use another device or keep the GPX.");
     await page.route("**/v1/me/routes/*", (route) => (route.request().method() !== "DELETE" ? route.fallback()
       : failure === "offline" ? route.abort("internetdisconnected")
         : route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "down", message: "down" }) })));
