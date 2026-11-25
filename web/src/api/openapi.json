@@ -21107,7 +21107,7 @@
   },
   "/v1/session": {
    "post": {
-    "description": "Returns a random token. Send it in the `X-Client-Token` header on every other call (share and health\nexcepted). Only its hash is stored, so a lost token cannot be recovered: ask for a new one.",
+    "description": "Returns a random token. Send it in the `X-Client-Token` header on every other call (share and health\nexcepted). Only its hash is stored, so a lost token cannot be recovered: ask for a new one. Limited per IP\n(60 an hour by default) and in total (120 a minute).",
     "operationId": "create_session_v1_session_post",
     "responses": {
      "201": {

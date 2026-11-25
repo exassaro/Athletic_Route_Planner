@@ -108,8 +108,14 @@ export async function call<T>(send: () => Promise<Sent>): Promise<T> {
 
 type Storage = Pick<globalThis.Storage, "getItem" | "setItem" | "removeItem">;
 
+/** The part of the Web Locks API used here (navigator.locks): one session per browser, across its tabs. */
+export type Locks = { request<T>(name: string, callback: () => Promise<T>): Promise<T> };
+const SESSION_LOCK = "gatho:session";
+
 export type Options = {
   baseUrl: string;
+  /** Defaults to navigator.locks where there is one; null: no lock (one tab's own dedupe only). */
+  locks?: Locks | null;
   fetch?: typeof globalThis.fetch;
   storage?: Storage | null;
   sleep?: (ms: number) => Promise<void>;
@@ -163,15 +169,31 @@ export class PlanClient {
     });
   }
 
+  /**
+   * This browser's token, made once, when a request first needs one (Step 9 amendment 6). Never on page load: a
+   * visitor who only looks gets no session. Calls at the same time in this page share one request (React strict
+   * mode, several components); tabs opening together wait on a Web Lock and read the token the first one stored.
+   * A failed request stores nothing, and the next call tries again.
+   */
   token(): Promise<string> {
     const saved = this.storage.getItem(TOKEN_KEY);
     if (saved) return Promise.resolve(saved);
-    this.tokenPromise ??= (async () => {
+    this.tokenPromise ??= this.newSession().finally(() => (this.tokenPromise = null));
+    return this.tokenPromise;
+  }
+
+  private newSession(): Promise<string> {
+    const make = async () => {
+      const made = this.storage.getItem(TOKEN_KEY);     // another tab made one while this one waited
+      if (made) return made;
       const { token } = await call<S["SessionOut"]>(() => this.api.POST("/v1/session"));
       this.storage.setItem(TOKEN_KEY, token);
       return token;
-    })().finally(() => (this.tokenPromise = null));
-    return this.tokenPromise;
+    };
+    const locks = this.opts.locks === undefined
+      ? (typeof navigator !== "undefined" ? (navigator.locks as Locks | undefined) : undefined)
+      : this.opts.locks;
+    return locks ? locks.request(SESSION_LOCK, make) : make();
   }
 
   /** Whether this browser holds a token already (without asking for one). */

@@ -39,7 +39,10 @@ class Settings(BaseSettings):
     rate_solve_per_ip_min: int = 40
     rate_read_per_client_min: int = 300
     rate_write_per_client_min: int = 60   # Phase 5c amendment 10; none per IP (behind the proxy all share one)
-    rate_session_per_ip_hour: int = 10
+    # Step 9 amendment 6: many phones share one carrier IP, so 60 an hour per IP; the total ceiling still stops a
+    # flood from many IPs creating unlimited client rows.
+    rate_session_per_ip_hour: int = 60
+    rate_session_global_min: int = 120
     # Step 9: "Use on another device". A link code lives this long in Redis; link is counted per client, claim
     # per IP (every attempt, wrong codes included).
     link_ttl_s: int = Field(300, ge=30)

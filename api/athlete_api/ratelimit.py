@@ -14,8 +14,8 @@ from .errors import ApiError
 
 @dataclass(frozen=True)
 class Limit:
-    bucket: str      # "solve", "read", "write", "session"
-    scope: str       # "client" or "ip"
+    bucket: str      # "solve", "read", "write", "session", "link", "claim"
+    scope: str       # "client", "ip" or "all" (one count for everyone)
     limit: int
     window_s: int
 
@@ -31,9 +31,9 @@ async def hit(redis: Redis, rule: Limit, ident: str, now: float | None = None) -
         count, _ = await pipe.execute()
     if count > rule.limit:
         retry = max(1, int((window + 1) * rule.window_s - now + 0.999))
+        who = "from everyone at once" if rule.scope == "all" else f"for this {rule.scope}"
         raise ApiError(429, "rate_limited",
-                       f"Too many {rule.bucket} requests for this {rule.scope}: at most {rule.limit} "
-                       f"every {rule.window_s} s.",
+                       f"Too many {rule.bucket} requests {who}: at most {rule.limit} every {rule.window_s} s.",
                        {"bucket": rule.bucket, "scope": rule.scope, "limit": rule.limit, "window_s": rule.window_s,
                         "retry_after_s": retry},
                        headers={"Retry-After": str(retry)})

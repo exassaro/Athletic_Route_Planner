@@ -48,8 +48,11 @@ def _link_key(code: str) -> str:
              summary="Issue an anonymous client token")
 async def create_session(ip: str = Depends(client_ip), svc: Services = Depends(services)) -> SessionOut:
     """Returns a random token. Send it in the `X-Client-Token` header on every other call (share and health
-    excepted). Only its hash is stored, so a lost token cannot be recovered: ask for a new one."""
-    await ratelimit.hit(svc.redis, ratelimit.Limit("session", "ip", svc.settings.rate_session_per_ip_hour, 3600), ip)
+    excepted). Only its hash is stored, so a lost token cannot be recovered: ask for a new one. Limited per IP
+    (60 an hour by default) and in total (120 a minute)."""
+    s = svc.settings
+    await ratelimit.hit(svc.redis, ratelimit.Limit("session", "ip", s.rate_session_per_ip_hour, 3600), ip)
+    await ratelimit.hit(svc.redis, ratelimit.Limit("session", "all", s.rate_session_global_min, 60), "all")
     token = secrets.token_urlsafe(32)
     client = Client(id=uuid.uuid4(), token_hash=token_hash(token))
     async with svc.sessions() as db:

@@ -59,6 +59,29 @@ def test_session_creation_is_limited_per_ip(make_client):
     assert resp.json()["error"] == "rate_limited" and int(resp.headers["Retry-After"]) > 0
 
 
+def test_session_defaults_suit_carrier_ips():
+    from athlete_api.config import Settings
+    fields = Settings.model_fields
+    assert (fields["rate_session_per_ip_hour"].default, fields["rate_session_global_min"].default) == (60, 120)
+
+
+def test_session_creation_has_a_ceiling_for_everyone(make_client):
+    api = make_client(rate_session_per_ip_hour=100, rate_session_global_min=3, trust_forwarded_for=True)
+    ips = ["198.51.100.1", "198.51.100.2", "198.51.100.3", "198.51.100.4"]
+    codes = [api.post("/v1/session", headers={"X-Forwarded-For": ip}).status_code for ip in ips]
+    assert codes == [201, 201, 201, 429]
+    over = api.post("/v1/session", headers={"X-Forwarded-For": "203.0.113.9"})
+    assert over.json()["detail"]["scope"] == "all"
+    assert "from everyone at once" in over.json()["message"]
+
+
+def test_an_ip_over_its_limit_does_not_use_up_the_ceiling(make_client):
+    api = make_client(rate_session_per_ip_hour=1, rate_session_global_min=2, trust_forwarded_for=True)
+    flood = {"X-Forwarded-For": "198.51.100.7"}
+    assert [api.post("/v1/session", headers=flood).status_code for _ in range(5)] == [201, 429, 429, 429, 429]
+    assert api.post("/v1/session", headers={"X-Forwarded-For": "198.51.100.8"}).status_code == 201
+
+
 def test_solve_limit_per_client_and_per_ip(make_client):
     api = make_client(_probe, rate_solve_per_client_min=2, rate_solve_per_ip_min=3)
     a = {"X-Client-Token": api.post("/v1/session").json()["token"]}

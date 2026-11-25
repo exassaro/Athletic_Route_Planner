@@ -374,7 +374,8 @@ export interface paths {
         /**
          * Issue an anonymous client token
          * @description Returns a random token. Send it in the `X-Client-Token` header on every other call (share and health
-         *     excepted). Only its hash is stored, so a lost token cannot be recovered: ask for a new one.
+         *     excepted). Only its hash is stored, so a lost token cannot be recovered: ask for a new one. Limited per IP
+         *     (60 an hour by default) and in total (120 a minute).
          */
         post: operations["create_session_v1_session_post"];
         delete?: never;
