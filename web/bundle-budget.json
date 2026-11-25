@@ -1,0 +1,12 @@
+{
+  "note": "First-load JS in gzip bytes, measured by scripts/bundle-size.mjs on a plain `npm run build` (Step 9). max_gzip = measured + 3 % (Linux CI and this laptop can differ by a few bytes). Raise it only on purpose, in its own commit, with the reason here; load single-screen code with import() instead.",
+  "measured": {
+    "commit_before_step9": "fe82d12",
+    "before_step9": { "/": 191832, "/routes": 160819 },
+    "after_step9": { "/": 192693, "/routes": 162461 }
+  },
+  "routes": {
+    "/": { "max_gzip": 198500 },
+    "/routes": { "max_gzip": 167300 }
+  }
+}

@@ -18,6 +18,7 @@
     "test": "vitest run",
     "gen:api": "openapi-typescript src/api/openapi.json -o src/api/schema.d.ts",
     "check:api": "npm run gen:api && git diff --exit-code -- src/api",
+    "check:bundle": "node scripts/bundle-size.mjs",
     "gen:icons": "node scripts/gen-icons.mjs",
     "gen:brand": "node scripts/make-brand.mjs",
     "gen:sprites": "node scripts/gen-sprites.mjs",

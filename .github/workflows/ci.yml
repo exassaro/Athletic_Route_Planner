@@ -1,19 +1,31 @@
-# Checks that need no services (blueprint Phase 5 amendment 2). Engines, Postgres and the live stack are tested
-# on the development laptop (pytest tests/api, -m integration, Playwright).
+# Checks that need no services (blueprint Phase 5 amendment 2; Step 9 item 10). Engines, Postgres and the live stack
+# are tested on the development laptop (pytest tests/api, -m integration, the other Playwright projects).
+# Branch protection, Vercel and the server: docs/ci-cd.md.
 name: ci
 
 on:
   push:
   pull_request:
 
+# A newer push to the same branch (or PR) cancels the run still going for the older one.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   api-schema-and-unit:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
       - run: uv sync --frozen
       # The front end's copy of the API schema must match the API (fails when the API changed without it).
       - run: uv run python api/scripts/export_openapi.py --check
@@ -21,9 +33,12 @@ jobs:
 
   web:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: web
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,6 +52,60 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - name: Next build cache
+        uses: actions/cache@v4
+        with:
+          path: web/.next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('web/package-lock.json') }}-${{ hashFiles('web/src/**', 'web/next.config.ts') }}
+          restore-keys: next-${{ runner.os }}-${{ hashFiles('web/package-lock.json') }}-
       - run: npm run build
-        env:
-          NEXT_TELEMETRY_DISABLED: "1"
+      # First-load JS of / and /routes against web/bundle-budget.json (Phase 5e brief, Step 9 amendment 9).
+      - run: npm run check:bundle
+
+      # The Playwright journeys that need no API, no engines and no basemap: every /v1 call is answered by the test.
+      - name: Playwright browser cache
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('web/package-lock.json') }}
+      - if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - name: Journeys without engines (project "unreachable")
+        run: |
+          npx next start --port 3000 > next-start.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS -o /dev/null http://localhost:3000/about && break; sleep 1; done
+          E2E_BASE=http://localhost:3000 npx playwright test --project=unreachable --reporter=list
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-unreachable
+          path: |
+            web/test-results/
+            web/next-start.log
+          retention-days: 7
+
+  deploy-files:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+      - name: shellcheck deploy/*.sh
+        run: uvx --from shellcheck-py shellcheck -x deploy/*.sh
+      - name: docker compose config (production file, dummy secrets)
+        run: |
+          sed -e 's/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=0123456789abcdef/' \
+              -e 's/^ATHLETE_HEALTH_KEY=.*/ATHLETE_HEALTH_KEY=dummy/' deploy/.env.prod.example > deploy/.env.prod
+          docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod config --quiet
+          docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod config | grep -q 'ATHLETE_DOCS: "false"'
+      - name: caddy validate engine/caddy/Caddyfile.prod
+        run: |
+          image=$(sed -n 's/^ *image: \(caddy:[^ ]*\).*/\1/p' deploy/docker-compose.prod.yml | head -1)
+          docker run --rm -e API_SITE=api.gatho.shahinsha.xyz -e WEB_ORIGIN=https://gatho.shahinsha.xyz \
+            -v "$PWD/engine/caddy/Caddyfile.prod:/etc/caddy/Caddyfile:ro" "$image" \
+            caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
