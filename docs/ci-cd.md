@@ -78,3 +78,37 @@ code checkout or the migrations (`deploy/RUNBOOK.md`, "Update"). Afterwards: `ba
 `bash deploy/smoke.sh`.
 
 Optional: the manual GitHub workflow below runs the same command over SSH.
+
+## Optional: deploy the server from GitHub (`deploy-server.yml`)
+
+**Off by default.** A manual workflow (Actions → deploy-server → Run workflow, type `update`) that connects to the
+VM over SSH and runs `cd ~/athlete_router && bash deploy/update.sh`. The run fails if `update.sh` fails. It never
+runs on a push, two runs never overlap, and it stops at the first step until all four secrets exist.
+
+**Precondition: SSH must be open to GitHub's runners.** GitHub-hosted runners connect from changing IP addresses
+(many ranges, changing often), so the VM's AWS security group would have to allow port 22 from anywhere
+(`0.0.0.0/0`). Today it does not need to, and nothing in this repository changes it. Only you can decide to open it,
+in the AWS console.
+
+**The risk if you open it:** port 22 is then reachable from the whole internet, so it gets scanned and
+brute-forced around the clock. That is acceptable only with **key-only login**: `PasswordAuthentication no` and
+`PermitRootLogin no` in `/etc/ssh/sshd_config` (Ubuntu on EC2 has both by default; check with
+`sudo sshd -T | grep -E 'passwordauthentication|permitrootlogin'`), and keeping the VM patched. The key in GitHub
+can do anything the `ubuntu` user can, Docker included. If it leaks, whoever holds it controls the server. Lower-risk
+alternatives: keep running `update.sh` by hand (the default), or open port 22 to your own IP only and run it from
+your machine.
+
+**Setup, if you decide to:**
+
+1. Make a key for this purpose only, on your machine: `ssh-keygen -t ed25519 -f gatho-deploy -N "" -C gatho-deploy`.
+2. On the VM, add `gatho-deploy.pub` to `~/.ssh/authorized_keys` of `ubuntu` (to limit it to this command, prefix
+   the line with `command="cd ~/athlete_router && bash deploy/update.sh",no-port-forwarding,no-pty `).
+3. Pin the host key: `ssh-keyscan -t ed25519 54.252.91.95` from a network you trust, and compare its fingerprint
+   (`ssh-keygen -lf <file>`) with the one the VM prints (`ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`).
+4. In GitHub: Settings → Secrets and variables → Actions, add `VM_HOST` (`54.252.91.95`), `VM_USER` (`ubuntu`),
+   `VM_SSH_KEY` (the whole private key file) and `VM_KNOWN_HOSTS` (the `ssh-keyscan` line). The job runs in the
+   `production` environment: add required reviewers there if you want a second click before each run.
+5. Open port 22 in the security group as described above.
+
+To turn it off again: delete the secrets (the workflow then stops at its first step), remove the key from
+`authorized_keys`, and close port 22 to everyone except yourself.

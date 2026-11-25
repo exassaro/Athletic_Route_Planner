@@ -1,0 +1,74 @@
+# Updates the production VM by running deploy/update.sh over SSH (Step 9 item 12). Manual only, and off in effect
+# until the four secrets exist: it stops at the first step with a message saying which are missing.
+# Preconditions, risks and setup: docs/ci-cd.md, "Optional: deploy the server from GitHub".
+name: deploy-server
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "update" to run deploy/update.sh on the VM'
+        required: true
+        default: ""
+
+# Never two updates at once, and never cancel one halfway.
+concurrency:
+  group: deploy-server
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - name: Check the confirmation and the secrets
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
+        run: |
+          if [ "$CONFIRM" != "update" ]; then
+            echo "::error::Not confirmed: run the workflow again and type update."
+            exit 1
+          fi
+          missing=""
+          for name in VM_HOST VM_USER VM_SSH_KEY VM_KNOWN_HOSTS; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secrets:$missing. This workflow is off until they exist (docs/ci-cd.md)."
+            exit 1
+          fi
+
+      - name: SSH key and pinned host key
+        env:
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$VM_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Run deploy/update.sh on the VM
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
+        run: |
+          # StrictHostKeyChecking=yes with only the pinned key: an unknown or changed host key fails the run.
+          # BatchMode: key only, never a password prompt. The remote command's exit status is the step's.
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=20 -o ServerAliveInterval=30 \
+            "$VM_USER@$VM_HOST" 'cd ~/athlete_router && bash deploy/update.sh'
+
+      - name: Remove the key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
