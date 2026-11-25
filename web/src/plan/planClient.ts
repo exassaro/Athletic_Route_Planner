@@ -28,6 +28,10 @@ export type PatchOp = S["PatchOp"];
 export type ErrorBody = S["ErrorBody"];
 
 export const TOKEN_KEY = "athlete.token";
+/** The token this browser had before it was linked to another device's client (Step 9): kept, never sent. */
+export const PREVIOUS_TOKEN_KEY = "athlete.token.previous";
+/** Endpoints sent without a token: a visitor never gets a session from them, and claim makes its own. */
+const NO_TOKEN = new Set(["/v1/session", "/v1/session/claim", "/v1/health"]);
 export const MAX_TRIES = 4;
 const MAX_WAIT_S = 30;
 const POLL_EVERY_MS = 1500;
@@ -134,7 +138,7 @@ export class PlanClient {
     this.api = createClient<paths>({ baseUrl: opts.baseUrl, fetch: opts.fetch });
     this.api.use({
       onRequest: async ({ request, schemaPath }) => {
-        if (schemaPath === "/v1/session" || schemaPath.startsWith("/v1/share") || schemaPath === "/v1/health") return;
+        if (NO_TOKEN.has(schemaPath) || schemaPath.startsWith("/v1/share")) return;
         request.headers.set("X-Client-Token", await this.token());
         return request;
       },
@@ -150,6 +154,18 @@ export class PlanClient {
       return token;
     })().finally(() => (this.tokenPromise = null));
     return this.tokenPromise;
+  }
+
+  /** Whether this browser holds a token already (without asking for one). */
+  hasToken(): boolean {
+    return this.storage.getItem(TOKEN_KEY) !== null;
+  }
+
+  /** Uses a token claimed from another device (Step 9). The one it replaces is kept aside, not thrown away. */
+  adoptToken(token: string): void {
+    const before = this.storage.getItem(TOKEN_KEY);
+    if (before && before !== token) this.storage.setItem(PREVIOUS_TOKEN_KEY, before);
+    this.storage.setItem(TOKEN_KEY, token);
   }
 
   /** Runs a create or patch with the waiting rules. `send(version)` gets the version to build on (If-Match). */

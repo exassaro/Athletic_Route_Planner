@@ -424,6 +424,7 @@ export function Planner() {
       )}
       <nav className="menu-section menu-links" aria-label="Pages">
         <Link className="btn btn-block" href="/routes">Saved routes</Link>
+        <Link className="btn btn-block" href="/routes#another-device" data-testid="menu-link-device">Use on another device</Link>
         <Link className="btn btn-block" href="/about">About GATHO</Link>
       </nav>
       <section className="menu-section" aria-label="Pace"><PaceSetting pace={pace} onChange={setPace} /></section>

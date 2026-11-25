@@ -3,6 +3,7 @@
  * Saved routes of this browser's client (section 13; blueprint Phase 5c): a card opens or edits its route, and the
  * rest is in its "..." menu. Delete runs at once, with Undo; the list changes first and rolls back on an error.
  */
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CardMenu } from "@/components/CardMenu";
@@ -22,7 +23,14 @@ import { deleteSaved, listSaved, patchSaved, restoreSaved, type SavedRow } from 
 import { forgetDeleted, newDeleted, takeDeleted, type Deleted } from "@/saved/deleted";
 import { displayName } from "@/saved/name";
 import { relativeDate } from "@/saved/relative";
+import { takeLinked } from "@/saved/linked";
 import { shareUrl } from "@/saved/share";
+
+// Step 9: loaded only when opened (its QR encoder is a second import() inside it), so not in this page's first load.
+const LinkDeviceDialog = dynamic(() => import("@/components/LinkDeviceDialog").then((m) => m.LinkDeviceDialog),
+  { ssr: false });
+/** The menu's "Use on another device" opens this page with the dialog open. */
+export const ANOTHER_DEVICE_HASH = "#another-device";
 
 /** As the API orders them: the latest rename or update first. */
 const byUpdate = (a: SavedRow, b: SavedRow) => Date.parse(b.updated_at) - Date.parse(a.updated_at) || a.saved_id.localeCompare(b.saved_id);
@@ -34,6 +42,8 @@ export function SavedRoutes() {
   const [deleted, setDeleted] = useState<Deleted | null>(null);
   const [renaming, setRenaming] = useState<SavedRow | null>(null);
   const [openingIn, setOpeningIn] = useState<SavedRow | null>(null);
+  const [linking, setLinking] = useState(false);
+  const [linked, setLinked] = useState(false);
   const removed = useRef(new Map<string, SavedRow>());
   const title = useRef<HTMLHeadingElement>(null);
   const toggles = useRef(new Map<string, HTMLButtonElement>());
@@ -50,6 +60,11 @@ export function SavedRoutes() {
     void load();
     // a delete made on the share page just before coming here; storage is readable only after hydration
     setDeleted(takeDeleted()); // eslint-disable-line react-hooks/set-state-in-effect
+    setLinked(takeLinked());   // just linked from /link
+    if (window.location.hash === ANOTHER_DEVICE_HASH) {
+      window.history.replaceState(window.history.state, "", window.location.pathname);
+      setLinking(true);
+    }
   }, [load]);
 
   const clearDeleted = () => {
@@ -98,6 +113,8 @@ export function SavedRoutes() {
       <h1 className="t-title" ref={title} tabIndex={-1}>Saved routes</h1>
       <p><Link href="/">Plan a run</Link></p>
       <p className="t-meta muted" data-testid="device-note">Saved routes live on this device until you sign in</p>
+      <p><Button icon="link" onClick={() => setLinking(true)} data-testid="link-open">
+        Use on another device</Button></p>
       {loadError ? (
         <div role="alert" className="opening-note">
           <p className="t-body-s">Saved routes didn&apos;t load. {loadError}</p>
@@ -157,7 +174,17 @@ export function SavedRoutes() {
           loadGpx={(ele) => ownRouteGpx(openingIn.route_id, ele)} />
       )}
 
+      {linking && (
+        <LinkDeviceDialog onClose={() => {
+          setLinking(false);
+          setTimeout(() => document.querySelector<HTMLButtonElement>("[data-testid=link-open]")?.focus());
+        }} />
+      )}
+
       <div className="page-messages">
+        {linked && (
+          <Snackbar testId="linked" onDismiss={() => setLinked(false)}>Linked. Your saved routes are here.</Snackbar>
+        )}
         {error && <Snackbar testId="saved-error" onDismiss={() => setError(null)}>{error}</Snackbar>}
         {deleted && <DeletedMessage key={deleted.at} deleted={deleted} onUndo={() => undoDelete(deleted)} onGone={clearDeleted} />}
       </div>

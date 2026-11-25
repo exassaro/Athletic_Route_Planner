@@ -834,3 +834,11 @@ dialog.rename-dialog { width: calc(100% - 32px); max-width: 420px; margin: 16dvh
 .follow-away p { flex: 1; margin: 0; }
 .follow-away .icon-btn { flex: none; }
 .follow-wake { margin: 0 0 var(--space-1); }
+
+/* Step 9: "Use on another device" and /link */
+.link-qr { display: grid; place-items: center; min-height: 224px; }
+.link-qr svg { width: 208px; height: 208px; border-radius: 4px; }
+.link-qr.expired svg { opacity: 0.15; }
+.link-url input { width: 100%; min-height: 44px; font: inherit; font-size: 0.85rem; padding: 0 10px; border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface); color: inherit; }
+.tabular { font-variant-numeric: tabular-nums; }
+.link-page .opening-note { margin-top: var(--space-2); }
