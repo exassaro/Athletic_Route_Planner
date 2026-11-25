@@ -142,7 +142,9 @@ def test_needs_a_token(make_client, database_url):
 
 def test_health_reports_the_loaded_extract(make_client, database_url):
     seed(database_url, with_meta=False)
-    assert "not loaded" in make_client().get("/v1/health").json()["services"]["osm_features"]["detail"]
+    key = {"X-Health-Key": "k" * 32}
+    assert "not loaded" in make_client(health_key="k" * 32).get("/v1/health", headers=key
+                                                               ).json()["services"]["osm_features"]["detail"]
     seed(database_url)
-    got = make_client().get("/v1/health").json()["services"]["osm_features"]
+    got = make_client(health_key="k" * 32).get("/v1/health", headers=key).json()["services"]["osm_features"]
     assert got["ok"] and got["build"].startswith(f"osm {STAMP}")

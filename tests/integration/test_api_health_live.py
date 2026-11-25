@@ -31,9 +31,9 @@ def loaded_features(live_database):
 
 
 def test_health_reports_every_service_and_both_builds(live_database, live_redis, loaded_features):
-    settings = Settings(database_url=live_database, redis_url=live_redis)
+    settings = Settings(database_url=live_database, redis_url=live_redis, health_key="live-check-key")
     with TestClient(create_app(settings)) as api:
-        resp = api.get("/v1/health")
+        resp = api.get("/v1/health", headers={"X-Health-Key": "live-check-key"})
     body = resp.json()
     assert resp.status_code == 200, body
     assert body["status"] == "ok", {k: v["detail"] for k, v in body["services"].items() if not v["ok"]}

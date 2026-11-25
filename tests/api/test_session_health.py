@@ -102,8 +102,11 @@ def test_read_limit_is_separate_from_solve(make_client):
     assert api.get("/probe/solve", headers=h).status_code == 200
 
 
+KEY = "0123456789abcdef0123456789abcdef"
+
+
 def test_health_without_engines_is_503_and_names_what_is_down(make_client):
-    resp = make_client().get("/v1/health")
+    resp = make_client(health_key=KEY).get("/v1/health", headers={"X-Health-Key": KEY})
     assert resp.status_code == 503
     body = resp.json()
     assert body["status"] == "down"
@@ -118,3 +121,40 @@ def test_errors_have_one_shape(make_client):
     resp = make_client().get("/v1/nowhere")
     assert resp.status_code == 404
     assert set(resp.json()) == {"error", "message", "detail"} and resp.json()["error"] == "not_found"
+
+
+def test_health_without_the_key_says_only_what_works(make_client):
+    for headers in ({}, {"X-Health-Key": "wrong"}, {"X-Health-Key": KEY[:-1]}, {"X-Health-Key": ""}):
+        resp = make_client(health_key=KEY).get("/v1/health", headers=headers)
+        assert resp.status_code == 503                     # same status code as with the key
+        body = resp.json()
+        assert set(body) == {"status", "features", "map"}
+        assert body["status"] == "down"
+        assert body["features"] == {"planning": False, "search": False, "recommended": False}
+        assert body["map"]["valhalla"] is None and body["map"]["graphhopper"] is None
+        assert len(body["map"]["osm"]) == 16 and all(c in "0123456789abcdef" for c in body["map"]["osm"])
+        text = resp.text.lower()
+        for secret in ("postgis", "redis", "valhalla ", "connect", "solver", "detail"):
+            assert secret not in text
+        assert resp.headers["cache-control"] == "no-store"
+
+
+def test_health_detail_is_never_given_when_no_key_is_set(make_client):
+    for headers in ({}, {"X-Health-Key": ""}, {"X-Health-Key": "anything"}):
+        assert set(make_client(health_key="").get("/v1/health", headers=headers).json()) == {"status", "features", "map"}
+
+
+def test_map_ids_are_the_sha256_of_the_build_ids():
+    import hashlib
+    from athlete_api.routes_health import key_ok, map_id
+    assert map_id("valhalla 3.9.2 tiles x") == hashlib.sha256(b"valhalla 3.9.2 tiles x").hexdigest()[:16]
+    assert map_id(None) is None and map_id("") is None
+    assert key_ok(KEY, KEY) and not key_ok(None, KEY) and not key_ok(KEY, "") and not key_ok("", "")
+
+
+def test_docs_can_be_turned_off(make_client):
+    on = make_client()
+    assert [on.get(p).status_code for p in ("/docs", "/redoc", "/openapi.json")] == [200, 200, 200]
+    off = make_client(docs=False)
+    assert [off.get(p).status_code for p in ("/docs", "/redoc", "/openapi.json")] == [404, 404, 404]
+    assert off.post("/v1/session").status_code == 201        # the API itself is unchanged

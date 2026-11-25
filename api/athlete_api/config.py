@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     trust_forwarded_for: bool = False   # take the client IP from X-Forwarded-For (behind a proxy only)
 
     health_timeout_s: float = 3.0
+    # Step 9 amendment 5: /v1/health gives its detail (services, build ids, errors) only to a request whose
+    # X-Health-Key equals this. Empty: never. deploy/gen_secrets.sh writes one to .env.prod.
+    health_key: str = ""
+    # /docs, /redoc and /openapi.json. On for development; ATHLETE_DOCS=false in production (compose.prod).
+    docs: bool = True
 
     # Phase 5 A1: browser origins allowed to call the API (comma-separated). In production the web app, the
     # API and the tiles share one origin behind Caddy, so this matters for development (next dev on :3000).

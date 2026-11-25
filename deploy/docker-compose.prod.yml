@@ -155,6 +155,8 @@ services:
       # and uvicorn trusts Caddy's X-Forwarded-Proto, so absolute links (share_url) say https.
       - ATHLETE_TRUST_FORWARDED_FOR=true
       - FORWARDED_ALLOW_IPS=*
+      # No /docs, /redoc or /openapi.json in production (Step 9); the schema is in the repo (web/src/api).
+      - ATHLETE_DOCS=false
     volumes:
       - ../data/manifest.json:/app/data/manifest.json:ro
     healthcheck:

@@ -169,10 +169,8 @@ for (const vp of SIZES) {
       await page.waitForTimeout(1500);
 
       await page.route("**/v1/health", (route) => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({
-        status: "down", builds: { osm: "2026-11-15T00:15:25Z", valhalla: null, graphhopper: null, graphhopper_data: null, solver: "x" },
-        services: { valhalla: { ok: false, ms: 3000, build: null, detail: "ConnectTimeout" }, graphhopper: { ok: false, ms: 3000, build: null, detail: "ConnectTimeout" },
-          photon: { ok: true, ms: 10, build: "photon", detail: null }, postgres: { ok: true, ms: 3, build: "pg", detail: null },
-          redis: { ok: true, ms: 1, build: "redis", detail: null }, osm_features: { ok: true, ms: 2, build: "osm", detail: null } } }) }));
+        status: "down", features: { planning: false, search: true, recommended: false },
+        map: { osm: "0123456789abcdef", valhalla: null, graphhopper: null } }) }));
       await page.reload();
       await expect(page.getByTestId("health-banner")).toBeVisible();
       await shot(page, vp, "24-engines-down-mocked");

@@ -325,7 +325,8 @@ test("a plan made on another map says so", async ({ page }) => {
   await page.route(/\/v1\/health/, async (route) => {
     const response = await route.fetch();
     const body = await response.json();
-    await route.fulfill({ response, json: { ...body, builds: { ...body.builds, valhalla: "valhalla 3.9.2 tiles of another day" } } });
+    // the public body's opaque map id (Step 9): any other value is another map
+    await route.fulfill({ response, json: { ...body, map: { ...body.map, valhalla: "0123456789abcdef" } } });
   });
   await page.reload();
   await waitVersion(page, 1);

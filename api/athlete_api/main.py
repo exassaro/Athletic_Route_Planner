@@ -58,13 +58,16 @@ def create_app(settings: Settings | None = None, solver: SolverPort | None = Non
             await redis.aclose()
             await db_engine.dispose()
 
-    app = FastAPI(title="Athlete Router API", version="0.4.0", description=DESCRIPTION, lifespan=lifespan)
+    docs = settings.docs   # Step 9: off in production (ATHLETE_DOCS=false); api/scripts/export_openapi.py still works
+    app = FastAPI(title="Athlete Router API", version="0.4.0", description=DESCRIPTION, lifespan=lifespan,
+                  docs_url="/docs" if docs else None, redoc_url="/redoc" if docs else None,
+                  openapi_url="/openapi.json" if docs else None)
     errors.install(app)
     if settings.cors_origin_list:   # Phase 5 A1
         app.add_middleware(
             CORSMiddleware, allow_origins=settings.cors_origin_list, allow_credentials=False,
             allow_methods=["GET", "POST", "PATCH", "DELETE"],
-            allow_headers=["Content-Type", "X-Client-Token", "If-Match"],
+            allow_headers=["Content-Type", "X-Client-Token", "If-Match"],   # never X-Health-Key: not for browsers
             # Retry-After for 429 backoff, Content-Disposition for the GPX file name.
             expose_headers=["Retry-After", "Content-Disposition", "Location"],
             max_age=600)

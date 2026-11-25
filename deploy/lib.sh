@@ -33,6 +33,16 @@ die() {
 	exit 1
 }
 
+# The key that unlocks /v1/health's detail (ATHLETE_HEALTH_KEY): from the environment, else from .env.prod when
+# this user can read it. Empty when neither: the public body only.
+health_key() {
+	if [ -n "${ATHLETE_HEALTH_KEY:-}" ]; then
+		printf '%s' "$ATHLETE_HEALTH_KEY"
+	elif [ -r "$ENV_FILE" ]; then
+		sed -n 's/^ATHLETE_HEALTH_KEY=//p' "$ENV_FILE" | tail -1 | tr -d ''
+	fi
+}
+
 need_env() {
 	[ -f "$ENV_FILE" ] || die "$ENV_FILE is missing. Run deploy/gen_secrets.sh first."
 }

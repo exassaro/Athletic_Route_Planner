@@ -26,12 +26,39 @@ status() { head -1 "$1" | awk '{print $2}'; }
 echo "Checking $PUBLIC_URL (front end $WEB_URL)"
 
 if [ "${SKIP_API:-0}" != 1 ]; then
-	code=$("${CURL[@]}" -o "$TMP/health.json" -w '%{http_code}' "$PUBLIC_URL/v1/health" || echo 000)
+	# The detail (services, builds) needs the key (Step 9): ATHLETE_HEALTH_KEY, or deploy/.env.prod when readable.
+	KEY="$(health_key)"
+	KEY_HEADER=()
+	[ -n "$KEY" ] && KEY_HEADER=(-H "X-Health-Key: $KEY")
+	code=$("${CURL[@]}" "${KEY_HEADER[@]}" -o "$TMP/health.json" -w '%{http_code}' "$PUBLIC_URL/v1/health" || echo 000)
+	summary=$("$PY" -c '
+import json, sys
+d = json.load(open(sys.argv[1]))
+if "services" in d:
+    print("detail", d["status"], ", ".join(k + ("" if v["ok"] else " DOWN") for k, v in d["services"].items()))
+else:
+    print("public", d["status"], ", ".join(k + ("" if v else " DOWN") for k, v in d["features"].items()))
+' "$TMP/health.json" 2>/dev/null || echo "unreadable")
 	if [ "$code" = 200 ]; then
-		ok "/v1/health 200: $("$PY" -c 'import json,sys;d=json.load(open(sys.argv[1]));print(d["status"], ", ".join(k+("" if v["ok"] else " DOWN") for k,v in d["services"].items()))' "$TMP/health.json")"
+		ok "/v1/health 200: ${summary#* }"
 	else
 		bad "/v1/health answered $code: $(head -c 300 "$TMP/health.json" 2>/dev/null)"
 	fi
+	if [ -n "$KEY" ]; then
+		[ "${summary%% *}" = detail ] && ok "the health key unlocks the detail" ||
+			bad "the health key did not unlock the detail (ATHLETE_HEALTH_KEY differs from the API's?)"
+	else
+		warn "no ATHLETE_HEALTH_KEY here: only the public health body was checked"
+	fi
+	# without the key: the public body only, and no interactive docs
+	"${CURL[@]}" -o "$TMP/public.json" "$PUBLIC_URL/v1/health" || true
+	if grep -q '"services"' "$TMP/public.json" 2>/dev/null; then
+		bad "/v1/health gives its detail without the key"
+	else
+		ok "/v1/health without the key: public body only"
+	fi
+	docs=$("${CURL[@]}" -o /dev/null -w '%{http_code}' "$PUBLIC_URL/docs" || echo 000)
+	[ "$docs" = 404 ] && ok "/docs is off (404)" || bad "/docs answered $docs (want 404: ATHLETE_DOCS=false)"
 
 	# the API's own CORS for the front end (ATHLETE_CORS_ORIGINS)
 	"${CURL[@]}" -o /dev/null -D "$TMP/api_pre" -X OPTIONS "$PUBLIC_URL/v1/plans" \

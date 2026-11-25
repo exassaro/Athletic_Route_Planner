@@ -1,14 +1,21 @@
 """GET /v1/health: every service, both engine build ids, the OSM pin and the solver hash.
 
+Step 9 amendment 5: that detail goes only to a request whose X-Health-Key equals ATHLETE_HEALTH_KEY (constant-time
+comparison; no key set: never). Everyone else gets the status, what works (features) and an opaque id of each
+engine's map (sha256 of its build id, 16 hex), so the web can still tell that a reopened plan was made on an older
+map without anyone learning the versions. The status codes are the same for both.
+
 200 when the solve path is up (Valhalla, Postgres, Redis). GraphHopper down only costs the
 "recommended" alternative (the solver flags it) and Photon down only costs search, so neither fails health.
 """
 
 import asyncio
+import hashlib
+import hmac
 import time
 from typing import Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -41,6 +48,34 @@ class HealthOut(BaseModel):
     builds: Builds
 
 
+class Features(BaseModel):
+    planning: bool      # routes can be made (Valhalla, Postgres, Redis)
+    search: bool        # place search (Photon)
+    recommended: bool   # the "recommended" alternative (GraphHopper)
+
+
+class MapIds(BaseModel):
+    """sha256 of each build id, first 16 hex characters; null when that engine does not answer."""
+    osm: str | None
+    valhalla: str | None
+    graphhopper: str | None
+
+
+class PublicHealthOut(BaseModel):
+    status: Literal["ok", "degraded", "down"]
+    features: Features
+    map: MapIds
+
+
+def map_id(build: str | None) -> str | None:
+    return hashlib.sha256(build.encode()).hexdigest()[:16] if build else None
+
+
+def key_ok(given: str | None, expected: str) -> bool:
+    """Constant time; an empty setting never matches."""
+    return bool(expected) and given is not None and hmac.compare_digest(given.encode(), expected.encode())
+
+
 async def _timed(coro, timeout: float) -> ServiceStatus:
     t0 = time.perf_counter()
     try:
@@ -51,9 +86,12 @@ async def _timed(coro, timeout: float) -> ServiceStatus:
                              detail=f"{type(err).__name__}: {err}"[:300])
 
 
-@router.get("/health", response_model=HealthOut, responses={503: {"model": HealthOut}},
-            summary="Service status and build ids")
-async def health(svc: Services = Depends(services)):
+@router.get("/health", response_model=PublicHealthOut | HealthOut,
+            responses={503: {"model": PublicHealthOut | HealthOut}}, summary="Service status")
+async def health(svc: Services = Depends(services),
+                 x_health_key: str | None = Header(None, include_in_schema=False)):
+    """200 when routes can be made, 503 when not. The body is PublicHealthOut; HealthOut (services, build ids,
+    errors) only with the operators' key."""
     s = svc.settings
     gh_info: dict = {}
 
@@ -98,8 +136,17 @@ async def health(svc: Services = Depends(services)):
     status = dict(zip(names, results))
     up = all(status[n].ok for n in REQUIRED)
     overall = "ok" if up and all(r.ok for r in results) else ("degraded" if up else "down")
+    osm = builds.osm_pin(s.manifest_path)
+    code = 200 if up else 503
+    if not key_ok(x_health_key, s.health_key):
+        public = PublicHealthOut(
+            status=overall,
+            features=Features(planning=up, search=status["photon"].ok, recommended=status["graphhopper"].ok),
+            map=MapIds(osm=map_id(osm), valhalla=map_id(status["valhalla"].build),
+                       graphhopper=map_id(status["graphhopper"].build)))
+        return JSONResponse(status_code=code, content=public.model_dump(mode="json"), headers={"Cache-Control": "no-store"})
     body = HealthOut(status=overall, services=status, builds=Builds(
-        osm=builds.osm_pin(s.manifest_path), valhalla=status["valhalla"].build,
+        osm=osm, valhalla=status["valhalla"].build,
         graphhopper=status["graphhopper"].build, graphhopper_data=gh_info.get("data_date"),
         solver=builds.solver_hash()))
-    return JSONResponse(status_code=200 if up else 503, content=body.model_dump(mode="json"))
+    return JSONResponse(status_code=code, content=body.model_dump(mode="json"), headers={"Cache-Control": "no-store"})

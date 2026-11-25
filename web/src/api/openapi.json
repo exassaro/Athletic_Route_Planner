@@ -1166,6 +1166,29 @@
     "title": "FeatureItemOut",
     "type": "object"
    },
+   "Features": {
+    "properties": {
+     "planning": {
+      "title": "Planning",
+      "type": "boolean"
+     },
+     "recommended": {
+      "title": "Recommended",
+      "type": "boolean"
+     },
+     "search": {
+      "title": "Search",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "planning",
+     "search",
+     "recommended"
+    ],
+    "title": "Features",
+    "type": "object"
+   },
    "FixOut": {
     "additionalProperties": false,
     "description": "The solver's fix, plus the patch that applies it (Phase 5 A4). Null: no unambiguous patch (the label\nmatches no checkpoint or several), or the action has no effect in this version (`make_optional`).",
@@ -1559,6 +1582,51 @@
      "expires_in_s"
     ],
     "title": "LinkOut",
+    "type": "object"
+   },
+   "MapIds": {
+    "description": "sha256 of each build id, first 16 hex characters; null when that engine does not answer.",
+    "properties": {
+     "graphhopper": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Graphhopper"
+     },
+     "osm": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Osm"
+     },
+     "valhalla": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Valhalla"
+     }
+    },
+    "required": [
+     "osm",
+     "valhalla",
+     "graphhopper"
+    ],
+    "title": "MapIds",
     "type": "object"
    },
    "MustUse": {
@@ -2230,6 +2298,32 @@
      }
     },
     "title": "Preferences",
+    "type": "object"
+   },
+   "PublicHealthOut": {
+    "properties": {
+     "features": {
+      "$ref": "#/components/schemas/Features"
+     },
+     "map": {
+      "$ref": "#/components/schemas/MapIds"
+     },
+     "status": {
+      "enum": [
+       "ok",
+       "degraded",
+       "down"
+      ],
+      "title": "Status",
+      "type": "string"
+     }
+    },
+    "required": [
+     "status",
+     "features",
+     "map"
+    ],
+    "title": "PublicHealthOut",
     "type": "object"
    },
    "ReverseOut": {
@@ -3441,30 +3535,57 @@
   },
   "/v1/health": {
    "get": {
+    "description": "200 when routes can be made, 503 when not. The body is PublicHealthOut; HealthOut (services, build ids,\nerrors) only with the operators' key.",
     "operationId": "health_v1_health_get",
     "responses": {
      "200": {
       "content": {
        "application/json": {
         "schema": {
-         "$ref": "#/components/schemas/HealthOut"
+         "anyOf": [
+          {
+           "$ref": "#/components/schemas/PublicHealthOut"
+          },
+          {
+           "$ref": "#/components/schemas/HealthOut"
+          }
+         ],
+         "title": "Response Health V1 Health Get"
         }
        }
       },
       "description": "Successful Response"
      },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     },
      "503": {
       "content": {
        "application/json": {
         "schema": {
-         "$ref": "#/components/schemas/HealthOut"
+         "anyOf": [
+          {
+           "$ref": "#/components/schemas/PublicHealthOut"
+          },
+          {
+           "$ref": "#/components/schemas/HealthOut"
+          }
+         ],
+         "title": "Response 503 Health V1 Health Get"
         }
        }
       },
       "description": "Service Unavailable"
      }
     },
-    "summary": "Service status and build ids",
+    "summary": "Service status",
     "tags": [
      "health"
     ]

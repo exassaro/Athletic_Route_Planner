@@ -4,7 +4,7 @@
 # the share page on the front end. The saved route is deleted at the end (soft delete), so no public link is
 # left behind; KEEP=1 keeps it.
 #   bash deploy/smoke.sh          # from the VM or the laptop (needs curl and python)
-# Uses one of the 10 new sessions an IP may open per hour.
+# Uses one of the 60 new sessions an IP may open per hour. Sends the health key when it has one (health.sh).
 set -euo pipefail
 # shellcheck source=deploy/lib.sh
 . "$(dirname "$0")/lib.sh"
@@ -32,6 +32,21 @@ expect() { # expect <step> <want> <got> <body file>
 }
 
 echo "Smoke test against $PUBLIC_URL and $WEB_URL"
+
+KEY="$(health_key)"
+if [ -n "$KEY" ]; then
+	code=$("${CURL[@]}" -H "X-Health-Key: $KEY" -o "$TMP/health.json" -w '%{http_code}' "$PUBLIC_URL/v1/health")
+	expect "health (with the key)" 200 "$code" "$TMP/health.json"
+	grep -q '"services"' "$TMP/health.json" || {
+		echo "FAIL  the health key did not unlock the detail"
+		exit 1
+	}
+	echo "ok    health, detail with the key"
+else
+	code=$("${CURL[@]}" -o "$TMP/health.json" -w '%{http_code}' "$PUBLIC_URL/v1/health")
+	expect "health" 200 "$code" "$TMP/health.json"
+	echo "ok    health (public body; no ATHLETE_HEALTH_KEY here)"
+fi
 
 code=$("${CURL[@]}" -o "$TMP/session.json" -D "$TMP/session.h" -w '%{http_code}' -X POST "$PUBLIC_URL/v1/session")
 expect "session" 201 "$code" "$TMP/session.json"

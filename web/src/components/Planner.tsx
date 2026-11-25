@@ -20,6 +20,7 @@ import { applyToDraft, blocked, patchFor, type Edit, type Point, type RouteReque
 import { pace as formatPace, parsePace, signedKm } from "@/plan/format";
 import { usePace } from "@/plan/pace";
 import type { Place } from "@/plan/places";
+import { mapIdsOf, olderMap, type MapIds } from "@/plan/mapIds";
 import { MAX_TRIES } from "@/plan/planClient";
 import { planClient, usePlan, type Busy, type Editing, type Kept, type Opening } from "@/plan/usePlan";
 import { RESTORING } from "@/restore/boot";
@@ -61,15 +62,6 @@ const NEW_VIEW: View = { center: KOZHIKODE, zoom: 12 };
 /** Everything "Plan a new run" takes away. */
 type Cleared = { plan: Kept; draft: Draft; step: number; seq: number; sheet: Snap; view: View | null; rebuild: boolean;
   /** A run in Follow mode. */ run: string | null };
-type Builds = NonNullable<Schemas["HealthOut"]["builds"]>;
-
-function olderMap(made: Schemas["BuildsOut"], now: Builds | null): boolean {
-  if (!now) return false;
-  return (["osm", "valhalla", "graphhopper"] as const).some((key) => {
-    const [a, b] = [made[key], (now as Record<string, unknown>)[key]];
-    return !!a && !!b && a !== b;         // an engine that is down is not another map
-  });
-}
 
 export function Planner() {
   const plan = usePlan();
@@ -231,7 +223,8 @@ export function Planner() {
   const [flow, setFlow] = useState(0);             // a new number: the setup opens again, on `step`
   const [located, setLocated] = useState(false);   // the start was the runner's location, which is not kept
   const [rebuild, setRebuild] = useState(false);   // the stops came back without their geometry
-  const [builds, setBuilds] = useState<Builds | null>(null);
+  const [mapNow, setMapNow] = useState<MapIds | null>(null);
+  const [mapMade, setMapMade] = useState<{ key: string; ids: MapIds | null } | null>(null);
   const [cleared, setCleared] = useState<Cleared | null>(null);
   const view = useRef<View | null>(null);
   const jumpTo = useRef<View | null>(null);
@@ -406,7 +399,14 @@ export function Planner() {
 
   const anythingPlanned = !!v || !!draft.start || step > 1 || !!plan.opening;
   const openingRun = plan.target?.kind === "plan";
-  const onOlderMap = !!v && versionKey === plan.restoredKey && olderMap(v.builds, builds);
+  const restored = !!v && versionKey === plan.restoredKey;
+  useEffect(() => {
+    if (!restored || !v) return;
+    let live = true;
+    void mapIdsOf(v.builds).then((ids) => { if (live) setMapMade({ key: versionKey, ids }); });
+    return () => { live = false; };
+  }, [restored, v, versionKey]);
+  const onOlderMap = restored && mapMade?.key === versionKey && olderMap(mapMade.ids, mapNow);
 
   const menu = (closeMenu: () => void) => (
     <>
@@ -508,7 +508,7 @@ export function Planner() {
             ? <RestoringNote reason={plan.openError} state={plan.opening} onRetry={plan.retryOpening} />
             : <OpeningNote reason={plan.openError} state={plan.opening} onRetry={plan.retryOpening} />)}
           {v && candidates[selected] && <PeekBar cand={candidates[selected]!} pace={pace} />}
-          <HealthBanner trigger={plan.busy.kind === "error" ? plan.busy.error.code : null} onBuilds={setBuilds} />
+          <HealthBanner trigger={plan.busy.kind === "error" ? plan.busy.error.code : null} onMap={setMapNow} />
           {onOlderMap && (
             <p className="t-body-s older-map" role="status" data-testid="older-map">
               Built on an older map. Changing anything plans it again on the current one.

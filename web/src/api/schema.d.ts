@@ -54,7 +54,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Service status and build ids */
+        /**
+         * Service status
+         * @description 200 when routes can be made, 503 when not. The body is PublicHealthOut; HealthOut (services, build ids,
+         *     errors) only with the operators' key.
+         */
         get: operations["health_v1_health_get"];
         put?: never;
         post?: never;
@@ -953,6 +957,15 @@ export interface components {
             role: "checkpoint" | "via" | "must_use" | "avoid";
             via?: components["schemas"]["Via"] | null;
         };
+        /** Features */
+        Features: {
+            /** Planning */
+            planning: boolean;
+            /** Recommended */
+            recommended: boolean;
+            /** Search */
+            search: boolean;
+        };
         /**
          * FixOut
          * @description The solver's fix, plus the patch that applies it (Phase 5 A4). Null: no unambiguous patch (the label
@@ -1126,6 +1139,18 @@ export interface components {
             code: string;
             /** Expires In S */
             expires_in_s: number;
+        };
+        /**
+         * MapIds
+         * @description sha256 of each build id, first 16 hex characters; null when that engine does not answer.
+         */
+        MapIds: {
+            /** Graphhopper */
+            graphhopper: string | null;
+            /** Osm */
+            osm: string | null;
+            /** Valhalla */
+            valhalla: string | null;
         };
         /**
          * MustUse
@@ -1408,6 +1433,16 @@ export interface components {
              * @enum {string}
              */
             surface: "any" | "paved";
+        };
+        /** PublicHealthOut */
+        PublicHealthOut: {
+            features: components["schemas"]["Features"];
+            map: components["schemas"]["MapIds"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "degraded" | "down";
         };
         /** ReverseOut */
         ReverseOut: {
@@ -1924,7 +1959,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HealthOut"];
+                    "application/json": components["schemas"]["PublicHealthOut"] | components["schemas"]["HealthOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
             /** @description Service Unavailable */
@@ -1933,7 +1977,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HealthOut"];
+                    "application/json": components["schemas"]["PublicHealthOut"] | components["schemas"]["HealthOut"];
                 };
             };
         };
