@@ -27,6 +27,8 @@ export default defineConfig({
     // E2E_INSECURE=1: through Caddy's local CA (https://<LAN IP>), which this Chromium does not trust
     ignoreHTTPSErrors: process.env.E2E_INSECURE === "1" },
   projects: [
+    // Step 9: two browsers, A saves and shows a link, B claims it (live stack; the API must have migration 0006)
+    { name: "link", testMatch: /link[.]spec[.]ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "phone", testMatch: /(journeys|sr01)\.spec\.ts/, use: { ...devices["Pixel 7"], browserName: "chromium" } },
     { name: "screens", testMatch: /screens\.spec\.ts/, use: { browserName: "chromium" } },
     { name: "basemap", testMatch: /basemap\.spec\.ts/, use: { ...devices["iPhone 16"], browserName: "chromium" } },
