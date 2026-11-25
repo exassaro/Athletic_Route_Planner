@@ -1,8 +1,8 @@
 "use client";
 /**
  * "Use on another device" (Step 9, blueprint amendments 2 to 4): a one-time link to this browser's saved routes,
- * as text to copy, valid for 5 minutes, with "New code". Loaded with next/dynamic only when it is
- * opened, so it is not in a page's first load.
+ * as a QR code and as text to copy, valid for 5 minutes, with "New code". Loaded with next/dynamic only when it is
+ * opened; the QR encoder is a second import() inside it, so neither is in a page's first load.
  *
  * A modal dialog, mounted only while open, like RenameDialog: Esc closes, the opener takes the focus back.
  */
@@ -10,6 +10,7 @@ import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } f
 import { asFailure } from "@/plan/planClient";
 import { planClient } from "@/plan/usePlan";
 import { linkUrl, mmss, requestLinkCode } from "@/saved/link";
+import type { QrPath } from "@/saved/qr";
 import { Button } from "./ui";
 
 type State =
@@ -23,6 +24,7 @@ export function LinkDeviceDialog({ onClose, now = Date.now }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const ids = useId();
   const [state, setState] = useState<State>({ kind: "loading" });
+  const [qr, setQr] = useState<QrPath | null>(null);
   const [left, setLeft] = useState(0);
   const [copied, setCopied] = useState(false);
   const asked = useRef(0);
@@ -30,6 +32,7 @@ export function LinkDeviceDialog({ onClose, now = Date.now }: Props) {
   const newCode = useCallback(async () => {
     const n = ++asked.current;
     setState({ kind: "loading" });
+    setQr(null);
     setCopied(false);
     try {
       const out = await requestLinkCode(planClient());
@@ -37,6 +40,8 @@ export function LinkDeviceDialog({ onClose, now = Date.now }: Props) {
       const url = linkUrl(window.location.origin, out.code);
       setState({ kind: "ready", url, until: now() + out.expires_in_s * 1000 });
       setLeft(out.expires_in_s);
+      const { qrPath } = await import("@/saved/qr");
+      if (n === asked.current) setQr(qrPath(url));
     } catch (e) {
       if (n === asked.current) setState({ kind: "error", message: asFailure(e).message });
     }
@@ -90,7 +95,7 @@ export function LinkDeviceDialog({ onClose, now = Date.now }: Props) {
       <div className="editor-inner">
         <h2 id={`${ids}-title`} className="t-heading">Use on another device</h2>
         <p className="t-body-s">
-          Open this link on your other device. That device will see and change these same
+          Scan this with your phone&apos;s camera, or open the link there. That device will see and change these same
           saved routes. Anyone who has the link in the next 5 minutes can do that too, so keep it to yourself.
         </p>
 
@@ -100,6 +105,16 @@ export function LinkDeviceDialog({ onClose, now = Date.now }: Props) {
         )}
         {state.kind === "ready" && (
           <>
+            <div className={`link-qr${expired ? " expired" : ""}`} data-testid="link-qr" aria-hidden={expired}>
+              {qr ? (
+                // Always dark on white whatever the theme: phone cameras read inverted codes badly.
+                <svg viewBox={`0 0 ${qr.size} ${qr.size}`} width="208" height="208" shapeRendering="crispEdges"
+                  role="img" aria-label="QR code of the link below">
+                  <rect width={qr.size} height={qr.size} fill="#fff" />
+                  <path d={qr.d} fill="#000" />
+                </svg>
+              ) : <span className="muted">Drawing the code…</span>}
+            </div>
             <div className="link-url">
               <label htmlFor={`${ids}-url`} className="field-label">Link</label>
               <input id={`${ids}-url`} readOnly value={expired ? "" : state.url} placeholder="Expired"

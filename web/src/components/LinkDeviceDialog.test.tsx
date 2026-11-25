@@ -27,15 +27,17 @@ async function open(now: () => number = Date.now) {
   const onClose = vi.fn();
   render(<LinkDeviceDialog onClose={onClose} now={now} />);
   await screen.findByTestId("link-url");
+  await screen.findByRole("img", { hidden: true });       // the QR code, after its import()
   return { onClose };
 }
 
 describe("LinkDeviceDialog", () => {
-  it("shows the link with the code in its fragment and 5:00", async () => {
+  it("shows the link with the code in its fragment, a QR code and 5:00", async () => {
     await open();
     const url = (screen.getByTestId("link-url") as HTMLInputElement).value;
     expect(url).toBe(`${window.location.origin}/link#${CODE_A}`);
     expect(screen.getByTestId("link-countdown").textContent).toContain("5:00");
+    expect(screen.getByRole("img", { hidden: true }).querySelector("path")!.getAttribute("d")).toMatch(/^M\d/);
   });
 
   it("counts down, expires, and 'New code' brings a fresh one", async () => {

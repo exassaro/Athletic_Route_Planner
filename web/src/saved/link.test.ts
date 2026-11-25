@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { PlanClient, PREVIOUS_TOKEN_KEY, TOKEN_KEY } from "@/plan/planClient";
 import { claimLinkCode, codeFromHash, linkUrl, mmss, requestLinkCode } from "./link";
 import { takeLinked, markLinked } from "./linked";
+import { qrPath } from "./qr";
 
 const CODE = "Ab-_0123456789abcdefghijklmnopqrst";   // 32 URL-safe characters, as the API makes them
 
@@ -92,5 +93,32 @@ describe("claim", () => {
     const c = new PlanClient({ baseUrl: "http://api.test", fetch: api.fetch, storage: storage({ [TOKEN_KEY]: "t" }) });
     expect(await requestLinkCode(c)).toEqual({ code: CODE, expires_in_s: 300 });
     expect(api.calls[0]).toMatchObject({ path: "/v1/session/link", token: "t" });
+  });
+});
+
+describe("qrPath", () => {
+  it("draws the three finder patterns inside a 4-module quiet zone", () => {
+    const { size, d } = qrPath(linkUrl("https://gatho.shahinsha.xyz", CODE));
+    // 65 bytes: version 5 (37 modules) at error correction M holds up to 84; plus 2 × 4 of quiet zone.
+    expect(size).toBe(45);
+    const dark = new Set<string>();
+    for (const m of d.matchAll(/M(\d+) (\d+)h(\d+)/g)) {
+      for (let x = +m[1]!; x < +m[1]! + +m[3]!; x++) dark.add(`${x},${m[2]}`);
+    }
+    const ring = (x0: number, y0: number) => {
+      for (let k = 0; k < 7; k++) {
+        for (const [x, y] of [[x0 + k, y0], [x0 + k, y0 + 6], [x0, y0 + k], [x0 + 6, y0 + k]]) {
+          expect(dark.has(`${x},${y}`)).toBe(true);
+        }
+      }
+    };
+    ring(4, 4);
+    ring(size - 11, 4);
+    ring(4, size - 11);
+    for (let k = 0; k < size; k++) expect(dark.has(`${k},0`) || dark.has(`0,${k}`)).toBe(false);
+  });
+
+  it("is the same for the same text", () => {
+    expect(qrPath("https://x.test/link#abc")).toEqual(qrPath("https://x.test/link#abc"));
   });
 });
