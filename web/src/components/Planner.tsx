@@ -20,6 +20,7 @@ import { applyToDraft, blocked, patchFor, type Edit, type Point, type RouteReque
 import { pace as formatPace, parsePace, signedKm } from "@/plan/format";
 import { usePace } from "@/plan/pace";
 import type { Place } from "@/plan/places";
+import { MAX_TRIES } from "@/plan/planClient";
 import { planClient, usePlan, type Busy, type Editing, type Kept, type Opening } from "@/plan/usePlan";
 import { RESTORING } from "@/restore/boot";
 import { MY_LOCATION, rebuildItems, serialise, type Draft, type RunPointer, type View } from "@/restore/draft";
@@ -502,7 +503,7 @@ export function Planner() {
           </Snackbar>
         )}>
           {/* what a peeked sheet shows first */}
-          <StatusLine busy={plan.busy} onDismiss={plan.clearError} />
+          <StatusLine busy={plan.busy} onDismiss={plan.clearError} onCancel={plan.cancelWaiting} />
           {plan.opening && (openingRun
             ? <RestoringNote reason={plan.openError} state={plan.opening} onRetry={plan.retryOpening} />
             : <OpeningNote reason={plan.openError} state={plan.opening} onRetry={plan.retryOpening} />)}
@@ -553,18 +554,39 @@ export function Planner() {
   );
 }
 
-function StatusLine({ busy, onDismiss }: { busy: Busy; onDismiss: () => void }) {
+/** Seconds left until `until` (ms since the epoch), updated every second while there is one. */
+function useSecondsLeft(until: number | null): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (until === null) return;
+    setNow(Date.now()); // eslint-disable-line react-hooks/set-state-in-effect
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [until]);
+  return until === null ? 0 : Math.max(0, Math.ceil((until - now) / 1000));
+}
+
+/**
+ * What the API is doing, in words (Step 9 amendment 7): planning, a busy solver with a live countdown and Cancel,
+ * a slow solve, or a failure with its reason. Never a blank screen: the plan and the form stay as they were.
+ */
+export function StatusLine({ busy, onDismiss, onCancel }: { busy: Busy; onDismiss: () => void; onCancel: () => void }) {
+  const left = useSecondsLeft(busy.kind === "busy" ? busy.until : null);
   let text: string | null = null;
   if (busy.kind === "solving") text = "GATHO is planning...";
-  if (busy.kind === "busy") text = busy.reason === "solver_busy"
-    ? `Many runs are being planned right now. Trying again in ${busy.retryInS} s (attempt ${busy.attempt}).`
-    : `Too many requests for a moment. Trying again in ${busy.retryInS} s.`;
+  if (busy.kind === "busy") {
+    text = `Lots of runners planning right now. Retrying in ${left} second${left === 1 ? "" : "s"}` +
+      (busy.attempt > 1 ? ` (try ${busy.attempt + 1} of ${MAX_TRIES}).` : ".");
+  }
   if (busy.kind === "waiting") text = busy.reason === "solve_timeout"
     ? "This one is taking longer than usual. It is still being worked on…"
     : "Finishing the previous change first…";
   return (
     <div aria-live="polite" className="status" data-testid="status" data-state={busy.kind}>
       {text && <p className="progress"><SneakerCycle />{text}</p>}
+      {busy.kind === "busy" && (
+        <div className="row"><Button onClick={onCancel} data-testid="status-cancel">Cancel</Button></div>
+      )}
       {busy.kind === "error" && (
         <div role="alert" className="error-box" data-error={busy.error.code}>
           <p>{busy.error.message}</p>

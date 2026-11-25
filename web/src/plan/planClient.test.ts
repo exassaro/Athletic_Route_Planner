@@ -1,6 +1,7 @@
 /** The waiting rules of PlanClient against a scripted fake API (no network). */
-import { describe, expect, it } from "vitest";
-import { ApiFailure, PlanClient, TOKEN_KEY, type Status } from "./planClient";
+import { describe, expect, it, vi } from "vitest";
+import { ApiFailure, CANCELLED, MAX_TRIES, PlanClient, TOKEN_KEY, TOO_LONG_MESSAGE, UNAVAILABLE_MESSAGE, waitText,
+  type Status } from "./planClient";
 
 type Reply = { status: number; body?: unknown; headers?: Record<string, string> };
 
@@ -63,13 +64,71 @@ describe("PlanClient", () => {
     const v = await c.create({ route_type: "loop", start: { lon: 75.8, lat: 11.2 }, target_distance_m: 10000 });
     expect(v.version).toBe(1);
     expect(slept).toEqual([5000]);
-    expect(statuses).toContainEqual({ kind: "busy", reason: "solver_busy", retryInS: 5, attempt: 1 });
+    expect(statuses).toContainEqual(expect.objectContaining({ kind: "busy", reason: "solver_busy", retryInS: 5, attempt: 1 }));
+    const busy = statuses.find((s) => s.kind === "busy") as { until: number };
+    expect(busy.until).toBeGreaterThan(Date.now() + 3000);      // the countdown's end, about 5 s on
   });
 
-  it("gives up after MAX_TRIES busy answers", async () => {
-    const { c } = client({ "POST /v1/plans": [err(429, "solver_busy", null, { "Retry-After": "1" })] });
+  it("gives up after MAX_TRIES busy answers (3 retries), saying so", async () => {
+    const { c, api, slept } = client({ "POST /v1/plans": [err(429, "solver_busy", null, { "Retry-After": "1" })] });
     await expect(c.create({ route_type: "loop", start: { lon: 75.8, lat: 11.2 }, target_distance_m: 10000 }))
-      .rejects.toMatchObject({ status: 429, code: "solver_busy" });
+      .rejects.toMatchObject({ status: 429, code: "solver_busy", message: expect.stringContaining("still busy") });
+    expect(api.calls.filter((x) => x.path === "/v1/plans")).toHaveLength(MAX_TRIES);
+    expect(slept).toEqual([1000, 1000, 1000]);
+  });
+
+  it("solver_busy: Cancel stops the wait, sends nothing more, and fails as CANCELLED", async () => {
+    const api = fakeApi({ "POST /v1/session": [session], "POST /v1/plans": [err(429, "solver_busy", null, { "Retry-After": "5" })] });
+    let c!: PlanClient;
+    c = new PlanClient({ baseUrl: "http://api.test", fetch: api.fetch, sleep: () => new Promise(() => {}),
+      onStatus: (s) => { if (s.kind === "busy") queueMicrotask(() => c.cancelWaiting()); } });
+    await expect(c.create({ route_type: "loop", start: { lon: 75.8, lat: 11.2 }, target_distance_m: 10000 }))
+      .rejects.toMatchObject({ status: 0, code: CANCELLED });
+    expect(api.calls.filter((x) => x.path === "/v1/plans")).toHaveLength(1);
+    c.cancelWaiting();                                           // nothing waiting: no effect
+  });
+
+  it("rate_limited: no retry, and says how long to wait (Retry-After)", async () => {
+    const { c, api, slept } = client({ "POST /v1/plans": [err(429, "rate_limited", { bucket: "solve", retry_after_s: 42 },
+      { "Retry-After": "42" })] });
+    await expect(c.create({ route_type: "loop", start: { lon: 75.8, lat: 11.2 }, target_distance_m: 10000 }))
+      .rejects.toMatchObject({ status: 429, code: "rate_limited", message: "Too many plans in a short time. Wait 42 seconds, then try again.",
+        detail: expect.objectContaining({ retry_after_s: 42 }) });
+    expect(api.calls.filter((x) => x.path === "/v1/plans")).toHaveLength(1);
+    expect(slept).toEqual([]);
+  });
+
+  it("waitText reads as people say it", () => {
+    expect([waitText(1), waitText(42), waitText(60), waitText(61), waitText(3599)])
+      .toEqual(["1 second", "42 seconds", "1 minute", "2 minutes", "60 minutes"]);
+  });
+
+  it("503: planning is temporarily unavailable, the API's reason kept", async () => {
+    const { c } = client({ "POST /v1/plans": [err(503, "engine_unavailable", { engine: "valhalla" })] });
+    await expect(c.create({ route_type: "loop", start: { lon: 75.8, lat: 11.2 }, target_distance_m: 10000 }))
+      .rejects.toMatchObject({ status: 503, code: "engine_unavailable", message: UNAVAILABLE_MESSAGE,
+        detail: { reason: "engine_unavailable", detail: { engine: "valhalla" } } });
+  });
+
+  it("504: polls first, and only when that gives up says to try a shorter distance", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const api = fakeApi({ "POST /v1/session": [session],
+        "PATCH /v1/plans/p1": [err(504, "solve_timeout", { plan_id: "p1" })],
+        "GET /v1/plans/p1": [{ status: 200, body: { plan_id: "p1", status: "solving", versions: [1], latest: version(1) } }] });
+      const c = new PlanClient({ baseUrl: "http://api.test", fetch: api.fetch,
+        sleep: async (ms) => void vi.setSystemTime(Date.now() + ms) });
+      await expect(c.patch("p1", [], 1)).rejects.toMatchObject({ status: 504, code: "solve_timeout", message: TOO_LONG_MESSAGE });
+      expect(api.calls.filter((x) => x.method === "GET").length).toBeGreaterThan(10);   // it did wait about a minute
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("504 with nothing to poll says the same at once", async () => {
+    const { c } = client({ "POST /v1/plans": [err(504, "gateway_timeout")] });
+    await expect(c.create({ route_type: "loop", start: { lon: 75.8, lat: 11.2 }, target_distance_m: 10000 }))
+      .rejects.toMatchObject({ status: 504, message: TOO_LONG_MESSAGE });
   });
 
   it("plan_solving: polls until ready, then sends on top of the new version with If-Match", async () => {

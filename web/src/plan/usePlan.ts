@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "@/api/client";
 import { openSaved, type Saved } from "@/saved/api";
 import { patchFor, type Edit } from "./edits";
-import { ApiFailure, apiSaid, browserStorage, call, PlanClient, TOKEN_KEY, type NewRouteRequest, type PatchOp, type PlanVersion,
+import { ApiFailure, apiSaid, browserStorage, call, CANCELLED, PlanClient, TOKEN_KEY, type NewRouteRequest, type PatchOp, type PlanVersion,
   type RouteRequest, type Status } from "./planClient";
 
 export type Busy = { kind: "idle" } | Status | { kind: "error"; error: ApiFailure };
@@ -34,6 +34,12 @@ export type Target =
   | { kind: "plan"; plan: string; version: number; edit: string | null; history: History | null };
 /** What "Plan a new run" takes away, for its Undo. */
 export type Kept = { version: PlanVersion | null; editing: Editing | null; history: History; opened: boolean; target: Target | null };
+
+/** What a failed create or patch leaves on screen: nothing after a Cancel, else the failure (the plan stays). */
+function failed(e: unknown): Busy {
+  if (e instanceof ApiFailure && e.code === CANCELLED) return { kind: "idle" };
+  return { kind: "error", error: e instanceof ApiFailure ? e : new ApiFailure(0, "network", String(e)) };
+}
 
 let shared: PlanClient | null = null;
 const listeners = new Set<(s: Status) => void>();
@@ -113,7 +119,7 @@ export function usePlan() {
             continue;
           }
           queue.current = [];
-          setBusy({ kind: "error", error: e instanceof ApiFailure ? e : new ApiFailure(0, "network", String(e)) });
+          setBusy(failed(e));
         }
       }
     } finally {
@@ -147,7 +153,7 @@ export function usePlan() {
         setBusy({ kind: "idle" });
         return null;
       }
-      setBusy({ kind: "error", error: e instanceof ApiFailure ? e : new ApiFailure(0, "network", String(e)) });
+      setBusy(failed(e));
       return null;
     }
   }, [adopt, client]);
@@ -267,7 +273,7 @@ export function usePlan() {
       if (asked === generation.current) adopt(next, dir);
       setBusy({ kind: "idle" });
     } catch (e) {
-      setBusy({ kind: "error", error: e instanceof ApiFailure ? e : new ApiFailure(0, "network", String(e)) });
+      setBusy(failed(e));
     } finally {
       running.current = false;
       void drain();
@@ -282,5 +288,7 @@ export function usePlan() {
     undo: () => step("undo"), redo: () => step("redo"),
     canUndo: history.at > 0, canRedo: history.at >= 0 && history.at < history.versions.length - 1,
     clearError: () => setBusy({ kind: "idle" }),
+    /** Stops waiting for a busy solver; the edit or plan that waited is not sent (Step 9 amendment 7). */
+    cancelWaiting: () => client.cancelWaiting(),
   };
 }

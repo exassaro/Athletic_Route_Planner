@@ -3,11 +3,15 @@
  * Types are the generated ones only (Phase 5 amendment 2).
  *
  * Waiting rules (section 13 states, Phase 4 amendments 3, 12, 19):
- * - 429 solver_busy / rate_limited: wait Retry-After (capped), try again, at most MAX_TRIES times.
+ * - 429 solver_busy: wait Retry-After (capped), try again, at most MAX_TRIES sends in all (3 retries), with a
+ *   countdown the planner shows and a Cancel (cancelWaiting) (Step 9 amendment 7).
+ * - 429 rate_limited: no retry; the failure says how long to wait.
+ * - 503 on a solve: "Planning is temporarily unavailable" (the API's reason is kept in detail).
  * - 409 plan_solving: a solve for this plan is running; poll the plan until it is ready, then send again.
  * - 412 version_mismatch: someone (another tab) made a newer version; send again on top of it. The patch's
  *   `test` operations stop a stale removal.
- * - 504 solve_timeout: the solve carries on; poll the plan until the new version appears.
+ * - 504 solve_timeout: the solve carries on; poll the plan until the new version appears. Only if that gives up:
+ *   "That route took too long; try a shorter distance".
  * - 401: the token is unknown (database reset); get a new one and try once more.
  * An edit of a version that is not the latest (a saved route opened for editing) names it with from_version and
  * sends no If-Match: it is meant to apply to that version whatever the latest is (Phase 5c A11).
@@ -33,13 +37,18 @@ export const PREVIOUS_TOKEN_KEY = "athlete.token.previous";
 /** Endpoints sent without a token: a visitor never gets a session from them, and claim makes its own. */
 const NO_TOKEN = new Set(["/v1/session", "/v1/session/claim", "/v1/health"]);
 export const MAX_TRIES = 4;
+/** A wait the user cancelled: not an error to show. */
+export const CANCELLED = "cancelled";
+export const UNAVAILABLE_MESSAGE = "Planning is temporarily unavailable. Try again in a few minutes.";
+export const TOO_LONG_MESSAGE = "That route took too long; try a shorter distance.";
 const MAX_WAIT_S = 30;
 const POLL_EVERY_MS = 1500;
 const POLL_FOR_MS = 60_000;
 
 export type Status =
   | { kind: "solving" }
-  | { kind: "busy"; reason: "solver_busy" | "rate_limited"; retryInS: number; attempt: number }
+  /** `until`: when the next try is sent (ms since the epoch), for a live countdown. */
+  | { kind: "busy"; reason: "solver_busy"; retryInS: number; attempt: number; until: number }
   | { kind: "waiting"; reason: "plan_solving" | "solve_timeout" };
 
 export class ApiFailure extends Error {
@@ -124,12 +133,21 @@ export function browserStorage(): Storage {
   }
 }
 
+/** "45 seconds", "1 minute", "3 minutes". */
+export function waitText(seconds: number): string {
+  const s = Math.max(1, Math.ceil(seconds));
+  if (s < 60) return `${s} second${s === 1 ? "" : "s"}`;
+  const m = Math.ceil(s / 60);
+  return `${m} minute${m === 1 ? "" : "s"}`;
+}
+
 export class PlanClient {
   readonly api;
   private storage: Storage;
   private sleep: (ms: number) => Promise<void>;
   private onStatus: (s: Status) => void;
   private tokenPromise: Promise<string> | null = null;
+  private cancelWait: (() => void) | null = null;
 
   constructor(private opts: Options) {
     this.storage = opts.storage ?? memoryStorage();
@@ -178,12 +196,25 @@ export class PlanClient {
       const { data, error, response } = await answer(() => send(version));
       if (data) return data as PlanVersion;
       const f = apiFailure(response.status, error);
-      if (response.status === 429 && attempt < MAX_TRIES && (f.code === "solver_busy" || f.code === "rate_limited")) {
-        const after = Number(response.headers.get("Retry-After")) || 2 ** attempt;
-        const wait = Math.min(after, MAX_WAIT_S);
-        this.onStatus({ kind: "busy", reason: f.code, retryInS: wait, attempt });
-        await this.sleep(wait * 1000);
+      const retryAfter = Number(response.headers.get("Retry-After")) ||
+        Number((f.detail as { retry_after_s?: number } | undefined)?.retry_after_s) || 0;
+      if (response.status === 429 && f.code === "solver_busy") {
+        if (attempt >= MAX_TRIES) {
+          throw new ApiFailure(429, f.code, "Lots of runners planning right now, and it's still busy. Try again in a minute.",
+            f.detail);
+        }
+        const wait = Math.min(retryAfter || 2 ** attempt, MAX_WAIT_S);
+        this.onStatus({ kind: "busy", reason: f.code, retryInS: wait, attempt, until: Date.now() + wait * 1000 });
+        await this.waitOrCancel(wait * 1000);
         continue;
+      }
+      if (response.status === 429 && f.code === "rate_limited") {
+        const wait = retryAfter || 60;
+        throw new ApiFailure(429, f.code, `Too many plans in a short time. Wait ${waitText(wait)}, then try again.`,
+          { ...(typeof f.detail === "object" && f.detail ? f.detail : {}), retry_after_s: wait });
+      }
+      if (response.status === 503 && f.code !== NOT_HERE && f.code !== NO_API_ANSWER) {
+        throw new ApiFailure(503, f.code, UNAVAILABLE_MESSAGE, { reason: f.message, detail: f.detail });
       }
       if (response.status === 401 && !renewed) {
         renewed = true;
@@ -199,13 +230,43 @@ export class PlanClient {
       }
       if (response.status === 504 && f.code === "solve_timeout") {
         const id = planId ?? (f.detail as { plan_id?: string } | undefined)?.plan_id;
-        if (!id) throw f;
+        if (!id) throw new ApiFailure(504, f.code, TOO_LONG_MESSAGE, f.detail);
         this.onStatus({ kind: "waiting", reason: "solve_timeout" });
-        const plan = await this.waitForPlan(id, ifVersion);
+        let plan: PlanOut;
+        try {
+          plan = await this.waitForPlan(id, ifVersion);
+        } catch (e) {
+          if (e instanceof ApiFailure && e.code === "solve_timeout") throw new ApiFailure(504, e.code, TOO_LONG_MESSAGE, f.detail);
+          throw e;
+        }
         if (plan.latest) return plan.latest;
       }
+      if (response.status === 504) throw new ApiFailure(504, f.code, TOO_LONG_MESSAGE, f.detail);
       throw f;
     }
+  }
+
+  /** Stops a solver_busy wait: the create or patch waiting on it fails with CANCELLED, and nothing is sent. */
+  cancelWaiting(): void {
+    this.cancelWait?.();
+  }
+
+  private waitOrCancel(ms: number): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      let done = false;
+      this.cancelWait = () => {
+        if (done) return;
+        done = true;
+        this.cancelWait = null;
+        reject(new ApiFailure(0, CANCELLED, "Cancelled. Nothing was changed."));
+      };
+      void this.sleep(ms).then(() => {
+        if (done) return;
+        done = true;
+        this.cancelWait = null;
+        resolve();
+      });
+    });
   }
 
   /** Polls the plan until no solve is running (and, given `after`, until a version newer than it exists). */
