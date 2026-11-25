@@ -86,8 +86,10 @@ bash deploy/gen_secrets.sh
 cat deploy/.env.prod
 ```
 
-This writes `deploy/.env.prod` with a random database password. **Copy the `POSTGRES_PASSWORD` line into your
-password manager.** The database cannot be opened without it, and git does not keep this file.
+This writes `deploy/.env.prod` with a random database password and a random `ATHLETE_HEALTH_KEY`. **Copy the
+`POSTGRES_PASSWORD` line into your password manager.** The database cannot be opened without it, and git does not
+keep this file. The health key unlocks the detail of `/v1/health` for `health.sh` and `smoke.sh` (they read it from
+this file on the server; elsewhere, `export ATHLETE_HEALTH_KEY=...` first). It can be replaced at any time.
 
 ### 7. Copy the map tiles from the laptop
 
@@ -201,8 +203,10 @@ within 3 minutes, it puts the previous image back.
 
 - **Migrations are not undone by the rollback.** If a migration broke the old code, restore the backup taken
   before the update (run `bash deploy/backup.sh` before updating when a migration is involved).
-- **Caddyfile.prod changed:**
-  `docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod exec caddy caddy reload --config /etc/caddy/Caddyfile`
+- **Caddyfile.prod changed, or the basemap was replaced:** `update.sh` recreates Caddy itself and checks that
+  `docker exec athlete-prod-caddy ls /srv/basemap` shows `kerala.pmtiles`. By hand:
+  `source deploy/lib.sh; refresh_caddy force`. (A running Caddy keeps the files it started with: replacing them on
+  the host leaves it serving the old ones, which gave a 404 map after the first run. `health.sh` now fails on it.)
 - **The compose file changed:**
   `docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod up -d` (recreates only the
   services that changed).
@@ -210,7 +214,52 @@ within 3 minutes, it puts the previous image back.
   (finished steps are skipped; it applies the overrides and restarts Valhalla).
 - **GraphHopper config or custom models changed:** stop Photon first, then rebuild GraphHopper:
   `rm -rf data/graphhopper/graph-cache`, `docker compose ... build graphhopper`, `docker compose ... up -d graphhopper`.
-- **The basemap pin changed:** copy the new archive as in step 7, then run `bash deploy/first_run.sh`.
+- **The basemap pin changed:** copy the new archive as in step 7, then run `bash deploy/first_run.sh` (it
+  recreates Caddy after the basemap step).
+
+### Step 9 update (2026-11-25): migration 0006, health key, session limit
+
+Once, for the update that brings Step 9. **Update the server before the web app is deployed** (a push to `main`
+deploys Vercel at once, and the new web app calls `/v1/session/link`).
+
+```bash
+cd ~/athlete_router
+bash deploy/backup.sh                                   # before a migration
+bash deploy/update.sh                                   # pull, migration 0006 (adds client_tokens), new API, Caddy refreshed
+bash deploy/gen_secrets.sh --add-health-key             # adds ATHLETE_HEALTH_KEY to .env.prod; nothing else changes
+sed -i 's/^ATHLETE_RATE_SESSION_PER_IP_HOUR=10$/ATHLETE_RATE_SESSION_PER_IP_HOUR=60/' deploy/.env.prod
+grep -q '^ATHLETE_RATE_SESSION_GLOBAL_MIN=' deploy/.env.prod || echo 'ATHLETE_RATE_SESSION_GLOBAL_MIN=120' >> deploy/.env.prod
+source deploy/lib.sh; dc up -d --no-deps --force-recreate api   # the API reads .env.prod again
+wait_healthy athlete-prod-api 180
+refresh_caddy                                           # the new log filter; see below
+bash deploy/health.sh && bash deploy/smoke.sh
+```
+
+- **Migration 0006 only adds a table** (`client_tokens`). Existing tokens keep working; no row changes.
+  `alembic downgrade 0005` would drop it and log out every linked device (the first device is not affected).
+- The recreated API reads the new `.env.prod`, so the health key and the session limits take effect;
+  `ATHLETE_DOCS=false` comes from the compose file. Check: `curl -s https://api.gatho.shahinsha.xyz/v1/health`
+  shows only `status`, `features` and `map`; `/docs` is 404.
+- **Caddy's new log filter** (no `X-Client-Token` in the access log) needs Caddy recreated. This one time
+  `update.sh` cannot do it: bash keeps running the copy of `update.sh` it opened before `git pull`, which has no
+  Caddy step. Hence `refresh_caddy` above; from the next update on, `update.sh` does it.
+  The access logs written before it still hold client tokens: delete them once,
+  `sudo find data/logs/caddy -name 'access*.log*' -delete`, then `source deploy/lib.sh; refresh_caddy force`.
+
+## New settings (Step 9)
+
+| Variable | Default | Where |
+|---|---|---|
+| `ATHLETE_HEALTH_KEY` | empty (no one gets the health detail) | `.env.prod`, written by `gen_secrets.sh` |
+| `ATHLETE_DOCS` | `true` (`false` in production) | `docker-compose.prod.yml` |
+| `ATHLETE_RATE_SESSION_PER_IP_HOUR` | `60` (was 10) | `.env.prod` |
+| `ATHLETE_RATE_SESSION_GLOBAL_MIN` | `120` | `.env.prod` |
+| `ATHLETE_RATE_LINK_PER_CLIENT_HOUR` | `10` | `.env.prod` (optional) |
+| `ATHLETE_RATE_CLAIM_PER_IP_MIN` | `10` | `.env.prod` (optional) |
+| `ATHLETE_LINK_TTL_S` | `300` | `.env.prod` (optional) |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | unset (no contact line on About) | Vercel, then redeploy |
+
+Deploying the server from GitHub instead of by hand is optional and off: `docs/ci-cd.md`.
 
 ## Backup
 

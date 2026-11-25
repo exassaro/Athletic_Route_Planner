@@ -72,8 +72,9 @@ Three build-time variables, set in the Vercel project (Production):
 | `NEXT_PUBLIC_API_BASE` | the API's public address, e.g. `https://api.<domain>` (no trailing `/v1`) | every API call from the browser (`src/api/client.ts`); the share page's server render too, unless `API_INTERNAL_BASE` is set |
 | `NEXT_PUBLIC_SITE_URL` | `https://gatho.shahinsha.xyz` | absolute OpenGraph and icon links (`src/app/layout.tsx`) |
 | `NEXT_PUBLIC_BASEMAP_ORIGIN` | the origin that serves `/basemap/`, e.g. `https://tiles.<domain>` (no path) | the PMTiles archive, fonts and sprites (`basemapOrigin()` in `src/map/basemap.ts`) |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | optional, an address you read | the contact line on `/about` (`src/lib/contact.ts`); left out when unset or not an address. Never hard-coded |
 
-All three are inlined at build time: changing one needs a redeploy. Unset, `NEXT_PUBLIC_BASEMAP_ORIGIN` falls back
+All of them are inlined at build time: changing one needs a redeploy. Unset, `NEXT_PUBLIC_BASEMAP_ORIGIN` falls back
 to the page's own origin, which is how development and the LAN Caddy work.
 
 **The API** must allow the front end's origin: `ATHLETE_CORS_ORIGINS=https://gatho.shahinsha.xyz` (exactly that, no
@@ -96,3 +97,27 @@ DELETE, and exposes `Retry-After` and `Content-Disposition`.
 Nothing else assumes one origin: there is no CSP, no preload link and no service worker for the basemap, and the
 Follow map's style still has no `glyphs` URL (its tiles come from the corridor in memory, loaded from the archive
 before the run). Share links (`src/saved/share.ts`) use the page's origin, which is the front end, as they should.
+
+## Step 9 (cross-device link, launch hardening)
+
+- **"Use on another device"** (`src/components/LinkDeviceDialog.tsx`, opened from Saved routes and the menu via
+  `/routes#another-device`): a one-time link `<origin>/link#<code>` (code in the **fragment**: in no server log and
+  no Referer), a QR code, Copy, a 5-minute countdown and "New code". The dialog is `next/dynamic`, and the QR encoder
+  (`src/saved/qr.ts`, uqr 0.1.3, MIT) a second `import()` inside it: neither is in a first load.
+- **`/link`** (`src/app/link/LinkClaim.tsx`) reads the fragment once and clears it with `replaceState` before any
+  request, claims without a token, stores the new token (the old one is kept as `athlete.token.previous`, never
+  sent), and goes to `/routes` ("Linked. Your saved routes are here"). A browser with saved routes of its own is
+  warned first; nothing is deleted on the server.
+- **One session per browser** (`PlanClient.token`): made only when a request needs a token; concurrent calls share
+  one request; tabs wait on a Web Lock (`gatho:session`) and read the token the first one stored.
+- **Busy and error states** (`solveCall`, `StatusLine` in `Planner.tsx`): solver_busy counts down from Retry-After,
+  at most 3 retries, with Cancel (`CANCELLED`, not an error); rate_limited says how long to wait and does not retry;
+  503 "Planning is temporarily unavailable"; a 504 polls first, then "That route took too long; try a shorter
+  distance". The plan and the draft stay.
+- **Health:** the app reads the public `/v1/health` body (`features`, `map`); the "older map" note hashes the
+  version's build ids the same way (`src/plan/mapIds.ts`; needs WebCrypto, so https or localhost).
+- **About and privacy** (`/about`) and a footer link (`SiteFooter`) on Saved routes, `/link` and the share page.
+- **First-load JS budget:** `npm run build && npm run check:bundle` (`scripts/bundle-size.mjs`, limits and the
+  measured numbers in `bundle-budget.json`). CI runs it.
+- Playwright projects: `link` (two browsers, live stack with migration 0006), `privacy` (no request outside GATHO's
+  own origins), and `unreachable` now also runs in CI.
