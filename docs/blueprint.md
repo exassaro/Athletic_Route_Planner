@@ -2,6 +2,20 @@
 
 Nov 16, 2026 · @Azzm
 
+## Step 9 amendments (2026-11-25)
+
+Cross-device link, launch hardening and CI/CD, approved by the product owner on 2026-11-25 (report: [Step 9 summary](reports/step9/summary.md)). The solver does not change. Where these amendments conflict with an earlier amendment or a later section, they win.
+
+1. **Several tokens per client.** Migration 0006 adds `client_tokens` (token_hash primary key, client_id, created_at, label). A token is accepted when it is in `clients.token_hash` (the first device) or in `client_tokens` (a linked one). Existing tokens are unchanged.
+2. **A16 `POST /v1/session/link`** (token needed): a one-time code, 192 random bits, URL-safe, valid 5 minutes, stored in Redis as its sha256 only, bound to the client. 10 an hour per client. Never returns the token.
+3. **A17 `POST /v1/session/claim {code}`** (no token): Redis GETDEL, so single use even when two claims race; a new token for the same client. 10 a minute per IP, wrong codes included. Unknown, expired, used: one answer, 404 `link_invalid`.
+4. **The web's link is `/link#<code>`**: the code is in the fragment, never in a query, a server log or a referrer. `/link` clears it with replaceState. A browser that already holds saved routes is warned first; nothing is deleted on the server, and the browser keeps its old token under `athlete.token.previous`.
+5. **A18 health detail behind a key.** `/v1/health` keeps 200/503. Without `X-Health-Key` equal to `ATHLETE_HEALTH_KEY` (compared in constant time; unset = never) the body is `{"status", "features": {"planning", "search", "recommended"}}`; no service names, builds or errors. `ATHLETE_DOCS=false` turns off /docs, /redoc and /openapi.json (production).
+6. **Session limits:** 60 new sessions an hour per IP (carrier NAT), and 120 a minute in total. The web creates its session once per browser (a Web Lock across tabs).
+7. **Busy states:** solver_busy retries after Retry-After, at most 3 tries, with a countdown and Cancel; rate_limited says how long to wait and does not retry; 503 "Planning is temporarily unavailable"; a 504 still polls (Phase 4 amendment 12) and only then says "That route took too long; try a shorter distance".
+8. **Caddy's access log deletes `X-Client-Token` and `X-Health-Key`** (Caddy logs request headers and hides only Cookie and Authorization).
+9. **First-load JS budget** for `/` and `/routes` in CI (`web/bundle-budget.json`, measured by `web/scripts/bundle-size.mjs`). Code for one screen only (the QR code) loads with `import()`.
+
 ## Phase 5e amendments
 
 Items 1 to 3 of the Phase 5e brief (resume on refresh), brought forward on 2026-11-22 at the product owner's request and built with Phase 5d step 7. The rest of 5e (faster reload, the performance guard) is not built, and its brief is cut off after "Fail the build". The solver and the API do not change. Where these amendments conflict with an earlier amendment or a later section, they win.

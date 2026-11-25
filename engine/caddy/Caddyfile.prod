@@ -12,13 +12,19 @@
 
 {$API_SITE:api.gatho.shahinsha.xyz} {
 	# Access log (IP, method, path, status, size, time), rotated by Caddy: 50 MiB a file, 10 files, 30 days.
+	# Caddy logs request headers and hides only Cookie and Authorization by itself, so the client token and the
+	# health key are deleted here (Step 9). Link codes are in a URL fragment or a request body: never logged.
 	log {
 		output file /var/log/caddy/access.log {
 			roll_size 50MiB
 			roll_keep 10
 			roll_keep_for 720h
 		}
-		format json
+		format filter {
+			request>headers>X-Client-Token delete
+			request>headers>X-Health-Key delete
+			wrap json
+		}
 	}
 
 	# Request bodies: a RouteRequest or a JSON Patch is a few kB. Larger is refused (413).

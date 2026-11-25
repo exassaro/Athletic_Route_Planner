@@ -6,7 +6,7 @@ plain Settings() fails at startup instead of writing to the developer's database
 
 from urllib.parse import urlsplit
 
-TEST_DATABASES = frozenset({"athlete_test", "athlete_test_0005", "athlete_live"})
+TEST_DATABASES = frozenset({"athlete_test", "athlete_test_0005", "athlete_test_0006", "athlete_live"})
 TEST_REDIS_DBS = frozenset({"14", "15"})
 
 

@@ -42,6 +42,17 @@ class Client(Base):
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class ClientToken(Base):
+    """Another device's token for the same client (Step 9, migration 0006). Only the sha256 is stored. The token
+    in clients.token_hash (the first device's) is accepted too."""
+
+    __tablename__ = "client_tokens"
+    token_hash: Mapped[bytes] = mapped_column(LargeBinary, primary_key=True)
+    client_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("clients.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    label: Mapped[str | None] = mapped_column(Text)
+
+
 class Plan(Base):
     """One planning session, owned by a client."""
 

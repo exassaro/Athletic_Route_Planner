@@ -13,7 +13,7 @@ from sqlalchemy.sql import func
 
 from . import ratelimit
 from .config import Settings
-from .db import Client
+from .db import Client, ClientToken
 from .errors import ApiError
 
 TOKEN_HEADER = "X-Client-Token"
@@ -44,6 +44,14 @@ def client_ip(request: Request, svc: Services = Depends(services)) -> str:
     return request.client.host if request.client else "unknown"
 
 
+def _client_id_for(token: str):
+    """The client a token belongs to: the first device's (clients.token_hash) or a linked one's (client_tokens)."""
+    h = token_hash(token)
+    return (select(Client.id).where(Client.token_hash == h)
+            .union_all(select(ClientToken.client_id).where(ClientToken.token_hash == h))
+            .limit(1).scalar_subquery())
+
+
 async def client_id_if_known(x_client_token: str | None = Header(None, description="Optional: the token from "
                                                               "POST /v1/session"),
                              svc: Services = Depends(services)) -> uuid.UUID | None:
@@ -51,8 +59,7 @@ async def client_id_if_known(x_client_token: str | None = Header(None, descripti
     if not x_client_token:
         return None
     async with svc.sessions() as db:
-        return (await db.execute(select(Client.id).where(Client.token_hash == token_hash(x_client_token)))
-                ).scalar_one_or_none()
+        return (await db.execute(select(_client_id_for(x_client_token)))).scalar_one_or_none()
 
 
 async def current_client(x_client_token: str | None = Header(None, description="Token from POST /v1/session"),
@@ -61,7 +68,7 @@ async def current_client(x_client_token: str | None = Header(None, description="
         raise ApiError(401, "client_required", f"Send the token from POST /v1/session in the {TOKEN_HEADER} header.")
     async with svc.sessions() as db:
         client = (await db.execute(
-            update(Client).where(Client.token_hash == token_hash(x_client_token))
+            update(Client).where(Client.id == _client_id_for(x_client_token))
             .values(last_seen_at=func.now()).returning(Client))).scalar_one_or_none()
         await db.commit()
     if client is None:

@@ -383,6 +383,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/session/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Join the client behind a link code
+         * @description Uses the code up (once only) and returns a new token for the client that asked for it. Needs no token.
+         *     An unknown, expired or used code answers 404 `link_invalid`, the same in each case. Every attempt counts
+         *     against a limit per IP.
+         */
+        post: operations["claim_v1_session_claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/session/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A one-time code to use this client on another device
+         * @description The code (192 random bits, URL-safe) is valid once, for 5 minutes. Another browser sends it to
+         *     `POST /v1/session/claim` and gets its own token for this same client: the same saved routes and plans.
+         *     Asking again gives a new code; earlier ones stay valid until they expire or are used.
+         */
+        post: operations["link_v1_session_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/share/{slug}": {
         parameters: {
             query?: never;
@@ -702,6 +746,11 @@ export interface components {
             role: "checkpoint" | "via" | "must_use";
             /** Way Ids */
             way_ids?: number[];
+        };
+        /** ClaimIn */
+        ClaimIn: {
+            /** Code */
+            code: string;
         };
         /**
          * ConflictOut
@@ -1066,6 +1115,16 @@ export interface components {
              * @constant
              */
             type: "LineString";
+        };
+        /** LinkOut */
+        LinkOut: {
+            /**
+             * Code
+             * @description One-time code for POST /v1/session/claim. Never contains or reveals the token.
+             */
+            code: string;
+            /** Expires In S */
+            expires_in_s: number;
         };
         /**
          * MustUse
@@ -2992,6 +3051,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SessionOut"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    claim_v1_session_claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    link_v1_session_link_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Token from POST /v1/session */
+                "x-client-token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
             /** @description Too Many Requests */

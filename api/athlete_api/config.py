@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     rate_read_per_client_min: int = 300
     rate_write_per_client_min: int = 60   # Phase 5c amendment 10; none per IP (behind the proxy all share one)
     rate_session_per_ip_hour: int = 10
+    # Step 9: "Use on another device". A link code lives this long in Redis; link is counted per client, claim
+    # per IP (every attempt, wrong codes included).
+    link_ttl_s: int = Field(300, ge=30)
+    rate_link_per_client_hour: int = 10
+    rate_claim_per_ip_min: int = 10
     trust_forwarded_for: bool = False   # take the client IP from X-Forwarded-For (behind a proxy only)
 
     health_timeout_s: float = 3.0
