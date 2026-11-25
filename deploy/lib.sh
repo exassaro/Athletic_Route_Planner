@@ -39,8 +39,52 @@ health_key() {
 	if [ -n "${ATHLETE_HEALTH_KEY:-}" ]; then
 		printf '%s' "$ATHLETE_HEALTH_KEY"
 	elif [ -r "$ENV_FILE" ]; then
-		sed -n 's/^ATHLETE_HEALTH_KEY=//p' "$ENV_FILE" | tail -1 | tr -d ''
+		sed -n 's/^ATHLETE_HEALTH_KEY=//p' "$ENV_FILE" | tail -1 | tr -d '
+'
 	fi
+}
+
+# --- Caddy's bind mounts (Step 9) -------------------------------------------------------------------------------
+# A running container keeps the files it was started with: replacing web/public/basemap (fetch_basemap.py) or
+# Caddyfile.prod (git pull) on the host leaves Caddy on the old ones, which gave a 404 map after first_run.
+CADDY=athlete-prod-caddy
+PMTILES_HOST="$ROOT/web/public/basemap/kerala.pmtiles"
+
+# What differs between the host and the running Caddy, one reason a line; empty when Caddy is current.
+caddy_stale() {
+	local host_cf box_cf host_pm box_pm
+	host_cf=$(sha256sum "$ROOT/engine/caddy/Caddyfile.prod" | cut -d' ' -f1)
+	box_cf=$(docker exec "$CADDY" sha256sum /etc/caddy/Caddyfile 2>/dev/null | cut -d' ' -f1)
+	[ "$host_cf" = "$box_cf" ] || echo "Caddyfile.prod differs from the one Caddy runs"
+	host_pm=$(stat -c '%s %Y' "$PMTILES_HOST" 2>/dev/null || echo missing)
+	box_pm=$(docker exec "$CADDY" stat -c '%s %Y' /srv/basemap/kerala.pmtiles 2>/dev/null || echo missing)
+	[ "$host_pm" = "$box_pm" ] || echo "kerala.pmtiles: host '$host_pm', Caddy sees '$box_pm'"
+}
+
+# Fails loudly unless Caddy serves the same basemap and Caddyfile as the host.
+check_caddy_mounts() {
+	local stale
+	docker exec "$CADDY" ls /srv/basemap/kerala.pmtiles >/dev/null 2>&1 ||
+		die "Caddy does not see /srv/basemap/kerala.pmtiles (docker exec $CADDY ls /srv/basemap): the map would be a 404"
+	stale=$(caddy_stale)
+	[ -z "$stale" ] || die "Caddy is not serving the current files: $stale"
+	echo "   Caddy sees /srv/basemap/kerala.pmtiles ($(docker exec "$CADDY" stat -c '%s' /srv/basemap/kerala.pmtiles) bytes) and the current Caddyfile"
+}
+
+# Recreates Caddy when it is stale (or always, with "force"), then checks. Only Caddy: --no-deps.
+refresh_caddy() {
+	local why
+	why=$(caddy_stale)
+	if [ "${1:-}" = force ] || [ -n "$why" ]; then
+		[ -n "$why" ] && echo "   recreating Caddy: $why"
+		dc up -d --no-deps --force-recreate caddy
+		local _
+		for _ in $(seq 1 15); do
+			docker exec "$CADDY" ls /srv/basemap >/dev/null 2>&1 && break
+			sleep 2
+		done
+	fi
+	check_caddy_mounts
 }
 
 need_env() {

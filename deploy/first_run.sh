@@ -71,6 +71,10 @@ basemap() {
 	"$UV" run --no-dev python engine/scripts/fetch_basemap.py ||
 		die "basemap failed: copy data/basemap/$pin_file from the laptop and run this again."
 	[ -f web/public/basemap/kerala.pmtiles ] || die "web/public/basemap/kerala.pmtiles was not written"
+	# a Caddy already running (a re-run) still has the old directory mounted: recreate it (Step 9)
+	if docker ps --format '{{.Names}}' | grep -qx "$CADDY"; then
+		refresh_caddy force
+	fi
 }
 
 photon_data() {
@@ -164,7 +168,8 @@ api() {
 
 caddy() {
 	mkdir -p data/caddy-prod/data data/caddy-prod/config data/logs/caddy
-	dc up -d caddy
+	# recreated every time, so it mounts the basemap and Caddyfile as they are now, then checked (Step 9)
+	refresh_caddy force
 	echo "   waiting for the certificate (up to 2 minutes)"
 	local _
 	for _ in $(seq 1 24); do

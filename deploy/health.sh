@@ -117,6 +117,14 @@ if command -v docker >/dev/null && docker ps >/dev/null 2>&1 && docker ps --form
 	free -m | sed 's/^/        /'
 	docker ps --format '{{.Names}}\t{{.Status}}' | grep '^athlete-prod-' | sed 's/^/        /'
 	docker stats --no-stream --format '{{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}' | grep '^athlete-prod-' | sed 's/^/        /'
+	# Caddy serves the basemap and Caddyfile that are on disk (Step 9: a stale mount gave a 404 map)
+	if docker exec "$CADDY" ls /srv/basemap/kerala.pmtiles >/dev/null 2>&1; then
+		stale=$(caddy_stale)
+		[ -z "$stale" ] && ok "Caddy sees /srv/basemap/kerala.pmtiles and the current Caddyfile" ||
+			bad "Caddy is stale ($stale): source deploy/lib.sh; refresh_caddy"
+	else
+		bad "Caddy does not see /srv/basemap/kerala.pmtiles: source deploy/lib.sh; refresh_caddy"
+	fi
 	for c in $(docker ps -a --format '{{.Names}}' | grep '^athlete-prod-'); do
 		h=$(health_of "$c")
 		[ "$h" = unhealthy ] && bad "$c is unhealthy"

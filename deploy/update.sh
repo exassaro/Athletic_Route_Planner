@@ -4,7 +4,8 @@
 #   bash deploy/update.sh
 #
 # Not rolled back: the code checkout (git) and database migrations. A migration that breaks the old code needs
-# a manual step (RUNBOOK, "Update"). Changes to Caddyfile.prod or the engines are not applied here (RUNBOOK).
+# a manual step (RUNBOOK, "Update"). Caddy is recreated when Caddyfile.prod changed or it serves a stale basemap
+# (Step 9). Changes to the compose file or the engines are not applied here (RUNBOOK).
 set -euo pipefail
 # shellcheck source=deploy/lib.sh
 . "$(dirname "$0")/lib.sh"
@@ -24,8 +25,11 @@ say "git pull (was $prev_commit)"
 git pull --ff-only
 new_commit=$(git rev-parse --short HEAD)
 git --no-pager log --oneline "$prev_commit..$new_commit" | sed 's/^/   /' || true
-if ! git diff --quiet "$prev_commit" "$new_commit" -- engine/caddy/Caddyfile.prod deploy/docker-compose.prod.yml; then
-	warn "Caddyfile.prod or the compose file changed: see RUNBOOK, \"Update\", for applying them."
+if ! git diff --quiet "$prev_commit" "$new_commit" -- deploy/docker-compose.prod.yml; then
+	warn "the compose file changed: see RUNBOOK, \"Update\", for applying it."
+fi
+if ! git diff --quiet "$prev_commit" "$new_commit" -- engine/basemap_pin.json; then
+	warn "engine/basemap_pin.json changed: run fetch_basemap.py (RUNBOOK, \"Update\"), then this script again."
 fi
 
 say "Build the API image"
@@ -41,6 +45,8 @@ say "Restart the API"
 dc up -d --no-deps --no-build api
 
 if wait_healthy athlete-prod-api 180 && curl -fsS --max-time 10 -o /dev/null "$PUBLIC_URL/v1/health"; then
+	say "Caddy (Caddyfile.prod and the basemap mount)"
+	refresh_caddy
 	say "Updated to $new_commit; $PUBLIC_URL/v1/health is ok"
 	exit 0
 fi
