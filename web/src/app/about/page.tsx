@@ -5,8 +5,10 @@
  */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AuthorLinks } from "@/components/AuthorLinks";
 import { Wordmark } from "@/components/Wordmark";
 import { contactEmail } from "@/lib/contact";
+import { AUTHOR } from "@/lib/links";
 import { ThemeToggle } from "@/theme/ThemeToggle";
 
 export const metadata: Metadata = { title: "About and privacy" };
@@ -86,6 +88,8 @@ export default function AboutPage() {
         <li>Routing by <a href="https://valhalla.github.io/valhalla/">Valhalla</a> and <a href="https://www.graphhopper.com">GraphHopper</a>; place search by <a href="https://photon.komoot.io">Photon</a>.</li>
         <li>Numbers in Silkscreen, under the SIL Open Font License 1.1.</li>
       </ul>
+      <p className="t-body-s about-author" data-testid="about-author">Built by {AUTHOR}.</p>
+      <AuthorLinks className="t-body-s" />
       <p><Link href="/">Plan a run</Link></p>
     </main>
   );
